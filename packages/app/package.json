@@ -1,0 +1,30 @@
+{
+  "name": "@tuevento/app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/App.tsx",
+    "./styles.css": "./src/styles.css",
+    "./desktop": "./src/desktop.tsx",
+    "./landing": "./src/landing.tsx",
+    "./downloads": "./src/downloads.tsx"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.2.8",
+    "@fontsource-variable/manrope": "^5.2.8",
+    "@hookform/resolvers": "^5.2.2",
+    "@tuevento/client": "1.0.0",
+    "@tuevento/contracts": "1.0.0",
+    "date-fns": "^4.4.0",
+    "date-fns-tz": "^3.2.0",
+    "i18next": "^26.4.4",
+    "lucide-react": "^0.544.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-hook-form": "^7.63.0",
+    "react-i18next": "^17.0.16",
+    "react-router-dom": "^7.9.3",
+    "zod": "^4.6.7"
+  }
+}

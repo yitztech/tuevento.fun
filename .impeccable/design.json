@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T23:29:35.003280+00:00",
+  "title": "Design System: TuEventoFun",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Azul tinta",
+        "tonalRamp": [
+          "oklch(15% 0.08 264)",
+          "oklch(27% 0.08 264)",
+          "oklch(39% 0.08 264)",
+          "oklch(51% 0.08 264)",
+          "oklch(63% 0.08 264)",
+          "oklch(75% 0.08 264)",
+          "oklch(87% 0.08 264)",
+          "oklch(95% 0.08 264)"
+        ]
+      },
+      "peony": {
+        "role": "secondary",
+        "displayName": "Rosa peonía",
+        "tonalRamp": [
+          "oklch(15% 0.06 350)",
+          "oklch(27% 0.06 350)",
+          "oklch(39% 0.06 350)",
+          "oklch(51% 0.06 350)",
+          "oklch(63% 0.06 350)",
+          "oklch(75% 0.06 350)",
+          "oklch(87% 0.06 350)",
+          "oklch(95% 0.06 350)"
+        ]
+      },
+      "yellow": {
+        "role": "tertiary",
+        "displayName": "Amarillo celebración",
+        "tonalRamp": [
+          "oklch(15% 0.1 90)",
+          "oklch(27% 0.1 90)",
+          "oklch(39% 0.1 90)",
+          "oklch(51% 0.1 90)",
+          "oklch(63% 0.1 90)",
+          "oklch(75% 0.1 90)",
+          "oklch(87% 0.1 90)",
+          "oklch(95% 0.1 90)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Blanco puro",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "tonalRamp": [
+          "oklch(15% 0.01 264)",
+          "oklch(27% 0.01 264)",
+          "oklch(39% 0.01 264)",
+          "oklch(51% 0.01 264)",
+          "oklch(63% 0.01 264)",
+          "oklch(75% 0.01 264)",
+          "oklch(87% 0.01 264)",
+          "oklch(95% 0.01 264)"
+        ]
+      },
+      "ice": {
+        "role": "neutral",
+        "displayName": "Hielo"
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Titular",
+        "purpose": "Títulos de página."
+      },
+      "title": {
+        "displayName": "Título",
+        "purpose": "Secciones e invitaciones."
+      }
+    },
+    "shadows": [
+      {
+        "name": "modal",
+        "value": "0 24px 90px #131b2f40",
+        "purpose": "Diálogos."
+      },
+      {
+        "name": "toast",
+        "value": "0 6px 25px #16213a29",
+        "purpose": "Avisos superpuestos."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Transiciones de interfaz, reducidas por preferencia del sistema."
+      },
+      {
+        "name": "button",
+        "value": "180ms",
+        "purpose": "Fondo y desplazamiento hover de botones."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "small-mobile",
+        "value": "480px"
+      },
+      {
+        "name": "mobile",
+        "value": "760px"
+      },
+      {
+        "name": "tablet",
+        "value": "1000px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1200px"
+      },
+      {
+        "name": "wide",
+        "value": "1650px"
+      },
+      {
+        "name": "platform-mobile",
+        "value": "767px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción visible con estado hover y foco de teclado.",
+      "html": "<button class=\"ds-button primary\">Continuar</button>",
+      "css": "\n.ds-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  min-height: 44px;\n  padding: 12px 20px;\n  background: var(--blue,#17274c);\n  border: 1px solid transparent;\n  border-radius: 9px;\n  color: #fff;\n  font-size: 13px;\n  font-weight: 700;\n  line-height: 1.3;\n  white-space: nowrap;\n  transition:\n    background 0.18s,\n    transform 0.18s;\n}\n\n.ds-button:hover {\n  background: var(--blue-dark,#111e3b);\n  transform: translateY(-1px);\n}\n\n@media (prefers-reduced-motion: reduce) { .ds-button:hover { transform: none; } }\n.ds-button:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción visible con estado hover y foco de teclado.",
+      "html": "<button class=\"ds-button secondary\">Continuar</button>",
+      "css": "\n.ds-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  min-height: 44px;\n  padding: 12px 20px;\n  background: var(--blue,#17274c);\n  border: 1px solid transparent;\n  border-radius: 9px;\n  color: #fff;\n  font-size: 13px;\n  font-weight: 700;\n  line-height: 1.3;\n  white-space: nowrap;\n  transition:\n    background 0.18s,\n    transform 0.18s;\n}\n\n.ds-button:hover {\n  background: var(--blue-dark,#111e3b);\n  transform: translateY(-1px);\n}\n\n.ds-button.secondary {\n  border-color: #dfe1e5;\n  background: #fff;\n  color: var(--ink,#25282e);\n}\n\n.ds-button.secondary:hover {\n  background: #f2f3f6;\n}\n\n@media (prefers-reduced-motion: reduce) { .ds-button:hover { transform: none; } }\n.ds-button:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Celebration button",
+      "kind": "button",
+      "refersTo": "button-celebrate",
+      "description": "Acción visible con estado hover y foco de teclado.",
+      "html": "<button class=\"ds-button pink\">Continuar</button>",
+      "css": "\n.ds-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  min-height: 44px;\n  padding: 12px 20px;\n  background: var(--blue,#17274c);\n  border: 1px solid transparent;\n  border-radius: 9px;\n  color: #fff;\n  font-size: 13px;\n  font-weight: 700;\n  line-height: 1.3;\n  white-space: nowrap;\n  transition:\n    background 0.18s,\n    transform 0.18s;\n}\n\n.ds-button:hover {\n  background: var(--blue-dark,#111e3b);\n  transform: translateY(-1px);\n}\n\n.ds-button.pink {\n  background: var(--pink,#f5cedd);\n  color: var(--blue,#17274c);\n}\n\n.ds-button.pink:hover {\n  background: #f8dfe8;\n}\n\n@media (prefers-reduced-motion: reduce) { .ds-button:hover { transform: none; } }\n.ds-button:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Destructive button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Acción visible con estado hover y foco de teclado.",
+      "html": "<button class=\"ds-button danger\">Continuar</button>",
+      "css": "\n.ds-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  min-height: 44px;\n  padding: 12px 20px;\n  background: var(--blue,#17274c);\n  border: 1px solid transparent;\n  border-radius: 9px;\n  color: #fff;\n  font-size: 13px;\n  font-weight: 700;\n  line-height: 1.3;\n  white-space: nowrap;\n  transition:\n    background 0.18s,\n    transform 0.18s;\n}\n\n.ds-button:hover {\n  background: var(--blue-dark,#111e3b);\n  transform: translateY(-1px);\n}\n\n.ds-button.danger {\n  background: var(--error,#a53746);\n}\n\n@media (prefers-reduced-motion: reduce) { .ds-button:hover { transform: none; } }\n\n.ds-button.danger:hover {\n  background: #852937;\n}\n.ds-button:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "description": "Etiqueta independiente y control de al menos 44 px.",
+      "html": "<label class=\"ds-field\">Nombre del evento<input placeholder=\"Una ocasión especial\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:8px;font:650 12px \"Manrope Variable\",sans-serif;color:#444851}.ds-field input{background:#fff;color:#353943;border:1px solid #dcdee4;border-radius:8px;padding:12px;font:400 12px \"Manrope Variable\",sans-serif;min-height:44px;line-height:1.5}.ds-field input:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "description": "Estado activo hielo con texto azul.",
+      "html": "<nav class=\"ds-nav\"><a class=\"active\" href=\"#\">Mis eventos</a><a href=\"#\">Invitados</a></nav>",
+      "css": "\n.ds-nav {\n  display: flex;\n  flex-direction: column;\n  gap: 7px;\n}\n\n.ds-nav a {\n  display: flex;\n  align-items: center;\n  gap: 13px;\n  min-height: 46px;\n  padding: 0 13px;\n  color: #656971;\n  font-size: 12px;\n  font-weight: 600;\n  border-radius: 8px;\n}\n\n.ds-nav a:hover {\n  background: #f4f5f7;\n  color: var(--blue,#17274c);\n}\n\n.ds-nav a.active {\n  background: var(--ice,#e8ebf2);\n  color: var(--blue,#17274c);\n  font-weight: 800;\n}\n\n.ds-nav a:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Event card",
+      "kind": "card",
+      "description": "Contenedor de evento con borde suave; la fotografía se aporta como contenido.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-body\"><h3>Tu próxima celebración</h3><p>Fecha y ubicación del evento</p></div></article>",
+      "css": "\n.ds-card {\n  border: 1px solid var(--line,#e8e9ec);\n  border-radius: 13px;\n  overflow: hidden;\n  background: #fff;\n  transition: border-color 0.2s;\n}\n\n.ds-card:hover {\n  border-color: #b5bccb;\n}\n\n.ds-card-body {\n  padding: 17px 17px 15px;\n}\n\n\n\n\n.ds-card h3{font:600 18px \"Bricolage Grotesque Variable\",sans-serif}.ds-card p{font:12px \"Manrope Variable\",sans-serif;color:#696c72}"
+    },
+    {
+      "name": "Language selector",
+      "kind": "input",
+      "description": "Selector nativo persistente para español e inglés.",
+      "html": "<label class=\"ds-language\"><select aria-label=\"Cambiar idioma\"><option>Español</option><option>English</option></select></label>",
+      "css": "\n\n.ds-language {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  color: var(--blue,#17274c);\n  position: relative;\n  flex-shrink: 0;\n}\n\n.ds-language select {\n  min-height: 38px;\n  border: 1px solid #dfe1e5;\n  background: #fff;\n  padding: 7px 23px 7px 10px;\n  border-radius: 7px;\n  font-size: 11px;\n  color: var(--blue,#17274c);\n  cursor: pointer;\n  font-weight: 650;\n  max-width: 112px;\n}\n\n  .ds-language select {\n    font-size: 10px;\n    padding: 7px 17px 7px 8px;\n    max-width: 100px;\n  }\n\n.ds-language select {\n  min-height: 44px;\n  font-size: 12px;\n}\n\n  .ds-language select {\n    font-size: 12px;\n  }.ds-language select:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    },
+    {
+      "name": "Demo notice",
+      "kind": "custom",
+      "description": "La naturaleza sintética de los datos se comunica también en móvil.",
+      "html": "<div class=\"ds-demo\"><p>Estás explorando una demostración.</p><a href=\"#\">Crear mi cuenta</a></div>",
+      "css": "\n.ds-demo p {\n  flex: 1 1 250px;\n}\n\n.ds-demo a {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  min-height: 44px;\n  font-weight: 750;\n  color: var(--blue,#17274c);\n}.ds-demo a:focus-visible{outline:3px solid #657496;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Revista contemporánea de celebraciones",
+    "overview": "Una interfaz de gestión clara que utiliza fotografía de celebraciones y tipografía expresiva para dar identidad a tareas concretas. El fondo blanco puro es una condición del producto; los acentos azul tinta, rosa peonía y amarillo aportan color sin cubrir el área de trabajo.\n\nLa personalidad editorial se concentra en titulares, cifras e invitaciones. Los controles de organización mantienen bordes discretos, estados claros y una densidad compacta. El lenguaje visual acompaña el trabajo del anfitrión y la respuesta del invitado.",
+    "keyCharacteristics": [
+      "Fotografías visibles y plantillas diferenciadas.",
+      "Jerarquía editorial con controles de gestión compactos.",
+      "Estados de asistencia identificados por texto y color.",
+      "Español e inglés con el mismo lenguaje visual."
+    ],
+    "rules": [
+      {
+        "name": "The White Ground Rule",
+        "body": "La superficie principal permanece blanca; los bloques de color tienen una función concreta y límites visibles.",
+        "section": "colors"
+      },
+      {
+        "name": "The Task and Celebration Rule",
+        "body": "Manrope sostiene lectura y controles; Bricolage aporta la voz expresiva de títulos y cifras.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "**Do** conservar el fondo blanco puro y los acentos definidos.",
+      "**Do** mostrar nombres de estados además de su color.",
+      "**Do** traducir los textos de interfaz y conservar intacto el contenido escrito por usuarios.",
+      "**Do** mantener imágenes reales, fuentes locales y foco visible."
+    ],
+    "donts": [
+      "**Don't** presentar datos de demostración como eventos reales del usuario.",
+      "**Don't** sustituir fotografías por degradados o texturas simuladas.",
+      "**Don't** fijar anchos de texto que corten las traducciones."
+    ]
+  }
+}

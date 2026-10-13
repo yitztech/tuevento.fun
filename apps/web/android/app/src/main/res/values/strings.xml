@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TuEventoFun</string>
+    <string name="title_activity_main">TuEventoFun</string>
+    <string name="package_name">com.tueventofun.app</string>
+    <string name="custom_url_scheme">com.tueventofun.app</string>
+</resources>

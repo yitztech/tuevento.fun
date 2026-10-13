@@ -1,0 +1,15 @@
+{
+  "buildPath": "code",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "georgia",
+        "createdAt": "2026-10-13T22:53:45.569Z",
+        "reason": "Las plantillas existentes Elegante Dorado y Bodas Florales usan Georgia como serif de invitación; la nueva landing reutiliza esas tarjetas sin cambiar su identidad."
+      }
+    ]
+  }
+}

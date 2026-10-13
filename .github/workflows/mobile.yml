@@ -1,0 +1,127 @@
+name: Release Android and iOS
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semantic version, e.g. 1.0.0'
+        required: true
+      platform:
+        type: choice
+        options: [android, ios, both]
+        default: both
+      publish_catalog:
+        type: boolean
+        default: false
+        description: 'Publish verified distribution links to the website'
+permissions:
+  contents: read
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+jobs:
+  android:
+    if: inputs.platform == 'android' || inputs.platform == 'both'
+    environment: mobile-production
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    env:
+      APP_VERSION: ${{ inputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      VITE_APP_VERSION: ${{ inputs.version }}
+      VITE_PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+      MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: android-actions/setup-android@v3
+      - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test && node scripts/validate-mobile-env.mjs
+      - run: npm run build && npx cap sync android
+        working-directory: apps/web
+      - name: Decode signing keystore
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE"
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+      - name: Build signed APK and Play bundle
+        working-directory: apps/web/android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease bundleRelease
+      - name: Publish downloadable APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp apps/web/android/app/build/outputs/apk/release/app-release.apk TuEventoFun.apk
+          cp apps/web/android/app/build/outputs/bundle/release/app-release.aab TuEventoFun.aab
+          sha256sum TuEventoFun.apk > SHA256SUMS
+          gh release create "app-android-v${APP_VERSION}-${BUILD_NUMBER}" TuEventoFun.apk TuEventoFun.aab SHA256SUMS --title "Android ${APP_VERSION} (${BUILD_NUMBER})" --notes "Android release" --target "$GITHUB_SHA"
+          echo "RELEASE_SHA256=$(cut -d ' ' -f1 SHA256SUMS)" >> "$GITHUB_ENV"
+          echo "RELEASE_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/app-android-v${APP_VERSION}-${BUILD_NUMBER}/TuEventoFun.apk" >> "$GITHUB_ENV"
+      - name: Update website catalog
+        if: inputs.publish_catalog
+        env:
+          RELEASE_PLATFORM: android
+          RELEASE_CHANNEL: direct
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+        run: |
+          curl --fail --head --location "$RELEASE_URL"
+          npm run build -w @tuevento/contracts
+          node scripts/publish-release.mjs
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+  ios:
+    if: inputs.platform == 'ios' || inputs.platform == 'both'
+    runs-on: macos-15
+    environment: mobile-production
+    env:
+      APP_VERSION: ${{ inputs.version }}
+      VITE_APP_VERSION: ${{ inputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      VITE_PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+      MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test && node scripts/validate-mobile-env.mjs
+      - run: npm run build && npx cap sync ios
+        working-directory: apps/web
+      - name: Install distribution identity
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: bash scripts/ios-signing.sh
+      - name: Archive and export
+        run: |
+          xcodebuild -project apps/web/ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$APPLE_TEAM_ID" PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_UUID" CODE_SIGN_IDENTITY='Apple Distribution' PRODUCT_BUNDLE_IDENTIFIER="$MOBILE_APP_ID" MARKETING_VERSION="$APP_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportPath "$RUNNER_TEMP/ipa" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+      - name: Upload to App Store Connect for TestFlight processing
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          xcrun altool --upload-app -f "$RUNNER_TEMP/ipa/App.ipa" --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-distribution
+          path: ${{ runner.temp }}/ipa/*.ipa
+      - if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/distribution.p12" "$RUNNER_TEMP/profile.mobileprovision"
+          rm -rf ~/.appstoreconnect/private_keys
+# iOS catalog is published separately AFTER Apple processing/review, never on upload success.

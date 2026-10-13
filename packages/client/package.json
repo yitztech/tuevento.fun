@@ -1,0 +1,13 @@
+{
+  "name": "@tuevento/client",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tuevento/contracts": "1.0.0"
+  }
+}

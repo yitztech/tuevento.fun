@@ -1,0 +1,66 @@
+name: tueventofun
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tueventofun
+      POSTGRES_USER: tuevento
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Run bash scripts/setup.sh first}
+    ports:
+      - "127.0.0.1:${DB_PORT:-5487}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tuevento -d tueventofun"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+  backend:
+    build:
+      context: .
+      target: backend
+    environment:
+      NODE_ENV: production
+      PORT: 3087
+      DATABASE_URL: postgres://tuevento:${DB_PASSWORD}@postgres:5432/tueventofun
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-}
+      RELEASE_DOWNLOAD_HOSTS: ${RELEASE_DOWNLOAD_HOSTS:-github.com,apps.apple.com,testflight.apple.com,play.google.com}
+      DEMO_ENABLED: ${DEMO_ENABLED:-true}
+    ports:
+      - "127.0.0.1:${API_PORT:-3087}:3087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3087/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  frontend:
+    build:
+      context: .
+      target: frontend
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5187}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ && wget -q --spider http://127.0.0.1/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+volumes:
+  postgres_data:

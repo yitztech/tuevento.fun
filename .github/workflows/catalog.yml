@@ -1,0 +1,28 @@
+name: Publish approved app link
+on:
+  workflow_dispatch:
+    inputs:
+      platform: {type: choice, options: [ios, android], required: true}
+      channel: {type: choice, options: [testflight, store], required: true}
+      version: {required: true, description: 'Version x.y.z'}
+      build: {required: true, description: 'Already approved build number'}
+      url: {required: true, description: 'Approved public TestFlight or store URL'}
+permissions: {contents: read}
+jobs:
+  publish:
+    environment: mobile-production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci && npm run build -w @tuevento/contracts
+      - run: node scripts/publish-release.mjs
+        env:
+          RELEASE_PLATFORM: ${{ inputs.platform }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          APP_VERSION: ${{ inputs.version }}
+          BUILD_NUMBER: ${{ inputs.build }}
+          RELEASE_URL: ${{ inputs.url }}
+          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}

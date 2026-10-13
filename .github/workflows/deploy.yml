@@ -1,0 +1,74 @@
+name: Deploy web and API
+on:
+  workflow_dispatch:
+  push:
+    tags: ['web-v*']
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: production-web
+  cancel-in-progress: false
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test
+      - id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: backend
+          push: true
+          tags: ${{ steps.image.outputs.name }}-api:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: frontend
+          push: true
+          tags: ${{ steps.image.outputs.name }}-web:${{ github.sha }}
+  deploy:
+    needs: images
+    environment: production
+    runs-on: ubuntu-latest
+    permissions: {contents: read}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy immutable images
+        env:
+          HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_LOGIN: ${{ vars.DEPLOY_USER }}
+          IMAGE: ${{ needs.images.outputs.image }}
+          TAG: ${{ github.sha }}
+        run: |
+          test -n "$HOST" && test -n "$DEPLOY_LOGIN"
+          scp compose.production.yml "$DEPLOY_LOGIN@$HOST:tueventofun/compose.yml"
+          # shellcheck disable=SC2029 # Deliberately pass immutable image coordinates to the server.
+          ssh "$DEPLOY_LOGIN@$HOST" "cd tueventofun && IMAGE_BASE='$IMAGE' IMAGE_TAG='$TAG' docker compose pull && IMAGE_BASE='$IMAGE' IMAGE_TAG='$TAG' docker compose up -d --wait"
+      - name: Public health
+        env:
+          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+        run: curl --fail --retry 5 --retry-delay 3 "$PUBLIC_ORIGIN/api/health"
+      - if: always()
+        run: rm -f ~/.ssh/id_ed25519

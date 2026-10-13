@@ -1,0 +1,16 @@
+node_modules
+**/dist
+.git
+.env
+.env.*
+qa-artifacts
+.impeccable
+docs
+*.log
+
+apps/web/android
+apps/web/ios
+**/build
+*.jks
+*.p12
+*.mobileprovision
