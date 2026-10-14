@@ -15,7 +15,7 @@ import {
 import { themes, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
-import { LegalLinks } from "./legal";
+import { LegalLinks, legalPath } from "./legal";
 import "./landing.css";
 
 const family = [
@@ -55,7 +55,7 @@ export function LandingPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setNewsletterStatus("success");
-        setNewsletterMessage(tr("¡Gracias por suscribirte!"));
+        setNewsletterMessage(data.message || tr("¡Gracias por suscribirte!"));
         setNewsletterEmail("");
       } else {
         setNewsletterStatus("error");
@@ -481,6 +481,10 @@ export function LandingPage() {
                 {newsletterStatus === "loading" ? tr("Cargando…") : tr("Suscribirme")}
               </button>
             </form>
+            <p className="landing-newsletter-legal">
+              {tr("Te escribiremos en este idioma. Puedes darte de baja en cualquier momento.")}{" "}
+              <Link to={legalPath("privacy", locale)}>{tr("Aviso de privacidad")}</Link>
+            </p>
             {newsletterMessage && (
               <p className={`landing-newsletter-msg ${newsletterStatus}`} role="status">
                 {newsletterMessage}

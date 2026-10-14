@@ -14,7 +14,7 @@ fi
 cp /etc/nginx/templates/default.dev.conf.template /etc/nginx/http.d/default.conf
 rm -f /etc/nginx/conf.d/default.conf
 
-# Arrancar Nginx en segundo plano para hacer de reverse proxy
+# Nginx en segundo plano (puerto 8080) delante de Vite
 nginx
 
 # Parar Nginx al recibir señales de parada del contenedor

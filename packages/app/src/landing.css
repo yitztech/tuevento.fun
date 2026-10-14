@@ -582,6 +582,17 @@
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(136, 45, 23, 0.15);
 }
+.landing-newsletter-legal {
+  width: 100%;
+  margin: -12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.landing-newsletter-legal a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .landing-newsletter-msg {
   width: 100%;
   font-size: 13px;

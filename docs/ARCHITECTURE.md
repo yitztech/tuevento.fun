@@ -13,9 +13,14 @@ TuEventoFun es un monorepo TypeScript. La web no contiene reglas de negocio excl
 
 ## Gateway, proxy y reinicios
 
-`services/gateway/` contiene la configuración del Nginx de entrada (imagen construida desde `services/gateway/Dockerfile`): `default.conf.template` (rutas, IP real, `/healthz`, `/version.json`, robots, sitemap, `canonical`/`hreflang`), `snippets/` (cabeceras de proxy y de seguridad con la CSP), `16-analytics.sh` (Umami opcional) y `17-sites.sh` (idioma por dominio a partir de `SITE_URL_ES`/`SITE_URL_EN`). La configuración va dentro de la imagen; el compose no monta archivos.
+El tráfico entra por `gateway` y se reparte: `/api/` y `/.well-known/*` van a `api`; todo lo demás, a `web`. Así el frontend se puede escalar o cachear por separado.
 
-Nginx usa la resolución dinámica de DNS de Docker para encontrar a la API cuando cambia su IP al recrear el contenedor; se usa `resolve` con una zona compartida ([documentación de upstream resolve](https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)). El healthcheck del gateway usa `/healthz`, que responde el propio Nginx: el gateway sigue sano aunque la API se esté reiniciando, y la API tiene su propio healthcheck.
+- `services/gateway/`: Nginx de entrada, la misma imagen en desarrollo y producción. `default.conf.template` (rutas, IP real, `/healthz` y una zona de caché preparada, sin activar, para `/assets/`) y `snippets/proxy-headers.conf`. Reenvía el `Host` original a `web` y `api`.
+- `services/web/`: el frontend. En producción, Nginx en el puerto 8080 con la SPA compilada: `default.conf.template` (`/version.json`, robots, sitemap, `canonical`/`hreflang`), `snippets/security-headers.conf` (cabeceras y CSP), `16-analytics.sh` (Umami opcional) y `17-sites.sh` (idioma por dominio a partir de `SITE_URL_ES`/`SITE_URL_EN`). En desarrollo (`target: dev`), el mismo Nginx delante de Vite con recarga en caliente.
+
+La configuración va dentro de las imágenes; el compose no monta archivos. El HTML varía por `Host` (idioma): si algún día se cachea en el gateway, la clave de caché debe incluir `$host`.
+
+El gateway usa la resolución dinámica de DNS de Docker para encontrar a `api` y a `web` cuando cambia su IP al recrear el contenedor; se usa `resolve` con una zona compartida ([documentación de upstream resolve](https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)). El healthcheck del gateway usa `/healthz`, que responde el propio Nginx: el gateway sigue sano aunque la API o la web se estén reiniciando, y cada una tiene su propio healthcheck.
 
 IP real: Traefik (subred `TRUSTED_PROXY_CIDR`) añade la IP del cliente a `X-Forwarded-For`; el gateway solo acepta esa cabecera desde esa subred y la sobrescribe con la IP resultante hacia la API.
 

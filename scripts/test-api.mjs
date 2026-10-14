@@ -9,6 +9,21 @@ const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 const englishHost = new URL(
   process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
 ).hostname;
+// API de Mailpit (compose.yml y compose.ci.yml): ahí llegan los correos de la API
+const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
+/** Último correo a `address` cuyo asunto cumple `subject`, esperando a que llegue. */
+async function mailTo(address, subject) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const list = await fetch(
+      `${mailpit}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}`,
+    ).then((r) => r.json());
+    const found = list.messages?.find((m) => subject.test(m.Subject));
+    if (found)
+      return fetch(`${mailpit}/api/v1/message/${found.ID}`).then((r) => r.json());
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`No llegó a ${address} un correo con asunto ${subject}`);
+}
 const records = [],
   users = [];
 const suite = async (name, fn) => {
@@ -451,6 +466,121 @@ try {
       assert.equal((await a.call("/events")).length, 1);
     },
   );
+  await suite(
+    "Recuperar contraseña: correo en el idioma y desde el dominio por el que entra",
+    async () => {
+      const owner = client(),
+        data = account("reset");
+      const created = await owner.call("/auth/register", "POST", data, 201);
+      users.push(created.id);
+      const en = { Host: englishHost };
+      // Misma respuesta exista o no la cuenta
+      const unknown = await guest.call(
+        "/auth/password/forgot",
+        "POST",
+        { email: `qa-${unique}-nadie@example.invalid` },
+        201,
+        en,
+      );
+      const known = await guest.call(
+        "/auth/password/forgot",
+        "POST",
+        { email: data.email.toUpperCase() },
+        201,
+        en,
+      );
+      assert.equal(unknown.message, known.message);
+      assert.match(known.message, /^If that email has an account/);
+      const mail = await mailTo(data.email, /^Reset your TuEventoFun password$/);
+      assert.equal(mail.From.Address, "no-reply@en.tueventofun.orb.local");
+      const link = new URL(mail.Text.match(/https?:\/\/\S+\?token=[\w-]{43}/)[0]);
+      assert.equal(link.hostname, englishHost);
+      assert.equal(link.pathname, "/nueva-contrasena");
+      const token = link.searchParams.get("token");
+      const before = owner.cookie(),
+        renewed = client(),
+        newPassword = randomBytes(20).toString("hex");
+      await renewed.call(
+        "/auth/password/reset",
+        "POST",
+        { token, password: "corta" },
+        400,
+        en,
+      );
+      const changed = await renewed.call(
+        "/auth/password/reset",
+        "POST",
+        { token, password: newPassword },
+        201,
+        en,
+      );
+      assert.equal(changed.email, data.email);
+      // Entró por el dominio inglés: la cuenta pasa a inglés
+      assert.equal(changed.locale, "en");
+      assert.equal((await renewed.call("/auth/me")).id, created.id);
+      // Cierra las demás sesiones; el enlace es de un solo uso
+      await owner.call("/auth/me", "GET", undefined, 401, { Cookie: before });
+      const reused = await client().call(
+        "/auth/password/reset",
+        "POST",
+        { token, password: newPassword },
+        400,
+        en,
+      );
+      assert.equal(reused.message, "The password reset link is invalid or has expired.");
+      await client().call(
+        "/auth/login",
+        "POST",
+        { email: data.email, password: data.password },
+        401,
+      );
+      await client().call(
+        "/auth/login",
+        "POST",
+        { email: data.email, password: newPassword },
+        201,
+      );
+      const notice = await mailTo(data.email, /^Your TuEventoFun password was changed$/);
+      assert.equal(notice.From.Address, "no-reply@en.tueventofun.orb.local");
+      // Desde el dominio español: correo en español, desde tuevento y con enlace a tuevento
+      const spanish = await guest.call(
+        "/auth/password/forgot",
+        "POST",
+        { email: data.email },
+        201,
+      );
+      assert.match(spanish.message, /^Si ese correo tiene una cuenta/);
+      const es = await mailTo(data.email, /^Restablece tu contraseña de TuEventoFun$/);
+      assert.equal(es.From.Address, "no-reply@tueventofun.orb.local");
+      assert.match(es.Text, /https:\/\/tueventofun\.orb\.local\/nueva-contrasena\?token=[\w-]{43}/);
+      // Un enlace inventado se rechaza
+      const invalid = await guest.call(
+        "/auth/password/reset",
+        "POST",
+        { token: "x".repeat(43), password: newPassword },
+        400,
+      );
+      assert.equal(invalid.message, "El enlace para cambiar la contraseña no es válido o caducó.");
+    },
+  );
+  await suite("Newsletter responde en el idioma del dominio", async () => {
+    const en = await guest.call(
+      "/newsletter/subscribe",
+      "POST",
+      { email: `qa-${unique}-news@example.invalid` },
+      201,
+      { Host: englishHost },
+    );
+    assert.equal(en.ok, true);
+    assert.match(en.message, /^Thanks/);
+    const es = await guest.call(
+      "/newsletter/subscribe",
+      "POST",
+      { email: `qa-${unique}-noticias@example.invalid` },
+      201,
+    );
+    assert.match(es.message, /^¡Gracias/);
+  });
   await suite("Eliminar invitación y evento invalida enlaces", async () => {
     await a.call(`/events/${event.id}/invitations/${invitation.id}`, "DELETE");
     await guest.call(`/invitations/${invitation.token}`, "GET", undefined, 404);
@@ -479,7 +609,7 @@ try {
         "-d",
         "tueventofun",
         "-c",
-        `DELETE FROM users WHERE id IN (${users.map((id) => `'${id}'`).join(",")}) AND email LIKE 'qa-%@example.invalid';`,
+        `DELETE FROM users WHERE id IN (${users.map((id) => `'${id}'`).join(",")}) AND email LIKE 'qa-%@example.invalid'; DELETE FROM newsletter_subscribers WHERE email LIKE 'qa-${unique}-%@example.invalid';`,
       ],
       { stdio: "ignore" },
     );

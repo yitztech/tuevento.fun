@@ -1,6 +1,6 @@
 # Publica las imágenes en GHCR y despliega en Coolify cuando cambia main.
 #
-#   probar → publicar (gateway, api y postgres) → desplegar (webhook de Coolify) → comprobar
+#   probar → publicar (gateway, web, api y postgres) → desplegar (webhook de Coolify) → comprobar
 #
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variables SITE_URL y
 # SITE_URL_EN) lo rellena la plataforma. Mientras no exista, se publican las imágenes
@@ -51,6 +51,9 @@ jobs:
       matrix:
         include:
           - name: gateway
+            build_args: ""
+          # /version.json lo sirve web: confirma que el frontend nuevo ya está en marcha
+          - name: web
             build_args: |
               RELEASE_SHA=${{ github.sha }}
           # Valores públicos de los App Links (/.well-known/*), en vars del repositorio
@@ -69,7 +72,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway, -api y -postgres
+      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway, -web, -api y -postgres
       - id: image
         env:
           REPOSITORY: ${{ github.repository }}

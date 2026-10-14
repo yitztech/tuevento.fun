@@ -1,14 +1,14 @@
-resolver 127.0.0.11 valid=10s ipv6=off;
-upstream api_upstream { zone api_upstream 64k; server api:3087 resolve; keepalive 16; }
-
-map $http_x_forwarded_proto $forwarded_proto { default $scheme; https https; }
+# Frontend de desarrollo: Nginx delante de Vite (recarga en caliente). Aplica el mismo
+# idioma por dominio que producción; /api y /.well-known los reparte el gateway.
+# $connection_upgrade lo define el nginx.conf del paquete de Alpine.
 
 server {
-    listen 80;
+    listen 8080;
     server_name _;
-    client_max_body_size 3m;
+    absolute_redirect off;
 
     location = /healthz {
+        access_log off;
         default_type text/plain;
         return 200 'ok';
     }
@@ -17,24 +17,6 @@ server {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         return 200 '{"revision":"dev"}';
-    }
-
-    # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas
-    location /api/ {
-        include /etc/nginx/snippets/proxy-headers.conf;
-        proxy_buffering off;
-        proxy_read_timeout 1h;
-        proxy_pass http://api_upstream;
-    }
-
-    # Verificación de App Links (Android e iOS)
-    location = /.well-known/assetlinks.json {
-        include /etc/nginx/snippets/proxy-headers.conf;
-        proxy_pass http://api_upstream/api/.well-known/assetlinks.json;
-    }
-    location = /.well-known/apple-app-site-association {
-        include /etc/nginx/snippets/proxy-headers.conf;
-        proxy_pass http://api_upstream/api/.well-known/apple-app-site-association;
     }
 
     # robots.txt y sitemap.xml del dominio que se visita
@@ -47,16 +29,13 @@ server {
         alias /etc/nginx/seo/sitemap-$site_lang.xml;
     }
 
-    # Vite Dev Server con soporte HMR y WebSockets
+    # Vite con HMR por WebSocket
     location / {
         proxy_pass http://127.0.0.1:5187;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $forwarded_proto;
         proxy_set_header Accept-Encoding "";
         proxy_read_timeout 86400s;
 

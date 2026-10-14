@@ -1,0 +1,73 @@
+# Frontend de producción: sirve la SPA detrás del gateway, que reenvía el Host original.
+# Las variables ${...} las sustituye el entrypoint de nginx al arrancar (solo RELEASE_SHA,
+# ver NGINX_ENVSUBST_FILTER). $site_lang, $site_origin, $origin_es y $origin_en los
+# define 17-sites.sh; $analytics_src, 16-analytics.sh.
+server_tokens off;
+
+# ── Rutas para canonical y hreflang ─────────────────────────────────
+# Ruta de la petición sin query. Solo caracteres seguros: se inserta en el HTML,
+# así que cualquier otra cosa se reduce a "/".
+map $request_uri $seo_raw_path {
+    "~^(?<seo_p>/[A-Za-z0-9/_.~-]*)(\?.*)?$" $seo_p;
+    default "/";
+}
+# Mapa común de rutas traducidas (el resto es igual en los dos idiomas).
+# Debe coincidir con el de packages/contracts y con 17-sites.sh.
+map $seo_raw_path $seo_path_es { default $seo_raw_path; /privacy /privacidad; /terms /condiciones; }
+map $seo_raw_path $seo_path_en { default $seo_raw_path; /privacidad /privacy; /condiciones /terms; }
+map $site_lang $seo_path { default $seo_path_es; en $seo_path_en; }
+
+server {
+    # Puerto sin privilegios: no necesita NET_BIND_SERVICE
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    # Redirecciones relativas: que no lleven el host ni el puerto interno (8080)
+    absolute_redirect off;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 'ok';
+    }
+
+    # Commit desplegado: el workflow lo consulta (a través del gateway) para saber que
+    # el frontend nuevo ya sirve
+    location = /version.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"revision":"${RELEASE_SHA}"}';
+    }
+
+    # robots.txt y sitemap.xml del dominio que se visita
+    location = /robots.txt {
+        add_header Cache-Control "public, max-age=3600" always;
+        alias /etc/nginx/seo/robots-$site_lang.txt;
+    }
+    location = /sitemap.xml {
+        add_header Cache-Control "public, max-age=3600" always;
+        alias /etc/nginx/seo/sitemap-$site_lang.xml;
+    }
+
+    # Recursos con hash en el nombre: caché inmutable (el gateway puede guardarlos)
+    location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+    }
+
+    # SPA. Idioma y enlaces canonical/hreflang los decide el Host. Las sustituciones
+    # usan sub_filter sobre index.html; sub_filter_types y sub_filter_once se dejan en
+    # su valor por defecto (text/html, una vez) porque el snippet de analítica los define.
+    # El HTML varía por Host: nunca se cachea en el gateway sin incluir $host en la clave.
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/snippets/analytics*.conf;
+        add_header Cache-Control "no-cache" always;
+        add_header Vary "Host" always;
+        sub_filter '<html lang="es">' '<html lang="$site_lang">';
+        sub_filter '<meta name="tuevento-seo"/>' '<link rel="canonical" href="$site_origin$seo_path"/><link rel="alternate" hreflang="es" href="$origin_es$seo_path_es"/><link rel="alternate" hreflang="en" href="$origin_en$seo_path_en"/><link rel="alternate" hreflang="x-default" href="$origin_es$seo_path_es"/><meta name="tuevento:sites" content="es=$origin_es en=$origin_en"/>';
+        try_files $uri $uri/ /index.html;
+    }
+}

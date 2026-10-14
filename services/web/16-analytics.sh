@@ -1,5 +1,5 @@
 #!/bin/sh
-# Analítica con Umami: si hay UMAMI_SCRIPT_URL y UMAMI_WEBSITE_ID, el gateway inserta
+# Analítica con Umami: si hay UMAMI_SCRIPT_URL y UMAMI_WEBSITE_ID, el contenedor web inserta
 # el script en el HTML y amplía la CSP con el origen de Umami. Sin valores no se carga
 # nada de terceros.
 #   UMAMI_SCRIPT_URL   p. ej. https://stats.yunitztech.com/script.js

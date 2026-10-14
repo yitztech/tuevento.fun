@@ -8,7 +8,7 @@ La app reutiliza `packages/app` (pantallas React ES/EN), `packages/contracts` (Z
 
 La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. El regreso a la app usa **App Links / Universal Links verificados** en `https://<host de VITE_PUBLIC_ORIGIN>/app-link/auth?code=…`; el esquema propio `tueventofun://` se retiró porque cualquier app podía registrarlo y recibir el código. El código es de un solo uso, no expone el token de sesión y se entrega solo tras pulsar «Conectar mi app» y después «Abrir TuEventoFun». Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
 
-Desarrollo (`compose.yml`, local) y producción (`compose.prod.yml`, desplegado por Coolify desde `deploy.yml`) son configuraciones separadas con los mismos servicios (`gateway`, `api`, `postgres`): demo activa y cookies sin `Secure` en desarrollo; demo desactivada y `COOKIE_SECURE=true` en producción. En producción el único punto de entrada es Traefik de la plataforma hacia el `gateway`. El gateway solo acepta `X-Forwarded-For` si llega de `TRUSTED_PROXY_CIDR` (la subred de Traefik) y lo **sobrescribe** con la IP real antes de pasarlo a la API, que a su vez solo confía en el gateway. Si `TRUSTED_PROXY_CIDR` no es la subred correcta, todos los usuarios comparten la IP de Traefik y el límite de peticiones.
+Desarrollo (`compose.yml`, local) y producción (`compose.prod.yml`, desplegado por Coolify desde `deploy.yml`) son configuraciones separadas con los mismos servicios (`gateway`, `web`, `api`, `postgres`): demo activa y cookies sin `Secure` en desarrollo; demo desactivada y `COOKIE_SECURE=true` en producción. En producción el único punto de entrada es Traefik de la plataforma hacia el `gateway`. El gateway solo acepta `X-Forwarded-For` si llega de `TRUSTED_PROXY_CIDR` (la subred de Traefik) y lo **sobrescribe** con la IP real antes de pasarlo a la API, que a su vez solo confía en el gateway. Si `TRUSTED_PROXY_CIDR` no es la subred correcta, todos los usuarios comparten la IP de Traefik y el límite de peticiones.
 
 ## Desarrollo
 
@@ -55,11 +55,11 @@ El repositorio remoto es `yitztech/tuevento.fun`. Los workflows usan Node 24 y a
 | Workflow | Función |
 |---|---|
 | `ci.yml` | Build, tipos, contratos, API/plataforma y navegador con Compose aislado en runner |
-| `deploy.yml` | En push a `main`: pruebas, imágenes `gateway` y `api` en GHCR (`:main` y `:<sha>`), webhook de Coolify en el entorno `production` y espera a que `/version.json` sirva el commit en los dos dominios |
+| `deploy.yml` | En push a `main`: pruebas, imágenes `gateway`, `web`, `api` y `postgres` en GHCR (`:main` y `:<sha>`), webhook de Coolify en el entorno `production` y espera a que `/version.json` sirva el commit en los dos dominios |
 | `mobile.yml` | Manual: APK firmado/AAB y GitHub Release; iOS archive/export y carga a App Store Connect |
 | `catalog.yml` | Publica enlace aprobado de TestFlight o tienda después de revisión/procesamiento |
 
-El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables `SITE_URL` y `SITE_URL_EN`) lo crea y rellena la plataforma, y solo acepta despliegues desde `main`. Configura `mobile-production` con las protecciones deseadas. Ningún archivo contiene credenciales.
+El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables `SITE_URL` y `SITE_URL_EN`) lo crea y rellena la plataforma, y solo acepta despliegues desde `main`. `mobile.yml` usa también el entorno `production`, que solo acepta ejecuciones desde `main`. Ningún archivo contiene credenciales.
 
 ### Variables
 
@@ -70,7 +70,7 @@ El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables
 
 - Despliegue: `COOLIFY_WEBHOOK`, `COOLIFY_TOKEN` (los pone la plataforma).
 - Compartido API/publicación: `RELEASE_PUBLISH_TOKEN` (lo genera la plataforma y lo pasa para este secreto).
-- Android: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Conserva la misma clave en cada actualización.
+- Android (entorno `production`, como en los demás proyectos): `ANDROID_RELEASE_KEYSTORE_BASE64` (base64 de `release.keystore`) y `ANDROID_SIGNING_JSON` (contenido de `signing.json`: `{"alias":"…","password":"…"}`). La clave vive en `~/.tuevento-secrets/android/`, fuera del repo, con permisos 700/600. **Es única e irremplazable**: con otra clave, Android no actualiza sobre la versión instalada y `assetlinks.json` deja de coincidir. Guarda una copia cifrada.
 - iOS: `IOS_CERTIFICATE_BASE64` (P12 de distribución), `IOS_CERTIFICATE_PASSWORD`, `IOS_PROFILE_BASE64`, `KEYCHAIN_PASSWORD` (temporal), `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` (P8).
 
 ### Servidor
@@ -83,7 +83,7 @@ La descarga directa de GitHub Release debe ser pública: el workflow comprueba l
 
 Para que Android e iOS abran `/app-link/auth` en la app, el dominio debe publicar los archivos de asociación. La API los sirve, y el gateway los expone en los dos dominios (`tuevento.fun` y `yourevent.fun`). Los valores no son secretos ni variables de la plataforma: son **variables del repositorio** que `deploy.yml` hornea en la imagen de la API como build-args, así que cambiarlos requiere un nuevo despliegue:
 
-- `ANDROID_CERT_SHA256`: huella SHA-256 del certificado de firma de la app Android, formato `AA:BB:…` (32 pares).
+- `ANDROID_CERT_SHA256`: huella SHA-256 del certificado de firma de la app Android, formato `AA:BB:…` (32 pares). Admite varias separadas por comas: la de la clave propia (APK directo de GitHub Releases) y, si se publica en Google Play con Play App Signing, la de la clave de firma que muestra Play Console (Integridad de la app).
 - `APPLE_TEAM_ID`: Team ID de 10 caracteres del Apple Developer.
 - `MOBILE_APP_ID`: el mismo bundle/applicationId de los builds (por defecto `com.tueventofun.app`).
 - Build iOS: el workflow fija `APP_LINK_HOST` desde `VITE_PUBLIC_ORIGIN` y firma con el entitlement `applinks:`. El perfil de distribución debe tener activada la capacidad **Associated Domains** en el portal de Apple; sin ello, la firma falla o el enlace no se abre.

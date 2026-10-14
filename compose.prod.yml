@@ -32,17 +32,34 @@ services:
     environment:
       # Subred de la red de esta app donde está Traefik (se mide tras el primer arranque)
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:?Define la subred de Traefik}
+    depends_on:
+      web: { condition: service_healthy }
+      api: { condition: service_started }
+    # /healthz lo responde el propio nginx, sin depender de web ni de api
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks: [frontend]
+
+  # Frontend: la SPA estática. El gateway le reenvía el Host, y aquí se decide el idioma.
+  web:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-web:${IMAGE_TAG:-main}
+    # Escucha en 8080: arranca como root y baja a su usuario, sin NET_BIND_SERVICE
+    cap_add: [CHOWN, SETGID, SETUID]
+    mem_limit: 64m
+    cpus: 0.25
+    environment:
       # Un idioma por dominio: el Host decide es/en, canonical, hreflang, robots y sitemap
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
       SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
       # Analítica con Umami (vacío = sin analítica)
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
-    depends_on:
-      api: { condition: service_started }
-    # No depende de la API: /healthz lo responde el propio nginx
     healthcheck:
-      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8080/healthz"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -67,10 +84,22 @@ services:
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
       SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Correo transaccional (recuperar contraseña). Sin sufijo = es (tuevento.fun),
+      # _EN = en (yourevent.fun): cada usuario lo recibe desde el dominio por el que entró.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SMTP_USER_EN: ${SMTP_USER_EN:-}
+      SMTP_PASSWORD_EN: ${SMTP_PASSWORD_EN:-}
+      MAIL_FROM_EN: ${MAIL_FROM_EN:-}
+      # Newsletter: un Listmonk por idioma, en news. de cada dominio (suscripción pública)
       LISTMONK_URL: ${LISTMONK_URL:-}
-      LISTMONK_API_USER: ${LISTMONK_API_USER:-}
-      LISTMONK_API_TOKEN: ${LISTMONK_API_TOKEN:-}
-      LISTMONK_LIST_ID: ${LISTMONK_LIST_ID:-1}
+      LISTMONK_LIST_UUID: ${LISTMONK_LIST_UUID:-}
+      LISTMONK_URL_EN: ${LISTMONK_URL_EN:-}
+      LISTMONK_LIST_UUID_EN: ${LISTMONK_LIST_UUID_EN:-}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:?Define RELEASE_PUBLISH_TOKEN}
       COOKIE_SECURE: "true"
       DEMO_ENABLED: "false"
