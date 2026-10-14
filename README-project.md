@@ -6,27 +6,29 @@ Aplicación en español e inglés para organizar celebraciones, crear invitacion
 
 **http://localhost:5187**
 
-El stack usa tres servicios independientes: frontend React/Vite servido por Nginx, backend NestJS/Fastify y PostgreSQL 17.
+El stack usa tres servicios, con los mismos nombres en desarrollo (`compose.yml`) y en producción (`compose.prod.yml`): `gateway` (Nginx que sirve la web React/Vite y reparte `/api/`), `api` (NestJS/Fastify) y `postgres` (PostgreSQL 18).
 
 ```bash
 bash scripts/setup.sh
 ```
 
-El script crea `.env` con una contraseña aleatoria de PostgreSQL si no existe, compila, levanta los servicios y espera sus healthchecks. No crea una contraseña ni un usuario organizador predeterminado. El registro está en **http://localhost:5187/registro**.
+El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PASSWORD`) si no existe, compila, levanta los servicios y espera sus healthchecks. Si tu `.env` es anterior y usa `DB_PASSWORD`, la renombra. No crea un usuario organizador predeterminado. El registro está en **http://localhost:5187/registro**.
 
-| Servicio   | Dirección local                  | Con OrbStack                              |
-| ---------- | -------------------------------- | ----------------------------------------- |
-| Aplicación | http://localhost:5187            | https://tueventofun.orb.local             |
-| Salud API  | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health  |
-| PostgreSQL | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432       |
+| Servicio            | Dirección local                  | Con OrbStack                                |
+| ------------------- | -------------------------------- | ------------------------------------------- |
+| Aplicación (es)     | http://localhost:5187            | https://tueventofun.orb.local               |
+| Aplicación (en)     | —                                | https://en.tueventofun.orb.local            |
+| Salud del gateway   | http://localhost:5187/healthz    | https://tueventofun.orb.local/healthz       |
+| Salud API           | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health    |
+| PostgreSQL          | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432         |
 
-Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`.
+Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`. Si tenías un volumen de PostgreSQL 17, no sirve para la 18: bórralo (`docker compose down -v`, borra los datos) o migra los datos con `pg_dump`.
 
-Con OrbStack, `https://tueventofun.orb.local` usa su certificado local de confianza; también responden `frontend.tueventofun.orb.local` y `backend.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`. Si cambias el nombre del proyecto Compose, los dominios cambian y debes añadirlos ahí, o los POST darán 403. Para Google, añade `https://tueventofun.orb.local` como origen autorizado. Los enlaces de invitación generados desde estas URL solo se abren en este Mac, igual que con `localhost`.
+Con OrbStack, el gateway responde en dos dominios con su certificado local de confianza: `tueventofun.orb.local` (español) y `en.tueventofun.orb.local` (inglés), igual que `tuevento.fun` y `yourevent.fun` en producción. También responde `gateway.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si cambias el nombre del proyecto Compose o los dominios, añádelos ahí o los POST darán 403. `localhost` es un Host desconocido y se sirve en español. Para Google, añade los dos orígenes de OrbStack como autorizados. Los enlaces de invitación generados desde estas URL solo se abren en este Mac.
 
 ```bash
 docker compose ps
-docker compose logs --tail=80 backend
+docker compose logs --tail=80 api
 docker compose up -d --build --wait   # Aplicar cambios
 docker compose stop                 # Detener conservando datos
 docker compose start                # Volver a arrancar
@@ -51,7 +53,7 @@ Los eventos, nombres y lugares de la demo son sintéticos. Cada navegador obtien
 
 ## Idiomas
 
-El selector Español / English está disponible en el panel, registro, acceso, invitaciones públicas y modo pantalla. La elección se conserva en este dispositivo. Los enlaces de invitación incluyen `?lang=es` o `?lang=en`; esta preferencia tiene prioridad al abrirlos. Fechas, formularios, validaciones, ayudas y notificaciones se muestran en el idioma elegido. El texto escrito por usuarios permanece en su idioma original.
+Un idioma por dominio: `https://tuevento.fun` en español y `https://yourevent.fun` en inglés. El idioma lo decide el Host (no `?lang=`, el navegador ni `Accept-Language`); un Host desconocido usa español. El gateway lo pone en `<html lang>`, añade `canonical` y `hreflang` (es, en, x-default) hacia la página equivalente del otro dominio y sirve `robots.txt` y `sitemap.xml` propios de cada dominio. El otro idioma se ofrece con un enlace a su dominio, nunca con una redirección. Las rutas son iguales en los dos idiomas salvo `/privacidad`↔`/privacy` y `/condiciones`↔`/terms`. Las sesiones son de cada dominio. Fechas, formularios, validaciones, ayudas y notificaciones se muestran en el idioma del dominio. El texto escrito por usuarios permanece en su idioma original.
 
 Se utilizan i18next/react-i18next y un catálogo compartido con el backend. Consulta [la guía de traducciones](docs/I18N.md) para ampliar idiomas.
 
@@ -60,9 +62,9 @@ Se utilizan i18next/react-i18next y un catálogo compartido con el backend. Cons
 La integración usa Google Identity Services en la web y `google-auth-library` para verificar la firma, audiencia, expiración y nonce en el backend. Nunca confía en un correo enviado por el frontend.
 
 1. Crea un cliente OAuth **Aplicación web** en tu proyecto de Google y configura la pantalla de consentimiento y los usuarios de prueba cuando aplique.
-2. Añade `http://localhost:5187` y `http://127.0.0.1:5187` como orígenes JavaScript autorizados. El flujo GIS con callback usado aquí no requiere URI de redirección.
-3. Pon su ID público en `.env`: `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`.
-4. Ejecuta `docker compose up -d --force-recreate backend` y recarga la web.
+2. Añade como orígenes JavaScript autorizados los dos dominios de producción (`https://tuevento.fun`, `https://yourevent.fun`), sus URI de redirección si la plataforma las requiere, y en local `http://localhost:5187` y los dos dominios de OrbStack. La CSP del gateway ya admite Google Identity Services.
+3. Pon su ID público en `.env`: `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`. En producción lo pasa la plataforma.
+4. Ejecuta `docker compose up -d --force-recreate api` y recarga la web.
 
 No hace falta un client secret para este flujo. Sin ID configurado, el botón informa que el acceso aún no está habilitado. **La autenticación real con una cuenta Google está pendiente de tus credenciales y de una prueba con tu proyecto.**
 
@@ -76,7 +78,7 @@ El host desktop debe inyectar un `Runtime` con el servidor, transporte autentica
 
 ## Desarrollo y verificación
 
-Node 22.12+ y Docker Compose v2.
+Node 24 (LTS activa) y Docker Compose v2.
 
 ```bash
 npm ci
@@ -104,22 +106,54 @@ TEST_WEB_URL=https://tueventofun.orb.local npm run test:browser
 
 Con `TEST_WEB_URL`, `test:browser` no borra la cuenta de prueba que crea.
 
-Para editar el frontend con Vite y conservar backend/base de datos en Docker:
+Para editar la web con Vite y conservar API y base de datos en Docker:
 
 ```bash
-docker compose stop frontend
+docker compose stop gateway
 npm run dev
 ```
 
-Vite escucha en 5187 y hace proxy al backend en 3087. Al terminar, detén Vite y ejecuta `docker compose start frontend`. No ejecutes ambos frontends en el mismo puerto.
+Vite escucha en 5187 y hace proxy a la API en 3087. Sin el gateway no hay idioma por dominio (siempre español), `canonical`/`hreflang`, `robots.txt` ni `sitemap.xml`. Al terminar, detén Vite y ejecuta `docker compose start gateway`. No ejecutes Vite y el gateway en el mismo puerto.
 
 La matriz y evidencia de QA están en [docs/QA.md](docs/QA.md) y `qa-artifacts/`. No son prueba de despliegue público, de Google configurado ni de un dispositivo Smart TV físico.
 
 La descripción de captación y sus rutas están en [docs/LANDING.md](docs/LANDING.md); su revisión visual independiente, en [docs/LANDING-DESIGN-REVIEW.md](docs/LANDING-DESIGN-REVIEW.md).
 
-## Para salir de localhost
+## Producción (plataforma yitztech)
 
-Configura una URL pública con HTTPS, `ALLOWED_ORIGINS` y `COOKIE_SECURE=true`. Desactiva la demo con `DEMO_ENABLED=false` si no la quieres publicada. Los enlaces compartidos actualmente apuntan a la dirección desde la que abres la web; `localhost` no es accesible desde el teléfono de un invitado. Revisa backups, retención y operación antes de abrir el servicio a terceros.
+Se despliega en modo imágenes: `.github/workflows/deploy.yml` prueba (Node 24), publica `ghcr.io/yitztech/tuevento.fun-gateway` y `ghcr.io/yitztech/tuevento.fun-api` con las etiquetas `:main` y `:<sha>`, pide el despliegue a Coolify (POST al webhook con `Authorization: Bearer`) y espera hasta 10 minutos a que `SITE_URL/version.json` y `SITE_URL_EN/version.json` devuelvan el commit. Se dispara en push a `main` (salvo cambios solo en `.md`) y con `workflow_dispatch`, y solo publica y despliega desde `main`. El servidor nunca compila.
+
+`compose.prod.yml` define `gateway` (único servicio con dominio, puerto 80, `/healthz` sin depender de la API), `api` y `postgres` (red `backend` interna, solo con la API). Ningún servicio publica puertos ni monta archivos del repositorio. Todos llevan `mem_limit` y `cpus` (64m, 256m y 512m), `restart: unless-stopped`, `no-new-privileges`, `cap_drop: [ALL]` con las capacidades mínimas y logs `json-file` rotados (10m × 3). La plataforma hace el backup de PostgreSQL.
+
+Variables que pasa la plataforma (no se usan otros nombres):
+
+| Variable | Servicio | Uso |
+| --- | --- | --- |
+| `IMAGE_PREFIX`, `IMAGE_TAG` | todos | Imágenes (`IMAGE_TAG` por defecto `main`) |
+| `TRUSTED_PROXY_CIDR` | gateway | Subred de Traefik: solo desde ella se acepta `X-Forwarded-For` |
+| `SITE_URL_ES`, `SITE_URL_EN` | gateway, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
+| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | gateway | Analítica (vacío = sin analítica) |
+| `POSTGRES_PASSWORD` | api, postgres | Lo genera la plataforma |
+| `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
+| `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
+
+`SITE_URL` (dominio principal) e `IDIOMAS` los usa el workflow, no el compose. La app no envía correo ni newsletter, así que no usa `SMTP_*`, `MAIL_FROM_*` ni `LISTMONK_*`. En la API, `COOKIE_SECURE=true`, `DEMO_ENABLED=false` y los hosts de descarga son valores fijos del compose, no variables.
+
+Para los App Links, la imagen de la API hornea `ANDROID_CERT_SHA256`, `APPLE_TEAM_ID` y `MOBILE_APP_ID` como build-args desde las **variables del repositorio** de GitHub (son públicos; ver [MOBILE-CICD.md](docs/MOBILE-CICD.md)).
+
+Comprobar antes de un PR:
+
+```bash
+docker build --target gateway --build-arg RELEASE_SHA=prueba -t t-gateway .
+docker build --target api -t t-api .
+grep -c mem_limit compose.prod.yml    # 3, uno por servicio
+grep -n "ports:" compose.prod.yml     # sin salida
+docker run --rm -p 8080:80 -e TRUSTED_PROXY_CIDR=127.0.0.1/32 t-gateway
+curl localhost:8080/version.json      # {"revision":"prueba"}
+curl localhost:8080/healthz           # ok
+```
+
+Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no es accesible desde el teléfono de un invitado.
 
 [Arquitectura y límites](docs/ARCHITECTURE.md) · [Procedencia de imágenes](docs/ASSETS.md) · [Diseño](DESIGN.md)
 

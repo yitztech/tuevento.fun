@@ -1,0 +1,103 @@
+# Gateway de producción detrás del proxy de Coolify (Traefik). En desarrollo,
+# compose.yml usa la misma imagen.
+#
+# Traefik termina TLS; este nginx escucha en HTTP (80), sirve la SPA y reparte /api/
+# hacia el servicio `api`. Las variables ${...} las sustituye el entrypoint de nginx
+# al arrancar (solo TRUSTED_PROXY_CIDR y RELEASE_SHA, ver NGINX_ENVSUBST_FILTER).
+# $site_lang, $site_origin, $origin_es y $origin_en los define 17-sites.sh.
+server_tokens off;
+
+# Docker cambia la IP de un contenedor cada vez que lo recrea. Con `resolve` nginx
+# vuelve a consultar el DNS interno de Docker y sigue la IP nueva sin reiniciarse.
+resolver 127.0.0.11 valid=10s ipv6=off;
+upstream api_upstream { zone api_upstream 64k; server api:3087 resolve; keepalive 16; }
+
+# ── IP real del cliente ─────────────────────────────────────────────
+# Solo se confía en X-Forwarded-For si llega de la red donde está Traefik
+# (TRUSTED_PROXY_CIDR). Sin esto todo el mundo parecería tener la IP de Traefik.
+set_real_ip_from ${TRUSTED_PROXY_CIDR};
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+# Protocolo original: Traefik ya terminó TLS, aquí $scheme siempre es "http"
+map $http_x_forwarded_proto $forwarded_proto { default $scheme; https https; }
+
+# ── Rutas para canonical y hreflang ─────────────────────────────────
+# Ruta de la petición sin query. Solo caracteres seguros: se inserta en el HTML,
+# así que cualquier otra cosa se reduce a "/".
+map $request_uri $seo_raw_path {
+    "~^(?<seo_p>/[A-Za-z0-9/_.~-]*)(\?.*)?$" $seo_p;
+    default "/";
+}
+# Mapa común de rutas traducidas (el resto es igual en los dos idiomas).
+# Debe coincidir con el de packages/contracts y con 17-sites.sh.
+map $seo_raw_path $seo_path_es { default $seo_raw_path; /privacy /privacidad; /terms /condiciones; }
+map $seo_raw_path $seo_path_en { default $seo_raw_path; /privacidad /privacy; /condiciones /terms; }
+map $site_lang $seo_path { default $seo_path_es; en $seo_path_en; }
+
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    client_max_body_size 3m;
+
+    location = /healthz {
+        default_type text/plain;
+        return 200 'ok';
+    }
+
+    # Commit desplegado: el workflow lo consulta para saber que la versión nueva ya sirve
+    location = /version.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"revision":"${RELEASE_SHA}"}';
+    }
+
+    # robots.txt y sitemap.xml del dominio que se visita
+    location = /robots.txt {
+        add_header Cache-Control "public, max-age=3600" always;
+        alias /etc/nginx/seo/robots-$site_lang.txt;
+    }
+    location = /sitemap.xml {
+        add_header Cache-Control "public, max-age=3600" always;
+        alias /etc/nginx/seo/sitemap-$site_lang.xml;
+    }
+
+    # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas
+    location /api/ {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_buffering off;
+        proxy_read_timeout 1h;
+        proxy_pass http://api_upstream;
+    }
+
+    # Verificación de App Links (Android e iOS), servida por la API en cualquier dominio
+    location = /.well-known/assetlinks.json {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/.well-known/assetlinks.json;
+    }
+    location = /.well-known/apple-app-site-association {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/.well-known/apple-app-site-association;
+    }
+
+    # Recursos con hash en el nombre: caché inmutable
+    location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+    }
+
+    # SPA. Idioma y enlaces canonical/hreflang los decide el Host. Las sustituciones
+    # usan sub_filter sobre index.html; sub_filter_types y sub_filter_once se dejan en
+    # su valor por defecto (text/html, una vez) porque el snippet de analítica los define.
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/snippets/analytics*.conf;
+        add_header Cache-Control "no-cache" always;
+        sub_filter '<html lang="es">' '<html lang="$site_lang">';
+        sub_filter '<meta name="tuevento-seo"/>' '<link rel="canonical" href="$site_origin$seo_path"/><link rel="alternate" hreflang="es" href="$origin_es$seo_path_es"/><link rel="alternate" hreflang="en" href="$origin_en$seo_path_en"/><link rel="alternate" hreflang="x-default" href="$origin_es$seo_path_es"/><meta name="tuevento:sites" content="es=$origin_es en=$origin_en"/>';
+        try_files $uri $uri/ /index.html;
+    }
+}

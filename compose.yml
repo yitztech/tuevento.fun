@@ -1,30 +1,36 @@
+# DESARROLLO local. Mismas imágenes y nombres de servicio que compose.prod.yml
+# (gateway, api, postgres), pero construidas aquí, con puertos en loopback y demo activa.
 name: tueventofun
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: tueventofun
       POSTGRES_USER: tuevento
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?Run bash scripts/setup.sh first}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run bash scripts/setup.sh first}
     ports:
       - "127.0.0.1:${DB_PORT:-5487}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18: el volumen se monta en /var/lib/postgresql (no en /data)
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tuevento -d tueventofun"]
       interval: 5s
       timeout: 3s
       retries: 12
     restart: unless-stopped
-  backend:
+  api:
     build:
       context: .
-      target: backend
+      target: api
     environment:
       NODE_ENV: production
       PORT: 3087
-      DATABASE_URL: postgres://tuevento:${DB_PASSWORD}@postgres:5432/tueventofun
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://frontend.tueventofun.orb.local,http://frontend.tueventofun.orb.local}
+      DATABASE_URL: postgres://tuevento@postgres:5432/tueventofun
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
+      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
+      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-}
@@ -47,21 +53,28 @@ services:
       timeout: 5s
       retries: 12
     restart: unless-stopped
-  frontend:
+  gateway:
     build:
       context: .
-      target: frontend
-    # OrbStack: publica la web en https://tueventofun.orb.local con certificado local.
-    # Otros motores Docker ignoran la etiqueta.
+      target: gateway
+    # OrbStack: la web en español en https://tueventofun.orb.local y en inglés en
+    # https://en.tueventofun.orb.local, con certificado local. Otros motores la ignoran.
     labels:
-      dev.orbstack.domains: tueventofun.orb.local
+      dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
+    environment:
+      # En local nadie hace de proxy delante: no se confía en X-Forwarded-For
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
+      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
+      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
+      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
     ports:
       - "127.0.0.1:${WEB_PORT:-5187}:80"
     depends_on:
-      backend:
+      api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ && wget -q --spider http://127.0.0.1/api/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
       interval: 10s
       timeout: 5s
       retries: 8
