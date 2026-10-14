@@ -14,13 +14,13 @@ async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    // El único proxy delante es Nginx, que añade la IP real del cliente al final
-    // de X-Forwarded-For. Confiar solo en el primer salto (Nginx) evita que el
-    // cliente falsee su IP y hace que el rate limit y las métricas usen la IP
-    // real, no la del contenedor de Nginx (equivale a trustProxy: 1).
+    // Solo el contenedor de Nginx (IP privada) puede hablar con la API, y Nginx
+    // sobrescribe X-Forwarded-For con la IP real del cliente. Por eso se confía en
+    // saltos privados y el cliente nunca es un salto de confianza: así el rate limit
+    // y las métricas usan la IP real, tanto en desarrollo como tras el HTTPS externo.
     new FastifyAdapter({
       bodyLimit: 3 * 1024 * 1024,
-      trustProxy: (_address: string, hop: number) => hop === 0,
+      trustProxy: (address: string) => isPrivateAddress(address),
     }),
   );
   app.setGlobalPrefix("api");
@@ -69,6 +69,19 @@ async function bootstrap() {
     });
   app.enableShutdownHooks();
   await app.listen(Number(process.env.PORT || 3087), "0.0.0.0");
+}
+// Redes privadas y loopback: Docker, el host y el propio Nginx. Una IP pública nunca
+// se trata como proxy, así que no puede falsificar la IP del cliente.
+function isPrivateAddress(address: string): boolean {
+  const ip = address.replace(/^::ffff:/i, "");
+  return (
+    /^127\./.test(ip) ||
+    /^10\./.test(ip) ||
+    /^192\.168\./.test(ip) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+    /^::1$/.test(ip) ||
+    /^f[cd][0-9a-f]{2}:/i.test(ip)
+  );
 }
 bootstrap().catch((error) => {
   console.error(error.message);

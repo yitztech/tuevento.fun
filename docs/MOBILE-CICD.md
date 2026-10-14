@@ -8,6 +8,8 @@ La app reutiliza `packages/app` (pantallas React ES/EN), `packages/contracts` (Z
 
 La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. El regreso a la app usa **App Links / Universal Links verificados** en `https://<host de VITE_PUBLIC_ORIGIN>/app-link/auth?code=…`; el esquema propio `tueventofun://` se retiró porque cualquier app podía registrarlo y recibir el código. El código es de un solo uso, no expone el token de sesión y se entrega solo tras pulsar «Conectar mi app» y después «Abrir TuEventoFun». Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
 
+Desarrollo (`compose.yml`, local) y producción (`compose.production.yml`, desplegado por `deploy.yml`) son configuraciones separadas: demo activa y cookies sin `Secure` en desarrollo; demo desactivada y `COOKIE_SECURE=true` en producción. Producción queda en `127.0.0.1` detrás de un HTTPS externo, que debe **añadir o fijar** `X-Forwarded-For` con la IP del cliente. Si lo elimina, el límite de peticiones vuelve a compartirse entre todos los usuarios. Nginx confía solo en redes privadas (`set_real_ip_from`) y reenvía la IP real a la API.
+
 ## Desarrollo
 
 ```sh
