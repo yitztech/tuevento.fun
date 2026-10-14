@@ -4,6 +4,7 @@
     "module": "CommonJS",
     "outDir": "dist",
     "rootDir": "src",
+    "incremental": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },

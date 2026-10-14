@@ -121,9 +121,9 @@ La descripción de captación y sus rutas están en [docs/LANDING.md](docs/LANDI
 
 ## Producción (plataforma yitztech)
 
-Se despliega en modo imágenes: `.github/workflows/deploy.yml` prueba (Node 24), publica `ghcr.io/yitztech/tuevento.fun-gateway` y `ghcr.io/yitztech/tuevento.fun-api` con las etiquetas `:main` y `:<sha>`, pide el despliegue a Coolify (POST al webhook con `Authorization: Bearer`) y espera hasta 10 minutos a que `SITE_URL/version.json` y `SITE_URL_EN/version.json` devuelvan el commit. Se dispara en push a `main` (salvo cambios solo en `.md`) y con `workflow_dispatch`, y solo publica y despliega desde `main`. El servidor nunca compila.
+Se despliega en modo imágenes: `.github/workflows/deploy.yml` prueba (Node 24), publica `ghcr.io/yitztech/tuevento.fun-gateway`, `ghcr.io/yitztech/tuevento.fun-api` y `ghcr.io/yitztech/tuevento.fun-postgres` con las etiquetas `:main` y `:<sha>`, pide el despliegue a Coolify (POST al webhook con `Authorization: Bearer`) y espera hasta 10 minutos a que `SITE_URL/version.json` y `SITE_URL_EN/version.json` devuelvan el commit. Se dispara en push a `main` (salvo cambios solo en `.md`) y con `workflow_dispatch`, y solo publica y despliega desde `main`. El servidor nunca compila.
 
-`compose.prod.yml` define `gateway` (único servicio con dominio, puerto 80, `/healthz` sin depender de la API), `api` y `postgres` (red `backend` interna, solo con la API). Ningún servicio publica puertos ni monta archivos del repositorio. Todos llevan `mem_limit` y `cpus` (64m, 256m y 512m), `restart: unless-stopped`, `no-new-privileges`, `cap_drop: [ALL]` con las capacidades mínimas y logs `json-file` rotados (10m × 3). La plataforma hace el backup de PostgreSQL.
+`compose.prod.yml` define `gateway` (único servicio con dominio, puerto 80, `/healthz` sin depender de la API), `api` (read_only, tmpfs /tmp, mem_limit 256m) y `postgres` (red `backend` interna, PostgreSQL 18.6 con postgresql.conf ajustado y rol `api`). Ningún servicio publica puertos ni monta archivos del repositorio. Todos llevan `mem_limit` y `cpus` (64m, 256m y 512m), `restart: unless-stopped`, `no-new-privileges`, `cap_drop: [ALL]` con las capacidades mínimas y logs `json-file` rotados (10m × 3). La plataforma hace el backup de PostgreSQL.
 
 Variables que pasa la plataforma (no se usan otros nombres):
 
@@ -133,24 +133,52 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `TRUSTED_PROXY_CIDR` | gateway | Subred de Traefik: solo desde ella se acepta `X-Forwarded-For` |
 | `SITE_URL_ES`, `SITE_URL_EN` | gateway, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | gateway | Analítica (vacío = sin analítica) |
-| `POSTGRES_PASSWORD` | api, postgres | Lo genera la plataforma |
+| `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
+| `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
 | `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
 
-`SITE_URL` (dominio principal) e `IDIOMAS` los usa el workflow, no el compose. La app no envía correo ni newsletter, así que no usa `SMTP_*`, `MAIL_FROM_*` ni `LISTMONK_*`. En la API, `COOKIE_SECURE=true`, `DEMO_ENABLED=false` y los hosts de descarga son valores fijos del compose, no variables.
+### Migración de base de datos en producción (Coolify)
+El rol `api` no es superusuario ni dueño de la base de datos. Para volúmenes existentes creados antes de este cambio:
+1. Hacer un respaldo de la base de datos en Coolify.
+2. Añadir la variable `API_DB_PASSWORD` en el panel de Coolify.
+3. En el contenedor PostgreSQL de producción, ejecutar antes o durante la actualización:
+```bash
+docker compose exec -T postgres psql -U tuevento -d tueventofun -c "
+DO \$\$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'api') THEN
+    CREATE ROLE api LOGIN PASSWORD '\$API_DB_PASSWORD';
+  ELSE
+    ALTER ROLE api WITH PASSWORD '\$API_DB_PASSWORD';
+  END IF;
+END \$\$;
+GRANT CONNECT ON DATABASE tueventofun TO api;
+GRANT USAGE, CREATE ON SCHEMA public TO api;
+DO \$\$ DECLARE r RECORD; BEGIN
+  FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+    EXECUTE 'ALTER TABLE public.' || quote_ident(r.tablename) || ' OWNER TO api';
+  END LOOP;
+  FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
+    EXECUTE 'ALTER SEQUENCE public.' || quote_ident(r.sequence_name) || ' OWNER TO api';
+  END LOOP;
+END \$\$;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO api;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO api;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO api;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO api;
+"
+```
 
-Para los App Links, la imagen de la API hornea `ANDROID_CERT_SHA256`, `APPLE_TEAM_ID` y `MOBILE_APP_ID` como build-args desde las **variables del repositorio** de GitHub (son públicos; ver [MOBILE-CICD.md](docs/MOBILE-CICD.md)).
+Para App Links, la imagen de la API hornea `ANDROID_CERT_SHA256`, `APPLE_TEAM_ID` y `MOBILE_APP_ID` como build-args desde las **variables del repositorio** de GitHub (son públicos; ver [MOBILE-CICD.md](docs/MOBILE-CICD.md)).
 
 Comprobar antes de un PR:
 
 ```bash
-docker build --target gateway --build-arg RELEASE_SHA=prueba -t t-gateway .
-docker build --target api -t t-api .
+docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --build --wait
 grep -c mem_limit compose.prod.yml    # 3, uno por servicio
 grep -n "ports:" compose.prod.yml     # sin salida
-docker run --rm -p 8080:80 -e TRUSTED_PROXY_CIDR=127.0.0.1/32 t-gateway
-curl localhost:8080/version.json      # {"revision":"prueba"}
-curl localhost:8080/healthz           # ok
+curl localhost:5187/version.json      # {"revision":"ci"}
+curl localhost:5187/healthz           # ok
 ```
 
 Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no es accesible desde el teléfono de un invitado.

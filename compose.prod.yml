@@ -39,8 +39,8 @@ services:
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
     depends_on:
-      api: { condition: service_healthy }
-    # /healthz lo responde el propio nginx una vez la api está lista
+      api: { condition: service_started }
+    # No depende de la API: /healthz lo responde el propio nginx
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
       interval: 15s
@@ -59,9 +59,9 @@ services:
     environment:
       NODE_ENV: production
       NODE_OPTIONS: --max-old-space-size=192
-      # La contraseña va aparte (PGPASSWORD) para no tener que escaparla dentro de la URL
-      DATABASE_URL: postgres://tuevento@postgres:5432/tueventofun
-      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      # La API se conecta como rol `api` (no como dueño de la base)
+      DATABASE_URL: postgres://api@postgres:5432/tueventofun
+      PGPASSWORD: ${API_DB_PASSWORD:?Define API_DB_PASSWORD}
       # Los dos dominios de la web y los orígenes de las apps Capacitor
       ALLOWED_ORIGINS: ${SITE_URL_ES:?Define SITE_URL_ES},${SITE_URL_EN:?Define SITE_URL_EN},capacitor://localhost,https://localhost
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
@@ -88,7 +88,7 @@ services:
   # La plataforma hace el backup de cada contenedor PostgreSQL en marcha.
   postgres:
     <<: *hardening
-    image: postgres:18-alpine
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-postgres:${IMAGE_TAG:-main}
     # El entrypoint arranca como root, ajusta el dueño del directorio de datos (CHOWN),
     # lo recorre ya siendo de postgres en cada rearranque (DAC_READ_SEARCH) y baja a
     # ese usuario (SETGID, SETUID). Mínimo comprobado con volumen nuevo y existente.
@@ -99,6 +99,7 @@ services:
       POSTGRES_DB: tueventofun
       POSTGRES_USER: tuevento
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:?Define API_DB_PASSWORD}
     volumes:
       # PostgreSQL 18: el volumen se monta en /var/lib/postgresql (no en /data)
       - postgres_data:/var/lib/postgresql

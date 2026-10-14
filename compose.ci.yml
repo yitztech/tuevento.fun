@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  CI: Capa de pruebas sobre compose.prod.yml
+#  Misma topología que producción, con imágenes construidas en local y puertos
+#  expuestos en 127.0.0.1 para los ejecutores de pruebas (E2E / Playwright / API).
+#
+#    docker compose -f compose.prod.yml -f compose.ci.yml up -d --build --wait
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+      args:
+        RELEASE_SHA: ${RELEASE_SHA:-ci}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5187}:80"
+    environment:
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
+      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
+      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
+    labels:
+      dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+      args:
+        RELEASE_SHA: ${RELEASE_SHA:-ci}
+    ports:
+      - "127.0.0.1:${API_PORT:-3087}:3087"
+    environment:
+      COOKIE_SECURE: "false"
+      DEMO_ENABLED: "true"
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
+      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
+      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
+
+  postgres:
+    build:
+      context: .
+      dockerfile: services/postgres/Dockerfile
+    ports:
+      - "127.0.0.1:${DB_PORT:-5487}:5432"

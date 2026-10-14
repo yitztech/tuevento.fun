@@ -1,13 +1,21 @@
-# DESARROLLO local. Mismas imágenes y nombres de servicio que compose.prod.yml
-# (gateway, api, postgres), pero construidas aquí, con puertos en loopback y demo activa.
+# ─────────────────────────────────────────────────────────────────────────────
+#  DESARROLLO local: misma topología que producción con recarga en caliente.
+#    docker compose up --watch
+#  Todas las variables tienen valores por defecto de desarrollo (sin setup.sh obligatorio).
+#  Mismos nombres de servicio que producción: gateway, api, postgres.
+# ─────────────────────────────────────────────────────────────────────────────
 name: tueventofun
+
 services:
   postgres:
-    image: postgres:18-alpine
+    build:
+      context: .
+      dockerfile: services/postgres/Dockerfile
     environment:
       POSTGRES_DB: tueventofun
       POSTGRES_USER: tuevento
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run bash scripts/setup.sh first}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-postgres}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:-dev-api}
     ports:
       - "127.0.0.1:${DB_PORT:-5487}:5432"
     volumes:
@@ -19,16 +27,18 @@ services:
       timeout: 3s
       retries: 12
     restart: unless-stopped
+
   api:
     build:
       context: .
-      target: api
+      dockerfile: services/api/Dockerfile
+      target: dev
     environment:
-      NODE_ENV: production
-      NODE_OPTIONS: --max-old-space-size=192
+      NODE_ENV: development
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=512}
       PORT: 3087
-      DATABASE_URL: postgres://tuevento@postgres:5432/tueventofun
-      PGPASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_URL: postgres://api@postgres:5432/tueventofun
+      PGPASSWORD: ${API_DB_PASSWORD:-dev-api}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
@@ -38,7 +48,7 @@ services:
       LISTMONK_API_TOKEN: ${LISTMONK_API_TOKEN:-}
       LISTMONK_LIST_ID: ${LISTMONK_LIST_ID:-1}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-}
+      RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-dev-release-token}
       RELEASE_DOWNLOAD_HOSTS: ${RELEASE_DOWNLOAD_HOSTS:-github.com,apps.apple.com,testflight.apple.com,play.google.com}
       DEMO_ENABLED: ${DEMO_ENABLED:-true}
     ports:
@@ -58,16 +68,30 @@ services:
       timeout: 5s
       retries: 12
     restart: unless-stopped
+    develop:
+      watch:
+        - path: apps/api/src
+          target: /app/apps/api/src
+          action: sync
+        - path: packages/contracts/src
+          target: /app/packages/contracts/src
+          action: sync
+        - path: packages/client/src
+          target: /app/packages/client/src
+          action: sync
+        - path: package.json
+          action: rebuild
+        - path: package-lock.json
+          action: rebuild
+
   gateway:
     build:
       context: .
-      target: gateway
-    # OrbStack: la web en español en https://tueventofun.orb.local y en inglés en
-    # https://en.tueventofun.orb.local, con certificado local. Otros motores la ignoran.
+      dockerfile: services/gateway/Dockerfile
+      target: dev
     labels:
       dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
     environment:
-      # En local nadie hace de proxy delante: no se confía en X-Forwarded-For
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
@@ -84,5 +108,26 @@ services:
       timeout: 5s
       retries: 8
     restart: unless-stopped
+    develop:
+      watch:
+        - path: apps/web/src
+          target: /app/apps/web/src
+          action: sync
+        - path: packages/app/src
+          target: /app/packages/app/src
+          action: sync
+        - path: packages/contracts/src
+          target: /app/packages/contracts/src
+          action: sync
+        - path: packages/client/src
+          target: /app/packages/client/src
+          action: sync
+        - path: services/gateway
+          action: rebuild
+        - path: package.json
+          action: rebuild
+        - path: package-lock.json
+          action: rebuild
+
 volumes:
   postgres_data:
