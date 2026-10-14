@@ -1,13 +1,14 @@
-import { Controller, Get, Post, Body, Req, Param, Query, Res, BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, Param, Query, Res, BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { visitSchema, releaseSchema, normalizeLocale, validationOptions } from '@tuevento/contracts';
+import { visitSchema, releaseSchema, validationOptions } from '@tuevento/contracts';
+import { requestLocale } from './request-locale';
 import { Database } from './database';
 import { AuthService, userView } from './auth';
 import { clientPlatform } from './client-platform';
 const parse = <T extends z.ZodType>(schema: T, value: unknown, req?: FastifyRequest): z.output<T> => {
-  const r = schema.safeParse(value, validationOptions(normalizeLocale(req?.headers["accept-language"]))); if (!r.success) throw new BadRequestException(r.error.issues[0]?.message); return r.data;
+  const r = schema.safeParse(value, validationOptions(requestLocale(req))); if (!r.success) throw new BadRequestException(r.error.issues[0]?.message); return r.data;
 };
 @Controller()
 export class PlatformController {
@@ -43,6 +44,21 @@ export class PlatformController {
     const sources = await this.db.query(`SELECT platform, ${counts} FROM activity WHERE ${where} GROUP BY platform ORDER BY platform`, [days]);
     const daily = await this.db.query(`SELECT to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD') AS day, ${counts} FROM activity WHERE ${where} GROUP BY day ORDER BY day`, [days]);
     return {days, totals, sources, daily};
+  }
+  // Verificación de App Links: Google y Apple leen estos archivos del dominio público.
+  // Se sirven desde la API con la configuración del entorno, sin reconstruir la web.
+  @Get('.well-known/assetlinks.json') assetLinks() {
+    const fingerprint = process.env.ANDROID_CERT_SHA256 || '';
+    if (!/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(fingerprint)) throw new NotFoundException();
+    return [{
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: { namespace: 'android_app', package_name: process.env.MOBILE_APP_ID || 'com.tueventofun.app', sha256_cert_fingerprints: [fingerprint] },
+    }];
+  }
+  @Get('.well-known/apple-app-site-association') appleAssociation() {
+    const team = process.env.APPLE_TEAM_ID || '';
+    if (!/^[A-Z0-9]{10}$/.test(team)) throw new NotFoundException();
+    return { applinks: { details: [{ appIDs: [`${team}.${process.env.MOBILE_APP_ID || 'com.tueventofun.app'}`], components: [{ '/': '/app-link/auth*' }] }] } };
   }
   @Get('releases') async releases() {
     return this.db.query(`SELECT DISTINCT ON(platform,channel) id,platform,version,build,channel,url,sha256,notes,published_at AS "publishedAt" FROM app_releases ORDER BY platform,channel,build DESC`);

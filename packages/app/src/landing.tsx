@@ -15,6 +15,7 @@ import {
 import { themes, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
+import { LegalLinks } from "./legal";
 import "./landing.css";
 
 const family = [
@@ -32,6 +33,41 @@ export function LandingPage() {
   );
   const attending = answers.filter((status) => status === "accepted").length;
   const primary = "/registro?empezar=evento";
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [newsletterMessage, setNewsletterMessage] = useState("");
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    setNewsletterStatus("loading");
+    setNewsletterMessage("");
+    try {
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-TuEvento-Client": "1",
+        },
+        body: JSON.stringify({ email: newsletterEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setNewsletterStatus("success");
+        setNewsletterMessage(tr("¡Gracias por suscribirte!"));
+        setNewsletterEmail("");
+      } else {
+        setNewsletterStatus("error");
+        setNewsletterMessage(
+          data.message || tr("No se pudo completar la solicitud."),
+        );
+      }
+    } catch {
+      setNewsletterStatus("error");
+      setNewsletterMessage(tr("No se pudo completar la solicitud."));
+    }
+  };
   const example = {
     title: tr("Una noche para recordar"),
     date: "2026-12-12T23:00:00Z",
@@ -40,7 +76,6 @@ export function LandingPage() {
     theme,
   };
   useEffect(() => {
-    document.documentElement.lang = locale;
     document.title = tr("TuEventoFun · Invita, reúne y celebra");
     const meta = document.querySelector('meta[name="description"]');
     const previous = meta?.getAttribute("content");
@@ -421,6 +456,38 @@ export function LandingPage() {
             height="800"
           />
         </section>
+
+        <section className="landing-container landing-newsletter">
+          <div className="landing-newsletter-card">
+            <div className="landing-newsletter-copy">
+              <h2>{tr("Suscríbete a nuestra newsletter")}</h2>
+              <p>{tr("Recibe ideas de celebraciones e invitaciones exclusivas.")}</p>
+            </div>
+            <form className="landing-newsletter-form" onSubmit={handleSubscribe}>
+              <input
+                type="email"
+                required
+                placeholder={tr("Correo electrónico")}
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                disabled={newsletterStatus === "loading"}
+                aria-label={tr("Correo electrónico")}
+              />
+              <button
+                type="submit"
+                className="button landing-primary"
+                disabled={newsletterStatus === "loading"}
+              >
+                {newsletterStatus === "loading" ? tr("Cargando…") : tr("Suscribirme")}
+              </button>
+            </form>
+            {newsletterMessage && (
+              <p className={`landing-newsletter-msg ${newsletterStatus}`} role="status">
+                {newsletterMessage}
+              </p>
+            )}
+          </div>
+        </section>
       </main>
       <footer className="landing-footer landing-container">
         <div>
@@ -431,6 +498,7 @@ export function LandingPage() {
           <Link to="/acceso">{tr("Entrar a mi espacio")}</Link>
           <Link to="/app">{tr("Explorar la demostración")}</Link>
           <a href="#preguntas">{tr("Preguntas frecuentes")}</a>
+          <LegalLinks className="landing-legal-links" />
         </nav>
         <small>© {new Date().getFullYear()} TuEventoFun</small>
       </footer>

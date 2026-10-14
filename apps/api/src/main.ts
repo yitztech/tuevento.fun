@@ -9,19 +9,30 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { AppModule } from "./app.module";
 import { LocaleExceptionFilter } from "./locale.filter";
-import { normalizeLocale, translateMessage } from "@tuevento/contracts";
+import { translateMessage } from "@tuevento/contracts";
+import { requestLocale } from "./request-locale";
+import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
+  await startTrustedProxyRefresh();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ bodyLimit: 3 * 1024 * 1024, trustProxy: false }),
+    // Solo se confía en el gateway de la red interna del compose, que fija
+    // X-Forwarded-For con la IP real del cliente (ver trusted-proxy.ts).
+    new FastifyAdapter({
+      bodyLimit: 3 * 1024 * 1024,
+      trustProxy: (address: string) => isTrustedProxy(address),
+    }),
   );
   app.setGlobalPrefix("api");
   app.useGlobalFilters(new LocaleExceptionFilter());
   await app.register(cookie);
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(rateLimit, {
-    max: 240,
+    max: Number(
+      process.env.RATE_LIMIT_MAX ||
+        (process.env.DEMO_ENABLED === "true" ? 1200 : 300),
+    ),
     timeWindow: "1 minute",
     keyGenerator: (req) => req.ip,
   });
@@ -31,7 +42,7 @@ async function bootstrap() {
   app.enableCors({
     origin: origins,
     credentials: true,
-    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "Accept-Language", "X-Client-Platform", "X-App-Version", "Authorization"],
+    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "X-Client-Platform", "X-App-Version", "X-App-Locale", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
   app
@@ -40,10 +51,7 @@ async function bootstrap() {
     .addHook("onRequest", async (req: any, reply: any) => {
       if (req.url.startsWith("/api")) {
         reply.header("Cache-Control", "no-store");
-        reply.header(
-          "Content-Language",
-          normalizeLocale(req.headers["accept-language"]),
-        );
+        reply.header("Content-Language", requestLocale(req));
       }
       if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
         if (
@@ -55,7 +63,7 @@ async function bootstrap() {
             .send({
               message: translateMessage(
                 "Origen de solicitud no permitido.",
-                normalizeLocale(req.headers["accept-language"]),
+                requestLocale(req),
               ),
             });
       }

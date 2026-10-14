@@ -1,11 +1,13 @@
 import "@tuevento/app/styles.css";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
-import { TuEventoApp, type Runtime } from "@tuevento/app";
+import { TuEventoApp, SeoLinks, getLocale, type Runtime } from "@tuevento/app";
 import { LandingPage } from "@tuevento/app/landing";
 import { Capacitor } from '@capacitor/core';
 import { EventApi } from '@tuevento/client';
 import { DownloadsPage } from '@tuevento/app/downloads';
+import { LegalPage } from '@tuevento/app/legal';
+import { localizedPaths } from '@tuevento/contracts';
 import { Analytics } from './analytics';
 const runtime: Runtime = {
   apiBase: "/api",
@@ -29,11 +31,12 @@ const runtime: Runtime = {
 async function start() {
  const native=Capacitor.isNativePlatform();
  const activeRuntime=native?await (await import('./native')).nativeRuntime():runtime;
- const api=new EventApi({baseUrl:activeRuntime.apiBase,fetch:activeRuntime.fetch,platform:activeRuntime.platform});
+ const api=new EventApi({baseUrl:activeRuntime.apiBase,fetch:activeRuntime.fetch,platform:activeRuntime.platform,locale:()=>getLocale()});
  const Router=native?HashRouter:BrowserRouter;
  ReactDOM.createRoot(document.getElementById("root")!).render(
-  <Router><Analytics api={api} native={native}/>{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>
+  <Router><Analytics api={api} native={native}/>{!native&&<SeoLinks/>}{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>
    <Route path="/" element={<LandingPage/>}/><Route path="/descargas" element={<DownloadsPage api={api}/>}/>
+   {(['privacy','terms'] as const).flatMap(page=>(['es','en'] as const).map(locale=><Route key={`${page}-${locale}`} path={localizedPaths[page][locale]} element={<LegalPage page={page}/>}/>))}
    <Route path="*" element={<TuEventoApp runtime={activeRuntime}/>}/>
   </Routes>}</Router>);
 }

@@ -106,6 +106,11 @@ export const profileSchema = z.object({
     .max(32, "Usa como máximo 32 caracteres.")
     .regex(/^[a-zA-Z0-9_.-]+$/),
 });
+export const newsletterSchema = z.object({
+  email,
+  name: z.string().trim().max(100).optional(),
+});
+export type NewsletterInput = z.infer<typeof newsletterSchema>;
 export const eventSchema = z.object({
   title: name,
   description: z.string().trim().max(2500).default(""),
@@ -192,6 +197,8 @@ export type User = {
   avatar: string | null;
   isOwner?: boolean;
   isDemo: boolean;
+  /** Idioma de la cuenta: el del dominio donde se registró. */
+  locale: "es" | "en";
 };
 export type Metrics = {
   invitations: number;

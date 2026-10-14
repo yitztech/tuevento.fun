@@ -13,9 +13,9 @@ jobs:
     environment: mobile-production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm}
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24, cache: npm}
       - run: npm ci && npm run build -w @tuevento/contracts
       - run: node scripts/publish-release.mjs
         env:
@@ -24,5 +24,6 @@ jobs:
           APP_VERSION: ${{ inputs.version }}
           BUILD_NUMBER: ${{ inputs.build }}
           RELEASE_URL: ${{ inputs.url }}
-          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+          # Nombre que lee scripts/publish-release.mjs; el valor es SITE_URL de la plataforma
+          PUBLIC_ORIGIN: ${{ vars.SITE_URL }}
           RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}

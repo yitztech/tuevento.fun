@@ -28,15 +28,15 @@ jobs:
       APP_VERSION: ${{ inputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       VITE_APP_VERSION: ${{ inputs.version }}
-      VITE_PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+      VITE_PUBLIC_ORIGIN: ${{ vars.SITE_URL }}
       MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm}
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24, cache: npm}
+      - uses: actions/setup-java@v6
         with: {distribution: temurin, java-version: '21'}
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test && node scripts/validate-mobile-env.mjs
       - run: npm run build && npx cap sync android
         working-directory: apps/web
@@ -70,7 +70,8 @@ jobs:
           RELEASE_PLATFORM: android
           RELEASE_CHANNEL: direct
           RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
-          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+          # Nombre que lee scripts/publish-release.mjs; el valor es SITE_URL de la plataforma
+          PUBLIC_ORIGIN: ${{ vars.SITE_URL }}
         run: |
           curl --fail --head --location "$RELEASE_URL"
           npm run build -w @tuevento/contracts
@@ -85,13 +86,13 @@ jobs:
       APP_VERSION: ${{ inputs.version }}
       VITE_APP_VERSION: ${{ inputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
-      VITE_PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+      VITE_PUBLIC_ORIGIN: ${{ vars.SITE_URL }}
       MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
       APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm}
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24, cache: npm}
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test && node scripts/validate-mobile-env.mjs
       - run: npm run build && npx cap sync ios
         working-directory: apps/web
@@ -102,9 +103,11 @@ jobs:
           IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: bash scripts/ios-signing.sh
+      - name: Resolve App Links host
+        run: echo "APP_LINK_HOST=$(node -p 'new URL(process.env.VITE_PUBLIC_ORIGIN).host')" >> "$GITHUB_ENV"
       - name: Archive and export
         run: |
-          xcodebuild -project apps/web/ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$APPLE_TEAM_ID" PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_UUID" CODE_SIGN_IDENTITY='Apple Distribution' PRODUCT_BUNDLE_IDENTIFIER="$MOBILE_APP_ID" MARKETING_VERSION="$APP_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+          xcodebuild -project apps/web/ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$APPLE_TEAM_ID" APP_LINK_HOST="$APP_LINK_HOST" PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_UUID" CODE_SIGN_IDENTITY='Apple Distribution' PRODUCT_BUNDLE_IDENTIFIER="$MOBILE_APP_ID" MARKETING_VERSION="$APP_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportPath "$RUNNER_TEMP/ipa" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
       - name: Upload to App Store Connect for TestFlight processing
         env:
@@ -115,7 +118,7 @@ jobs:
           mkdir -p ~/.appstoreconnect/private_keys
           printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           xcrun altool --upload-app -f "$RUNNER_TEMP/ipa/App.ipa" --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ios-distribution
           path: ${{ runner.temp }}/ipa/*.ipa

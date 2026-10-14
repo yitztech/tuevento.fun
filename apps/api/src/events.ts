@@ -12,6 +12,7 @@ import {
   type InvitationInput,
   type Invitation,
   type Event,
+  type Member,
   type PublicInvitation,
   type Status,
 } from "@tuevento/contracts";
@@ -92,12 +93,38 @@ export class EventsService {
     event.metrics = countMetrics(await this.invitations(userId, id));
     return event;
   }
-  async list(userId: string) {
-    const rows = await this.db.query(
-      "SELECT id FROM events WHERE user_id=$1 ORDER BY date",
+  async list(userId: string): Promise<Event[]> {
+    const events = await this.db.query(
+      "SELECT * FROM events WHERE user_id=$1 ORDER BY date",
       [userId],
     );
-    return Promise.all(rows.map((r) => this.event(userId, r.id)));
+    if (!events.length) return [];
+    const ids = events.map((e) => e.id);
+    const invites = await this.db.query(
+      "SELECT id,event_id FROM invitations WHERE event_id=ANY($1::uuid[])",
+      [ids],
+    );
+    const members = await this.db.query(
+      "SELECT m.invitation_id,m.kind,m.status FROM members m JOIN invitations i ON i.id=m.invitation_id WHERE i.event_id=ANY($1::uuid[])",
+      [ids],
+    );
+    const membersByInvite = new Map<string, Pick<Member, "kind" | "status">[]>();
+    for (const m of members) {
+      const list = membersByInvite.get(m.invitation_id) ?? [];
+      list.push({ kind: m.kind, status: m.status });
+      membersByInvite.set(m.invitation_id, list);
+    }
+    const invitesByEvent = new Map<string, { members: Pick<Member, "kind" | "status">[] }[]>();
+    for (const inv of invites) {
+      const list = invitesByEvent.get(inv.event_id) ?? [];
+      list.push({ members: membersByInvite.get(inv.id) ?? [] });
+      invitesByEvent.set(inv.event_id, list);
+    }
+    return events.map((r) => {
+      const event = eventView(r);
+      event.metrics = countMetrics(invitesByEvent.get(r.id) ?? []);
+      return event;
+    });
   }
   async saveEvent(userId: string, input: EventInput, id?: string) {
     if (id) await this.owned(userId, id);

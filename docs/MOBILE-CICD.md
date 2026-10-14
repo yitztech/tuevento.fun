@@ -4,9 +4,11 @@ La app reutiliza `packages/app` (pantallas React ES/EN), `packages/contracts` (Z
 
 ## Entornos y cuentas
 
-`VITE_PUBLIC_ORIGIN` debe contener el origen HTTPS real del backend/web al compilar. No contiene secretos. `MOBILE_APP_ID` por defecto es `com.tueventofun.app`; confirma que sea tu identificador registrado antes de publicar. `VITE_APP_VERSION`, `APP_VERSION` y `BUILD_NUMBER` versionan los recursos y paquetes; la compilación toma el número creciente de GitHub Actions. No reinicies ese contador ni publiques un número menor al de las tiendas.
+`VITE_PUBLIC_ORIGIN` debe contener el origen HTTPS real de la web y la API al compilar; en los workflows sale de la variable `SITE_URL` de la plataforma (dominio principal). No contiene secretos. La app nativa usa ese único dominio y, por tanto, su idioma. `MOBILE_APP_ID` por defecto es `com.tueventofun.app`; confirma que sea tu identificador registrado antes de publicar. `VITE_APP_VERSION`, `APP_VERSION` y `BUILD_NUMBER` versionan los recursos y paquetes; la compilación toma el número creciente de GitHub Actions. No reinicies ese contador ni publiques un número menor al de las tiendas.
 
-La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. Es de un solo uso, no expone el token de sesión en el enlace y requiere confirmación explícita del usuario en la página de conexión. Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
+La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. El regreso a la app usa **App Links / Universal Links verificados** en `https://<host de VITE_PUBLIC_ORIGIN>/app-link/auth?code=…`; el esquema propio `tueventofun://` se retiró porque cualquier app podía registrarlo y recibir el código. El código es de un solo uso, no expone el token de sesión y se entrega solo tras pulsar «Conectar mi app» y después «Abrir TuEventoFun». Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
+
+Desarrollo (`compose.yml`, local) y producción (`compose.prod.yml`, desplegado por Coolify desde `deploy.yml`) son configuraciones separadas con los mismos servicios (`gateway`, `api`, `postgres`): demo activa y cookies sin `Secure` en desarrollo; demo desactivada y `COOKIE_SECURE=true` en producción. En producción el único punto de entrada es Traefik de la plataforma hacia el `gateway`. El gateway solo acepta `X-Forwarded-For` si llega de `TRUSTED_PROXY_CIDR` (la subred de Traefik) y lo **sobrescribe** con la IP real antes de pasarlo a la API, que a su vez solo confía en el gateway. Si `TRUSTED_PROXY_CIDR` no es la subred correcta, todos los usuarios comparten la IP de Traefik y el límite de peticiones.
 
 ## Desarrollo
 
@@ -38,7 +40,7 @@ No publiques la URL de base de datos ni la guardes en el repositorio. Alternativ
 - Registros/accesos: se generan en servidor después del éxito; demos excluidas. Primer acceso Google registra creación y acceso.
 - Descargas: clics en enlaces, no instalaciones verificadas.
 - Plataforma: `web`, `android`, `ios`, declarada por el cliente y normalizada; sirve para analítica, nunca para autorización. Sesiones guardan plataforma y versión; usuarios, plataforma de registro.
-- Periodos 7/30/90 días, límites de fecha UTC, tablas por cliente y día. No se reconstruye actividad anterior. Retención de eventos de 90 días, depurada al arrancar API. No se guardan IP, UA, contactos o rutas privadas en `activity`.
+- Periodos 7/30/90 días, límites de fecha UTC, tablas por cliente y día. No se reconstruye actividad anterior. Retención de eventos de 90 días, depurada al arrancar la API y cada hora. No se guardan IP, UA, contactos o rutas privadas en `activity`.
 
 ## Descargas
 
@@ -48,33 +50,45 @@ Publicación: `POST /api/releases` exige `Authorization: Bearer RELEASE_PUBLISH_
 
 ## GitHub Actions
 
-El checkout actual no tiene remoto GitHub configurado. Los workflows están escritos; aún no se han ejecutado en GitHub.
+El repositorio remoto es `yitztech/tuevento.fun`. Los workflows usan Node 24 y acciones vigentes; validados con `actionlint`.
 
 | Workflow | Función |
 |---|---|
 | `ci.yml` | Build, tipos, contratos, API/plataforma y navegador con Compose aislado en runner |
-| `deploy.yml` | Imágenes API/web en GHCR por SHA, despliegue SSH al entorno `production`, health check |
+| `deploy.yml` | En push a `main`: pruebas, imágenes `gateway` y `api` en GHCR (`:main` y `:<sha>`), webhook de Coolify en el entorno `production` y espera a que `/version.json` sirva el commit en los dos dominios |
 | `mobile.yml` | Manual: APK firmado/AAB y GitHub Release; iOS archive/export y carga a App Store Connect |
 | `catalog.yml` | Publica enlace aprobado de TestFlight o tienda después de revisión/procesamiento |
 
-Configura environments `production` y `mobile-production` con las protecciones deseadas. Ningún archivo contiene credenciales de tu cuenta.
+El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables `SITE_URL` y `SITE_URL_EN`) lo crea y rellena la plataforma, y solo acepta despliegues desde `main`. Configura `mobile-production` con las protecciones deseadas. Ningún archivo contiene credenciales.
 
 ### Variables
 
-`PUBLIC_ORIGIN` (HTTPS), `MOBILE_APP_ID`, `APPLE_TEAM_ID`, `DEPLOY_HOST`, `DEPLOY_USER`.
+- Plataforma: `SITE_URL` (origen HTTPS principal; lo usan `mobile.yml` y `catalog.yml`) y `SITE_URL_EN`.
+- Repositorio (públicas, se hornean en la imagen de la API para `/.well-known/*`): `ANDROID_CERT_SHA256`, `APPLE_TEAM_ID`, `MOBILE_APP_ID`. `APPLE_TEAM_ID` y `MOBILE_APP_ID` también los usa `mobile.yml`.
 
 ### Secrets
 
-- Despliegue: `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` (clave verificada del host, no aceptación ciega).
-- Compartido API/publicación: `RELEASE_PUBLISH_TOKEN`.
+- Despliegue: `COOLIFY_WEBHOOK`, `COOLIFY_TOKEN` (los pone la plataforma).
+- Compartido API/publicación: `RELEASE_PUBLISH_TOKEN` (lo genera la plataforma y lo pasa para este secreto).
 - Android: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Conserva la misma clave en cada actualización.
 - iOS: `IOS_CERTIFICATE_BASE64` (P12 de distribución), `IOS_CERTIFICATE_PASSWORD`, `IOS_PROFILE_BASE64`, `KEYCHAIN_PASSWORD` (temporal), `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` (P8).
 
 ### Servidor
 
-Prepara `~/tueventofun/.env` con DB_PASSWORD, PUBLIC_ORIGIN, RELEASE_PUBLISH_TOKEN, GOOGLE_CLIENT_ID y opciones de `.env.example`. Instala Docker Compose y configura HTTPS externo hacia `127.0.0.1:5187`; la BD no publica puerto en producción. El usuario SSH debe tener acceso a Docker y autenticación de lectura GHCR si las imágenes son privadas. Configura backups antes de usar datos reales. El workflow no crea servidores, DNS, TLS ni claves de firma.
+Lo opera la plataforma: Coolify lee `compose.prod.yml`, descarga las imágenes de GHCR y pone los dominios y certificados con Traefik. Las variables (`POSTGRES_PASSWORD`, `TRUSTED_PROXY_CIDR`, `SITE_URL_*`, `UMAMI_*`, `RELEASE_PUBLISH_TOKEN`, `GOOGLE_CLIENT_ID`) las pasa la plataforma; ver la tabla del README. El backup de PostgreSQL también es de la plataforma. Los workflows no crean servidores, DNS, TLS ni claves de firma.
 
 La descarga directa de GitHub Release debe ser pública: el workflow comprueba la URL sin autenticación antes de añadirla al catálogo. Si el repositorio es privado, publica el APK en tu host/CDN permitido y usa el endpoint desde un workflow adaptado; no expongas un token GitHub al visitante. El AAB queda para publicación en Play Console; no se automatiza el envío a Google Play en esta versión. iOS se carga para procesamiento, no se declara aprobado; el enlace se habilita con `catalog.yml` cuando realmente esté disponible.
+
+## App Links (verificación de dominio)
+
+Para que Android e iOS abran `/app-link/auth` en la app, el dominio debe publicar los archivos de asociación. La API los sirve, y el gateway los expone en los dos dominios (`tuevento.fun` y `yourevent.fun`). Los valores no son secretos ni variables de la plataforma: son **variables del repositorio** que `deploy.yml` hornea en la imagen de la API como build-args, así que cambiarlos requiere un nuevo despliegue:
+
+- `ANDROID_CERT_SHA256`: huella SHA-256 del certificado de firma de la app Android, formato `AA:BB:…` (32 pares).
+- `APPLE_TEAM_ID`: Team ID de 10 caracteres del Apple Developer.
+- `MOBILE_APP_ID`: el mismo bundle/applicationId de los builds (por defecto `com.tueventofun.app`).
+- Build iOS: el workflow fija `APP_LINK_HOST` desde `VITE_PUBLIC_ORIGIN` y firma con el entitlement `applinks:`. El perfil de distribución debe tener activada la capacidad **Associated Domains** en el portal de Apple; sin ello, la firma falla o el enlace no se abre.
+- Comprobaciones: `https://<dominio>/.well-known/assetlinks.json` y `https://<dominio>/.well-known/apple-app-site-association` responden 200 JSON sin redirección. En Android, `adb shell pm get-app-links com.tueventofun.app` debe mostrar `verified`.
+- Hasta que estén configurados, los `.well-known` responden 404 y la conexión móvil no funciona en dispositivos; esa es la forma segura de fallar.
 
 ## Límites de entrega
 

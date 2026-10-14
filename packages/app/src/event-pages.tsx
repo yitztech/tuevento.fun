@@ -11,6 +11,24 @@ import { useForm, useFieldArray, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
+const eventTimeZones = [
+  "America/Mexico_City",
+  "America/Cancun",
+  "America/Tijuana",
+  "America/Monterrey",
+  "America/Bogota",
+  "America/New_York",
+  "Europe/Madrid",
+  "UTC",
+];
+/** Zona del usuario para un evento nuevo, si está entre las ofrecidas. */
+function defaultTimeZone() {
+  try {
+    const own = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (eventTimeZones.includes(own)) return own;
+  } catch {}
+  return "America/Mexico_City";
+}
 import {
   Plus,
   ArrowLeft,
@@ -81,7 +99,7 @@ export function EventEditor() {
       theme: themes.some((t) => t.id === query.get("tema"))
         ? (query.get("tema") as Event["theme"])
         : "floral",
-      timeZone: "America/Mexico_City",
+      timeZone: defaultTimeZone(),
       archived: false,
     },
   });
@@ -847,7 +865,8 @@ export function ShareDialog({
 }) {
   const { runtime, toast } = useApp(),
     [copied, setCopied] = useState(false);
-  const url = `${runtime.publicOrigin}/i/${invitation.token}?lang=${getLocale()}`,
+  // El idioma lo da el dominio: el enlace usa el origen actual, sin ?lang=.
+  const url = `${runtime.publicOrigin}/i/${invitation.token}`,
     message = tr(
       "¡Hola, {{name}}! Te invitamos a {{event}}. Consulta los detalles y confirma tu asistencia aquí: {{url}}",
       { name: invitation.name, event: event.title, url },

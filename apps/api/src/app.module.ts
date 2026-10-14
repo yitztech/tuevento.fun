@@ -5,6 +5,7 @@ import { AuthService, SessionGuard } from "./auth";
 import { EventsService, Updates } from "./events";
 import { DemoService } from "./demo";
 import { PublicController, OrganizerController } from "./controllers";
+import { ListmonkService } from "./listmonk";
 @Module({
   controllers: [PlatformController, PublicController, OrganizerController],
   providers: [
@@ -14,6 +15,7 @@ import { PublicController, OrganizerController } from "./controllers";
     EventsService,
     Updates,
     DemoService,
+    ListmonkService,
   ],
 })
 export class AppModule {}

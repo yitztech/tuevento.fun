@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  PRODUCCIÓN en Coolify (aplicación Docker Compose)
+#
+#  Las imágenes las publica GitHub Actions en GHCR (.github/workflows/deploy.yml):
+#  el servidor solo las descarga y arranca, nunca compila. Coolify lee este
+#  archivo del repositorio y su Traefik pone los dominios y los certificados.
+#
+#  Reglas de la plataforma:
+#  - Dominios (tuevento.fun y yourevent.fun): SOLO al servicio `gateway`, puerto 80.
+#  - Ningún servicio publica puertos: solo el gateway es alcanzable, y solo desde Traefik.
+#  - Todo servicio lleva límite de memoria y CPU: varios clientes comparten servidor.
+#  - Todo lo que termina en `:?` es obligatorio: si falta, el despliegue se detiene.
+#  - Variables: solo las que pasa la plataforma (ver README-project.md).
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  gateway:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX, p. ej. ghcr.io/yitztech/tuevento.fun}-gateway:${IMAGE_TAG:-main}
+    # nginx necesita estas capacidades para arrancar como root y bajar a su usuario
+    cap_add: [CHOWN, SETGID, SETUID, NET_BIND_SERVICE]
+    mem_limit: 64m
+    cpus: 0.25
+    environment:
+      # Subred de la red de esta app donde está Traefik (se mide tras el primer arranque)
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:?Define la subred de Traefik}
+      # Un idioma por dominio: el Host decide es/en, canonical, hreflang, robots y sitemap
+      SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
+      SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
+      # Analítica con Umami (vacío = sin analítica)
+      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+    depends_on:
+      api: { condition: service_started }
+    # No depende de la API: /healthz lo responde el propio nginx
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks: [frontend]
+
+  api:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-api:${IMAGE_TAG:-main}
+    # Corre como usuario node en el puerto 3087: no necesita capacidades
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      NODE_ENV: production
+      # La contraseña va aparte (PGPASSWORD) para no tener que escaparla dentro de la URL
+      DATABASE_URL: postgres://tuevento@postgres:5432/tueventofun
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      # Los dos dominios de la web y los orígenes de las apps Capacitor
+      ALLOWED_ORIGINS: ${SITE_URL_ES:?Define SITE_URL_ES},${SITE_URL_EN:?Define SITE_URL_EN},capacitor://localhost,https://localhost
+      SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
+      SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      LISTMONK_URL: ${LISTMONK_URL:-}
+      LISTMONK_API_USER: ${LISTMONK_API_USER:-}
+      LISTMONK_API_TOKEN: ${LISTMONK_API_TOKEN:-}
+      LISTMONK_LIST_ID: ${LISTMONK_LIST_ID:-1}
+      RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:?Define RELEASE_PUBLISH_TOKEN}
+      COOKIE_SECURE: "true"
+      DEMO_ENABLED: "false"
+      RELEASE_DOWNLOAD_HOSTS: github.com,apps.apple.com,testflight.apple.com,play.google.com
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3087/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    # frontend: la alcanza el gateway. backend: solo ella habla con postgres.
+    networks: [frontend, backend]
+
+  # La plataforma hace el backup de cada contenedor PostgreSQL en marcha.
+  postgres:
+    <<: *hardening
+    image: postgres:18-alpine
+    # El entrypoint arranca como root, ajusta el dueño del directorio de datos (CHOWN),
+    # lo recorre ya siendo de postgres en cada rearranque (DAC_READ_SEARCH) y baja a
+    # ese usuario (SETGID, SETUID). Mínimo comprobado con volumen nuevo y existente.
+    cap_add: [CHOWN, DAC_READ_SEARCH, SETGID, SETUID]
+    mem_limit: 512m
+    cpus: 1.0
+    environment:
+      POSTGRES_DB: tueventofun
+      POSTGRES_USER: tuevento
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+    volumes:
+      # PostgreSQL 18: el volumen se monta en /var/lib/postgresql (no en /data)
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U tuevento -d tueventofun"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [backend]
+
+volumes:
+  postgres_data:
+
+networks:
+  frontend:
+  backend:
+    internal: true    # sin salida a internet: solo api ↔ postgres

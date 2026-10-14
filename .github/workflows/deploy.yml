@@ -1,74 +1,142 @@
-name: Deploy web and API
+# Publica las imágenes en GHCR y despliega en Coolify cuando cambia main.
+#
+#   probar → publicar (gateway y api) → desplegar (webhook de Coolify) → comprobar
+#
+# El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variables SITE_URL y
+# SITE_URL_EN) lo rellena la plataforma. Mientras no exista, se publican las imágenes
+# pero no se despliega. Solo despliega desde main.
+name: Desplegar
+
 on:
-  workflow_dispatch:
   push:
-    tags: ['web-v*']
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 permissions:
   contents: read
-  packages: write
-concurrency:
-  group: production-web
-  cancel-in-progress: false
+
 jobs:
-  images:
+  probar:
+    name: Pruebas
     runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.image.outputs.name }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm}
-      - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test
-      - id: image
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # El typecheck necesita los paquetes compartidos compilados
+      - run: npm run build -w @tuevento/contracts && npm run build -w @tuevento/client
+      - run: npm run typecheck
+      - run: npm test
+
+  publicar:
+    name: Publicar ${{ matrix.name }}
+    needs: probar
+    # La etiqueta :main solo puede salir de main (también con workflow_dispatch)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: gateway
+            build_args: |
+              RELEASE_SHA=${{ github.sha }}
+          # Valores públicos de los App Links (/.well-known/*), en vars del repositorio
+          - name: api
+            build_args: |
+              ANDROID_CERT_SHA256=${{ vars.ANDROID_CERT_SHA256 }}
+              APPLE_TEAM_ID=${{ vars.APPLE_TEAM_ID }}
+              MOBILE_APP_ID=${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway y -api
+      - id: image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "name=ghcr.io/${REPOSITORY,,}-${{ matrix.name }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v7
         with:
           context: .
-          target: backend
+          file: Dockerfile
+          target: ${{ matrix.name }}
           push: true
-          tags: ${{ steps.image.outputs.name }}-api:${{ github.sha }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: frontend
-          push: true
-          tags: ${{ steps.image.outputs.name }}-web:${{ github.sha }}
-  deploy:
-    needs: images
-    environment: production
+          build-args: ${{ matrix.build_args }}
+          tags: |
+            ${{ steps.image.outputs.name }}:main
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          provenance: true
+          sbom: true
+
+  desplegar:
+    name: Desplegar en Coolify
+    needs: publicar
     runs-on: ubuntu-latest
-    permissions: {contents: read}
+    environment: production
     steps:
-      - uses: actions/checkout@v4
-      - name: Configure SSH
+      - name: ¿Coolify está configurado?
+        id: coolify
         env:
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL_EN: ${{ vars.SITE_URL_EN }}
         run: |
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-      - name: Deploy immutable images
+          if [ -n "$COOLIFY_WEBHOOK" ] && [ -n "$COOLIFY_TOKEN" ] && [ -n "$SITE_URL" ] && [ -n "$SITE_URL_EN" ]; then
+            echo "listo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "listo=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Imágenes publicadas, pero no se despliega: faltan COOLIFY_WEBHOOK, COOLIFY_TOKEN, SITE_URL o SITE_URL_EN en el entorno production (los pone la plataforma)."
+          fi
+
+      - name: Pedir el despliegue a Coolify
+        if: steps.coolify.outputs.listo == 'true'
         env:
-          HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_LOGIN: ${{ vars.DEPLOY_USER }}
-          IMAGE: ${{ needs.images.outputs.image }}
-          TAG: ${{ github.sha }}
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
-          test -n "$HOST" && test -n "$DEPLOY_LOGIN"
-          scp compose.production.yml "$DEPLOY_LOGIN@$HOST:tueventofun/compose.yml"
-          # shellcheck disable=SC2029 # Deliberately pass immutable image coordinates to the server.
-          ssh "$DEPLOY_LOGIN@$HOST" "cd tueventofun && IMAGE_BASE='$IMAGE' IMAGE_TAG='$TAG' docker compose pull && IMAGE_BASE='$IMAGE' IMAGE_TAG='$TAG' docker compose up -d --wait"
-      - name: Public health
+          # Coolify (4.3.x) solo despliega con POST
+          curl --fail-with-body --silent --show-error --retry 3 --max-time 60 \
+            --request POST --header "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_WEBHOOK"
+
+      # Cada redespliegue corta el sitio ~1 minuto (Coolify para y arranca los
+      # contenedores): se espera a que los dos dominios sirvan el commit nuevo.
+      - name: Comprobar que la versión nueva ya sirve en los dos dominios
+        if: steps.coolify.outputs.listo == 'true'
         env:
-          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
-        run: curl --fail --retry 5 --retry-delay 3 "$PUBLIC_ORIGIN/api/health"
-      - if: always()
-        run: rm -f ~/.ssh/id_ed25519
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL_EN: ${{ vars.SITE_URL_EN }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 60); do
+            es=$(curl --fail --silent --max-time 10 "$SITE_URL/version.json" | jq -r '.revision' || true)
+            en=$(curl --fail --silent --max-time 10 "$SITE_URL_EN/version.json" | jq -r '.revision' || true)
+            if [ "$es" = "$EXPECTED_SHA" ] && [ "$en" = "$EXPECTED_SHA" ]; then
+              echo "Desplegado: $EXPECTED_SHA en $SITE_URL y $SITE_URL_EN"
+              exit 0
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              echo "::error::Coolify no sirvió la revisión esperada en 10 minutos (es: $es, en: $en)."
+              exit 1
+            fi
+            sleep 10
+          done

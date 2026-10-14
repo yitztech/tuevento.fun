@@ -3,16 +3,32 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const target = process.env.TEST_WEB_URL || "http://localhost:5187";
+// Un idioma por dominio: el inglés vive en el host de SITE_URL_EN. Contra localhost
+// se usa ese host en el mismo puerto y Chromium lo resuelve a 127.0.0.1, así la
+// prueba no depende de DNS (CI) y el gateway recibe el Host inglés.
+const englishHost = new URL(
+  process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
+).hostname;
+const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(target).hostname);
+const targetEn =
+  process.env.TEST_WEB_URL_EN ||
+  (local
+    ? `http://${englishHost}:${new URL(target).port || 80}`
+    : `https://${englishHost}`);
 const artifacts = path.resolve("qa-artifacts");
 fs.mkdirSync(artifacts, { recursive: true });
 (async () => {
   const browser = await chromium.launch({
     headless: process.env.HEADED !== "1",
+    args: local ? [`--host-resolver-rules=MAP ${englishHost} 127.0.0.1`] : [],
   });
+  // El navegador pide español: el dominio inglés debe responder en inglés igualmente.
   const context = await browser.newContext({
     viewport: { width: 1512, height: 1100 },
     reducedMotion: "reduce",
+    locale: "es-ES",
     permissions: ["clipboard-read", "clipboard-write"],
+    ignoreHTTPSErrors: true,
   });
   let createdUser;
   const page = await context.newPage();
@@ -59,14 +75,18 @@ fs.mkdirSync(artifacts, { recursive: true });
     ).toBeVisible();
     await shot("dashboard-desktop");
     checks.push("Demostración con eventos y métricas persistidas");
-    await page
-      .getByRole("combobox", { name: "Cambiar idioma" })
-      .selectOption("en");
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    // El otro idioma es un enlace a su dominio, nunca una redirección
+    const toEnglish = page.locator('a.language-switcher[hreflang="en"]').first();
+    await expect(toEnglish).toHaveAttribute("href", `${targetEn}/app`);
+    expect(new URL(page.url()).origin).toBe(new URL(target).origin);
+    await toEnglish.click();
+    await page.waitForURL(`${targetEn}/app`);
     await expect(
       page.getByRole("heading", {
         name: "Life is better celebrated together.",
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30000 });
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await page.reload();
     await expect(
@@ -74,15 +94,19 @@ fs.mkdirSync(artifacts, { recursive: true });
         name: "Life is better celebrated together.",
       }),
     ).toBeVisible();
+    await expect(
+      page.locator('a.language-switcher[hreflang="es"]').first(),
+    ).toHaveAttribute("href", `${target}/app`);
     await shot("dashboard-en-desktop");
     await page.setViewportSize({ width: 390, height: 844 });
     await shot("dashboard-en-mobile");
     await page.setViewportSize({ width: 1512, height: 1100 });
-    await page
-      .getByRole("combobox", { name: "Change language" })
-      .selectOption("es");
+    await page.goto(target + "/app");
+    await expect(
+      page.getByRole("heading", { name: "La vida se celebra juntos." }),
+    ).toBeVisible();
     checks.push(
-      "Selector ES/EN, idioma HTML y preferencia conservada al recargar",
+      "Idioma por dominio con navegador en español; enlace al otro dominio sin redirección",
     );
 
     await page.setViewportSize({ width: 390, height: 844 });
@@ -111,23 +135,50 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(
       page.getByText("Escribe al menos 2 caracteres.").first(),
     ).toBeVisible();
-    await page
-      .getByRole("combobox", { name: "Cambiar idioma" })
-      .selectOption("en");
     await expect(
-      page.getByText("Enter at least 2 characters.").first(),
+      page.getByRole("link", { name: "Condiciones de uso" }),
+    ).toHaveAttribute("href", "/condiciones");
+    const english = await context.newPage();
+    english.on("pageerror", (e) => errors.push(e.message));
+    await english.goto(targetEn + "/registro");
+    await english
+      .getByRole("button", { name: "Create my account", exact: true })
+      .click();
+    await expect(
+      english.getByText("Enter at least 2 characters.").first(),
     ).toBeVisible();
     await expect(
-      page.getByLabel("Email address", { exact: true }),
+      english.getByLabel("Email address", { exact: true }),
     ).toBeVisible();
-    await page.reload();
     await expect(
-      page.getByRole("button", { name: "Create my account", exact: true }),
+      english.getByRole("link", { name: "Terms of use" }),
+    ).toHaveAttribute("href", "/terms");
+    checks.push("Registro y validaciones en inglés en el dominio inglés");
+    await english.goto(targetEn + "/privacy");
+    await expect(
+      english.getByRole("heading", { name: "Privacy policy" }),
     ).toBeVisible();
-    await page
-      .getByRole("combobox", { name: "Change language" })
-      .selectOption("es");
-    checks.push("Registro y validaciones traducidos a inglés");
+    await english.goto(targetEn + "/terms");
+    await expect(
+      english.getByRole("heading", { name: "Terms of use" }),
+    ).toBeVisible();
+    await english.goto(target + "/privacidad");
+    await expect(
+      english.getByRole("heading", { name: "Aviso de privacidad" }),
+    ).toBeVisible();
+    // La ruta inglesa en el dominio español muestra el texto en español
+    await english.goto(target + "/privacy");
+    await expect(
+      english.getByRole("heading", { name: "Aviso de privacidad" }),
+    ).toBeVisible();
+    const canonical = english.locator('link[rel="canonical"]');
+    if (await canonical.count())
+      await expect(canonical).toHaveAttribute("href", /\/privacidad$/);
+    await english.goto(target + "/condiciones");
+    await expect(
+      english.getByRole("heading", { name: "Condiciones de uso" }),
+    ).toBeVisible();
+    checks.push("Privacidad y condiciones en cada dominio y su idioma");
     const unique = Date.now(),
       email = `ui-${unique}@example.invalid`,
       password = crypto.randomBytes(20).toString("hex");
@@ -178,19 +229,19 @@ fs.mkdirSync(artifacts, { recursive: true });
       .fill("Nos encantará compartir este día. Datos de prueba.");
     await page.getByRole("button", { name: "Tropical", exact: true }).click();
     await shot("event-editor-desktop");
-    await page
-      .getByRole("combobox", { name: "Cambiar idioma" })
-      .selectOption("en");
+    // El editor en inglés, con la sesión de demostración del dominio inglés
+    await english.goto(targetEn + "/eventos/nuevo");
     await expect(
-      page.getByLabel("Date and time", { exact: true }),
-    ).toBeVisible();
-    await expect(page.getByLabel("Event name", { exact: true })).toHaveValue(
-      "Fiesta de prueba QA",
-    );
-    await shot("event-editor-en");
-    await page
-      .getByRole("combobox", { name: "Change language" })
-      .selectOption("es");
+      english.getByLabel("Date and time", { exact: true }),
+    ).toBeVisible({ timeout: 30000 });
+    await english
+      .getByLabel("Event name", { exact: true })
+      .fill("Fiesta de prueba QA");
+    await english.evaluate(() => document.fonts.ready);
+    await english.screenshot({
+      path: path.join(artifacts, "event-editor-en.png"),
+      fullPage: true,
+    });
     await page.getByRole("button", { name: "Crear mi evento" }).click();
     await expect(
       page.getByRole("heading", { name: "Fiesta de prueba QA" }),
@@ -241,6 +292,9 @@ fs.mkdirSync(artifacts, { recursive: true });
     const link = await page
       .getByLabel("Enlace privado de invitación")
       .inputValue();
+    // El enlace usa el dominio actual y no lleva idioma en la query
+    expect(link.startsWith(`${target}/i/`)).toBe(true);
+    expect(link).not.toContain("lang=");
     await page
       .getByRole("button", { name: "Copiar enlace", exact: true })
       .click();
@@ -258,6 +312,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     const guestContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       reducedMotion: "reduce",
+      ignoreHTTPSErrors: true,
     });
     const guest = await guestContext.newPage();
     guest.on("pageerror", (e) => errors.push(e.message));
@@ -283,7 +338,8 @@ fs.mkdirSync(artifacts, { recursive: true });
       path: path.join(artifacts, "rsvp-mobile.png"),
       fullPage: true,
     });
-    await guest.goto(link.replace("lang=es", "lang=en"));
+    // El mismo enlace en el dominio inglés muestra la invitación en inglés
+    await guest.goto(link.replace(target, targetEn));
     await expect(
       guest.getByRole("heading", {
         name: "It wouldn't be the same without you.",
@@ -300,15 +356,15 @@ fs.mkdirSync(artifacts, { recursive: true });
       path: path.join(artifacts, "rsvp-en-mobile.png"),
       fullPage: true,
     });
-    await guest
-      .getByRole("combobox", { name: "Change language" })
-      .selectOption("es");
-    await guest.reload();
+    await expect(
+      guest.locator('a.language-switcher[hreflang="es"]').first(),
+    ).toHaveAttribute("href", link);
+    await guest.goto(link);
     await expect(
       guest.getByRole("button", { name: "Guardar mi respuesta", exact: true }),
     ).toBeVisible();
     checks.push(
-      "Invitación pública ES/EN por enlace, contenido original y preferencia persistente",
+      "Invitación pública en ambos dominios con el mismo enlace y contenido original",
     );
     await expect(
       page
@@ -358,19 +414,26 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(
       page.getByRole("heading", { name: "Familia Prueba" }),
     ).toBeVisible();
-    await page
-      .getByRole("combobox", { name: "Cambiar idioma" })
-      .selectOption("en");
-    await expect(
-      page.getByText("1 attending, 1 not attending and 1 pending."),
-    ).toBeVisible();
-    await page
-      .getByRole("combobox", { name: "Change language" })
-      .selectOption("es");
     await expect(
       page.getByText("1 confirmado, 1 no asistirá y 1 en espera."),
     ).toBeVisible();
-    checks.push("Notificaciones traducidas dinámicamente en el backend");
+    // Sesión por dominio: en el dominio inglés hay que entrar con la misma cuenta
+    await english.goto(targetEn + "/acceso");
+    await english.getByLabel("Email address", { exact: true }).fill(email);
+    await english.getByLabel("Password", { exact: true }).fill(password);
+    await english
+      .getByRole("button", { name: "Sign in to my space", exact: true })
+      .click();
+    await expect(
+      english.getByRole("heading", { name: "Fiesta de prueba QA" }),
+    ).toBeVisible();
+    await english.goto(targetEn + "/notificaciones");
+    await expect(
+      english.getByText("1 attending, 1 not attending and 1 pending."),
+    ).toBeVisible();
+    checks.push(
+      "Notificaciones en el idioma del dominio; sesión independiente por dominio",
+    );
     await page
       .getByRole("button", { name: "Marcar todas como leídas" })
       .click();

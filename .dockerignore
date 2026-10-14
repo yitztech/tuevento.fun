@@ -1,12 +1,18 @@
+# Contexto de build: solo entra lo que necesitan los targets api y gateway
 node_modules
+**/node_modules
 **/dist
 .git
+.github
+.claude
 .env
 .env.*
 qa-artifacts
 .impeccable
 docs
+*.md
 *.log
+**/.DS_Store
 
 apps/web/android
 apps/web/ios

@@ -22,11 +22,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <intent-filter>
+            <!-- App Links verificados (assetlinks.json en el dominio): solo esta app abre el enlace. -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="tueventofun" android:host="auth" />
+                <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/app-link/auth" />
             </intent-filter>
         </activity>
 

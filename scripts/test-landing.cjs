@@ -4,15 +4,28 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { execFileSync } = require("node:child_process");
 const target = process.env.TEST_WEB_URL || "http://localhost:5187";
+// Un idioma por dominio (ver test-browser.cjs): el inglés en el host de SITE_URL_EN.
+const englishHost = new URL(
+  process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
+).hostname;
+const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(target).hostname);
+const targetEn =
+  process.env.TEST_WEB_URL_EN ||
+  (local
+    ? `http://${englishHost}:${new URL(target).port || 80}`
+    : `https://${englishHost}`);
 const artifacts = path.resolve("qa-artifacts");
 fs.mkdirSync(artifacts, { recursive: true });
 (async () => {
   const browser = await chromium.launch({
     headless: process.env.HEADED !== "1",
+    args: local ? [`--host-resolver-rules=MAP ${englishHost} 127.0.0.1`] : [],
   });
   const context = await browser.newContext({
     viewport: { width: 1512, height: 1100 },
     reducedMotion: "reduce",
+    locale: "es-ES",
+    ignoreHTTPSErrors: true,
   });
   const page = await context.newPage();
   const errors = [],
@@ -56,6 +69,15 @@ fs.mkdirSync(artifacts, { recursive: true });
     ).toBeVisible();
     await shot("landing-desktop");
     expect(apiRequests.filter(url => !url.endsWith("/analytics/visit"))).toEqual([]);
+    const footer = page.getByRole("navigation", {
+      name: "Enlaces del pie de página",
+    });
+    await expect(
+      footer.getByRole("link", { name: "Privacidad", exact: true }),
+    ).toHaveAttribute("href", "/privacidad");
+    await expect(
+      footer.getByRole("link", { name: "Condiciones", exact: true }),
+    ).toHaveAttribute("href", "/condiciones");
     checks.push("Landing pública sin crear sesión; solo telemetría anónima");
     await page.setViewportSize({ width: 390, height: 844 });
     await shot("landing-mobile");
@@ -80,9 +102,16 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page.setViewportSize({ width: 768, height: 1024 });
     await shot("landing-tablet");
     await page.setViewportSize({ width: 1512, height: 1100 });
+    // El inglés se ofrece como enlace a su dominio; la página no se redirige sola
+    expect(new URL(page.url()).origin).toBe(new URL(target).origin);
     await page
-      .getByRole("combobox", { name: "Cambiar idioma" })
-      .selectOption("en");
+      .locator('.landing-header a.language-switcher[hreflang="en"]')
+      .first()
+      .click();
+    // El enlace conserva la ruta, la query y el ancla actuales (aquí #preguntas)
+    await page.waitForURL(
+      (url) => url.origin === new URL(targetEn).origin && url.pathname === "/",
+    );
     await expect(
       page.getByRole("heading", { name: "The joy is being together." }),
     ).toBeVisible();
@@ -91,12 +120,20 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(page).toHaveTitle(
       "TuEventoFun · Invite, gather and celebrate",
     );
+    await expect(
+      page
+        .getByRole("navigation", { name: "Footer links" })
+        .getByRole("link", { name: "Privacy", exact: true }),
+    ).toHaveAttribute("href", "/privacy");
+    const canonical = page.locator('link[rel="canonical"]');
+    if (await canonical.count())
+      await expect(canonical).toHaveAttribute("href", `${targetEn}/`);
     await shot("landing-en-desktop");
     await page.setViewportSize({ width: 390, height: 844 });
     await shot("landing-en-mobile");
     await page.setViewportSize({ width: 1512, height: 1100 });
     checks.push(
-      "Landing ES/EN: textos, título, idioma HTML y preferencia persistente",
+      "Landing en el dominio inglés: textos, título, idioma HTML y enlaces legales",
     );
     await page
       .getByRole("group", { name: "Reply from Leo" })
@@ -148,10 +185,15 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(
       page.getByRole("button", { name: "Tropical", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
-    const me = await context.request.get(target + "/api/auth/me");
-    userIds.push((await me.json()).id);
+    // Desde la página: el host inglés solo lo resuelve Chromium (--host-resolver-rules)
+    const created = await page.evaluate(() =>
+      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json()),
+    );
+    userIds.push(created.id);
+    // La cuenta guarda el idioma del dominio donde se registró
+    expect(created.locale).toBe("en");
     checks.push(
-      "CTA de diseño crea una cuenta real y conserva Tropical al abrir el editor",
+      "CTA de diseño crea una cuenta real en inglés y conserva Tropical al abrir el editor",
     );
     await page
       .getByRole("navigation", { name: "Main navigation" })
@@ -164,7 +206,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     checks.push(
       "Panel en /app accesible después de la captación, con cuenta vacía",
     );
-    await page.goto(target);
+    await page.goto(targetEn);
     await page
       .getByRole("link", { name: "Create my first event", exact: true })
       .click();
@@ -186,6 +228,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     const demoContext = await browser.newContext({
       viewport: { width: 1512, height: 1100 },
       reducedMotion: "reduce",
+      ignoreHTTPSErrors: true,
     });
     const demo = await demoContext.newPage();
     demo.on("pageerror", (e) => errors.push(e.message));

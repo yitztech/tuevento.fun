@@ -1,10 +1,4 @@
-import {
-  tr,
-  getLocale,
-  formatLocale,
-  useLocale,
-  LanguageSwitcher,
-} from "./i18n";
+import { tr, formatLocale, useLocale, LanguageSwitcher } from "./i18n";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   Routes,
@@ -48,11 +42,13 @@ import { MobileConnect } from "./mobile-connect";
 import { OwnerDashboard } from "./owner";
 import { AuthPage, ProfilePage } from "./account";
 import { PublicRsvp } from "./public-rsvp";
+import { LegalPage, legalPageFor } from "./legal";
 export type { Runtime } from "./context";
+export { SeoLinks, getLocale, switchAppLocale } from "./i18n";
 export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const { locale } = useLocale();
+  // <html lang> lo fija el gateway según el dominio; aquí solo el título.
   useEffect(() => {
-    document.documentElement.lang = locale;
     document.title =
       locale === "en"
         ? "TuEventoFun · A good reason to celebrate"
@@ -63,7 +59,6 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       new EventApi({
         baseUrl: runtime.apiBase,
         fetch: runtime.fetch,
-        language: getLocale,
         platform: runtime.platform,
         appVersion: runtime.appVersion,
       }),
@@ -80,7 +75,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const location = useLocation(),
     navigate = useNavigate(),
     timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const isPublic = location.pathname.startsWith("/i/"),
+  const legal = legalPageFor(location.pathname);
+  const isPublic = location.pathname.startsWith("/i/") || legal !== null,
     isAuth = ["/registro", "/acceso"].includes(location.pathname);
   const toast = useCallback((text: string) => {
     setMessage(text);
@@ -186,7 +182,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   };
   return (
     <AppContext.Provider value={context}>
-      {isPublic ? (
+      {legal ? (
+        <LegalPage page={legal} />
+      ) : isPublic ? (
         <Routes>
           <Route path="/i/:token" element={<PublicRsvp />} />
         </Routes>

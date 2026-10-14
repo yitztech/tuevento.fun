@@ -4,6 +4,8 @@ import {
   ConflictException,
   ServiceUnavailableException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   CanActivate,
   ExecutionContext,
 } from "@nestjs/common";
@@ -19,10 +21,16 @@ import { OAuth2Client } from "google-auth-library";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { clientPlatform } from "./client-platform";
 import { Database } from "./database";
-import type { RegisterInput, User } from "@tuevento/contracts";
+import type { Locale, RegisterInput, User } from "@tuevento/contracts";
+import { requestLocale } from "./request-locale";
 const scrypt = promisify(scryptCallback);
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
+// Freno a la fuerza bruta de contraseñas, por cuenta y no por IP: así no afecta a
+// oficinas tras NAT ni a las pruebas, pero detiene el adivinado contra un correo.
+const LOGIN_MAX_FAILURES = 5,
+  LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const loginFailures = new Map<string, { count: number; reset: number }>();
 export const userView = (r: any): User => ({
   id: r.id,
   firstName: r.first_name,
@@ -33,6 +41,7 @@ export const userView = (r: any): User => ({
   avatar: r.avatar,
   isDemo: r.is_demo,
   isOwner: r.is_owner === true,
+  locale: r.locale === "en" ? "en" : "es",
 });
 export type AuthedRequest = FastifyRequest & { user: User };
 @Injectable()
@@ -43,11 +52,11 @@ export class AuthService {
     const key = (await scrypt(password, salt, 64)) as Buffer;
     return `${salt}:${key.toString("hex")}`;
   }
-  async register(data: RegisterInput) {
+  async register(data: RegisterInput, locale: Locale) {
     const passwordHash = await this.passwordHash(data.password);
     try {
       const [r] = await this.db.query(
-        "INSERT INTO users(id,first_name,last_name,email,phone,username,password_hash) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,phone,username,password_hash,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
         [
           randomUUID(),
           data.firstName,
@@ -56,6 +65,7 @@ export class AuthService {
           data.phone,
           data.username,
           passwordHash,
+          locale,
         ],
       );
       return userView(r);
@@ -68,6 +78,17 @@ export class AuthService {
     }
   }
   async login(email: string, password: string) {
+    const key = email.toLowerCase();
+    const now = Date.now();
+    if (loginFailures.size > 10_000)
+      for (const [k, entry] of loginFailures)
+        if (entry.reset <= now) loginFailures.delete(k);
+    const failure = loginFailures.get(key);
+    if (failure && failure.reset > now && failure.count >= LOGIN_MAX_FAILURES)
+      throw new HttpException(
+        "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     const [r] = await this.db.query(
       "SELECT * FROM users WHERE email=$1 AND is_demo=false",
       [email],
@@ -79,10 +100,18 @@ export class AuthService {
     if (
       !r?.password_hash ||
       !timingSafeEqual(result, Buffer.from(expected, "hex"))
-    )
+    ) {
+      const current =
+        failure && failure.reset > now
+          ? failure
+          : { count: 0, reset: now + LOGIN_WINDOW_MS };
+      current.count++;
+      loginFailures.set(key, current);
       throw new UnauthorizedException(
         "El correo o la contraseña no coinciden.",
       );
+    }
+    loginFailures.delete(key);
     return userView(r);
   }
   cookieOptions() {
@@ -185,7 +214,7 @@ export class AuthService {
       );
     try {
       const [r] = await this.db.query(
-        "INSERT INTO users(id,first_name,last_name,email,username,google_sub) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,username,google_sub,locale) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
         [
           randomUUID(),
           payload.given_name || "Anfitrión",
@@ -193,6 +222,7 @@ export class AuthService {
           payload.email.toLowerCase(),
           "anfitrion_" + randomBytes(5).toString("hex"),
           payload.sub,
+          requestLocale(req),
         ],
       );
       await this.db.query("INSERT INTO activity(id,kind,platform,user_id) VALUES($1,'registration',$2,$3)", [randomUUID(), clientPlatform(req), r.id]);

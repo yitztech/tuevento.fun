@@ -17,7 +17,9 @@ export async function nativeRuntime():Promise<Runtime> {
  };
  const api=new EventApi({baseUrl:`${origin.origin}/api`,platform,fetch:transport,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0'});
  const handleURL=async(url:string)=>{
-  const parsed=new URL(url);if(parsed.protocol!=='tueventofun:'||parsed.hostname!=='auth')return;
+  // Solo el App Link verificado del propio dominio; el esquema tueventofun:// se retiró
+  // porque cualquier app puede registrarlo y robar el código.
+  const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!==origin.hostname||parsed.pathname!=='/app-link/auth')return;
   const verifier=localStorage.getItem('tueventofun:pkce');if(!verifier)return;
   try{await api.request('/auth/mobile/exchange','POST',{code:parsed.searchParams.get('code'),verifier});localStorage.removeItem('tueventofun:pkce');await Browser.close().catch(()=>{});window.location.hash='/app';window.location.reload()}catch{window.alert('No se pudo conectar la sesión. Vuelve a intentarlo. / Could not connect your session. Please try again.')}
  };
@@ -25,7 +27,15 @@ export async function nativeRuntime():Promise<Runtime> {
  const launch=await App.getLaunchUrl();if(launch?.url)void handleURL(launch.url);
  await App.addListener('backButton',({canGoBack})=>{if(canGoBack)window.history.back();else void App.exitApp()});
  document.body.classList.add('native-app');
- return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,
+ // El origen capacitor://localhost es cross-site frente a la API: la cookie SameSite=lax
+ // de sesión no viaja en EventSource, así que aquí se usa sondeo corto y recarga al volver
+ // a primer plano en lugar de SSE. Latencia máxima de unos 10 s (la web usa SSE).
+ const subscribe=(onChange:()=>void)=>{
+  const timer=setInterval(()=>{if(document.visibilityState==='visible')onChange()},10000);
+  const resume=App.addListener('appStateChange',({isActive})=>{if(isActive)onChange()});
+  return ()=>{clearInterval(timer);void resume.then(handle=>handle.remove())};
+ };
+ return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,subscribe,
  copy:async text=>{await Clipboard.write({string:text})},
  openExternal:url=>{const u=new URL(url);if(['https:','mailto:','tel:'].includes(u.protocol))window.open(url,'_blank','noopener,noreferrer')},
  startNativeLogin:async()=>{const verifier=base64url(crypto.getRandomValues(new Uint8Array(32)).buffer);localStorage.setItem('tueventofun:pkce',verifier);const challenge=base64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));await Browser.open({url:`${origin.origin}/acceso?appChallenge=${challenge}&source=${platform}`})}

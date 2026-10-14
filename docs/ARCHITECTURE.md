@@ -11,9 +11,13 @@ TuEventoFun es un monorepo TypeScript. La web no contiene reglas de negocio excl
 | `apps/api`            | NestJS sobre Fastify: autenticación, casos de uso y acceso a PostgreSQL.        |
 | `apps/api/migrations` | Esquema relacional versionado.                                                  |
 
-## Proxy y reinicios
+## Gateway, proxy y reinicios
 
-Nginx usa la resolución dinámica de DNS de Docker para encontrar al backend cuando cambia su IP al recrear el contenedor. El healthcheck del frontend verifica tanto el documento estático como `/api/health` a través del proxy. Se usa `resolve` con una zona compartida, disponible en la versión de Nginx del contenedor; referencia: [documentación de upstream resolve](https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server).
+`gateway/` contiene la configuración del Nginx de entrada (imagen `gateway` del `Dockerfile`): `default.conf.template` (rutas, IP real, `/healthz`, `/version.json`, robots, sitemap, `canonical`/`hreflang`), `snippets/` (cabeceras de proxy y de seguridad con la CSP), `16-analytics.sh` (Umami opcional) y `17-sites.sh` (idioma por dominio a partir de `SITE_URL_ES`/`SITE_URL_EN`). La configuración va dentro de la imagen; el compose no monta archivos.
+
+Nginx usa la resolución dinámica de DNS de Docker para encontrar a la API cuando cambia su IP al recrear el contenedor; se usa `resolve` con una zona compartida ([documentación de upstream resolve](https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)). El healthcheck del gateway usa `/healthz`, que responde el propio Nginx: el gateway sigue sano aunque la API se esté reiniciando, y la API tiene su propio healthcheck.
+
+IP real: Traefik (subred `TRUSTED_PROXY_CIDR`) añade la IP del cliente a `X-Forwarded-For`; el gateway solo acepta esa cabecera desde esa subred y la sobrescribe con la IP resultante hacia la API.
 
 ## Persistencia y seguridad
 
