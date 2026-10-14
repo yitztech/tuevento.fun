@@ -6,6 +6,7 @@ import { join } from "node:path";
 export class Database implements OnModuleInit, OnModuleDestroy {
   readonly pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    password: process.env.PGPASSWORD || undefined,
     max: 12,
   });
   private sweepTimer?: NodeJS.Timeout;

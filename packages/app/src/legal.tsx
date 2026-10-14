@@ -7,7 +7,7 @@ import {
   type Locale,
   type LocalizedPage,
 } from "@tuevento/contracts";
-import { Logo } from "./components";
+import { Logo, Container } from "./components";
 import { LanguageSwitcher, useLocale } from "./i18n";
 
 /**
@@ -302,41 +302,43 @@ export function LegalPage({ page }: { page: LegalKind }) {
   }).format(new Date(`${LEGAL_UPDATED}T00:00:00Z`));
   return (
     <div className="legal-page">
-      <header>
-        <Logo />
-        <LanguageSwitcher />
-      </header>
-      <main>
-        <Link to="/" className="text-link">
-          <ArrowLeft size={16} />
-          {locale === "en" ? "Back to home" : "Volver al inicio"}
-        </Link>
-        <h1>{content.title}</h1>
-        <p className="legal-updated">
-          {locale === "en" ? "Last updated: " : "Última actualización: "}
-          {updated}
-        </p>
-        <p className="legal-intro">{content.intro}</p>
-        {content.sections.map((section) => (
-          <section key={section.title}>
-            <h2>{section.title}</h2>
-            {section.body.map((text) => (
-              <p key={text}>{text}</p>
-            ))}
-          </section>
-        ))}
-        <p className="legal-other">
-          <Link to={legalPath(other, locale)}>
-            {other === "privacy"
-              ? locale === "en"
-                ? "Privacy policy"
-                : "Aviso de privacidad"
-              : locale === "en"
-                ? "Terms of use"
-                : "Condiciones de uso"}
+      <Container width="prose">
+        <header>
+          <Logo />
+          <LanguageSwitcher />
+        </header>
+        <main>
+          <Link to="/" className="text-link">
+            <ArrowLeft size={16} />
+            {locale === "en" ? "Back to home" : "Volver al inicio"}
           </Link>
-        </p>
-      </main>
+          <h1>{content.title}</h1>
+          <p className="legal-updated">
+            {locale === "en" ? "Last updated: " : "Última actualización: "}
+            {updated}
+          </p>
+          <p className="legal-intro">{content.intro}</p>
+          {content.sections.map((section) => (
+            <section key={section.title}>
+              <h2>{section.title}</h2>
+              {section.body.map((text) => (
+                <p key={text}>{text}</p>
+              ))}
+            </section>
+          ))}
+          <p className="legal-other">
+            <Link to={legalPath(other, locale)}>
+              {other === "privacy"
+                ? locale === "en"
+                  ? "Privacy policy"
+                  : "Aviso de privacidad"
+                : locale === "en"
+                  ? "Terms of use"
+                  : "Condiciones de uso"}
+            </Link>
+          </p>
+        </main>
+      </Container>
     </div>
   );
 }

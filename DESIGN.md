@@ -185,7 +185,16 @@ Las etiquetas de asistencia combinan nombre, punto de color y estado accesible. 
 
 ### Cards / Containers
 
-La tarjeta de evento integra fotografía, fecha superpuesta, tema, título, lugar y barra de asistencia. Tiene borde fino, esquinas de tarjeta y padding interior de 17 px, con 15 px abajo. El hover cambia el borde y escala la foto a 1.025 en 500 ms; no levanta la tarjeta. Las invitaciones conservan fotografía y composición temática.
+El sistema estandariza anchos de contenedor y tarjetas compartidos con `micitaentiempo.online`:
+- `--container-page` (1152px): catálogo, páginas públicas y vistas completas.
+- `--container-flow` (896px): flujos guiados y modales amplios.
+- `--container-prose` (72ch): páginas legales (`/privacidad`, `/condiciones`), lecturas largas y notas.
+- `--container-form` (640px): formularios de una columna.
+- `--container-auth` (448px): tarjetas de acceso y registro (`/acceso`, `/registro`).
+- Componentes `<Container width="...">` y `<Card>` en `packages/app/src/components.tsx`.
+- Sombra suave calculada `--shadow-soft: 0 1px 3px rgba(38, 28, 24, 0.05), 0 8px 24px rgba(38, 28, 24, 0.06);`.
+
+La tarjeta de evento integra fotografía, fecha superpuesta, tema, título, lugar y barra de asistencia. Utiliza borde fino, esquinas con `--radius`, fondo `--ground` y sombra `--shadow-soft`. El hover intensifica el borde a `--line-strong` y eleva sutilmente la tarjeta, escalando la foto a 1.025 en 500 ms. Las invitaciones conservan fotografía y composición temática.
 
 ### RSVP
 

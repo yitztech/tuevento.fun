@@ -1,6 +1,6 @@
 # Publica las imágenes en GHCR y despliega en Coolify cuando cambia main.
 #
-#   probar → publicar (gateway y api) → desplegar (webhook de Coolify) → comprobar
+#   probar → publicar (gateway, api y postgres) → desplegar (webhook de Coolify) → comprobar
 #
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variables SITE_URL y
 # SITE_URL_EN) lo rellena la plataforma. Mientras no exista, se publican las imágenes
@@ -59,6 +59,8 @@ jobs:
               ANDROID_CERT_SHA256=${{ vars.ANDROID_CERT_SHA256 }}
               APPLE_TEAM_ID=${{ vars.APPLE_TEAM_ID }}
               MOBILE_APP_ID=${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
+          - name: postgres
+            build_args: ""
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -67,7 +69,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway y -api
+      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway, -api y -postgres
       - id: image
         env:
           REPOSITORY: ${{ github.repository }}
@@ -75,8 +77,7 @@ jobs:
       - uses: docker/build-push-action@v7
         with:
           context: .
-          file: Dockerfile
-          target: ${{ matrix.name }}
+          file: services/${{ matrix.name }}/Dockerfile
           push: true
           build-args: ${{ matrix.build_args }}
           tags: |

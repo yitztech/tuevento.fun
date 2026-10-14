@@ -4,7 +4,7 @@
   font-size: 16px;
 }
 .landing-container {
-  width: min(1280px, calc(100% - 96px));
+  width: min(var(--container-page, 1152px), calc(100% - 96px));
   margin-inline: auto;
 }
 .landing-header {
@@ -152,7 +152,7 @@
   display: flex;
   align-items: center;
   gap: 13px;
-  box-shadow: 0 12px 32px #1820341a;
+  box-shadow: var(--shadow-soft);
   max-width: calc(100% - 10px);
 }
 .landing-photo-heart {
@@ -300,7 +300,7 @@
 }
 .landing-invitation-preview .invitation-art {
   border-radius: 14px;
-  box-shadow: 0 18px 42px #17274c1c;
+  box-shadow: 0 16px 36px rgba(38, 28, 24, 0.09);
   overflow: hidden;
 }
 .landing-invitation-preview .invitation-photo {

@@ -13,7 +13,7 @@ TuEventoFun es un monorepo TypeScript. La web no contiene reglas de negocio excl
 
 ## Gateway, proxy y reinicios
 
-`gateway/` contiene la configuración del Nginx de entrada (imagen `gateway` del `Dockerfile`): `default.conf.template` (rutas, IP real, `/healthz`, `/version.json`, robots, sitemap, `canonical`/`hreflang`), `snippets/` (cabeceras de proxy y de seguridad con la CSP), `16-analytics.sh` (Umami opcional) y `17-sites.sh` (idioma por dominio a partir de `SITE_URL_ES`/`SITE_URL_EN`). La configuración va dentro de la imagen; el compose no monta archivos.
+`services/gateway/` contiene la configuración del Nginx de entrada (imagen construida desde `services/gateway/Dockerfile`): `default.conf.template` (rutas, IP real, `/healthz`, `/version.json`, robots, sitemap, `canonical`/`hreflang`), `snippets/` (cabeceras de proxy y de seguridad con la CSP), `16-analytics.sh` (Umami opcional) y `17-sites.sh` (idioma por dominio a partir de `SITE_URL_ES`/`SITE_URL_EN`). La configuración va dentro de la imagen; el compose no monta archivos.
 
 Nginx usa la resolución dinámica de DNS de Docker para encontrar a la API cuando cambia su IP al recrear el contenedor; se usa `resolve` con una zona compartida ([documentación de upstream resolve](https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)). El healthcheck del gateway usa `/healthz`, que responde el propio Nginx: el gateway sigue sano aunque la API se esté reiniciando, y la API tiene su propio healthcheck.
 

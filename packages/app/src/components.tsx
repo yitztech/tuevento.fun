@@ -439,3 +439,49 @@ export const ArrowLink = ({
     <ArrowRight size={16} />
   </Link>
 );
+
+export type ContainerWidth = "page" | "flow" | "prose" | "form" | "auth";
+
+/**
+ * Contenedor estándar alineado con micitaentiempo.online.
+ * - page: páginas públicas, catálogos (1152px)
+ * - flow: flujos guiados y modales amplios (896px)
+ * - prose: lectura larga, legales, notas (72ch)
+ * - form: formularios estándar de una columna (640px)
+ * - auth: tarjetas de acceso y registro (448px)
+ */
+export function Container({
+  className = "",
+  width = "page",
+  children,
+  ...props
+}: {
+  className?: string;
+  width?: ContainerWidth;
+  children?: ReactNode;
+} & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={`ui-container ${width} ${className}`.trim()} {...props}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Tarjeta estándar con fondo de superficie, borde sutil y elevación suave.
+ */
+export function Card({
+  className = "",
+  children,
+  ...props
+}: {
+  className?: string;
+  children?: ReactNode;
+} & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={`ui-card ${className}`.trim()} {...props}>
+      {children}
+    </div>
+  );
+}
+

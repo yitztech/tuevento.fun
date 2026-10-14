@@ -1,0 +1,68 @@
+resolver 127.0.0.11 valid=10s ipv6=off;
+upstream api_upstream { zone api_upstream 64k; server api:3087 resolve; keepalive 16; }
+
+map $http_x_forwarded_proto $forwarded_proto { default $scheme; https https; }
+
+server {
+    listen 80;
+    server_name _;
+    client_max_body_size 3m;
+
+    location = /healthz {
+        default_type text/plain;
+        return 200 'ok';
+    }
+
+    location = /version.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"revision":"dev"}';
+    }
+
+    # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas
+    location /api/ {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_buffering off;
+        proxy_read_timeout 1h;
+        proxy_pass http://api_upstream;
+    }
+
+    # Verificación de App Links (Android e iOS)
+    location = /.well-known/assetlinks.json {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/.well-known/assetlinks.json;
+    }
+    location = /.well-known/apple-app-site-association {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/.well-known/apple-app-site-association;
+    }
+
+    # robots.txt y sitemap.xml del dominio que se visita
+    location = /robots.txt {
+        add_header Cache-Control "public, max-age=3600" always;
+        alias /etc/nginx/seo/robots-$site_lang.txt;
+    }
+    location = /sitemap.xml {
+        add_header Cache-Control "public, max-age=3600" always;
+        alias /etc/nginx/seo/sitemap-$site_lang.xml;
+    }
+
+    # Vite Dev Server con soporte HMR y WebSockets
+    location / {
+        proxy_pass http://127.0.0.1:5187;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header Accept-Encoding "";
+        proxy_read_timeout 86400s;
+
+        sub_filter '<html lang="es">' '<html lang="$site_lang">';
+        sub_filter '<meta name="tuevento-seo"/>' '<meta name="tuevento:sites" content="es=$origin_es en=$origin_en"/>';
+        sub_filter_types text/html;
+        sub_filter_once on;
+    }
+}

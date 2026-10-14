@@ -28,7 +28,7 @@ import {
   Heart,
 } from "lucide-react";
 import { useApp, errorText } from "./context";
-import { Logo, Field, ErrorBox, Avatar } from "./components";
+import { Logo, Field, ErrorBox, Avatar, Container, Card } from "./components";
 import { AuthLegalNotice } from "./legal";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
@@ -146,7 +146,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
           <ArrowLeft size={16} />
           {tr("Volver al inicio")}
         </Link>
-        <div className="auth-form">
+        <Container width="auth" className="auth-form">
           <h2>
             {registerMode
               ? tr("Empieza algo bonito.")
@@ -305,7 +305,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
             </button>
           )}
           <AuthLegalNotice registerMode={registerMode} />
-        </div>
+        </Container>
       </section>
     </div>
   );

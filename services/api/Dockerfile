@@ -1,10 +1,25 @@
-# Imágenes de producción (y de desarrollo con compose.yml). Se construyen desde la raíz:
-#   docker build --target api -t t-api .
-#   docker build --target gateway --build-arg RELEASE_SHA=<sha> -t t-gateway .
-# La configuración va dentro de las imágenes: el servidor solo descarga y arranca.
-
-FROM node:24-bookworm-slim AS build
+# syntax=docker/dockerfile:1
+# Imagen de `api`. Se construye desde la raíz del repositorio:
+#   docker build -f services/api/Dockerfile --build-arg RELEASE_SHA=<sha> .
+FROM node:24.21.0-alpine3.24 AS base
 WORKDIR /app
+
+# Desarrollo local (compose.yml): tsx watch con recarga en caliente; Compose Watch sincroniza src.
+FROM base AS dev
+ENV NODE_ENV=development
+COPY package*.json tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/client/package.json packages/client/
+RUN npm ci --no-audit --no-fund
+COPY packages packages
+COPY apps/api apps/api
+RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client
+EXPOSE 3087
+WORKDIR /app/apps/api
+CMD ["npm", "run", "dev"]
+
+FROM base AS build
 COPY package*.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
@@ -12,13 +27,12 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/client/package.json packages/client/
 COPY packages/app/package.json packages/app/
 RUN npm ci --no-audit --no-fund
-COPY apps apps
 COPY packages packages
-RUN npm run build
+COPY apps apps
+RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api
 
 # Dependencias de ejecución de la API, sin las de desarrollo ni las de la web
-FROM node:24-bookworm-slim AS api-deps
-WORKDIR /app
+FROM base AS api-deps
 COPY package*.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
@@ -27,7 +41,7 @@ COPY packages/client/package.json packages/client/
 COPY packages/app/package.json packages/app/
 RUN npm ci --omit=dev --workspace @tuevento/api --no-audit --no-fund
 
-FROM node:24-bookworm-slim AS api
+FROM node:24.21.0-alpine3.24 AS production
 # Valores públicos de los App Links (/.well-known/*). No son secretos ni variables de la
 # plataforma: el workflow de despliegue los pasa como build-args desde las vars del repo.
 ARG ANDROID_CERT_SHA256=
@@ -47,15 +61,3 @@ COPY --from=build --chown=node:node /app/apps/api/migrations ./apps/api/migratio
 USER node
 EXPOSE 3087
 CMD ["node", "apps/api/dist/main.js"]
-
-FROM nginx:1.30-alpine AS gateway
-ARG RELEASE_SHA=dev
-ENV RELEASE_SHA=${RELEASE_SHA} \
-    # El entrypoint de nginx solo sustituye estas variables en la plantilla
-    NGINX_ENVSUBST_FILTER='^(TRUSTED_PROXY_CIDR|RELEASE_SHA)$'
-COPY --from=build /app/apps/web/dist /usr/share/nginx/html
-COPY gateway/snippets/ /etc/nginx/snippets/
-COPY gateway/default.conf.template /etc/nginx/templates/default.conf.template
-COPY --chmod=755 gateway/16-analytics.sh /docker-entrypoint.d/16-analytics.sh
-COPY --chmod=755 gateway/17-sites.sh /docker-entrypoint.d/17-sites.sh
-EXPOSE 80
