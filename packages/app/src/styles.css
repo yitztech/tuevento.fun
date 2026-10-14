@@ -67,6 +67,14 @@
 
   --radius: 14px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Contenedores y elevación suave (Arquitectura micitaentiempo.online) */
+  --container-page: 1152px;
+  --container-flow: 896px;
+  --container-prose: 72ch;
+  --container-form: 640px;
+  --container-auth: 448px;
+  --shadow-soft: 0 1px 3px rgba(38, 28, 24, 0.05), 0 8px 24px rgba(38, 28, 24, 0.06);
 }
 
 /* ==========================================================================
@@ -119,6 +127,44 @@
   --status-declined: #9e1a2c;
   --status-declined-bg: #fde8ea;
 }
+/* ==========================================================================
+   Contenedores y Tarjetas (Arquitectura unificada con micitaentiempo.online)
+   ========================================================================== */
+.ui-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  box-sizing: border-box;
+}
+@media (min-width: 640px) {
+  .ui-container {
+    padding-inline: 1.5rem;
+  }
+}
+.ui-container.page {
+  max-width: var(--container-page);
+}
+.ui-container.flow {
+  max-width: var(--container-flow);
+}
+.ui-container.prose {
+  max-width: var(--container-prose);
+}
+.ui-container.form {
+  max-width: var(--container-form);
+}
+.ui-container.auth {
+  max-width: var(--container-auth);
+}
+
+.ui-card {
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -901,13 +947,15 @@ small {
 }
 .event-card {
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--radius);
   overflow: hidden;
-  background: #fff;
-  transition: border-color 0.2s;
+  background: var(--ground);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .event-card:hover {
-  border-color: #b5bccb;
+  border-color: var(--line-strong);
+  box-shadow: 0 4px 16px rgba(38, 28, 24, 0.08);
 }
 .event-photo {
   display: block;
@@ -4354,16 +4402,16 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 @media(max-width:767px){.owner-dashboard .page-heading>label{margin-top:20px}}
 
 /* Páginas legales: privacidad y condiciones en cada dominio. */
-.legal-page {max-width:820px;padding:28px 32px 80px;margin:auto;}
+.legal-page {padding:28px 0 80px;margin:auto;}
 .legal-page header {display:flex;justify-content:space-between;align-items:center;margin-bottom:48px;}
-.legal-page h1 {font-size:clamp(34px,4.4vw,54px);line-height:1.08;letter-spacing:-.03em;margin:24px 0 10px;}
-.legal-page h2 {font-size:20px;margin:36px 0 10px;}
-.legal-page p {line-height:1.65;color:#3d424c;margin:0 0 12px;max-width:68ch;}
-.legal-page .legal-updated {font-size:13px;color:#5d636e;}
+.legal-page h1 {font-size:clamp(34px,4.4vw,54px);line-height:1.08;letter-spacing:-.03em;margin:24px 0 10px;color:var(--ink);}
+.legal-page h2 {font-size:20px;margin:36px 0 10px;color:var(--ink);}
+.legal-page p {line-height:1.65;color:var(--ink);margin:0 0 12px;max-width:var(--container-prose);}
+.legal-page .legal-updated {font-size:13px;color:var(--muted);}
 .legal-page .legal-intro {font-size:17px;}
 .legal-page .legal-other {margin-top:40px;}
-.legal-page a:not(.language-switcher):not(.logo) {color:var(--blue);}
-.auth-legal {margin-top:18px;font-size:12px;color:#5d636e;line-height:1.5;}
-.auth-legal a {color:var(--blue);}
+.legal-page a:not(.language-switcher):not(.logo) {color:var(--primary);}
+.auth-legal {margin-top:18px;font-size:12px;color:var(--muted);line-height:1.5;}
+.auth-legal a {color:var(--primary);}
 .landing-legal-links {display:contents;}
-@media(max-width:767px){.legal-page{padding:24px 20px 56px}.legal-page header{margin-bottom:32px}}
+@media(max-width:767px){.legal-page{padding:24px 0 56px}.legal-page header{margin-bottom:32px}}

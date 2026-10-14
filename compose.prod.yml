@@ -39,8 +39,8 @@ services:
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
     depends_on:
-      api: { condition: service_started }
-    # No depende de la API: /healthz lo responde el propio nginx
+      api: { condition: service_healthy }
+    # /healthz lo responde el propio nginx una vez la api está lista
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
       interval: 15s
@@ -52,10 +52,13 @@ services:
     <<: *hardening
     image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-api:${IMAGE_TAG:-main}
     # Corre como usuario node en el puerto 3087: no necesita capacidades
+    read_only: true
+    tmpfs: [/tmp]
     mem_limit: 256m
     cpus: 0.5
     environment:
       NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=192
       # La contraseña va aparte (PGPASSWORD) para no tener que escaparla dentro de la URL
       DATABASE_URL: postgres://tuevento@postgres:5432/tueventofun
       PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
