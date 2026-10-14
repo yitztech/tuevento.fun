@@ -28,7 +28,7 @@ services:
       PORT: 3087
       DATABASE_URL: postgres://tuevento@postgres:5432/tueventofun
       PGPASSWORD: ${POSTGRES_PASSWORD}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
