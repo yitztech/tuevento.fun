@@ -75,7 +75,9 @@ disallow='/app
 /administracion
 /conectar-app
 /disenos
-/ayuda'
+/ayuda
+/recuperar-contrasena
+/nueva-contrasena'
 
 # Páginas públicas: "ruta en es|ruta en en"
 public_pages='/|/

@@ -8,6 +8,7 @@ import {
   HttpStatus,
   CanActivate,
   ExecutionContext,
+  Logger,
 } from "@nestjs/common";
 import {
   randomBytes,
@@ -21,8 +22,18 @@ import { OAuth2Client } from "google-auth-library";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { clientPlatform } from "./client-platform";
 import { Database } from "./database";
-import type { Locale, RegisterInput, User } from "@tuevento/contracts";
+import {
+  passwordResetPaths,
+  PASSWORD_RESET_MINUTES,
+  translateMessage,
+  type Locale,
+  type RegisterInput,
+  type User,
+} from "@tuevento/contracts";
 import { requestLocale } from "./request-locale";
+import { MailService } from "./mail";
+import { passwordChangedMail, passwordResetMail } from "./mail-templates";
+import { siteUrl } from "./locale-env";
 const scrypt = promisify(scryptCallback);
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -31,6 +42,26 @@ const hash = (value: string) =>
 const LOGIN_MAX_FAILURES = 5,
   LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const loginFailures = new Map<string, { count: number; reset: number }>();
+// Peticiones de recuperación de contraseña: por IP (frena el abuso del formulario)
+// y por correo (no inunda un buzón). Pasado el límite por correo se responde igual,
+// sin enviar nada, para no revelar si la cuenta existe.
+const RESET_WINDOW_MS = 15 * 60 * 1000,
+  RESET_MAX_PER_IP = 10,
+  RESET_MAX_PER_EMAIL = 3;
+const resetRequests = new Map<string, { count: number; reset: number }>();
+function allow(key: string, max: number, now = Date.now()) {
+  if (resetRequests.size > 10_000)
+    for (const [k, entry] of resetRequests)
+      if (entry.reset <= now) resetRequests.delete(k);
+  const entry = resetRequests.get(key);
+  if (!entry || entry.reset <= now) {
+    resetRequests.set(key, { count: 1, reset: now + RESET_WINDOW_MS });
+    return true;
+  }
+  return ++entry.count <= max;
+}
+const INVALID_RESET_LINK =
+  "El enlace para cambiar la contraseña no es válido o caducó.";
 export const userView = (r: any): User => ({
   id: r.id,
   firstName: r.first_name,
@@ -46,7 +77,11 @@ export const userView = (r: any): User => ({
 export type AuthedRequest = FastifyRequest & { user: User };
 @Injectable()
 export class AuthService {
-  constructor(private db: Database) {}
+  private readonly logger = new Logger(AuthService.name);
+  constructor(
+    private db: Database,
+    private mail: MailService,
+  ) {}
   async passwordHash(password: string) {
     const salt = randomBytes(16).toString("hex");
     const key = (await scrypt(password, salt, 64)) as Buffer;
@@ -133,6 +168,12 @@ export class AuthService {
       [hash(token), user.id, clientPlatform(req), String(req.headers["x-app-version"] || "web").slice(0,64)],
     );
     if (!user.isDemo) {
+      // Idioma de la cuenta = el del dominio por el que entra: ahí le llegan los correos
+      const locale = requestLocale(req);
+      if (user.locale !== locale) {
+        await this.db.query("UPDATE users SET locale=$1 WHERE id=$2", [locale, user.id]);
+        user = { ...user, locale };
+      }
       await this.db.query("INSERT INTO activity(id,kind,platform,user_id) VALUES($1,$2,$3,$4)", [randomUUID(), kind, clientPlatform(req), user.id]);
       if (kind === "registration") await this.db.query("UPDATE users SET registration_platform=$1 WHERE id=$2", [clientPlatform(req), user.id]);
     }
@@ -141,6 +182,97 @@ export class AuthService {
       maxAge: 7 * 86400,
     });
     return user;
+  }
+  /**
+   * Envía un enlace para elegir contraseña nueva, en el idioma del dominio por el que
+   * entró el usuario, desde el remitente de ese dominio y apuntando a ese dominio.
+   * La respuesta es la misma exista o no la cuenta.
+   */
+  async requestPasswordReset(email: string, req: FastifyRequest) {
+    const locale = requestLocale(req);
+    if (!allow(`ip:${req.ip}`, RESET_MAX_PER_IP))
+      throw new HttpException(
+        "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    const [user] = allow(`email:${email}`, RESET_MAX_PER_EMAIL)
+      ? await this.db.query(
+          "SELECT id,first_name,email FROM users WHERE email=$1 AND is_demo=false",
+          [email],
+        )
+      : [];
+    if (user) {
+      const token = randomBytes(32).toString("base64url");
+      // Solo vale el último enlace pedido
+      await this.db.query("DELETE FROM password_resets WHERE user_id=$1", [user.id]);
+      await this.db.query(
+        `INSERT INTO password_resets(token_hash,user_id,locale,expires_at) VALUES($1,$2,$3,now()+interval '${PASSWORD_RESET_MINUTES} minutes')`,
+        [hash(token), user.id, locale],
+      );
+      const site = siteUrl(locale);
+      // Sin esperar al SMTP: el tiempo de respuesta no revela si la cuenta existe
+      void this.mail
+        .send(
+          locale,
+          passwordResetMail(locale, {
+            to: user.email,
+            name: user.first_name,
+            url: `${site}${passwordResetPaths.reset}?token=${token}`,
+            site,
+            minutes: PASSWORD_RESET_MINUTES,
+          }),
+        )
+        .catch((e: Error) =>
+          this.logger.error(`No se pudo enviar el correo de recuperación: ${e.message}`),
+        );
+    }
+    return {
+      ok: true,
+      message: translateMessage(
+        "Si ese correo tiene una cuenta, te enviamos un enlace para elegir una contraseña nueva. Revisa también la carpeta de spam.",
+        locale,
+      ),
+    };
+  }
+  /** Cambia la contraseña con un enlace válido, cierra todas las sesiones y avisa por correo. */
+  async resetPassword(token: string, password: string) {
+    const passwordHash = await this.passwordHash(password);
+    const result = await this.db.transaction(async (c) => {
+      const {
+        rows: [reset],
+      } = await c.query(
+        "DELETE FROM password_resets WHERE token_hash=$1 RETURNING user_id, locale, expires_at > now() AS valid",
+        [hash(token)],
+      );
+      if (!reset?.valid) return null;
+      const {
+        rows: [user],
+      } = await c.query(
+        "UPDATE users SET password_hash=$1 WHERE id=$2 AND is_demo=false RETURNING *",
+        [passwordHash, reset.user_id],
+      );
+      if (!user) return null;
+      await c.query("DELETE FROM password_resets WHERE user_id=$1", [user.id]);
+      await c.query("DELETE FROM sessions WHERE user_id=$1", [user.id]);
+      return { user, locale: reset.locale as Locale };
+    });
+    if (!result) throw new BadRequestException(INVALID_RESET_LINK);
+    loginFailures.delete(result.user.email);
+    const site = siteUrl(result.locale);
+    void this.mail
+      .send(
+        result.locale,
+        passwordChangedMail(result.locale, {
+          to: result.user.email,
+          name: result.user.first_name,
+          site,
+          resetUrl: `${site}${passwordResetPaths.request}`,
+        }),
+      )
+      .catch((e: Error) =>
+        this.logger.error(`No se pudo enviar el aviso de contraseña cambiada: ${e.message}`),
+      );
+    return userView(result.user);
   }
   async current(req: FastifyRequest) {
     if (!req.cookies.session)

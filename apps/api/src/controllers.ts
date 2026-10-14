@@ -29,6 +29,8 @@ import {
   rsvpSchema,
   profileSchema,
   newsletterSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from "@tuevento/contracts";
 import {
   AuthService,
@@ -103,6 +105,27 @@ export class PublicController {
     const data = parse(loginSchema, body, req);
     return this.auth.session(
       await this.auth.login(data.email, data.password),
+      req,
+      reply,
+    );
+  }
+  @Post("auth/password/forgot") forgotPassword(
+    @Body() body: unknown,
+    @Req() req: FastifyRequest,
+  ) {
+    return this.auth.requestPasswordReset(
+      parse(forgotPasswordSchema, body, req).email,
+      req,
+    );
+  }
+  @Post("auth/password/reset") async resetPassword(
+    @Body() body: unknown,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    const data = parse(resetPasswordSchema, body, req);
+    return this.auth.session(
+      await this.auth.resetPassword(data.token, data.password),
       req,
       reply,
     );

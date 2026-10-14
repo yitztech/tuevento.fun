@@ -83,7 +83,7 @@ La descarga directa de GitHub Release debe ser pública: el workflow comprueba l
 
 Para que Android e iOS abran `/app-link/auth` en la app, el dominio debe publicar los archivos de asociación. La API los sirve, y el gateway los expone en los dos dominios (`tuevento.fun` y `yourevent.fun`). Los valores no son secretos ni variables de la plataforma: son **variables del repositorio** que `deploy.yml` hornea en la imagen de la API como build-args, así que cambiarlos requiere un nuevo despliegue:
 
-- `ANDROID_CERT_SHA256`: huella SHA-256 del certificado de firma de la app Android, formato `AA:BB:…` (32 pares).
+- `ANDROID_CERT_SHA256`: huella SHA-256 del certificado de firma de la app Android, formato `AA:BB:…` (32 pares). Admite varias separadas por comas: la de la clave propia (APK directo de GitHub Releases) y, si se publica en Google Play con Play App Signing, la de la clave de firma que muestra Play Console (Integridad de la app).
 - `APPLE_TEAM_ID`: Team ID de 10 caracteres del Apple Developer.
 - `MOBILE_APP_ID`: el mismo bundle/applicationId de los builds (por defecto `com.tueventofun.app`).
 - Build iOS: el workflow fija `APP_LINK_HOST` desde `VITE_PUBLIC_ORIGIN` y firma con el entitlement `applinks:`. El perfil de distribución debe tener activada la capacidad **Associated Domains** en el portal de Apple; sin ello, la firma falla o el enlace no se abre.

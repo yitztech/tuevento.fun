@@ -48,11 +48,13 @@ export class PlatformController {
   // Verificación de App Links: Google y Apple leen estos archivos del dominio público.
   // Se sirven desde la API con la configuración del entorno, sin reconstruir la web.
   @Get('.well-known/assetlinks.json') assetLinks() {
-    const fingerprint = process.env.ANDROID_CERT_SHA256 || '';
-    if (!/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(fingerprint)) throw new NotFoundException();
+    // Una o varias huellas separadas por comas: la de la firma propia (APK directo) y,
+    // si se publica en Google Play, la de la clave de firma de Play App Signing.
+    const fingerprints = (process.env.ANDROID_CERT_SHA256 || '').split(',').map((f) => f.trim().toUpperCase()).filter(Boolean);
+    if (!fingerprints.length || !fingerprints.every((f) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(f))) throw new NotFoundException();
     return [{
       relation: ['delegate_permission/common.handle_all_urls'],
-      target: { namespace: 'android_app', package_name: process.env.MOBILE_APP_ID || 'com.tueventofun.app', sha256_cert_fingerprints: [fingerprint] },
+      target: { namespace: 'android_app', package_name: process.env.MOBILE_APP_ID || 'com.tueventofun.app', sha256_cert_fingerprints: fingerprints },
     }];
   }
   @Get('.well-known/apple-app-site-association') appleAssociation() {

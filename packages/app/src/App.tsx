@@ -40,7 +40,13 @@ import {
 import { EventEditor, EventDetail, TvPage } from "./event-pages";
 import { MobileConnect } from "./mobile-connect";
 import { OwnerDashboard } from "./owner";
-import { AuthPage, ProfilePage } from "./account";
+import {
+  AuthPage,
+  ProfilePage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from "./account";
+import { passwordResetPaths } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
 import { LegalPage, legalPageFor } from "./legal";
 export type { Runtime } from "./context";
@@ -77,7 +83,12 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const legal = legalPageFor(location.pathname);
   const isPublic = location.pathname.startsWith("/i/") || legal !== null,
-    isAuth = ["/registro", "/acceso"].includes(location.pathname);
+    isAuth = [
+      "/registro",
+      "/acceso",
+      passwordResetPaths.request,
+      passwordResetPaths.reset,
+    ].includes(location.pathname);
   const toast = useCallback((text: string) => {
     setMessage(text);
     clearTimeout(timer.current);
@@ -188,6 +199,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         <Routes>
           <Route path="/i/:token" element={<PublicRsvp />} />
         </Routes>
+      ) : location.pathname === passwordResetPaths.request ? (
+        <ForgotPasswordPage />
+      ) : location.pathname === passwordResetPaths.reset ? (
+        <ResetPasswordPage />
       ) : isAuth ? (
         <AuthPage
           key={location.pathname}

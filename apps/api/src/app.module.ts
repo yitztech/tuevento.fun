@@ -6,6 +6,7 @@ import { EventsService, Updates } from "./events";
 import { DemoService } from "./demo";
 import { PublicController, OrganizerController } from "./controllers";
 import { ListmonkService } from "./listmonk";
+import { MailService } from "./mail";
 @Module({
   controllers: [PlatformController, PublicController, OrganizerController],
   providers: [
@@ -16,6 +17,7 @@ import { ListmonkService } from "./listmonk";
     Updates,
     DemoService,
     ListmonkService,
+    MailService,
   ],
 })
 export class AppModule {}

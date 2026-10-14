@@ -1,26 +1,40 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Database } from "./database";
-import type { Locale } from "@tuevento/contracts";
+import { supportedLocales, translateMessage, type Locale } from "@tuevento/contracts";
+import { localeEnv } from "./locale-env";
 
+/**
+ * Newsletter con un Listmonk por idioma (en `news.` de cada dominio), según el contrato
+ * de la plataforma: `LISTMONK_URL` y `LISTMONK_LIST_UUID` para es, `_EN` para en.
+ * Se usa la suscripción pública de Listmonk, que no necesita credenciales: si la lista
+ * es de doble confirmación, Listmonk envía el correo para confirmar desde su dominio,
+ * y las campañas salen en el idioma de la lista.
+ */
 @Injectable()
-export class ListmonkService {
+export class ListmonkService implements OnModuleInit {
   private readonly logger = new Logger(ListmonkService.name);
-  private readonly url = (process.env.LISTMONK_URL || "").replace(/\/+$/, "");
-  private readonly apiUser = process.env.LISTMONK_API_USER || process.env.LISTMONK_USERNAME || "";
-  private readonly apiToken = process.env.LISTMONK_API_TOKEN || process.env.LISTMONK_PASSWORD || "";
-  private readonly defaultListId = Number(process.env.LISTMONK_LIST_ID || "1");
 
   constructor(private db: Database) {}
 
-  isConfigured(): boolean {
-    return Boolean(this.url && this.apiUser && this.apiToken);
+  onModuleInit() {
+    for (const locale of supportedLocales)
+      if (!this.target(locale))
+        this.logger.warn(
+          `Newsletter "${locale}" sin Listmonk: faltan LISTMONK_URL${locale === "es" ? "" : "_EN"} o LISTMONK_LIST_UUID${locale === "es" ? "" : "_EN"}. Las altas se guardan solo en la base de datos.`,
+        );
   }
 
-  async subscribe(email: string, name?: string, locale: Locale = "es") {
+  private target(locale: Locale) {
+    const url = localeEnv("LISTMONK_URL", locale).replace(/\/+$/, "");
+    const list = localeEnv("LISTMONK_LIST_UUID", locale);
+    return url && list ? { url, list } : null;
+  }
+
+  async subscribe(email: string, name: string | undefined, locale: Locale) {
     const cleanEmail = email.toLowerCase().trim();
     const cleanName = name?.trim() || null;
 
-    // 1. Persistencia local en PostgreSQL
+    // Copia local: sirve de respaldo si Listmonk no responde
     try {
       await this.db.query(
         `INSERT INTO newsletter_subscribers (email, name, locale)
@@ -32,85 +46,36 @@ export class ListmonkService {
       this.logger.error(`Error guardando suscriptor en BD local: ${err.message}`);
     }
 
-    // 2. Sincronización con Listmonk si está configurado
-    if (this.isConfigured()) {
+    const target = this.target(locale);
+    if (target) {
       try {
-        const auth = Buffer.from(`${this.apiUser}:${this.apiToken}`).toString("base64");
-        const res = await fetch(`${this.url}/api/subscribers`, {
+        const res = await fetch(`${target.url}/api/public/subscription`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Basic ${auth}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: cleanEmail,
             name: cleanName || cleanEmail.split("@")[0],
-            status: "enabled",
-            lists: [this.defaultListId],
-            attribs: { locale },
+            list_uuids: [target.list],
           }),
+          signal: AbortSignal.timeout(10_000),
         });
-
         if (!res.ok) {
           const body = await res.text().catch(() => "");
-          this.logger.warn(`Listmonk API respondió ${res.status}: ${body}`);
-        } else {
-          this.logger.log(`Suscriptor sincronizado con Listmonk: ${cleanEmail}`);
+          this.logger.warn(`Listmonk (${locale}) respondió ${res.status}: ${body.slice(0, 300)}`);
         }
       } catch (err: any) {
-        this.logger.error(`Fallo de conexión con Listmonk: ${err.message}`);
+        this.logger.error(`Fallo de conexión con Listmonk (${locale}): ${err.message}`);
       }
-    } else {
-      this.logger.debug(`Listmonk no configurado. Suscripción registrada localmente: ${cleanEmail}`);
     }
 
     return {
       ok: true,
-      message:
-        locale === "en"
-          ? "Thanks for subscribing!"
+      message: translateMessage(
+        target
+          ? "¡Gracias! Revisa tu correo para confirmar la suscripción."
           : "¡Gracias por suscribirte!",
+        locale,
+      ),
     };
-  }
-
-  async sendTransactional(options: {
-    subscriberEmail: string;
-    templateId: number;
-    data?: Record<string, any>;
-    locale?: Locale;
-  }) {
-    if (!this.isConfigured()) {
-      this.logger.debug(
-        `[Simulación Email] Listmonk no configurado. Email a ${options.subscriberEmail} (template ${options.templateId})`,
-      );
-      return { sent: false, simulated: true };
-    }
-
-    try {
-      const auth = Buffer.from(`${this.apiUser}:${this.apiToken}`).toString("base64");
-      const res = await fetch(`${this.url}/api/tx`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${auth}`,
-        },
-        body: JSON.stringify({
-          subscriber_email: options.subscriberEmail,
-          template_id: options.templateId,
-          data: options.data || {},
-        }),
-      });
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        this.logger.warn(`Error enviando correo transaccional Listmonk: ${res.status} ${body}`);
-        return { sent: false, error: body };
-      }
-
-      return { sent: true };
-    } catch (err: any) {
-      this.logger.error(`Error en conexión transaccional Listmonk: ${err.message}`);
-      return { sent: false, error: err.message };
-    }
   }
 }

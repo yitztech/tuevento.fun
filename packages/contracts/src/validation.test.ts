@@ -163,3 +163,32 @@ test("La validación genérica responde por idioma sin cambiar el locale global"
     assert.notEqual(en.error.issues[0].message, es.error.issues[0].message);
   }
 });
+
+test("Recuperar contraseña: correo normalizado, token de 43 caracteres y mensajes traducidos", async () => {
+  const {
+    forgotPasswordSchema,
+    resetPasswordSchema,
+    translateMessage,
+    englishMessages,
+  } = await import("./index");
+  assert.deepEqual(forgotPasswordSchema.parse({ email: "Ana@Example.com" }), {
+    email: "ana@example.com",
+  });
+  const token = "A".repeat(43);
+  assert.equal(resetPasswordSchema.safeParse({ token, password: "x".repeat(10) }).success, true);
+  assert.equal(resetPasswordSchema.safeParse({ token, password: "corta" }).success, false);
+  assert.equal(
+    resetPasswordSchema.safeParse({ token: "a/b", password: "x".repeat(10) }).success,
+    false,
+  );
+  for (const message of [
+    "El enlace para cambiar la contraseña no es válido o caducó.",
+    "Si ese correo tiene una cuenta, te enviamos un enlace para elegir una contraseña nueva. Revisa también la carpeta de spam.",
+    "¡Gracias! Revisa tu correo para confirmar la suscripción.",
+  ])
+    assert.ok(englishMessages[message], message);
+  assert.equal(
+    translateMessage("El enlace para cambiar la contraseña no es válido o caducó.", "en"),
+    "The password reset link is invalid or has expired.",
+  );
+});

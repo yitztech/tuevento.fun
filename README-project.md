@@ -89,6 +89,7 @@ npm run test:api
 npx playwright install chromium
 npm run test:browser
 npm run test:landing
+npm run test:password
 ```
 
 `test:api` crea usuarios de prueba con credenciales aleatorias en memoria, ejerce los endpoints y limpia sus propias cuentas al terminar. Apunta por defecto al backend local. `TEST_API_URL` permite cambiar el destino, pero en ese caso no ejecuta limpieza directa de PostgreSQL.
@@ -137,6 +138,20 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
 | `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | api | Servidor SMTP común a los dos idiomas |
+| `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | api | Remitente en español (`no-reply@tuevento.fun`) |
+| `SMTP_USER_EN`, `SMTP_PASSWORD_EN`, `MAIL_FROM_EN` | api | Remitente en inglés (`no-reply@yourevent.fun`); sin él, el inglés sale del remitente español |
+| `LISTMONK_URL`, `LISTMONK_LIST_UUID` | api | Newsletter en español (Listmonk en `news.tuevento.fun`) |
+| `LISTMONK_URL_EN`, `LISTMONK_LIST_UUID_EN` | api | Newsletter en inglés (Listmonk en `news.yourevent.fun`) |
+
+### Correos por idioma
+
+El idioma lo decide el dominio por el que entra el usuario, igual que la web:
+
+- **Recuperar contraseña** (`/recuperar-contrasena` → correo → `/nueva-contrasena?token=…`): el correo sale en el idioma del dominio donde se pidió, desde su remitente (`MAIL_FROM` o `MAIL_FROM_EN`) y con el enlace a ese mismo dominio. El enlace es de un solo uso, caduca en 60 minutos y solo se guarda su hash. Al cambiar la contraseña se cierran todas las sesiones y se envía un aviso. La respuesta es idéntica exista o no la cuenta, con límites por IP y por correo.
+- **Idioma de la cuenta**: se actualiza con el dominio por el que el usuario inicia sesión.
+- **Newsletter**: el alta va a la lista del Listmonk de su idioma mediante la suscripción pública (`/api/public/subscription`, sin credenciales). Las listas deben ser públicas y de doble confirmación; Listmonk envía la confirmación y las campañas desde su dominio. También se guarda una copia en `newsletter_subscribers`.
+- Sin SMTP configurado, la API no envía correos: en desarrollo los escribe en el log; en producción solo avisa. `compose.yml` y `compose.ci.yml` usan Mailpit (interfaz en `http://127.0.0.1:8025`).
 
 ### Migración de base de datos en producción (Coolify)
 El rol `api` no es superusuario ni dueño de la base de datos. Para volúmenes existentes creados antes de este cambio:
@@ -169,7 +184,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO api;
 "
 ```
 
-Para App Links, la imagen de la API hornea `ANDROID_CERT_SHA256`, `APPLE_TEAM_ID` y `MOBILE_APP_ID` como build-args desde las **variables del repositorio** de GitHub (son públicos; ver [MOBILE-CICD.md](docs/MOBILE-CICD.md)).
+Para App Links, la imagen de la API hornea `ANDROID_CERT_SHA256` (una o varias huellas separadas por comas), `APPLE_TEAM_ID` y `MOBILE_APP_ID` como build-args desde las **variables del repositorio** de GitHub (son públicos; ver [MOBILE-CICD.md](docs/MOBILE-CICD.md)).
 
 Comprobar antes de un PR:
 

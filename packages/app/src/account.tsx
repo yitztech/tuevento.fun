@@ -13,6 +13,9 @@ import {
   registerSchema,
   loginSchema,
   profileSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  passwordResetPaths,
   themeIds,
   type RegisterInput,
   type ProfileInput,
@@ -26,6 +29,7 @@ import {
   EyeOff,
   ShieldCheck,
   Heart,
+  MailCheck,
 } from "lucide-react";
 import { useApp, errorText } from "./context";
 import { Logo, Field, ErrorBox, Avatar, Container, Card } from "./components";
@@ -50,6 +54,52 @@ async function readAvatar(file: File): Promise<string> {
     reader.onerror = () => reject(new Error(tr("No se pudo leer la imagen.")));
     reader.readAsDataURL(file);
   });
+}
+/** Marco común de las pantallas de acceso: historia a la izquierda, formulario a la derecha. */
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="auth-layout">
+      <section className="auth-story">
+        <Logo />
+        <div>
+          <span className="auth-heart">
+            <Heart size={30} />
+          </span>
+          <h1>
+            {tr("Que no falte")}
+            <br />
+            {tr("nadie en tus")}
+            <br />
+            {tr("mejores historias.")}
+          </h1>
+          <p>
+            {tr("Invita, reúne y celebra.")}
+            <br />
+            {tr("Los recuerdos empiezan aquí.")}
+          </p>
+        </div>
+        <img
+          src="/images/gold.jpg"
+          alt={tr("Flores y copas en una mesa preparada para una celebración")}
+        />
+        <span className="auth-story-footer">
+          {tr("TuEventoFun · Hecho para compartir momentos.")}
+        </span>
+      </section>
+      <section className="auth-form-wrap">
+        <div className="auth-language">
+          <LanguageSwitcher />
+        </div>
+        <Link className="back-link" to="/">
+          <ArrowLeft size={16} />
+          {tr("Volver al inicio")}
+        </Link>
+        <Container width="auth" className="auth-form">
+          {children}
+        </Container>
+      </section>
+    </div>
+  );
 }
 export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const postAuthTarget = usePostAuthTarget();
@@ -110,43 +160,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     }
   };
   return (
-    <div className="auth-layout">
-      <section className="auth-story">
-        <Logo />
-        <div>
-          <span className="auth-heart">
-            <Heart size={30} />
-          </span>
-          <h1>
-            {tr("Que no falte")}
-            <br />
-            {tr("nadie en tus")}
-            <br />
-            {tr("mejores historias.")}
-          </h1>
-          <p>
-            {tr("Invita, reúne y celebra.")}
-            <br />
-            {tr("Los recuerdos empiezan aquí.")}
-          </p>
-        </div>
-        <img
-          src="/images/gold.jpg"
-          alt={tr("Flores y copas en una mesa preparada para una celebración")}
-        />
-        <span className="auth-story-footer">
-          {tr("TuEventoFun · Hecho para compartir momentos.")}
-        </span>
-      </section>
-      <section className="auth-form-wrap">
-        <div className="auth-language">
-          <LanguageSwitcher />
-        </div>
-        <Link className="back-link" to="/">
-          <ArrowLeft size={16} />
-          {tr("Volver al inicio")}
-        </Link>
-        <Container width="auth" className="auth-form">
+    <AuthShell>
           <h2>
             {registerMode
               ? tr("Empieza algo bonito.")
@@ -248,6 +262,13 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 </button>
               </span>
             </Field>
+            {!registerMode && (
+              <p className="auth-forgot">
+                <Link to={passwordResetPaths.request}>
+                  {tr("¿Olvidaste tu contraseña?")}
+                </Link>
+              </p>
+            )}
             {registerMode && (
               <label className="upload-inline">
                 {avatar ? (
@@ -305,9 +326,147 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
             </button>
           )}
           <AuthLegalNotice registerMode={registerMode} />
-        </Container>
-      </section>
-    </div>
+    </AuthShell>
+  );
+}
+/** Pide el enlace para elegir contraseña nueva. Llega en el idioma de este dominio. */
+export function ForgotPasswordPage() {
+  const { api } = useApp(),
+    [error, setError] = useState(""),
+    [sent, setSent] = useState("");
+  const form = useForm<{ email: string }>({
+    resolver: zodResolver(forgotPasswordSchema, validationOptions(getLocale())),
+    defaultValues: { email: "" },
+  });
+  const submit = form.handleSubmit(async ({ email }) => {
+    setError("");
+    try {
+      setSent((await api.forgotPassword(email)).message);
+    } catch (e) {
+      setError(errorText(e));
+    }
+  });
+  return (
+    <AuthShell>
+      <h2>{tr("Recupera tu acceso.")}</h2>
+      <p>
+        {tr(
+          "Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.",
+        )}
+      </p>
+      {sent ? (
+        <div className="success-box" role="status">
+          <MailCheck size={22} />
+          <div>
+            <strong>{tr("Revisa tu correo")}</strong>
+            <span>{sent}</span>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={submit} noValidate>
+          <Field
+            label={tr("Correo electrónico")}
+            error={form.formState.errors.email?.message}
+          >
+            <input type="email" autoComplete="email" {...form.register("email")} />
+          </Field>
+          {error && <ErrorBox message={error} />}
+          <button className="button full" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting
+              ? tr("Un momento…")
+              : tr("Enviarme el enlace")}
+            <ArrowRight size={18} />
+          </button>
+        </form>
+      )}
+      <p className="auth-switch">
+        {tr("¿Ya la recordaste?")} <Link to="/acceso">{tr("Inicia sesión")}</Link>
+      </p>
+    </AuthShell>
+  );
+}
+/** Elige la contraseña nueva desde el enlace del correo. */
+export function ResetPasswordPage() {
+  const { api, setUser, toast } = useApp(),
+    navigate = useNavigate(),
+    [query] = useSearchParams(),
+    [error, setError] = useState(""),
+    [showPassword, setShowPassword] = useState(false);
+  // El token se lee una vez y se quita de la barra de direcciones y del historial
+  const [token] = useState(() => query.get("token") || "");
+  useEffect(() => {
+    if (query.has("token"))
+      window.history.replaceState(window.history.state, "", passwordResetPaths.reset);
+  }, []);
+  const form = useForm<{ token: string; password: string }>({
+    resolver: zodResolver(resetPasswordSchema, validationOptions(getLocale())),
+    defaultValues: { token, password: "" },
+  });
+  const submit = form.handleSubmit(async (data) => {
+    setError("");
+    try {
+      setUser(await api.resetPassword(data.token, data.password));
+      toast(tr("Listo: tu contraseña cambió y cerramos tus otras sesiones."));
+      navigate("/app");
+    } catch (e) {
+      setError(errorText(e));
+    }
+  });
+  const invalid = !/^[A-Za-z0-9_-]{43}$/.test(token);
+  return (
+    <AuthShell>
+      <h2>{tr("Elige una contraseña nueva.")}</h2>
+      {invalid ? (
+        <>
+          <ErrorBox message="El enlace para cambiar la contraseña no es válido o caducó." />
+          <Link className="button full" to={passwordResetPaths.request}>
+            {tr("Pedir un enlace nuevo")}
+            <ArrowRight size={18} />
+          </Link>
+        </>
+      ) : (
+        <>
+          <p>{tr("Al guardarla cerraremos las sesiones abiertas en otros dispositivos.")}</p>
+          <form onSubmit={submit} noValidate>
+            <Field
+              label={tr("Contraseña nueva")}
+              error={form.formState.errors.password?.message}
+              hint={tr("Al menos 10 caracteres. Usa una contraseña única.")}
+            >
+              <span className="password-input">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  {...form.register("password")}
+                />
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={
+                    showPassword ? tr("Ocultar contraseña") : tr("Mostrar contraseña")
+                  }
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </span>
+            </Field>
+            {error && (
+              <>
+                <ErrorBox message={error} />
+                <p className="auth-forgot">
+                  <Link to={passwordResetPaths.request}>{tr("Pedir un enlace nuevo")}</Link>
+                </p>
+              </>
+            )}
+            <button className="button full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? tr("Un momento…") : tr("Guardar y entrar")}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+        </>
+      )}
+    </AuthShell>
   );
 }
 function GoogleLogin({ onError }: { onError: (error: string) => void }) {

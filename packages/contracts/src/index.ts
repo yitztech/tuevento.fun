@@ -106,6 +106,21 @@ export const profileSchema = z.object({
     .max(32, "Usa como máximo 32 caracteres.")
     .regex(/^[a-zA-Z0-9_.-]+$/),
 });
+/** Rutas de recuperación de contraseña (iguales en los dos dominios, como /acceso). */
+export const passwordResetPaths = {
+  request: "/recuperar-contrasena",
+  reset: "/nueva-contrasena",
+} as const;
+/** Minutos de validez del enlace para restablecer la contraseña. */
+export const PASSWORD_RESET_MINUTES = 60;
+export const forgotPasswordSchema = z.object({ email });
+export const resetPasswordSchema = z.object({
+  token: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{43}$/, "El enlace para cambiar la contraseña no es válido o caducó."),
+  password: z.string().min(10, "Usa al menos 10 caracteres.").max(128),
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export const newsletterSchema = z.object({
   email,
   name: z.string().trim().max(100).optional(),

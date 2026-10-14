@@ -67,10 +67,22 @@ services:
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
       SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Correo transaccional (recuperar contraseña). Sin sufijo = es (tuevento.fun),
+      # _EN = en (yourevent.fun): cada usuario lo recibe desde el dominio por el que entró.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SMTP_USER_EN: ${SMTP_USER_EN:-}
+      SMTP_PASSWORD_EN: ${SMTP_PASSWORD_EN:-}
+      MAIL_FROM_EN: ${MAIL_FROM_EN:-}
+      # Newsletter: un Listmonk por idioma, en news. de cada dominio (suscripción pública)
       LISTMONK_URL: ${LISTMONK_URL:-}
-      LISTMONK_API_USER: ${LISTMONK_API_USER:-}
-      LISTMONK_API_TOKEN: ${LISTMONK_API_TOKEN:-}
-      LISTMONK_LIST_ID: ${LISTMONK_LIST_ID:-1}
+      LISTMONK_LIST_UUID: ${LISTMONK_LIST_UUID:-}
+      LISTMONK_URL_EN: ${LISTMONK_URL_EN:-}
+      LISTMONK_LIST_UUID_EN: ${LISTMONK_LIST_UUID_EN:-}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:?Define RELEASE_PUBLISH_TOKEN}
       COOKIE_SECURE: "true"
       DEMO_ENABLED: "false"

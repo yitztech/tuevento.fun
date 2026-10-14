@@ -4415,3 +4415,6 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .auth-legal a {color:var(--primary);}
 .landing-legal-links {display:contents;}
 @media(max-width:767px){.legal-page{padding:24px 0 56px}.legal-page header{margin-bottom:32px}}
+.auth-forgot {margin:-6px 0 16px;text-align:right;font-size:12px;}
+.auth-forgot > a {color:var(--primary);font-weight:650;text-decoration:underline;text-underline-offset:3px;}
+.auth-form .success-box > svg {flex:none;}

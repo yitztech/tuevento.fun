@@ -43,10 +43,17 @@ services:
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Correo: Mailpit recibe todo en local (http://127.0.0.1:8025); un remitente por dominio
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@tueventofun.orb.local}
+      MAIL_FROM_EN: ${MAIL_FROM_EN:-no-reply@en.tueventofun.orb.local}
+      # Newsletter: un Listmonk por idioma (vacío = solo se guarda en la base de datos)
       LISTMONK_URL: ${LISTMONK_URL:-}
-      LISTMONK_API_USER: ${LISTMONK_API_USER:-}
-      LISTMONK_API_TOKEN: ${LISTMONK_API_TOKEN:-}
-      LISTMONK_LIST_ID: ${LISTMONK_LIST_ID:-1}
+      LISTMONK_LIST_UUID: ${LISTMONK_LIST_UUID:-}
+      LISTMONK_URL_EN: ${LISTMONK_URL_EN:-}
+      LISTMONK_LIST_UUID_EN: ${LISTMONK_LIST_UUID_EN:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-dev-release-token}
       RELEASE_DOWNLOAD_HOSTS: ${RELEASE_DOWNLOAD_HOSTS:-github.com,apps.apple.com,testflight.apple.com,play.google.com}
@@ -83,6 +90,13 @@ services:
           action: rebuild
         - path: package-lock.json
           action: rebuild
+
+  # Buzón de pruebas: atrapa los correos de la API; interfaz en http://127.0.0.1:8025
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+    ports:
+      - "127.0.0.1:${MAIL_UI_PORT:-8025}:8025"
+    restart: unless-stopped
 
   gateway:
     build:

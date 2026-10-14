@@ -81,6 +81,14 @@ export class EventApi {
     this.request<User>("/auth/login", "POST", { email, password });
   google = (credential: string, nonce: string) =>
     this.request<User>("/auth/google", "POST", { credential, nonce });
+  forgotPassword = (email: string) =>
+    this.request<{ ok: boolean; message: string }>(
+      "/auth/password/forgot",
+      "POST",
+      { email },
+    );
+  resetPassword = (token: string, password: string) =>
+    this.request<User>("/auth/password/reset", "POST", { token, password });
   googleNonce = () =>
     this.request<{ nonce: string }>("/auth/google/nonce", "POST", {});
   logout = () => this.request("/auth/logout", "POST", {});
