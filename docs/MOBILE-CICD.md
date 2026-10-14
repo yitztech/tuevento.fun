@@ -59,7 +59,7 @@ El repositorio remoto es `yitztech/tuevento.fun`. Los workflows usan Node 24 y a
 | `mobile.yml` | Manual: APK firmado/AAB y GitHub Release; iOS archive/export y carga a App Store Connect |
 | `catalog.yml` | Publica enlace aprobado de TestFlight o tienda después de revisión/procesamiento |
 
-El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables `SITE_URL` y `SITE_URL_EN`) lo crea y rellena la plataforma, y solo acepta despliegues desde `main`. Configura `mobile-production` con las protecciones deseadas. Ningún archivo contiene credenciales.
+El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables `SITE_URL` y `SITE_URL_EN`) lo crea y rellena la plataforma, y solo acepta despliegues desde `main`. `mobile.yml` usa también el entorno `production`, que solo acepta ejecuciones desde `main`. Ningún archivo contiene credenciales.
 
 ### Variables
 
@@ -70,7 +70,7 @@ El entorno `production` (secretos `COOLIFY_WEBHOOK` y `COOLIFY_TOKEN`, variables
 
 - Despliegue: `COOLIFY_WEBHOOK`, `COOLIFY_TOKEN` (los pone la plataforma).
 - Compartido API/publicación: `RELEASE_PUBLISH_TOKEN` (lo genera la plataforma y lo pasa para este secreto).
-- Android: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Conserva la misma clave en cada actualización.
+- Android (entorno `production`, como en los demás proyectos): `ANDROID_RELEASE_KEYSTORE_BASE64` (base64 de `release.keystore`) y `ANDROID_SIGNING_JSON` (contenido de `signing.json`: `{"alias":"…","password":"…"}`). La clave vive en `~/.tuevento-secrets/android/`, fuera del repo, con permisos 700/600. **Es única e irremplazable**: con otra clave, Android no actualiza sobre la versión instalada y `assetlinks.json` deja de coincidir. Guarda una copia cifrada.
 - iOS: `IOS_CERTIFICATE_BASE64` (P12 de distribución), `IOS_CERTIFICATE_PASSWORD`, `IOS_PROFILE_BASE64`, `KEYCHAIN_PASSWORD` (temporal), `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` (P8).
 
 ### Servidor

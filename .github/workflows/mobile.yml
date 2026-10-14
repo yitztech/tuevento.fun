@@ -1,3 +1,9 @@
+# Secretos (entorno `production`, como en los demás proyectos):
+#   ANDROID_RELEASE_KEYSTORE_BASE64  base64 de ~/.tuevento-secrets/android/release.keystore
+#   ANDROID_SIGNING_JSON             contenido de ~/.tuevento-secrets/android/signing.json
+#                                    ({"alias":"…","password":"…"}; misma contraseña para almacén y clave)
+# Tienen que ser SIEMPRE los mismos: con otra clave, Android no actualiza sobre la
+# versión instalada y los App Links dejan de verificarse.
 name: Release Android and iOS
 on:
   workflow_dispatch:
@@ -21,7 +27,7 @@ concurrency:
 jobs:
   android:
     if: inputs.platform == 'android' || inputs.platform == 'both'
-    environment: mobile-production
+    environment: production
     runs-on: ubuntu-latest
     permissions: {contents: write}
     env:
@@ -40,19 +46,27 @@ jobs:
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm test && node scripts/validate-mobile-env.mjs
       - run: npm run build && npx cap sync android
         working-directory: apps/web
-      - name: Decode signing keystore
+      - name: Clave de firma
         env:
-          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          SIGNING: ${{ secrets.ANDROID_SIGNING_JSON }}
         run: |
-          test -n "$KEYSTORE"
-          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          if [ -z "$KEYSTORE" ] || [ -z "$SIGNING" ]; then
+            echo "::error::Faltan ANDROID_RELEASE_KEYSTORE_BASE64 o ANDROID_SIGNING_JSON en el entorno production."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          alias=$(printf '%s' "$SIGNING" | jq -r '.alias')
+          password=$(printf '%s' "$SIGNING" | jq -r '.password')
+          echo "::add-mask::$password"
+          {
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore"
+            echo "ANDROID_KEY_ALIAS=$alias"
+            echo "ANDROID_KEYSTORE_PASSWORD=$password"
+            echo "ANDROID_KEY_PASSWORD=$password"
+          } >> "$GITHUB_ENV"
       - name: Build signed APK and Play bundle
         working-directory: apps/web/android
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease bundleRelease
       - name: Publish downloadable APK
         env:
@@ -77,11 +91,11 @@ jobs:
           npm run build -w @tuevento/contracts
           node scripts/publish-release.mjs
       - if: always()
-        run: rm -f "$RUNNER_TEMP/release.jks"
+        run: rm -f "$RUNNER_TEMP/release.keystore"
   ios:
     if: inputs.platform == 'ios' || inputs.platform == 'both'
     runs-on: macos-15
-    environment: mobile-production
+    environment: production
     env:
       APP_VERSION: ${{ inputs.version }}
       VITE_APP_VERSION: ${{ inputs.version }}
