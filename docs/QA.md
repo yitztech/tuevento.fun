@@ -71,4 +71,4 @@ Resultados: `qa-artifacts/landing-results.json`. Capturas: `landing-desktop.png`
 - iOS: `xcodebuild ... -sdk iphonesimulator ... CODE_SIGNING_ALLOWED=NO build` completado. No prueba de dispositivo físico ni firma de distribución.
 - Workflows validados con `actionlint`; todavía no ejecutados en GitHub (sin remoto definido).
 - `npm audit`: cero vulnerabilidades después de sustituir el uuid transitivo obsoleto del parser Xcode por 11.1.1 mediante override.
-- Pendientes externos confirmados: dominio HTTPS, repositorio, cuenta dueña, firma Android/Apple y credenciales Google. No hay descargas públicas ni aprobación de tiendas.
+- Pendientes externos confirmados: dominio HTTPS, repositorio, cuenta dueña, firma Android/Apple, credenciales Google, huella SHA-256 del certificado Android, Team ID y capacidad Associated Domains en el perfil de distribución iOS. No hay descargas públicas ni aprobación de tiendas.

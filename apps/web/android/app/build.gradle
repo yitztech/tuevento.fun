@@ -9,6 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode = Integer.parseInt(System.getenv("BUILD_NUMBER") ?: "1")
         versionName (System.getenv("APP_VERSION") ?: "1.0.0")
+        // Host del enlace de la app = host del origen público (VITE_PUBLIC_ORIGIN).
+        manifestPlaceholders = [appLinkHost: new URI(System.getenv("VITE_PUBLIC_ORIGIN") ?: "https://invalid.local").host]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

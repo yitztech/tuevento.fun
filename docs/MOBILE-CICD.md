@@ -6,7 +6,7 @@ La app reutiliza `packages/app` (pantallas React ES/EN), `packages/contracts` (Z
 
 `VITE_PUBLIC_ORIGIN` debe contener el origen HTTPS real del backend/web al compilar. No contiene secretos. `MOBILE_APP_ID` por defecto es `com.tueventofun.app`; confirma que sea tu identificador registrado antes de publicar. `VITE_APP_VERSION`, `APP_VERSION` y `BUILD_NUMBER` versionan los recursos y paquetes; la compilación toma el número creciente de GitHub Actions. No reinicies ese contador ni publiques un número menor al de las tiendas.
 
-La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. Es de un solo uso, no expone el token de sesión en el enlace y requiere confirmación explícita del usuario en la página de conexión. Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
+La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. El regreso a la app usa **App Links / Universal Links verificados** en `https://<host de VITE_PUBLIC_ORIGIN>/app-link/auth?code=…`; el esquema propio `tueventofun://` se retiró porque cualquier app podía registrarlo y recibir el código. El código es de un solo uso, no expone el token de sesión y se entrega solo tras pulsar «Conectar mi app» y después «Abrir TuEventoFun». Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
 
 ## Desarrollo
 
@@ -75,6 +75,17 @@ Configura environments `production` y `mobile-production` con las protecciones d
 Prepara `~/tueventofun/.env` con DB_PASSWORD, PUBLIC_ORIGIN, RELEASE_PUBLISH_TOKEN, GOOGLE_CLIENT_ID y opciones de `.env.example`. Instala Docker Compose y configura HTTPS externo hacia `127.0.0.1:5187`; la BD no publica puerto en producción. El usuario SSH debe tener acceso a Docker y autenticación de lectura GHCR si las imágenes son privadas. Configura backups antes de usar datos reales. El workflow no crea servidores, DNS, TLS ni claves de firma.
 
 La descarga directa de GitHub Release debe ser pública: el workflow comprueba la URL sin autenticación antes de añadirla al catálogo. Si el repositorio es privado, publica el APK en tu host/CDN permitido y usa el endpoint desde un workflow adaptado; no expongas un token GitHub al visitante. El AAB queda para publicación en Play Console; no se automatiza el envío a Google Play en esta versión. iOS se carga para procesamiento, no se declara aprobado; el enlace se habilita con `catalog.yml` cuando realmente esté disponible.
+
+## App Links (verificación de dominio)
+
+Para que Android e iOS abran `/app-link/auth` en la app, el dominio debe publicar los archivos de asociación. La API los sirve desde su configuración, sin reconstruir la web:
+
+- `ANDROID_CERT_SHA256`: huella SHA-256 del certificado de firma de la app Android, formato `AA:BB:…` (32 pares). Va en `.env` del servidor.
+- `APPLE_TEAM_ID`: Team ID de 10 caracteres del Apple Developer. Va en `.env` del servidor.
+- `MOBILE_APP_ID`: el mismo bundle/applicationId de los builds.
+- Build iOS: el workflow fija `APP_LINK_HOST` desde `VITE_PUBLIC_ORIGIN` y firma con el entitlement `applinks:`. El perfil de distribución debe tener activada la capacidad **Associated Domains** en el portal de Apple; sin ello, la firma falla o el enlace no se abre.
+- Comprobaciones: `https://<dominio>/.well-known/assetlinks.json` y `https://<dominio>/.well-known/apple-app-site-association` responden 200 JSON sin redirección. En Android, `adb shell pm get-app-links com.tueventofun.app` debe mostrar `verified`.
+- Hasta que estén configurados, los `.well-known` responden 404 y la conexión móvil no funciona en dispositivos; esa es la forma segura de fallar.
 
 ## Límites de entrega
 

@@ -23,6 +23,9 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:?Set token}
       RELEASE_DOWNLOAD_HOSTS: ${RELEASE_DOWNLOAD_HOSTS:-github.com,apps.apple.com,testflight.apple.com,play.google.com}
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      MOBILE_APP_ID: ${MOBILE_APP_ID:-com.tueventofun.app}
     depends_on:
       postgres: {condition: service_healthy}
     healthcheck:
