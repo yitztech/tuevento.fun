@@ -8,7 +8,8 @@
     "./styles.css": "./src/styles.css",
     "./desktop": "./src/desktop.tsx",
     "./landing": "./src/landing.tsx",
-    "./downloads": "./src/downloads.tsx"
+    "./downloads": "./src/downloads.tsx",
+    "./legal": "./src/legal.tsx"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.2.8",

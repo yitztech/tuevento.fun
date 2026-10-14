@@ -29,9 +29,13 @@ export type AppState = {
 };
 export const AppContext = createContext<AppState>(null!);
 export const useApp = () => useContext(AppContext);
+/**
+ * Fecha guardada en UTC mostrada en una zona: la del evento cuando se indica y,
+ * si no (notificaciones, actividad), la zona horaria del propio usuario.
+ */
 export const dateText = (
   date: string,
-  timeZone = "America/Mexico_City",
+  timeZone?: string,
   options: Intl.DateTimeFormatOptions = {
     day: "numeric",
     month: "long",

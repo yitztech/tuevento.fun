@@ -6,7 +6,8 @@ import {
   Logger,
 } from "@nestjs/common";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { normalizeLocale, translateMessage } from "@tuevento/contracts";
+import { translateMessage } from "@tuevento/contracts";
+import { requestLocale } from "./request-locale";
 @Catch()
 export class LocaleExceptionFilter implements ExceptionFilter {
   private logger = new Logger(LocaleExceptionFilter.name);
@@ -14,7 +15,7 @@ export class LocaleExceptionFilter implements ExceptionFilter {
     const context = host.switchToHttp(),
       request = context.getRequest<FastifyRequest>(),
       reply = context.getResponse<FastifyReply>();
-    const locale = normalizeLocale(request.headers["accept-language"]);
+    const locale = requestLocale(request);
     const statusCode = (exception as { statusCode?: unknown })?.statusCode;
     const status =
       exception instanceof HttpException

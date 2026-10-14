@@ -192,6 +192,8 @@ export type User = {
   avatar: string | null;
   isOwner?: boolean;
   isDemo: boolean;
+  /** Idioma de la cuenta: el del dominio donde se registró. */
+  locale: "es" | "en";
 };
 export type Metrics = {
   invitations: number;

@@ -1,6 +1,6 @@
 # Landing de captación
 
-La ruta `/` presenta TuEventoFun en español e inglés. El panel sigue en `/app`, la autenticación en `/registro` y `/acceso`, y los enlaces de invitados en `/i/:token`.
+La ruta `/` presenta TuEventoFun en español en tuevento.fun y en inglés en yourevent.fun: el idioma lo da el dominio ([I18N](I18N.md)). El panel sigue en `/app`, la autenticación en `/registro` y `/acceso`, y los enlaces de invitados en `/i/:token`.
 
 ## Conversión
 
@@ -61,7 +61,7 @@ Los controles conservan esquinas de 9 px y la muestra RSVP, 14 px. Las sombras d
 | Hasta 620 px | Márgenes de 20 px; apertura, diseños, FAQ y cierre se apilan. H1 `clamp(49px, 11vw, 66px)`, H2 de 35 px; selector de temas en dos columnas y respuestas RSVP con icono sobre texto. El mensaje fotográfico queda dentro del álbum. |
 | Hasta 370 px | Selector de temas en una columna, H1 de 49 px y álbum de 310 px. |
 
-Estos breakpoints pertenecen a la landing. La traducción cambia la longitud de los títulos sin alterar el orden de lectura, las acciones o las muestras; el selector de idioma permanece accesible en la cabecera y el acceso también está disponible en el pie.
+Estos breakpoints pertenecen a la landing. La traducción cambia la longitud de los títulos sin alterar el orden de lectura, las acciones o las muestras; el enlace al otro idioma, que lleva al mismo contenido en el otro dominio, permanece accesible en la cabecera. El acceso y las páginas de privacidad y condiciones del idioma del dominio están en el pie.
 
 ### Deriva observada sin canonizar
 
@@ -76,6 +76,6 @@ npm run test:landing
 npm run test:browser
 ```
 
-`test:landing` cubre la página pública sin API, ambos idiomas, las vistas de escritorio/móvil/tablet, menú, preguntas frecuentes, respuestas de ejemplo, registro con tema seleccionado, acceso existente y demo. Guarda resultados y capturas en `qa-artifacts/` y limpia la cuenta que crea contra el stack local. `QA_SKIP_LANDING_CAPTURES=1` permite repetir solo el recorrido funcional.
+`test:landing` cubre la página pública sin API, el español y el inglés cada uno en su dominio (con el navegador en español), los enlaces legales del pie, las vistas de escritorio/móvil/tablet, menú, preguntas frecuentes, respuestas de ejemplo, registro con tema seleccionado, acceso existente y demo. Guarda resultados y capturas en `qa-artifacts/` y limpia la cuenta que crea contra el stack local. `QA_SKIP_LANDING_CAPTURES=1` permite repetir solo el recorrido funcional.
 
 La prueba general `test:browser` ahora entra por `/app` y conserva el recorrido de gestión de eventos e invitados.

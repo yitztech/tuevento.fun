@@ -21,7 +21,8 @@ import { OAuth2Client } from "google-auth-library";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { clientPlatform } from "./client-platform";
 import { Database } from "./database";
-import type { RegisterInput, User } from "@tuevento/contracts";
+import type { Locale, RegisterInput, User } from "@tuevento/contracts";
+import { requestLocale } from "./request-locale";
 const scrypt = promisify(scryptCallback);
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -40,6 +41,7 @@ export const userView = (r: any): User => ({
   avatar: r.avatar,
   isDemo: r.is_demo,
   isOwner: r.is_owner === true,
+  locale: r.locale === "en" ? "en" : "es",
 });
 export type AuthedRequest = FastifyRequest & { user: User };
 @Injectable()
@@ -50,11 +52,11 @@ export class AuthService {
     const key = (await scrypt(password, salt, 64)) as Buffer;
     return `${salt}:${key.toString("hex")}`;
   }
-  async register(data: RegisterInput) {
+  async register(data: RegisterInput, locale: Locale) {
     const passwordHash = await this.passwordHash(data.password);
     try {
       const [r] = await this.db.query(
-        "INSERT INTO users(id,first_name,last_name,email,phone,username,password_hash) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,phone,username,password_hash,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
         [
           randomUUID(),
           data.firstName,
@@ -63,6 +65,7 @@ export class AuthService {
           data.phone,
           data.username,
           passwordHash,
+          locale,
         ],
       );
       return userView(r);
@@ -211,7 +214,7 @@ export class AuthService {
       );
     try {
       const [r] = await this.db.query(
-        "INSERT INTO users(id,first_name,last_name,email,username,google_sub) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,username,google_sub,locale) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
         [
           randomUUID(),
           payload.given_name || "Anfitrión",
@@ -219,6 +222,7 @@ export class AuthService {
           payload.email.toLowerCase(),
           "anfitrion_" + randomBytes(5).toString("hex"),
           payload.sub,
+          requestLocale(req),
         ],
       );
       await this.db.query("INSERT INTO activity(id,kind,platform,user_id) VALUES($1,'registration',$2,$3)", [randomUUID(), clientPlatform(req), r.id]);

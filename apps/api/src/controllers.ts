@@ -20,7 +20,6 @@ import sharp from "sharp";
 import { randomBytes } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import {
-  normalizeLocale,
   translateMessage,
   notificationMessage,
   registerSchema,
@@ -39,12 +38,13 @@ import {
 import { Database } from "./database";
 import { DemoService } from "./demo";
 import { EventsService, Updates } from "./events";
+import { requestLocale } from "./request-locale";
 function parse<T extends z.ZodType>(
   schema: T,
   body: unknown,
   req?: FastifyRequest,
 ): z.output<T> {
-  const locale = normalizeLocale(req?.headers["accept-language"]);
+  const locale = requestLocale(req);
   const result = schema.safeParse(body, {
     error: z.locales[locale]().localeError,
   });
@@ -79,7 +79,7 @@ export class PublicController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     return this.auth.session(
-      await this.auth.register(parse(registerSchema, body, req)),
+      await this.auth.register(parse(registerSchema, body, req), requestLocale(req)),
       req,
       reply,
       "registration",
@@ -101,7 +101,7 @@ export class PublicController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    return this.auth.session(await this.demo.create(), req, reply);
+    return this.auth.session(await this.demo.create(requestLocale(req)), req, reply);
   }
   @Post("auth/google/nonce") googleNonce(
     @Res({ passthrough: true }) reply: FastifyReply,
@@ -141,8 +141,11 @@ export class PublicController {
   ) {
     return this.auth.logout(req, reply);
   }
-  @Get("invitations/:token") invitation(@Param("token") token: string) {
-    return this.events.publicInvitation(this.token(token));
+  @Get("invitations/:token") invitation(
+    @Req() req: FastifyRequest,
+    @Param("token") token: string,
+  ) {
+    return this.events.publicInvitation(this.token(token, req));
   }
   @Post("invitations/:token/rsvp") rsvp(
     @Req() req: FastifyRequest,
@@ -150,14 +153,15 @@ export class PublicController {
     @Body() body: unknown,
   ) {
     return this.events.rsvp(
-      this.token(token),
+      this.token(token, req),
       parse(rsvpSchema, body, req).members,
     );
   }
-  private token(token: string) {
+  private token(token: string, req: FastifyRequest) {
     return parse(
       z.string().regex(/^[\w-]{32}$/, "El enlace de invitación no es válido."),
       token,
+      req,
     );
   }
 }
@@ -251,11 +255,11 @@ export class OrganizerController {
       message: r.counts
         ? notificationMessage(
             r.counts,
-            normalizeLocale(req.headers["accept-language"]),
+            requestLocale(req),
           )
         : this.legacyNotification(
             r.message,
-            normalizeLocale(req.headers["accept-language"]),
+            requestLocale(req),
           ),
       read: r.read,
       createdAt: r.created_at.toISOString(),
