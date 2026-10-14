@@ -24,7 +24,7 @@ services:
       NODE_ENV: production
       PORT: 3087
       DATABASE_URL: postgres://tuevento:${DB_PASSWORD}@postgres:5432/tueventofun
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://frontend.tueventofun.orb.local,http://frontend.tueventofun.orb.local}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-}
@@ -51,6 +51,10 @@ services:
     build:
       context: .
       target: frontend
+    # OrbStack: publica la web en https://tueventofun.orb.local con certificado local.
+    # Otros motores Docker ignoran la etiqueta.
+    labels:
+      dev.orbstack.domains: tueventofun.orb.local
     ports:
       - "127.0.0.1:${WEB_PORT:-5187}:80"
     depends_on:

@@ -14,13 +14,15 @@ bash scripts/setup.sh
 
 El script crea `.env` con una contraseña aleatoria de PostgreSQL si no existe, compila, levanta los servicios y espera sus healthchecks. No crea una contraseña ni un usuario organizador predeterminado. El registro está en **http://localhost:5187/registro**.
 
-| Servicio   | Dirección local                  |
-| ---------- | -------------------------------- |
-| Aplicación | http://localhost:5187            |
-| Salud API  | http://localhost:3087/api/health |
-| PostgreSQL | 127.0.0.1:5487                   |
+| Servicio   | Dirección local                  | Con OrbStack                              |
+| ---------- | -------------------------------- | ----------------------------------------- |
+| Aplicación | http://localhost:5187            | https://tueventofun.orb.local             |
+| Salud API  | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health  |
+| PostgreSQL | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432       |
 
 Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`.
+
+Con OrbStack, `https://tueventofun.orb.local` usa su certificado local de confianza; también responden `frontend.tueventofun.orb.local` y `backend.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`. Si cambias el nombre del proyecto Compose, los dominios cambian y debes añadirlos ahí, o los POST darán 403. Para Google, añade `https://tueventofun.orb.local` como origen autorizado. Los enlaces de invitación generados desde estas URL solo se abren en este Mac, igual que con `localhost`.
 
 ```bash
 docker compose ps
@@ -90,6 +92,17 @@ npm run test:landing
 `test:api` crea usuarios de prueba con credenciales aleatorias en memoria, ejerce los endpoints y limpia sus propias cuentas al terminar. Apunta por defecto al backend local. `TEST_API_URL` permite cambiar el destino, pero en ese caso no ejecuta limpieza directa de PostgreSQL.
 
 `test:browser` ejecuta el recorrido completo ES/EN, captura escritorio/móvil/tablet/TV y elimina la cuenta que creó al finalizar en localhost. Usa `HEADED=1 npm run test:browser` para ver el navegador. Las capturas quedan en `qa-artifacts/`.
+
+Para probar contra los dominios de OrbStack, Node necesita su CA local, porque no usa el llavero de macOS (sin ella falla con `SELF_SIGNED_CERT_IN_CHAIN`):
+
+```bash
+security find-certificate -c "OrbStack Development Root CA" -p > /tmp/orbstack-ca.pem
+export NODE_EXTRA_CA_CERTS=/tmp/orbstack-ca.pem
+TEST_API_URL=https://tueventofun.orb.local/api npm run test:api
+TEST_WEB_URL=https://tueventofun.orb.local npm run test:browser
+```
+
+Con `TEST_WEB_URL`, `test:browser` no borra la cuenta de prueba que crea.
 
 Para editar el frontend con Vite y conservar backend/base de datos en Docker:
 
