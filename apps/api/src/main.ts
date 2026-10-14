@@ -29,7 +29,10 @@ async function bootstrap() {
   await app.register(cookie);
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(rateLimit, {
-    max: 240,
+    max: Number(
+      process.env.RATE_LIMIT_MAX ||
+        (process.env.DEMO_ENABLED === "true" ? 1200 : 300),
+    ),
     timeWindow: "1 minute",
     keyGenerator: (req) => req.ip,
   });

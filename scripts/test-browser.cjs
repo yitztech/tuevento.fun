@@ -28,6 +28,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     reducedMotion: "reduce",
     locale: "es-ES",
     permissions: ["clipboard-read", "clipboard-write"],
+    ignoreHTTPSErrors: true,
   });
   let createdUser;
   const page = await context.newPage();
@@ -311,6 +312,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     const guestContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       reducedMotion: "reduce",
+      ignoreHTTPSErrors: true,
     });
     const guest = await guestContext.newPage();
     guest.on("pageerror", (e) => errors.push(e.message));

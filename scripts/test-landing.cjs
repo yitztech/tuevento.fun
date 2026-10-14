@@ -25,6 +25,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     viewport: { width: 1512, height: 1100 },
     reducedMotion: "reduce",
     locale: "es-ES",
+    ignoreHTTPSErrors: true,
   });
   const page = await context.newPage();
   const errors = [],
@@ -227,6 +228,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     const demoContext = await browser.newContext({
       viewport: { width: 1512, height: 1100 },
       reducedMotion: "reduce",
+      ignoreHTTPSErrors: true,
     });
     const demo = await demoContext.newPage();
     demo.on("pageerror", (e) => errors.push(e.message));

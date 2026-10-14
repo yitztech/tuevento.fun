@@ -38,10 +38,28 @@ map \$host \$site_lang {
     $host_en       en;
     www.$host_en   en;
 }
-map \$host \$origin_es { default "$origin_es"; }
-map \$host \$origin_en { default "$origin_en"; }
-map \$site_lang \$site_origin { default "$origin_es"; en "$origin_en"; }
-map \$site_lang \$alt_origin  { default "$origin_en"; en "$origin_es"; }
+
+# Puerto en la cabecera Host si el cliente usa uno distinto a 80/443 (desarrollo local)
+map \$http_host \$client_port {
+    "~:(?<p>[0-9]+)$" ":\$p";
+    default "";
+}
+
+# En local (localhost o con puerto explícito) los enlaces conservan el puerto y el protocolo HTTP
+map \$http_host \$origin_es {
+    "~^(localhost|127\.0\.0\.1)(:[0-9]+)?$" "http://localhost\$client_port";
+    "~$host_en:[0-9]+$"                     "http://localhost\$client_port";
+    default                                 "$origin_es";
+}
+
+map \$http_host \$origin_en {
+    "~^(localhost|127\.0\.0\.1)(:[0-9]+)?$" "http://$host_en\$client_port";
+    "~$host_en:[0-9]+$"                     "http://$host_en\$client_port";
+    default                                 "$origin_en";
+}
+
+map \$site_lang \$site_origin { default \$origin_es; en \$origin_en; }
+map \$site_lang \$alt_origin  { default \$origin_en; en \$origin_es; }
 CONF
 
 mkdir -p /etc/nginx/seo

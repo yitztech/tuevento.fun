@@ -9,7 +9,7 @@ const englishHost=new URL(process.env.TEST_SITE_URL_EN||'https://en.tueventofun.
 const local=/^(localhost|127\.0\.0\.1)$/.test(new URL(base).hostname);
 const baseEn=process.env.TEST_WEB_URL_EN||(local?`http://${englishHost}:${new URL(base).port||80}`:`https://${englishHost}`);
 const sql=q=>execFileSync('docker',['compose','exec','-T','postgres','psql','-U','tuevento','-d','tueventofun','-Atc',q],{encoding:'utf8'});
-(async()=>{const browser=await chromium.launch({headless:true,args:local?[`--host-resolver-rules=MAP ${englishHost} 127.0.0.1`]:[]});const context=await browser.newContext();const page=await context.newPage();let id;const errors=[];page.on('pageerror',e=>errors.push(e.message));try{
+(async()=>{const browser=await chromium.launch({headless:true,args:local?[`--host-resolver-rules=MAP ${englishHost} 127.0.0.1`]:[]});const context=await browser.newContext({ignoreHTTPSErrors:true});const page=await context.newPage();let id;const errors=[];page.on('pageerror',e=>errors.push(e.message));try{
  const n=Date.now();const response=await context.request.post(base+'/api/auth/register',{headers:{'X-TuEvento-Client':'1'},data:{firstName:'Prueba',lastName:'Dueño',email:`owner-${n}@example.invalid`,username:`owner_${n}`,phone:'+527770000000',password:randomBytes(20).toString('hex')}});expect(response.ok()).toBe(true);id=(await response.json()).id;
  sql(`UPDATE users SET is_owner=true WHERE id='${id}'`);
  for(const [width,height] of [[1512,1000],[390,844]]){
