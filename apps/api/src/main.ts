@@ -14,7 +14,14 @@ async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ bodyLimit: 3 * 1024 * 1024, trustProxy: false }),
+    // El único proxy delante es Nginx, que añade la IP real del cliente al final
+    // de X-Forwarded-For. Confiar solo en el primer salto (Nginx) evita que el
+    // cliente falsee su IP y hace que el rate limit y las métricas usen la IP
+    // real, no la del contenedor de Nginx (equivale a trustProxy: 1).
+    new FastifyAdapter({
+      bodyLimit: 3 * 1024 * 1024,
+      trustProxy: (_address: string, hop: number) => hop === 0,
+    }),
   );
   app.setGlobalPrefix("api");
   app.useGlobalFilters(new LocaleExceptionFilter());

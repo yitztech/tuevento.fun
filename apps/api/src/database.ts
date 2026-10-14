@@ -8,6 +8,7 @@ export class Database implements OnModuleInit, OnModuleDestroy {
     connectionString: process.env.DATABASE_URL,
     max: 12,
   });
+  private sweepTimer?: NodeJS.Timeout;
   async onModuleInit() {
     const directory = join(__dirname, "../migrations");
     const migrations = (await readdir(directory))
@@ -28,7 +29,21 @@ export class Database implements OnModuleInit, OnModuleDestroy {
         await c.query("INSERT INTO schema_migrations(name) VALUES($1)", [name]);
       }
     });
-    await this.pool.query("DELETE FROM activity WHERE created_at < now() - interval '90 days'");
+    await this.cleanup();
+    // Repetir la purga mientras el servicio vive, no solo al arrancar: sesiones y
+    // códigos caducados, actividad antigua y cuentas demo no se acumulan entre
+    // reinicios. unref para no mantener vivo el proceso en el apagado.
+    this.sweepTimer = setInterval(() => {
+      void this.cleanup().catch((error) =>
+        console.error("Cleanup sweep failed:", (error as Error).message),
+      );
+    }, 60 * 60 * 1000);
+    this.sweepTimer.unref?.();
+  }
+  private async cleanup() {
+    await this.pool.query(
+      "DELETE FROM activity WHERE created_at < now() - interval '90 days'",
+    );
     await this.pool.query("DELETE FROM mobile_auth_codes WHERE expires_at < now()");
     await this.pool.query("DELETE FROM sessions WHERE expires_at < now()");
     await this.pool.query(
@@ -56,6 +71,7 @@ export class Database implements OnModuleInit, OnModuleDestroy {
     }
   }
   async onModuleDestroy() {
+    if (this.sweepTimer) clearInterval(this.sweepTimer);
     await this.pool.end();
   }
 }

@@ -4,6 +4,8 @@ import {
   ConflictException,
   ServiceUnavailableException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   CanActivate,
   ExecutionContext,
 } from "@nestjs/common";
@@ -23,6 +25,11 @@ import type { RegisterInput, User } from "@tuevento/contracts";
 const scrypt = promisify(scryptCallback);
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
+// Freno a la fuerza bruta de contraseñas, por cuenta y no por IP: así no afecta a
+// oficinas tras NAT ni a las pruebas, pero detiene el adivinado contra un correo.
+const LOGIN_MAX_FAILURES = 5,
+  LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const loginFailures = new Map<string, { count: number; reset: number }>();
 export const userView = (r: any): User => ({
   id: r.id,
   firstName: r.first_name,
@@ -68,6 +75,17 @@ export class AuthService {
     }
   }
   async login(email: string, password: string) {
+    const key = email.toLowerCase();
+    const now = Date.now();
+    if (loginFailures.size > 10_000)
+      for (const [k, entry] of loginFailures)
+        if (entry.reset <= now) loginFailures.delete(k);
+    const failure = loginFailures.get(key);
+    if (failure && failure.reset > now && failure.count >= LOGIN_MAX_FAILURES)
+      throw new HttpException(
+        "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     const [r] = await this.db.query(
       "SELECT * FROM users WHERE email=$1 AND is_demo=false",
       [email],
@@ -79,10 +97,18 @@ export class AuthService {
     if (
       !r?.password_hash ||
       !timingSafeEqual(result, Buffer.from(expected, "hex"))
-    )
+    ) {
+      const current =
+        failure && failure.reset > now
+          ? failure
+          : { count: 0, reset: now + LOGIN_WINDOW_MS };
+      current.count++;
+      loginFailures.set(key, current);
       throw new UnauthorizedException(
         "El correo o la contraseña no coinciden.",
       );
+    }
+    loginFailures.delete(key);
     return userView(r);
   }
   cookieOptions() {

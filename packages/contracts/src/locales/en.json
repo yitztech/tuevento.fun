@@ -465,5 +465,6 @@
   "Host de descarga no permitido.": "Download host is not allowed.",
   "Usa HTTPS.": "Use HTTPS.",
   "iOS requiere TestFlight o App Store.": "iOS requires TestFlight or the App Store.",
-  "Revisa el canal y la suma SHA-256 de Android.": "Check the Android channel and SHA-256 checksum."
+  "Revisa el canal y la suma SHA-256 de Android.": "Check the Android channel and SHA-256 checksum.",
+  "Demasiados intentos. Espera un momento e inténtalo de nuevo.": "Too many attempts. Please wait a moment and try again."
 }

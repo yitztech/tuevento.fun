@@ -15,8 +15,13 @@ export class LocaleExceptionFilter implements ExceptionFilter {
       request = context.getRequest<FastifyRequest>(),
       reply = context.getResponse<FastifyReply>();
     const locale = normalizeLocale(request.headers["accept-language"]);
+    const statusCode = (exception as { statusCode?: unknown })?.statusCode;
     const status =
-      exception instanceof HttpException ? exception.getStatus() : 500;
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : typeof statusCode === "number"
+          ? statusCode
+          : 500;
     if (status === 500)
       this.logger.error(
         exception instanceof Error ? exception.message : "Unexpected error",
@@ -24,7 +29,14 @@ export class LocaleExceptionFilter implements ExceptionFilter {
     const response =
       exception instanceof HttpException
         ? exception.getResponse()
-        : { message: "Error interno. Inténtalo de nuevo." };
+        : status === 429
+          ? {
+              message:
+                "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+            }
+          : status !== 500 && exception instanceof Error
+            ? { message: exception.message }
+            : { message: "Error interno. Inténtalo de nuevo." };
     const translate = (value: unknown): unknown =>
       typeof value === "string"
         ? translateMessage(value, locale)
