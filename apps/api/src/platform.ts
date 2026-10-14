@@ -2,12 +2,13 @@ import { Controller, Get, Post, Body, Req, Param, Query, Res, BadRequestExceptio
 import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { visitSchema, releaseSchema, normalizeLocale, validationOptions } from '@tuevento/contracts';
+import { visitSchema, releaseSchema, validationOptions } from '@tuevento/contracts';
+import { requestLocale } from './request-locale';
 import { Database } from './database';
 import { AuthService, userView } from './auth';
 import { clientPlatform } from './client-platform';
 const parse = <T extends z.ZodType>(schema: T, value: unknown, req?: FastifyRequest): z.output<T> => {
-  const r = schema.safeParse(value, validationOptions(normalizeLocale(req?.headers["accept-language"]))); if (!r.success) throw new BadRequestException(r.error.issues[0]?.message); return r.data;
+  const r = schema.safeParse(value, validationOptions(requestLocale(req))); if (!r.success) throw new BadRequestException(r.error.issues[0]?.message); return r.data;
 };
 @Controller()
 export class PlatformController {

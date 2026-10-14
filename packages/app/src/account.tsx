@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useApp, errorText } from "./context";
 import { Logo, Field, ErrorBox, Avatar } from "./components";
+import { AuthLegalNotice } from "./legal";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
   const challenge = query.get("appChallenge");
@@ -303,6 +304,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               <ArrowRight size={16} />
             </button>
           )}
+          <AuthLegalNotice registerMode={registerMode} />
         </div>
       </section>
     </div>

@@ -47,7 +47,7 @@ Confirmado: construcción directa del sitio. La nueva solicitud añade una landi
 
 ## Idiomas
 
-Español como idioma inicial e inglés como alternativa completa. Selector persistente en el dispositivo y parámetro de idioma en invitaciones públicas. La interfaz y mensajes se traducen; el contenido escrito por el usuario se conserva.
+Un idioma por dominio: https://tuevento.fun en español y https://yourevent.fun en inglés, con la misma aplicación. El idioma lo decide el dominio (un dominio desconocido usa español), no el navegador ni una preferencia guardada. El otro idioma se ofrece con un enlace a su dominio, nunca con una redirección automática. Cada página lleva su `canonical` y sus `hreflang`; `robots.txt` y `sitemap.xml` van por dominio. La cuenta guarda el idioma del dominio donde se registró. La interfaz y los mensajes se traducen; el contenido escrito por el usuario se conserva. Privacidad y condiciones están en `/privacidad` y `/condiciones` (es) y en `/privacy` y `/terms` (en); el titular y el contacto están pendientes de publicar. Detalle técnico en [docs/I18N.md](docs/I18N.md).
 
 ## Administración, descargas y apps
 

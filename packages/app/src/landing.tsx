@@ -15,6 +15,7 @@ import {
 import { themes, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
+import { LegalLinks } from "./legal";
 import "./landing.css";
 
 const family = [
@@ -40,7 +41,6 @@ export function LandingPage() {
     theme,
   };
   useEffect(() => {
-    document.documentElement.lang = locale;
     document.title = tr("TuEventoFun · Invita, reúne y celebra");
     const meta = document.querySelector('meta[name="description"]');
     const previous = meta?.getAttribute("content");
@@ -431,6 +431,7 @@ export function LandingPage() {
           <Link to="/acceso">{tr("Entrar a mi espacio")}</Link>
           <Link to="/app">{tr("Explorar la demostración")}</Link>
           <a href="#preguntas">{tr("Preguntas frecuentes")}</a>
+          <LegalLinks className="landing-legal-links" />
         </nav>
         <small>© {new Date().getFullYear()} TuEventoFun</small>
       </footer>

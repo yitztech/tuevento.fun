@@ -25,9 +25,11 @@ export type ApiOptions = {
   platform?: "web" | "android" | "ios";
   appVersion?: string;
   fetch?: typeof globalThis.fetch;
-  language?: () => "es" | "en";
 };
-/** Framework independent: inject fetch/baseUrl from browser, Electron or Tauri. */
+/**
+ * Framework independent: inject fetch/baseUrl from browser, Electron or Tauri.
+ * El idioma de las respuestas lo decide el servidor por el Host del dominio.
+ */
 export class EventApi {
   private transport: typeof globalThis.fetch;
   constructor(private options: ApiOptions) {
@@ -42,7 +44,6 @@ export class EventApi {
         "X-TuEvento-Client": "1",
         "X-Client-Platform": this.options.platform || "web",
         "X-App-Version": this.options.appVersion || "web",
-        "Accept-Language": this.options.language?.() || "es",
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });

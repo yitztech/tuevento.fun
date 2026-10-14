@@ -9,18 +9,19 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { AppModule } from "./app.module";
 import { LocaleExceptionFilter } from "./locale.filter";
-import { normalizeLocale, translateMessage } from "@tuevento/contracts";
+import { translateMessage } from "@tuevento/contracts";
+import { requestLocale } from "./request-locale";
+import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
+  await startTrustedProxyRefresh();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    // Solo el contenedor de Nginx (IP privada) puede hablar con la API, y Nginx
-    // sobrescribe X-Forwarded-For con la IP real del cliente. Por eso se confía en
-    // saltos privados y el cliente nunca es un salto de confianza: así el rate limit
-    // y las métricas usan la IP real, tanto en desarrollo como tras el HTTPS externo.
+    // Solo se confía en el gateway de la red interna del compose, que fija
+    // X-Forwarded-For con la IP real del cliente (ver trusted-proxy.ts).
     new FastifyAdapter({
       bodyLimit: 3 * 1024 * 1024,
-      trustProxy: (address: string) => isPrivateAddress(address),
+      trustProxy: (address: string) => isTrustedProxy(address),
     }),
   );
   app.setGlobalPrefix("api");
@@ -38,7 +39,7 @@ async function bootstrap() {
   app.enableCors({
     origin: origins,
     credentials: true,
-    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "Accept-Language", "X-Client-Platform", "X-App-Version", "Authorization"],
+    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "X-Client-Platform", "X-App-Version", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
   app
@@ -47,10 +48,7 @@ async function bootstrap() {
     .addHook("onRequest", async (req: any, reply: any) => {
       if (req.url.startsWith("/api")) {
         reply.header("Cache-Control", "no-store");
-        reply.header(
-          "Content-Language",
-          normalizeLocale(req.headers["accept-language"]),
-        );
+        reply.header("Content-Language", requestLocale(req));
       }
       if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
         if (
@@ -62,26 +60,13 @@ async function bootstrap() {
             .send({
               message: translateMessage(
                 "Origen de solicitud no permitido.",
-                normalizeLocale(req.headers["accept-language"]),
+                requestLocale(req),
               ),
             });
       }
     });
   app.enableShutdownHooks();
   await app.listen(Number(process.env.PORT || 3087), "0.0.0.0");
-}
-// Redes privadas y loopback: Docker, el host y el propio Nginx. Una IP pública nunca
-// se trata como proxy, así que no puede falsificar la IP del cliente.
-function isPrivateAddress(address: string): boolean {
-  const ip = address.replace(/^::ffff:/i, "");
-  return (
-    /^127\./.test(ip) ||
-    /^10\./.test(ip) ||
-    /^192\.168\./.test(ip) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
-    /^::1$/.test(ip) ||
-    /^f[cd][0-9a-f]{2}:/i.test(ip)
-  );
 }
 bootstrap().catch((error) => {
   console.error(error.message);

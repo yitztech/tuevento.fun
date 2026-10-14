@@ -3,20 +3,20 @@ import { randomUUID, randomBytes } from "node:crypto";
 import { Database } from "./database";
 import { EventsService } from "./events";
 import { userView } from "./auth";
-import type { Status } from "@tuevento/contracts";
+import type { Locale, Status } from "@tuevento/contracts";
 @Injectable()
 export class DemoService {
   constructor(
     private db: Database,
     private events: EventsService,
   ) {}
-  async create() {
+  async create(locale: Locale = "es") {
     if (process.env.DEMO_ENABLED !== "true") throw new NotFoundException();
     const id = randomUUID(),
       unique = randomBytes(8).toString("hex");
     const [row] = await this.db.query(
-      "INSERT INTO users(id,first_name,last_name,email,username,is_demo) VALUES($1,'Andrea','López',$2,$3,true) RETURNING *",
-      [id, `demo-${unique}@example.invalid`, `demo_${unique}`],
+      "INSERT INTO users(id,first_name,last_name,email,username,is_demo,locale) VALUES($1,'Andrea','López',$2,$3,true,$4) RETURNING *",
+      [id, `demo-${unique}@example.invalid`, `demo_${unique}`, locale],
     );
     try {
       const names = [

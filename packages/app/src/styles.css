@@ -4114,25 +4114,29 @@ small {
   }
 }
 
+/* Enlace al mismo contenido en el dominio del otro idioma (no cambia el idioma en el sitio). */
 .language-switcher {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: var(--blue);
-  position: relative;
-  flex-shrink: 0;
-}
-.language-switcher select {
   min-height: 38px;
   border: 1px solid #dfe1e5;
   background: #fff;
-  padding: 7px 23px 7px 10px;
+  padding: 7px 10px;
   border-radius: 7px;
   font-size: 11px;
-  color: var(--blue);
-  cursor: pointer;
   font-weight: 650;
-  max-width: 112px;
+  color: var(--blue);
+  text-decoration: none;
+  position: relative;
+  flex-shrink: 0;
+}
+.language-switcher:hover {
+  border-color: var(--blue);
+}
+.language-switcher:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 .auth-language {
   display: flex;
@@ -4146,14 +4150,10 @@ small {
 .tv-page .language-switcher {
   order: 3;
 }
-.public-header .language-switcher > span {
-  display: none;
-}
 @media (max-width: 760px) {
-  .language-switcher select {
+  .language-switcher {
     font-size: 10px;
-    padding: 7px 17px 7px 8px;
-    max-width: 100px;
+    padding: 7px 8px;
   }
   .language-switcher > svg {
     display: none;
@@ -4206,7 +4206,7 @@ small {
   color: #852937;
   border-color: #c48b96;
 }
-.language-switcher select {
+.language-switcher {
   min-height: 44px;
   font-size: 12px;
 }
@@ -4230,7 +4230,7 @@ small {
   .stat > div {
     min-width: 0;
   }
-  .language-switcher select {
+  .language-switcher {
     font-size: 12px;
   }
   .welcome-copy > p {
@@ -4266,3 +4266,18 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .owner-dashboard select {min-height:44px;padding:10px 36px 10px 12px;border:1px solid var(--line);border-radius:8px;color:var(--blue);background:#fff;font:inherit;}
 .owner-dashboard select:focus-visible,.analytics-table:focus-visible {outline:2px solid var(--blue);outline-offset:3px;}
 @media(max-width:767px){.owner-dashboard .page-heading>label{margin-top:20px}}
+
+/* Páginas legales: privacidad y condiciones en cada dominio. */
+.legal-page {max-width:820px;padding:28px 32px 80px;margin:auto;}
+.legal-page header {display:flex;justify-content:space-between;align-items:center;margin-bottom:48px;}
+.legal-page h1 {font-size:clamp(34px,4.4vw,54px);line-height:1.08;letter-spacing:-.03em;margin:24px 0 10px;}
+.legal-page h2 {font-size:20px;margin:36px 0 10px;}
+.legal-page p {line-height:1.65;color:#3d424c;margin:0 0 12px;max-width:68ch;}
+.legal-page .legal-updated {font-size:13px;color:#5d636e;}
+.legal-page .legal-intro {font-size:17px;}
+.legal-page .legal-other {margin-top:40px;}
+.legal-page a:not(.language-switcher):not(.logo) {color:var(--blue);}
+.auth-legal {margin-top:18px;font-size:12px;color:#5d636e;line-height:1.5;}
+.auth-legal a {color:var(--blue);}
+.landing-legal-links {display:contents;}
+@media(max-width:767px){.legal-page{padding:24px 20px 56px}.legal-page header{margin-bottom:32px}}

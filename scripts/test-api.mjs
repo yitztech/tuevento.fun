@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import http from "node:http";
+import https from "node:https";
 const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
+// Dominio inglés de desarrollo (mismo valor que SITE_URL_EN del compose).
+const englishHost = new URL(
+  process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
+).hostname;
 const records = [],
   users = [];
 const suite = async (name, fn) => {
@@ -10,11 +16,32 @@ const suite = async (name, fn) => {
   records.push({ name, passed: true });
   console.log("PASS", name);
 };
+/**
+ * fetch() de Node no permite fijar Host, y el idioma de la API depende del Host.
+ * Esta petición mínima con node:http/https sí lo permite.
+ */
+function send(url, { method = "GET", headers = {}, body } = {}) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const transport = target.protocol === "https:" ? https : http;
+    const request = transport.request(target, { method, headers }, (res) => {
+      let text = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => (text += chunk));
+      res.on("end", () =>
+        resolve({ status: res.statusCode, headers: res.headers, text }),
+      );
+    });
+    request.on("error", reject);
+    if (body !== undefined) request.write(body);
+    request.end();
+  });
+}
 function client() {
   let cookie = "";
   return {
     async call(path, method = "GET", body, expected = 200, headers = {}) {
-      const r = await fetch(base + path, {
+      const r = await send(base + path, {
         method,
         headers: {
           ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -24,9 +51,9 @@ function client() {
         },
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
-      const set = r.headers.get("set-cookie");
-      if (set) cookie = set.split(";")[0];
-      const data = await r.json();
+      const set = r.headers["set-cookie"];
+      if (set?.length) cookie = set[0].split(";")[0];
+      const data = JSON.parse(r.text || "{}");
       assert.equal(r.status, expected, JSON.stringify(data));
       return data;
     },
@@ -220,9 +247,9 @@ try {
     },
   );
   await suite(
-    "Idioma de API: validación, notificaciones y contenido original",
+    "Idioma por dominio: el Host decide, Accept-Language se ignora",
     async () => {
-      const en = { "Accept-Language": "en-US" };
+      const en = { Host: englishHost };
       const invalid = await guest.call(
         "/auth/login",
         "POST",
@@ -231,8 +258,33 @@ try {
         en,
       );
       assert.equal(invalid.message, "Enter a valid email address.");
+      const www = await guest.call(
+        "/auth/login",
+        "POST",
+        { email: "bad", password: "" },
+        400,
+        { Host: `www.${englishHost}` },
+      );
+      assert.equal(www.message, "Enter a valid email address.");
       const missing = await guest.call("/auth/register", "POST", {}, 400, en);
       assert.match(missing.message, /Invalid input/);
+      // Accept-Language en un Host desconocido no cambia el idioma: sigue es
+      const ignored = await guest.call(
+        "/auth/login",
+        "POST",
+        { email: "bad", password: "" },
+        400,
+        { "Accept-Language": "en-US,en;q=0.9" },
+      );
+      assert.equal(ignored.message, "Escribe un correo válido.");
+      const unknown = await guest.call(
+        "/auth/login",
+        "POST",
+        { email: "bad", password: "" },
+        400,
+        { Host: "sub." + englishHost, "Accept-Language": "en" },
+      );
+      assert.equal(unknown.message, "Escribe un correo válido.");
       const notifications = await a.call(
         "/notifications",
         "GET",
@@ -244,6 +296,10 @@ try {
         notifications[0].message,
         "1 attending, 1 not attending and 1 pending.",
       );
+      const spanish = await a.call("/notifications", "GET", undefined, 200, {
+        "Accept-Language": "en",
+      });
+      assert.match(spanish[0].message, /confirmado/);
       const original = await a.call(
         `/events/${event.id}`,
         "GET",
@@ -252,8 +308,39 @@ try {
         en,
       );
       assert.equal(original.title, "QA · Celebración");
-      const response = await fetch(base + "/health", { headers: en });
-      assert.equal(response.headers.get("content-language"), "en");
+      const health = await send(base + "/health", { headers: en });
+      assert.equal(health.headers["content-language"], "en");
+      const other = await send(base + "/health", {
+        headers: { "Accept-Language": "en" },
+      });
+      assert.equal(other.headers["content-language"], "es");
+    },
+  );
+  await suite(
+    "El idioma de la cuenta se guarda con el dominio del registro",
+    async () => {
+      const english = client(),
+        spanish = client();
+      const created = await english.call(
+        "/auth/register",
+        "POST",
+        account("en"),
+        201,
+        { Host: englishHost, "Accept-Language": "es" },
+      );
+      users.push(created.id);
+      assert.equal(created.locale, "en");
+      // La sesión es por dominio, pero la cuenta conserva su idioma en cualquiera
+      assert.equal((await english.call("/auth/me")).locale, "en");
+      const local = await spanish.call(
+        "/auth/register",
+        "POST",
+        account("es"),
+        201,
+        { "Accept-Language": "en-US" },
+      );
+      users.push(local.id);
+      assert.equal(local.locale, "es");
     },
   );
   await suite("RSVP idempotente y marcado de notificaciones", async () => {

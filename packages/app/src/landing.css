@@ -746,8 +746,7 @@
   .landing-login {
     display: none;
   }
-  .landing-header .language-switcher select {
-    max-width: 100px;
+  .landing-header .language-switcher {
     font-size: 11px;
   }
   .landing-nav.open {
