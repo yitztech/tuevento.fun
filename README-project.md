@@ -6,7 +6,7 @@ Aplicación en español e inglés para organizar celebraciones, crear invitacion
 
 **http://localhost:5187**
 
-El stack usa tres servicios, con los mismos nombres en desarrollo (`compose.yml`) y en producción (`compose.prod.yml`): `gateway` (Nginx que sirve la web React/Vite y reparte `/api/`), `api` (NestJS/Fastify) y `postgres` (PostgreSQL 18).
+El stack usa cuatro servicios, con los mismos nombres en desarrollo (`compose.yml`) y en producción (`compose.prod.yml`): `gateway` (Nginx de entrada: reparte `/api/` y `/.well-known/` a la API y el resto a la web; listo para cachear el frontend), `web` (la SPA React/Vite: idioma por dominio, `canonical`/`hreflang`, robots, sitemap y cabeceras de seguridad), `api` (NestJS/Fastify) y `postgres` (PostgreSQL 18). En desarrollo se suma `mailpit`, que atrapa los correos.
 
 ```bash
 bash scripts/setup.sh
@@ -21,6 +21,7 @@ El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PAS
 | Salud del gateway   | http://localhost:5187/healthz    | https://tueventofun.orb.local/healthz       |
 | Salud API           | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health    |
 | PostgreSQL          | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432         |
+| Correos (Mailpit)   | http://127.0.0.1:8026            | http://mail.tueventofun.orb.local:8025      |
 
 Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`. Si tenías un volumen de PostgreSQL 17, no sirve para la 18: bórralo (`docker compose down -v`, borra los datos) o migra los datos con `pg_dump`.
 
@@ -110,11 +111,11 @@ Con `TEST_WEB_URL`, `test:browser` no borra la cuenta de prueba que crea.
 Para editar la web con Vite y conservar API y base de datos en Docker:
 
 ```bash
-docker compose stop gateway
+docker compose stop gateway web
 npm run dev
 ```
 
-Vite escucha en 5187 y hace proxy a la API en 3087. Sin el gateway no hay idioma por dominio (siempre español), `canonical`/`hreflang`, `robots.txt` ni `sitemap.xml`. Al terminar, detén Vite y ejecuta `docker compose start gateway`. No ejecutes Vite y el gateway en el mismo puerto.
+Vite escucha en 5187 y hace proxy a la API en 3087. Sin `gateway` y `web` no hay idioma por dominio (siempre español), `canonical`/`hreflang`, `robots.txt` ni `sitemap.xml`. Al terminar, detén Vite y ejecuta `docker compose start web gateway`. No ejecutes Vite y el gateway en el mismo puerto. Normalmente no hace falta: `docker compose up --watch` ya recarga la web en caliente dentro del contenedor `web`.
 
 La matriz y evidencia de QA están en [docs/QA.md](docs/QA.md) y `qa-artifacts/`. No son prueba de despliegue público, de Google configurado ni de un dispositivo Smart TV físico.
 
@@ -122,9 +123,9 @@ La descripción de captación y sus rutas están en [docs/LANDING.md](docs/LANDI
 
 ## Producción (plataforma yitztech)
 
-Se despliega en modo imágenes: `.github/workflows/deploy.yml` prueba (Node 24), publica `ghcr.io/yitztech/tuevento.fun-gateway`, `ghcr.io/yitztech/tuevento.fun-api` y `ghcr.io/yitztech/tuevento.fun-postgres` con las etiquetas `:main` y `:<sha>`, pide el despliegue a Coolify (POST al webhook con `Authorization: Bearer`) y espera hasta 10 minutos a que `SITE_URL/version.json` y `SITE_URL_EN/version.json` devuelvan el commit. Se dispara en push a `main` (salvo cambios solo en `.md`) y con `workflow_dispatch`, y solo publica y despliega desde `main`. El servidor nunca compila.
+Se despliega en modo imágenes: `.github/workflows/deploy.yml` prueba (Node 24), publica `ghcr.io/yitztech/tuevento.fun-gateway`, `ghcr.io/yitztech/tuevento.fun-web`, `ghcr.io/yitztech/tuevento.fun-api` y `ghcr.io/yitztech/tuevento.fun-postgres` con las etiquetas `:main` y `:<sha>`, pide el despliegue a Coolify (POST al webhook con `Authorization: Bearer`) y espera hasta 10 minutos a que `SITE_URL/version.json` y `SITE_URL_EN/version.json` devuelvan el commit. Se dispara en push a `main` (salvo cambios solo en `.md`) y con `workflow_dispatch`, y solo publica y despliega desde `main`. El servidor nunca compila.
 
-`compose.prod.yml` define `gateway` (único servicio con dominio, puerto 80, `/healthz` sin depender de la API), `api` (read_only, tmpfs /tmp, mem_limit 256m) y `postgres` (red `backend` interna, PostgreSQL 18.6 con postgresql.conf ajustado y rol `api`). Ningún servicio publica puertos ni monta archivos del repositorio. Todos llevan `mem_limit` y `cpus` (64m, 256m y 512m), `restart: unless-stopped`, `no-new-privileges`, `cap_drop: [ALL]` con las capacidades mínimas y logs `json-file` rotados (10m × 3). La plataforma hace el backup de PostgreSQL.
+`compose.prod.yml` define `gateway` (único servicio con dominio, puerto 80, `/healthz` sin depender de los demás; reparte a `web` y `api`), `web` (Nginx en el puerto 8080 con la SPA; sirve `/version.json` con el commit, que el gateway expone), `api` (read_only, tmpfs /tmp, mem_limit 256m) y `postgres` (red `backend` interna, PostgreSQL 18.6 con postgresql.conf ajustado y rol `api`). Ningún servicio publica puertos ni monta archivos del repositorio. Todos llevan `mem_limit` y `cpus` (64m, 64m, 256m y 512m), `restart: unless-stopped`, `no-new-privileges`, `cap_drop: [ALL]` con las capacidades mínimas y logs `json-file` rotados (10m × 3). La plataforma hace el backup de PostgreSQL.
 
 Variables que pasa la plataforma (no se usan otros nombres):
 
@@ -132,8 +133,8 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | --- | --- | --- |
 | `IMAGE_PREFIX`, `IMAGE_TAG` | todos | Imágenes (`IMAGE_TAG` por defecto `main`) |
 | `TRUSTED_PROXY_CIDR` | gateway | Subred de Traefik: solo desde ella se acepta `X-Forwarded-For` |
-| `SITE_URL_ES`, `SITE_URL_EN` | gateway, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
-| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | gateway | Analítica (vacío = sin analítica) |
+| `SITE_URL_ES`, `SITE_URL_EN` | web, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
+| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | web | Analítica (vacío = sin analítica) |
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
@@ -151,7 +152,7 @@ El idioma lo decide el dominio por el que entra el usuario, igual que la web:
 - **Recuperar contraseña** (`/recuperar-contrasena` → correo → `/nueva-contrasena?token=…`): el correo sale en el idioma del dominio donde se pidió, desde su remitente (`MAIL_FROM` o `MAIL_FROM_EN`) y con el enlace a ese mismo dominio. El enlace es de un solo uso, caduca en 60 minutos y solo se guarda su hash. Al cambiar la contraseña se cierran todas las sesiones y se envía un aviso. La respuesta es idéntica exista o no la cuenta, con límites por IP y por correo.
 - **Idioma de la cuenta**: se actualiza con el dominio por el que el usuario inicia sesión.
 - **Newsletter**: el alta va a la lista del Listmonk de su idioma mediante la suscripción pública (`/api/public/subscription`, sin credenciales). Las listas deben ser públicas y de doble confirmación; Listmonk envía la confirmación y las campañas desde su dominio. También se guarda una copia en `newsletter_subscribers`.
-- Sin SMTP configurado, la API no envía correos: en desarrollo los escribe en el log; en producción solo avisa. `compose.yml` y `compose.ci.yml` usan Mailpit (interfaz en `http://127.0.0.1:8025`).
+- Sin SMTP configurado, la API no envía correos: en desarrollo los escribe en el log; en producción solo avisa. `compose.yml` y `compose.ci.yml` usan Mailpit, como micitaentiempo: interfaz en `http://127.0.0.1:8026` (8026 para no chocar con el Mailpit de micitaentiempo en 8025) y SMTP con usuario `dev`, para ejercitar también la autenticación.
 
 ### Migración de base de datos en producción (Coolify)
 El rol `api` no es superusuario ni dueño de la base de datos. Para volúmenes existentes creados antes de este cambio:

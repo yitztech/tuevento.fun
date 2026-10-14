@@ -6,7 +6,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const target = process.env.TEST_WEB_URL || "http://localhost:5187";
 const api = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
-const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8025";
+const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
 const englishHost = new URL(
   process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
 ).hostname;

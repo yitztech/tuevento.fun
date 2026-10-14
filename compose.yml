@@ -2,7 +2,8 @@
 #  DESARROLLO local: misma topología que producción con recarga en caliente.
 #    docker compose up --watch
 #  Todas las variables tienen valores por defecto de desarrollo (sin setup.sh obligatorio).
-#  Mismos nombres de servicio que producción: gateway, api, postgres.
+#  Mismos servicios que producción (gateway, web, api, postgres) más Mailpit,
+#  que atrapa los correos: http://127.0.0.1:8026
 # ─────────────────────────────────────────────────────────────────────────────
 name: tueventofun
 
@@ -43,12 +44,16 @@ services:
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      # Correo: Mailpit recibe todo en local (http://127.0.0.1:8025); un remitente por dominio
+      # Correo: Mailpit recibe todo en local (http://127.0.0.1:8026); un remitente por dominio
       SMTP_HOST: ${SMTP_HOST:-mailpit}
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_SECURE: ${SMTP_SECURE:-false}
-      MAIL_FROM: ${MAIL_FROM:-no-reply@tueventofun.orb.local}
-      MAIL_FROM_EN: ${MAIL_FROM_EN:-no-reply@en.tueventofun.orb.local}
+      SMTP_USER: ${SMTP_USER:-dev}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-dev}
+      MAIL_FROM: ${MAIL_FROM:-TuEventoFun <no-reply@tueventofun.orb.local>}
+      SMTP_USER_EN: ${SMTP_USER_EN:-dev}
+      SMTP_PASSWORD_EN: ${SMTP_PASSWORD_EN:-dev}
+      MAIL_FROM_EN: ${MAIL_FROM_EN:-TuEventoFun <no-reply@en.tueventofun.orb.local>}
       # Newsletter: un Listmonk por idioma (vacío = solo se guarda en la base de datos)
       LISTMONK_URL: ${LISTMONK_URL:-}
       LISTMONK_LIST_UUID: ${LISTMONK_LIST_UUID:-}
@@ -91,33 +96,59 @@ services:
         - path: package-lock.json
           action: rebuild
 
-  # Buzón de pruebas: atrapa los correos de la API; interfaz en http://127.0.0.1:8025
+  # Buzón de pruebas: atrapa todos los correos de la API (como en micitaentiempo).
+  # Interfaz: http://127.0.0.1:8026 o http://mail.tueventofun.orb.local:8025
+  # (8026 en el host para convivir con el Mailpit de micitaentiempo, que usa 8025).
   mailpit:
     image: axllent/mailpit:v1.31.5
+    labels:
+      dev.orbstack.domains: mail.tueventofun.orb.local
+    environment:
+      # Acepta cualquier usuario SMTP: así se ejercita la autenticación sin TLS
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
     ports:
-      - "127.0.0.1:${MAIL_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAIL_UI_PORT:-8026}:8025"
     restart: unless-stopped
 
+  # Mismo gateway que producción: solo reparte el tráfico entre web y api
   gateway:
     build:
       context: .
       dockerfile: services/gateway/Dockerfile
-      target: dev
     labels:
       dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
     environment:
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
-      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
-      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
-      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
-      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
     ports:
       - "127.0.0.1:${WEB_PORT:-5187}:80"
     depends_on:
+      web:
+        condition: service_healthy
       api:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+    develop:
+      watch:
+        - path: services/gateway
+          action: rebuild
+
+  # Frontend: Vite con recarga en caliente detrás de un Nginx con el idioma por dominio
+  web:
+    build:
+      context: .
+      dockerfile: services/web/Dockerfile
+      target: dev
+    environment:
+      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
+      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
       interval: 10s
       timeout: 5s
       retries: 8
@@ -136,7 +167,7 @@ services:
         - path: packages/client/src
           target: /app/packages/client/src
           action: sync
-        - path: services/gateway
+        - path: services/web
           action: rebuild
         - path: package.json
           action: rebuild

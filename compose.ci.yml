@@ -11,16 +11,22 @@ services:
     build:
       context: .
       dockerfile: services/gateway/Dockerfile
-      args:
-        RELEASE_SHA: ${RELEASE_SHA:-ci}
     ports:
       - "127.0.0.1:${WEB_PORT:-5187}:80"
     environment:
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
-      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
-      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
     labels:
       dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
+
+  web:
+    build:
+      context: .
+      dockerfile: services/web/Dockerfile
+      args:
+        RELEASE_SHA: ${RELEASE_SHA:-ci}
+    environment:
+      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
+      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
 
   api:
     build:
@@ -40,14 +46,22 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
       SMTP_SECURE: "false"
+      SMTP_USER: dev
+      SMTP_PASSWORD: dev
       MAIL_FROM: no-reply@tueventofun.orb.local
+      SMTP_USER_EN: dev
+      SMTP_PASSWORD_EN: dev
       MAIL_FROM_EN: no-reply@en.tueventofun.orb.local
 
-  # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8025
+  # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
   mailpit:
     image: axllent/mailpit:v1.31.5
+    environment:
+      # Acepta cualquier usuario SMTP: así se ejercita la autenticación sin TLS
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
     ports:
-      - "127.0.0.1:${MAIL_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAIL_UI_PORT:-8026}:8025"
     networks: [frontend]
 
   postgres:

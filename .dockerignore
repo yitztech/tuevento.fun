@@ -1,4 +1,4 @@
-# Contexto de build: solo entra lo que necesitan los targets api y gateway
+# Contexto de build: solo entra lo que necesitan las imágenes gateway, web, api y postgres
 node_modules
 **/node_modules
 **/dist

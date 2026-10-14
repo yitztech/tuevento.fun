@@ -8,7 +8,7 @@ La app reutiliza `packages/app` (pantallas React ES/EN), `packages/contracts` (Z
 
 La app inicia con acceso/registro, conserva la sesión mediante cookies nativas y comparte la misma cuenta con web. Google abre el acceso web en el navegador del sistema y devuelve un código de dos minutos ligado a PKCE SHA-256. El regreso a la app usa **App Links / Universal Links verificados** en `https://<host de VITE_PUBLIC_ORIGIN>/app-link/auth?code=…`; el esquema propio `tueventofun://` se retiró porque cualquier app podía registrarlo y recibir el código. El código es de un solo uso, no expone el token de sesión y se entrega solo tras pulsar «Conectar mi app» y después «Abrir TuEventoFun». Requiere configurar el client ID web de Google y su origen autorizado. El login real de Google y el regreso a la app deben validarse en dispositivos antes de distribuir.
 
-Desarrollo (`compose.yml`, local) y producción (`compose.prod.yml`, desplegado por Coolify desde `deploy.yml`) son configuraciones separadas con los mismos servicios (`gateway`, `api`, `postgres`): demo activa y cookies sin `Secure` en desarrollo; demo desactivada y `COOKIE_SECURE=true` en producción. En producción el único punto de entrada es Traefik de la plataforma hacia el `gateway`. El gateway solo acepta `X-Forwarded-For` si llega de `TRUSTED_PROXY_CIDR` (la subred de Traefik) y lo **sobrescribe** con la IP real antes de pasarlo a la API, que a su vez solo confía en el gateway. Si `TRUSTED_PROXY_CIDR` no es la subred correcta, todos los usuarios comparten la IP de Traefik y el límite de peticiones.
+Desarrollo (`compose.yml`, local) y producción (`compose.prod.yml`, desplegado por Coolify desde `deploy.yml`) son configuraciones separadas con los mismos servicios (`gateway`, `web`, `api`, `postgres`): demo activa y cookies sin `Secure` en desarrollo; demo desactivada y `COOKIE_SECURE=true` en producción. En producción el único punto de entrada es Traefik de la plataforma hacia el `gateway`. El gateway solo acepta `X-Forwarded-For` si llega de `TRUSTED_PROXY_CIDR` (la subred de Traefik) y lo **sobrescribe** con la IP real antes de pasarlo a la API, que a su vez solo confía en el gateway. Si `TRUSTED_PROXY_CIDR` no es la subred correcta, todos los usuarios comparten la IP de Traefik y el límite de peticiones.
 
 ## Desarrollo
 
@@ -55,7 +55,7 @@ El repositorio remoto es `yitztech/tuevento.fun`. Los workflows usan Node 24 y a
 | Workflow | Función |
 |---|---|
 | `ci.yml` | Build, tipos, contratos, API/plataforma y navegador con Compose aislado en runner |
-| `deploy.yml` | En push a `main`: pruebas, imágenes `gateway` y `api` en GHCR (`:main` y `:<sha>`), webhook de Coolify en el entorno `production` y espera a que `/version.json` sirva el commit en los dos dominios |
+| `deploy.yml` | En push a `main`: pruebas, imágenes `gateway`, `web`, `api` y `postgres` en GHCR (`:main` y `:<sha>`), webhook de Coolify en el entorno `production` y espera a que `/version.json` sirva el commit en los dos dominios |
 | `mobile.yml` | Manual: APK firmado/AAB y GitHub Release; iOS archive/export y carga a App Store Connect |
 | `catalog.yml` | Publica enlace aprobado de TestFlight o tienda después de revisión/procesamiento |
 

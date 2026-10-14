@@ -10,7 +10,7 @@ const englishHost = new URL(
   process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
 ).hostname;
 // API de Mailpit (compose.yml y compose.ci.yml): ahí llegan los correos de la API
-const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8025";
+const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
 /** Último correo a `address` cuyo asunto cumple `subject`, esperando a que llegue. */
 async function mailTo(address, subject) {
   for (let attempt = 0; attempt < 40; attempt++) {
