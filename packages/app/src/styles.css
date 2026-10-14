@@ -16,22 +16,108 @@
 }
 :root {
   font-family: "Manrope Variable", sans-serif;
-  color: #25282e;
-  background: #fff;
+  color: var(--ink);
+  background: var(--ground);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --blue: #17274c;
-  --blue-dark: #111e3b;
-  --pink: #f5cedd;
-  --yellow: #f4d677;
-  --ink: #25282e;
-  --muted: #696c72;
-  --line: #e8e9ec;
-  --ice: #e8ebf2;
-  --error: #a53746;
+
+  /* ========================================================================
+     TuEventoFun Design System Tokens
+     Paleta Activa: #2 - Terracota Festivo & Ámbar (Elegante, cálida y acogedora)
+     Lienzo base: Blanco puro #FFFFFF
+     ======================================================================== */
+  --ground: #ffffff;
+  --primary: #882d17;
+  --primary-hover: #68200f;
+  --primary-text: #ffffff;
+
+  --celebrate: #ffca66;
+  --celebrate-hover: #f5bc54;
+  --celebrate-text: #261c18;
+
+  --accent-secondary: #e25c80;
+  --accent-gold: #ffca66;
+
+  --surface-soft: #fdf8f5;
+  --surface-soft-hover: #f7ede6;
+
+  --ink: #261c18;
+  --muted: #6e5f5a;
+  --line: #efe6e1;
+  --line-strong: #ded4cd;
+
+  --error: #9c2020;
+  --error-bg: #fdeae8;
+
+  /* Estados de asistencia (RSVP) */
+  --status-confirmed: #804306;
+  --status-confirmed-bg: #fef1e1;
+  --status-pending: #8c5405;
+  --status-pending-bg: #fff6e5;
+  --status-declined: #9c2020;
+  --status-declined-bg: #fdeae8;
+
+  /* Mapeo de compatibilidad con clases históricas */
+  --blue: var(--primary);
+  --blue-dark: var(--primary-hover);
+  --pink: var(--celebrate);
+  --yellow: var(--accent-gold);
+  --ice: var(--surface-soft);
+
   --radius: 14px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   Temas alternativos disponibles mediante selector data-theme
+   ========================================================================== */
+[data-theme="cassis"] {
+  --primary: #4a154b;
+  --primary-hover: #330b34;
+  --primary-text: #ffffff;
+  --celebrate: #ffb299;
+  --celebrate-hover: #f5a287;
+  --celebrate-text: #4a154b;
+  --accent-secondary: #f6d38b;
+  --surface-soft: #fdf7f0;
+  --surface-soft-hover: #f5ebe1;
+  --ink: #241923;
+  --muted: #6c5e6a;
+  --line: #ede4eb;
+  --line-strong: #dcd0d9;
+  --error: #991b33;
+  --error-bg: #fde8ed;
+  --status-confirmed: #7a2352;
+  --status-confirmed-bg: #fceaf2;
+  --status-pending: #8a5000;
+  --status-pending-bg: #fff3e0;
+  --status-declined: #991b33;
+  --status-declined-bg: #fde8ed;
+}
+
+[data-theme="bougainvillea"] {
+  --primary: #421b48;
+  --primary-hover: #2e1033;
+  --primary-text: #ffffff;
+  --celebrate: #c41c5c;
+  --celebrate-hover: #b01550;
+  --celebrate-text: #ffffff;
+  --accent-secondary: #ffb994;
+  --surface-soft: #fdf5f8;
+  --surface-soft-hover: #f5e8ef;
+  --ink: #241b26;
+  --muted: #6a5e6e;
+  --line: #ebe2ec;
+  --line-strong: #dad0dc;
+  --error: #9e1a2c;
+  --error-bg: #fde8ea;
+  --status-confirmed: #851c47;
+  --status-confirmed-bg: #fce7ef;
+  --status-pending: #8a5000;
+  --status-pending-bg: #fff3e0;
+  --status-declined: #9e1a2c;
+  --status-declined-bg: #fde8ea;
 }
 * {
   box-sizing: border-box;
@@ -199,19 +285,19 @@ small {
   transform: translateY(-1px);
 }
 .button.secondary {
-  border-color: #dfe1e5;
+  border-color: var(--line-strong, #ded4cd);
   background: #fff;
   color: var(--ink);
 }
 .button.secondary:hover {
-  background: #f2f3f6;
+  background: var(--surface-soft);
 }
 .button.pink {
-  background: var(--pink);
-  color: var(--blue);
+  background: var(--celebrate);
+  color: var(--celebrate-text);
 }
 .button.pink:hover {
-  background: #f8dfe8;
+  background: var(--celebrate-hover);
 }
 .button.danger {
   background: var(--error);
@@ -706,13 +792,13 @@ small {
   flex-shrink: 0;
 }
 .dot.accepted {
-  background: #4b6194;
+  background: var(--status-confirmed);
 }
 .dot.pending {
-  background: #c6972b;
+  background: var(--status-pending);
 }
 .dot.declined {
-  background: #c15a68;
+  background: var(--status-declined);
 }
 .stats {
   display: grid;
@@ -741,20 +827,20 @@ small {
   border-radius: 11px;
 }
 .stat-icon.neutral {
-  background: #eff0fa;
-  color: #6b6b95;
+  background: var(--surface-soft);
+  color: var(--muted);
 }
 .stat-icon.accepted {
-  background: #e7ebf4;
-  color: #3c4f7c;
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed);
 }
 .stat-icon.pending {
-  background: #fbf1d9;
-  color: #95711d;
+  background: var(--status-pending-bg);
+  color: var(--status-pending);
 }
 .stat-icon.declined {
-  background: #fbeaec;
-  color: #ae5864;
+  background: var(--status-declined-bg);
+  color: var(--status-declined);
 }
 .stat > div > span {
   font-size: 10px;
@@ -1704,16 +1790,16 @@ small {
   font-size: 9px;
 }
 .status-pill.accepted {
-  background: #edf0f6;
-  color: #3e4e72;
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed);
 }
 .status-pill.pending {
-  background: #fcf4de;
-  color: #8a6b1a;
+  background: var(--status-pending-bg);
+  color: var(--status-pending);
 }
 .status-pill.declined {
-  background: #fcecf0;
-  color: #a0485c;
+  background: var(--status-declined-bg);
+  color: var(--status-declined);
 }
 .row-actions {
   display: flex;
@@ -2419,19 +2505,19 @@ small {
   white-space: nowrap;
 }
 .rsvp-options .accepted.selected {
-  background: #e9ecf4;
-  border-color: #8c99b6;
-  color: #314166;
+  background: var(--status-confirmed-bg);
+  border-color: var(--status-confirmed);
+  color: var(--status-confirmed);
 }
 .rsvp-options .declined.selected {
-  background: #fbeaec;
-  border-color: #cc96a0;
-  color: #a33f51;
+  background: var(--status-declined-bg);
+  border-color: var(--status-declined);
+  color: var(--status-declined);
 }
 .rsvp-options .pending.selected {
-  background: #fcf3d9;
-  border-color: #d4b568;
-  color: #856614;
+  background: var(--status-pending-bg);
+  border-color: var(--status-pending);
+  color: var(--status-pending);
 }
 .rsvp-options > button:hover {
   border-color: #828a9d;

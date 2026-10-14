@@ -17,6 +17,19 @@ import {
  */
 function documentLocale(): Locale {
   try {
+    const hasSites =
+      typeof document !== "undefined" &&
+      Boolean(document.querySelector('meta[name="tuevento:sites"]'));
+    if (!hasSites && typeof localStorage !== "undefined") {
+      const stored = localStorage.getItem("tueventofun:app_locale");
+      if (stored === "en" || stored === "es") return stored;
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.language?.toLowerCase().startsWith("en")
+      ) {
+        return "en";
+      }
+    }
     return document.documentElement.lang === "en" ? "en" : "es";
   } catch {
     return "es";
@@ -53,6 +66,14 @@ export function useLocale() {
     locale: (active.resolvedLanguage === "en" ? "en" : "es") as Locale,
   };
 }
+/** Cambia el idioma en apps móviles o entornos sin gateway de dominios. */
+export function switchAppLocale(target: Locale) {
+  try {
+    localStorage.setItem("tueventofun:app_locale", target);
+    document.documentElement.lang = target;
+  } catch {}
+  void i18n.changeLanguage(target);
+}
 /** Orígenes de cada idioma que publica el gateway en <meta name="tuevento:sites">. */
 export function siteOrigins(): SiteOrigins | null {
   try {
@@ -66,15 +87,29 @@ export function siteOrigins(): SiteOrigins | null {
   }
 }
 /**
- * Enlace al mismo contenido en el otro dominio. Nunca cambia el idioma en el sitio
- * ni redirige: el visitante decide. Sin orígenes publicados no se muestra.
+ * Enlace al mismo contenido en el otro dominio (en web) o botón interactivo de cambio (en app móvil).
  */
 export function LanguageSwitcher() {
   const { locale } = useLocale();
   const { pathname, search, hash } = useLocation();
   const sites = siteOrigins();
-  if (!sites) return null;
   const other: Locale = locale === "es" ? "en" : "es";
+  if (!sites) {
+    return (
+      <button
+        type="button"
+        className="language-switcher"
+        onClick={() => switchAppLocale(other)}
+        title={tr("Cambiar idioma")}
+        aria-label={tr("Cambiar idioma")}
+      >
+        <Languages size={16} aria-hidden="true" />
+        <span className="language-switcher-label">
+          {other === "en" ? "English" : "Español"}
+        </span>
+      </button>
+    );
+  }
   const href = `${sites[other]}${translatePath(pathname, other)}${search}${hash}`;
   return (
     <a

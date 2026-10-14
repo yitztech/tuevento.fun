@@ -1,7 +1,7 @@
 import "@tuevento/app/styles.css";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
-import { TuEventoApp, SeoLinks, type Runtime } from "@tuevento/app";
+import { TuEventoApp, SeoLinks, getLocale, type Runtime } from "@tuevento/app";
 import { LandingPage } from "@tuevento/app/landing";
 import { Capacitor } from '@capacitor/core';
 import { EventApi } from '@tuevento/client';
@@ -31,7 +31,7 @@ const runtime: Runtime = {
 async function start() {
  const native=Capacitor.isNativePlatform();
  const activeRuntime=native?await (await import('./native')).nativeRuntime():runtime;
- const api=new EventApi({baseUrl:activeRuntime.apiBase,fetch:activeRuntime.fetch,platform:activeRuntime.platform});
+ const api=new EventApi({baseUrl:activeRuntime.apiBase,fetch:activeRuntime.fetch,platform:activeRuntime.platform,locale:()=>getLocale()});
  const Router=native?HashRouter:BrowserRouter;
  ReactDOM.createRoot(document.getElementById("root")!).render(
   <Router><Analytics api={api} native={native}/>{!native&&<SeoLinks/>}{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>

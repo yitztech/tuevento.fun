@@ -19,7 +19,7 @@ export const LEGAL_OWNER: {
   name: string | null;
   address: string | null;
   contact: string | null;
-} = { name: null, address: null, contact: null };
+} = { name: "YunitzTech", address: null, contact: "YunitzTech" };
 /** Fecha de la última revisión del texto (AAAA-MM-DD). */
 export const LEGAL_UPDATED = "2026-10-13";
 

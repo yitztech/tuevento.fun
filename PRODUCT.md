@@ -28,7 +28,7 @@ Registro con avatar, sesiones y Google; múltiples eventos; seis temas; familias
 
 ## Brand Commitments
 
-Fondo blanco puro, elegante y colorido con imágenes. Azul tinta, hielo, rosa peonía y amarillo; el usuario pide eliminar el verde de toda la interfaz. Evitar paletas genéricas de herramientas de IA. Idioma español. Nombre TuEventoFun confirmado por el usuario.
+Fondo blanco puro (#FFFFFF), elegante, colorido y acogedor. Paleta activa: Terracota Festivo (#882D17), Ámbar Caléndula (#FFCA66), Lino Cálido Marfil (#FDF8F5) y Granada (#E25C80), implementada con variables CSS flexibles que admiten variantes como Cassis y Buganvilla. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio y contacto: YunitzTech.
 
 ## Evidence on Hand
 
@@ -43,11 +43,11 @@ Especificación funcional aportada en Texto pegado.txt. No hay imágenes propias
 
 ## Open Decisions
 
-Confirmado: construcción directa del sitio. La nueva solicitud añade una landing de captación como entrada pública en `/`; el panel y la demostración aislada permanecen en `/app`. Registro real con cuenta vacía o apertura del editor cuando el visitante inicia un evento desde la landing.
+Confirmado: construcción directa del sitio. La nueva solicitud añade una landing de captación como entrada pública en `/`; el panel y la demostración aislada permanecen en `/app`. Registro real con cuenta vacía o apertura del editor cuando el visitante inicia un evento desde la landing. Soporte de Newsletter y correos transaccionales mediante Listmonk y tabla de suscriptores local.
 
 ## Idiomas
 
-Un idioma por dominio: https://tuevento.fun en español y https://yourevent.fun en inglés, con la misma aplicación. El idioma lo decide el dominio (un dominio desconocido usa español), no el navegador ni una preferencia guardada. El otro idioma se ofrece con un enlace a su dominio, nunca con una redirección automática. Cada página lleva su `canonical` y sus `hreflang`; `robots.txt` y `sitemap.xml` van por dominio. La cuenta guarda el idioma del dominio donde se registró. La interfaz y los mensajes se traducen; el contenido escrito por el usuario se conserva. Privacidad y condiciones están en `/privacidad` y `/condiciones` (es) y en `/privacy` y `/terms` (en); el titular y el contacto están pendientes de publicar. Detalle técnico en [docs/I18N.md](docs/I18N.md).
+En la web, un idioma por dominio: https://tuevento.fun en español y https://yourevent.fun en inglés. El idioma lo decide el dominio (un dominio desconocido usa español). El otro idioma se ofrece con un enlace a su dominio, sin redirección forzada. Cada página lleva su `canonical` y sus `hreflang`; `robots.txt` y `sitemap.xml` van por dominio. En las apps móviles (Capacitor/nativas), se ofrece selector de idioma bilingüe (ES/EN) con persistencia local y cabecera `X-App-Locale` hacia la API. Privacidad y condiciones están en `/privacidad` y `/condiciones` (es) y en `/privacy` y `/terms` (en), con titular y contacto asignados a YunitzTech. Detalle técnico en [docs/I18N.md](docs/I18N.md).
 
 ## Administración, descargas y apps
 

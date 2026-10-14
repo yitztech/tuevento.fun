@@ -28,6 +28,7 @@ import {
   invitationSchema,
   rsvpSchema,
   profileSchema,
+  newsletterSchema,
 } from "@tuevento/contracts";
 import {
   AuthService,
@@ -38,6 +39,7 @@ import {
 import { Database } from "./database";
 import { DemoService } from "./demo";
 import { EventsService, Updates } from "./events";
+import { ListmonkService } from "./listmonk";
 import { requestLocale } from "./request-locale";
 function parse<T extends z.ZodType>(
   schema: T,
@@ -62,7 +64,15 @@ export class PublicController {
     private auth: AuthService,
     private demo: DemoService,
     private events: EventsService,
+    private listmonk: ListmonkService,
   ) {}
+  @Post("newsletter/subscribe") async subscribeNewsletter(
+    @Body() body: unknown,
+    @Req() req: FastifyRequest,
+  ) {
+    const data = parse(newsletterSchema, body, req);
+    return this.listmonk.subscribe(data.email, data.name, requestLocale(req));
+  }
   @Get("health") async health() {
     await this.db.query("SELECT 1");
     return { status: "ok", database: "connected" };

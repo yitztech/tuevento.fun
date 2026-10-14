@@ -44,7 +44,7 @@ import { AuthPage, ProfilePage } from "./account";
 import { PublicRsvp } from "./public-rsvp";
 import { LegalPage, legalPageFor } from "./legal";
 export type { Runtime } from "./context";
-export { SeoLinks } from "./i18n";
+export { SeoLinks, getLocale, switchAppLocale } from "./i18n";
 export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const { locale } = useLocale();
   // <html lang> lo fija el gateway según el dominio; aquí solo el título.

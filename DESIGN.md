@@ -2,16 +2,16 @@
 name: TuEventoFun
 description: Un espacio blanco y colorido para organizar celebraciones.
 colors:
-  primary: "#17274c"
-  primary-deep: "#111e3b"
-  peony: "#f5cedd"
-  yellow: "#f4d677"
+  primary: "#882d17"
+  primary-deep: "#68200f"
+  celebrate: "#ffca66"
+  accent-secondary: "#e25c80"
   ground: "#ffffff"
-  ink: "#25282e"
-  muted: "#696c72"
-  line: "#e8e9ec"
-  ice: "#e8ebf2"
-  error: "#a53746"
+  ink: "#261c18"
+  muted: "#6e5f5a"
+  line: "#efe6e1"
+  surface-soft: "#fdf8f5"
+  error: "#9c2020"
 typography:
   headline:
     fontFamily: "Bricolage Grotesque Variable, Manrope Variable, sans-serif"
@@ -114,28 +114,32 @@ La personalidad editorial se concentra en titulares, cifras e invitaciones. Los 
 
 ## Colors
 
-El azul tinta identifica acciones principales. Rosa peonía y amarillo distinguen invitaciones y momentos de celebración; el hielo identifica navegación activa. Fondo blanco, tinta oscura y separadores suaves sostienen la lectura. Rosa rojizo, azul y amarillo indican rechazo, confirmación y espera, acompañados de etiquetas o iconos.
+El sistema utiliza variables CSS flexibles en `:root` que permiten conmutar temas (p. ej. mediante `data-theme`). La paleta activa es **Terracota Festivo & Ámbar**: el terracota noble (`--primary: #882d17`) identifica acciones principales y enlaces destacados, mientras que el ámbar caléndula (`--celebrate: #ffca66`) y la granada cálida (`--accent-secondary: #e25c80`) distinguen momentos de celebración y detalles festivos.
+
+El lino cálido marfil (`--surface-soft: #fdf8f5`) identifica navegación activa y superficies de soporte sobre el fondo blanco puro innegociable (`--ground: #ffffff`). La tinta café tostado (`--ink: #261c18`) y el texto secundario cálido (`--muted: #6e5f5a`) garantizan lecturas con ratios de contraste superiores a 16:1 y 6:1 (WCAG AAA).
 
 ### Primary
 
-- **Azul tinta** y **azul tinta profundo**: acción principal y su respuesta al pasar el puntero.
+- **Terracota noble** (`#882d17`) y **terracota profundo** (`#68200f`): acción principal y su respuesta al pasar el puntero.
 
 ### Secondary
 
-- **Rosa peonía**: acciones celebratorias y selección de texto.
-- **Amarillo de globos**: acentos de celebración y detalles de la composición.
+- **Ámbar caléndula** (`#ffca66`): acciones celebratorias y botones de demostración.
+- **Granada cálida** (`#e25c80`): acentos festivos y detalles de composición.
 
 ### Neutral
 
-- **Blanco puro**: superficie principal y campos.
-- **Tinta**: lectura principal.
-- **Gris frío**: texto secundario.
-- **Línea suave**: bordes y divisores.
-- **Hielo**: navegación seleccionada y superficies de apoyo.
+- **Blanco puro** (`#ffffff`): superficie principal innegociable y campos.
+- **Café tostado** (`#261c18`): lectura principal de alto contraste.
+- **Arcilla suave** (`#6e5f5a`): texto secundario accesible.
+- **Línea arena** (`#efe6e1`): bordes y divisores suaves.
+- **Lino marfil** (`#fdf8f5`): navegación seleccionada y superficies de apoyo.
 
-El **rojo de error** expresa acciones destructivas y mensajes de error; la confirmación usa azul, la espera amarillo y el rechazo rosa rojizo, siempre junto a una etiqueta.
+### Estados de Asistencia (RSVP)
 
-El verde queda fuera de los colores de interfaz por decisión del usuario; las fotografías conservan sus colores naturales.
+El **carmesí accesible** (`#9c2020` sobre `#fdeae8`) expresa rechazo y acciones destructivas; la confirmación usa **bronce ocre** (`#804306` sobre `#fef1e1`), y la espera usa **ámbar tostado** (`#8c5405` sobre `#fff6e5`), siempre acompañados de su etiqueta textual.
+
+El verde y el azul quedan fuera de los colores principales de interfaz por decisión del producto; las fotografías conservan sus colores naturales.
 
 **The White Ground Rule.** La superficie principal permanece blanca; los bloques de color tienen una función concreta y límites visibles.
 

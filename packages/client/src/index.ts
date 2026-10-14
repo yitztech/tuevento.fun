@@ -24,11 +24,12 @@ export type ApiOptions = {
   baseUrl: string;
   platform?: "web" | "android" | "ios";
   appVersion?: string;
+  locale?: "es" | "en" | (() => "es" | "en");
   fetch?: typeof globalThis.fetch;
 };
 /**
  * Framework independent: inject fetch/baseUrl from browser, Electron or Tauri.
- * El idioma de las respuestas lo decide el servidor por el Host del dominio.
+ * El idioma de las respuestas lo decide el servidor por el Host del dominio (o X-App-Locale en apps móviles).
  */
 export class EventApi {
   private transport: typeof globalThis.fetch;
@@ -36,6 +37,10 @@ export class EventApi {
     this.transport = options.fetch ?? globalThis.fetch.bind(globalThis);
   }
   async request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+    const resolvedLocale =
+      typeof this.options.locale === "function"
+        ? this.options.locale()
+        : this.options.locale;
     const response = await this.transport(`${this.options.baseUrl}${path}`, {
       method,
       credentials: "include",
@@ -44,6 +49,7 @@ export class EventApi {
         "X-TuEvento-Client": "1",
         "X-Client-Platform": this.options.platform || "web",
         "X-App-Version": this.options.appVersion || "web",
+        ...(resolvedLocale ? { "X-App-Locale": resolvedLocale } : {}),
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
@@ -57,6 +63,13 @@ export class EventApi {
         data.fields,
       );
     return data;
+  }
+  subscribeNewsletter(email: string, name?: string) {
+    return this.request<{ ok: boolean; message: string }>(
+      "/newsletter/subscribe",
+      "POST",
+      { email, name },
+    );
   }
   config = () =>
     this.request<{ googleClientId: string; demoEnabled: boolean }>("/config");
