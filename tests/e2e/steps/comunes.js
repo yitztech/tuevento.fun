@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, escribir } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, escribir, abrir } from "./fixtures.js";
 import { englishURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
 Given("que abro la página de registro", async ({ page }) => {
-  await page.goto("/registro");
+  await abrir(page, "/registro");
 });
 
 Given("que abro la página de registro en inglés", async ({ page }) => {

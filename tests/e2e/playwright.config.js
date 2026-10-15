@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { defineBddConfig } from "playwright-bdd";
-import { baseURL, englishURL, local, slowMo, lento } from "./support/entorno.js";
+import { baseURL, englishURL, local, slowMo, lento, android } from "./support/entorno.js";
 
 const englishHost = new URL(englishURL).hostname;
 
@@ -19,10 +19,12 @@ export default defineConfig({
   // A ritmo humano un escenario tarda mucho más que los 30 s por defecto.
   timeout: lento ? 180_000 : 30_000,
   expect: { timeout: lento ? 15_000 : 5_000 },
-  fullyParallel: true,
+  fullyParallel: !android,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // En el emulador, el primer arranque de la app puede fallar al cargar: un reintento lo cubre y
+  // queda marcado como "inestable" en el resumen (no se oculta).
+  retries: process.env.CI || android ? 1 : 0,
+  workers: android ? 1 : process.env.CI ? 2 : undefined,
   reporter: [
     ["list"],
     ["html", { outputFolder: "results/report", open: "never" }],
@@ -40,5 +42,8 @@ export default defineConfig({
       args: local ? [`--host-resolver-rules=MAP ${englishHost} 127.0.0.1`] : [],
     },
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // Android: solo los escenarios @movil, de uno en uno y en el WebView de la app.
+  projects: android
+    ? [{ name: "android", grep: /@movil/, grepInvert: /@solo-web/ }]
+    : [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

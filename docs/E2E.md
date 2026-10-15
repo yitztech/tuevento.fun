@@ -75,3 +75,29 @@ curl --cacert tests/mobile/.ca/root.crt https://localhost:8443/api/health
 La CA es pública y de pruebas (no se versiona). Android: se empaqueta solo en el build de
 depuración. iOS: se añade solo al simulador con `xcrun simctl keychain booted add-root-cert`.
 Un servicio nuevo solo de pruebas se añade a la lista de `scripts/check-test-only.mjs`.
+
+## App móvil Android (emulador)
+
+Los escenarios etiquetados `@movil` (hoy, todo `registro.feature` salvo los `@solo-web`) se
+ejecutan también dentro del **WebView de la app real** instalada en el emulador. Playwright
+se conecta a él por Chrome DevTools (`_android`); es el mismo código de pasos.
+
+```
+docker compose up -d
+bash scripts/mobile-test-android.sh     # una vez, o tras cambiar la app: HTTPS de pruebas +
+                                        # build de depuración + emulador + instalar + abrir
+npm run e2e:android                     # los escenarios @movil en el emulador
+npm run e2e:android:ver                 # igual, a ritmo humano (E2E_TECLADO / E2E_PAUSA)
+```
+
+- El APK es **de depuración** (`com.tueventofun.app.pruebas`), apunta a `https://localhost:8443`
+  (ver «HTTPS local») y lleva la CA de pruebas solo en `src/debug/`. El release de `mobile.yml`
+  no cambia.
+- Cada escenario arranca con la app limpia (`pm clear`) y en español. Se ve en la ventana del
+  emulador; `E2E_SLOWMO` no aplica aquí (no hay navegador que ralentizar).
+- Si falla, se adjunta una captura de la pantalla del emulador. Un escenario que solo pasa al
+  reintentar sale como «inestable» en `npm run e2e:summary`.
+- `AVD=Pixel_10_Pro bash scripts/mobile-test-android.sh` usa otro emulador. No está en CI: un
+  emulador en GitHub Actions necesitaría un job aparte.
+- Los escenarios de perfil (`@perfil`) no llevan `@movil`: dependen de abrir sesión por la API
+  del navegador, y la app nativa gestiona la sesión de otra forma.

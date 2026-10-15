@@ -1,5 +1,5 @@
 # language: es
-@registro
+@registro @movil
 Característica: Crear una cuenta
   Para empezar a organizar eventos
   Como persona nueva
@@ -22,7 +22,7 @@ Característica: Crear una cuenta
     Entonces veo el campo "Nombre(s)"
     Y veo el campo "Apellido(s)"
 
-  @i18n
+  @i18n @solo-web
   Escenario: Las etiquetas se muestran en inglés en el dominio inglés
     Dado que abro la página de registro en inglés
     Entonces veo el campo "First name(s)"
