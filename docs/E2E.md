@@ -28,6 +28,17 @@ La app debe estar arriba: `docker compose up -d` (http://localhost:5187).
 | Resumen: qué pasa, falla u omite | `npm run e2e:summary` |
 | Informe HTML | `npm run report -w @tuevento/e2e` |
 
+**Ritmo humano** (`e2e:ver` ya lo activa; todo en milisegundos, 0 = a toda velocidad):
+
+| Variable | Qué hace | En `e2e:ver` |
+|---|---|---|
+| `E2E_SLOWMO` | pausa tras cada acción (clic, relleno…) | 500 |
+| `E2E_TECLADO` | pausa entre tecla y tecla al escribir | 90 |
+| `E2E_PAUSA` | espera al final de cada escenario para ver el resultado | 2000 |
+
+Ejemplo, aún más despacio: `E2E_SLOWMO=1000 E2E_TECLADO=150 E2E_PAUSA=4000 npm run e2e:ver`.
+Con cualquiera de ellas los tiempos máximos de la prueba se amplían solos.
+
 Cuando un escenario falla se guardan **captura, vídeo y traza** en `tests/e2e/results/`
 (`npx playwright show-trace <trace.zip>`). Para grabar vídeo siempre: `E2E_VIDEO=on`.
 

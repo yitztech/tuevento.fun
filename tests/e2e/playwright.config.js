@@ -1,12 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import { defineBddConfig } from "playwright-bdd";
-import { baseURL, englishURL, local } from "./support/entorno.js";
+import { baseURL, englishURL, local, slowMo, lento } from "./support/entorno.js";
 
 const englishHost = new URL(englishURL).hostname;
 
 // Vídeo: E2E_VIDEO=on (siempre) | off | retain-on-failure (por defecto).
 const video = process.env.E2E_VIDEO || "retain-on-failure";
-const slowMo = Number(process.env.E2E_SLOWMO || 0);
 
 const testDir = defineBddConfig({
   features: "features/**/*.feature",
@@ -17,6 +16,9 @@ const testDir = defineBddConfig({
 export default defineConfig({
   testDir,
   outputDir: "results/artifacts",
+  // A ritmo humano un escenario tarda mucho más que los 30 s por defecto.
+  timeout: lento ? 180_000 : 30_000,
+  expect: { timeout: lento ? 15_000 : 5_000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

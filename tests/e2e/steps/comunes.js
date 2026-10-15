@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, escribir } from "./fixtures.js";
 import { englishURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
@@ -21,9 +21,7 @@ Given("que tengo una cuenta creada y abro mi perfil", async ({ page, ctx }) => {
 });
 
 When("escribo {string} en el campo {string}", async ({ page }, texto, campo) => {
-  const input = page.getByLabel(campo, { exact: true });
-  await input.fill("");
-  await input.pressSequentially(texto);
+  await escribir(page.getByLabel(campo, { exact: true }), texto);
 });
 
 When("pego un texto de {int} letras en el campo {string}", async ({ page }, n, campo) => {
@@ -33,11 +31,11 @@ When("pego un texto de {int} letras en el campo {string}", async ({ page }, n, c
 When("relleno el registro con datos válidos", async ({ page, ctx }) => {
   ctx.cuenta = nuevaCuenta();
   const c = ctx.cuenta;
-  await page.getByLabel("Nombre(s)", { exact: true }).fill(c.firstName);
-  await page.getByLabel("Apellido(s)", { exact: true }).fill(c.lastName);
-  await page.getByLabel("Teléfono", { exact: true }).fill(c.phone);
-  await page.getByLabel("Correo electrónico", { exact: true }).fill(c.email);
-  await page.getByLabel("Contraseña", { exact: true }).fill(c.password);
+  await escribir(page.getByLabel("Nombre(s)", { exact: true }), c.firstName);
+  await escribir(page.getByLabel("Apellido(s)", { exact: true }), c.lastName);
+  await escribir(page.getByLabel("Teléfono", { exact: true }), c.phone);
+  await escribir(page.getByLabel("Correo electrónico", { exact: true }), c.email);
+  await escribir(page.getByLabel("Contraseña", { exact: true }), c.password);
 });
 
 When("envío el formulario de registro", async ({ page }) => {
