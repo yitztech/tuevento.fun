@@ -19,3 +19,13 @@ Antes de cerrar un cambio con texto: `npm run build -w @tuevento/contracts`, `np
 ## Dependencias: una sola versión por paquete
 
 Un mismo paquete (zod, react…) lleva **el mismo rango en todos los workspaces**, y cada workspace declara en su `package.json` todo lo que importa (la imagen de producción instala solo `--workspace @tuevento/api`). `node scripts/check-versions.mjs` lo comprueba y corre dentro de `npm test` (y por tanto en CI). Si un paquete va atado a otro (p. ej. `fastify` fijado en `5.12.5` por `@nestjs/platform-fastify`), usa la versión que exige el otro, no la última.
+
+## Límites de datos: los mismos en frontend, backend y base de datos
+
+Todo límite de longitud de un dato (máximo de caracteres, dígitos…) vive en **un solo sitio** (`accountLimits` en `packages/contracts/src/index.ts`) y se aplica en los tres niveles con el mismo valor:
+
+- **Frontend:** `maxLength={accountLimits.x}` en el campo.
+- **Backend:** el esquema Zod usa `accountLimits.x` y un mensaje traducido (`validation.maximumNCharacters`, en todos los idiomas).
+- **Base de datos:** una migración nueva (`apps/api/migrations/NNN_*.sql`, nunca editar una ya aplicada) con `ALTER TABLE t ADD CONSTRAINT t_col_max_length CHECK (char_length(col) <= N)`.
+
+Al crear o cambiar un límite, añade su columna a `packages/contracts/src/limits.test.ts`: ese test (dentro de `npm test`) falla si el valor de la base de datos y el de `accountLimits` difieren o si un límite no tiene columna. Un dato sin columna (p. ej. la contraseña, que se guarda como hash) se declara ahí como excepción.
