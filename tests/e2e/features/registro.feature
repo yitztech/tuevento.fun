@@ -62,7 +62,9 @@ Característica: Crear una cuenta
       | Correo electrónico | 254    |
       | Contraseña         | 128    |
 
-  @limites
+  # En iOS, Appium asigna el valor por programa y se salta el maxlength que sí respeta el
+  # teclado; la longitud queda cubierta por el escenario de los atributos maxlength.
+  @limites @sin-ios
   Escenario: Un nombre muy largo se corta en el máximo permitido
     Cuando pego un texto de 60 letras en el campo "Nombre(s)"
     Entonces el campo "Nombre(s)" contiene "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

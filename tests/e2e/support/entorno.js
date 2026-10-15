@@ -14,5 +14,7 @@ export const teclado = Number(process.env.E2E_TECLADO || 0);
 export const pausa = Number(process.env.E2E_PAUSA || 0);
 export const lento = slowMo + teclado + pausa > 0;
 
-// Destino de las pruebas: la web (por defecto) o la app de Android en el emulador.
-export const android = process.env.E2E_TARGET === "android";
+// Destino de las pruebas: la web (por defecto), la app de Android (emulador) o la de iOS (simulador).
+export const target = process.env.E2E_TARGET || "web";
+export const android = target === "android";
+export const ios = target === "ios";

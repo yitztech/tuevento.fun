@@ -101,3 +101,35 @@ npm run e2e:android:ver                 # igual, a ritmo humano (E2E_TECLADO / E
   emulador en GitHub Actions necesitaría un job aparte.
 - Los escenarios de perfil (`@perfil`) no llevan `@movil`: dependen de abrir sesión por la API
   del navegador, y la app nativa gestiona la sesión de otra forma.
+
+## App móvil iOS (simulador, iPhone y iPad)
+
+Los mismos escenarios `@movil` corren en el **WebView de la app real** dentro del simulador de
+iOS. Playwright no maneja iOS, así que los conduce **Appium** (XCUITest + WebdriverIO) a través
+de la interfaz común `ui` (`tests/e2e/support/ui-playwright.js` ↔ `ui-ios.js`): los pasos y los
+`.feature` son los mismos que en web y Android.
+
+```
+docker compose up -d
+bash scripts/mobile-test-ios.sh                  # build sin firma + CA solo en ese simulador + instalar + abrir
+npm run e2e:ios                                  # los escenarios @movil en el iPhone
+npm run e2e:ios:ver                              # igual, a ritmo humano (E2E_TECLADO / E2E_PAUSA)
+
+# iPad (u otro simulador): prepararlo y señalarlo
+SKIP_BUILD=1 SIMULATOR="iPad Pro 13-inch (M5)" bash scripts/mobile-test-ios.sh
+E2E_IOS_SIMULADOR="iPad Pro 13-inch (M5)" npm run e2e:ios
+```
+
+- La app es un build de **Debug para simulador, sin firma** (`com.tueventofun.app.pruebas`), contra
+  `https://localhost:8443`. El simulador comparte la red de la Mac y confía en la CA de pruebas
+  (`xcrun simctl keychain … add-root-cert`, solo en ese simulador). El release de `mobile.yml` no cambia.
+- Appium vive en `tests/mobile/.appium` (driver `xcuitest`, no se versiona): se instala una vez con
+  `APPIUM_HOME=$PWD/tests/mobile/.appium npx appium driver install xcuitest`. Playwright arranca y
+  para el servidor solo (`webServer` de la configuración).
+- Cada escenario reinstala la app para empezar sin sesión ni datos. Si falla, se adjunta captura.
+- El escenario `@sin-ios` («nombre muy largo se corta») no corre en iOS: Appium asigna el valor por
+  programa y se salta el `maxlength` que sí respeta el teclado. La longitud sigue cubierta por los
+  escenarios que comprueban el atributo `maxlength` de cada campo.
+- **Recursos:** emulador de Android + simuladores de iOS + Docker saturan la máquina. Con varios
+  abiertos a la vez, las pruebas se vuelven lentas y fallan por tiempo: apaga los que no uses
+  (`xcrun simctl shutdown all`).

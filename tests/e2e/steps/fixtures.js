@@ -2,15 +2,11 @@ import { test as base, createBdd } from "playwright-bdd";
 import { randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { _android } from "@playwright/test";
-import { teclado, pausa, android } from "../support/entorno.js";
-
-/** Escribe como una persona: vacía el campo y teclea con pausa entre teclas (E2E_TECLADO). */
-export async function escribir(locator, texto) {
-  await locator.fill("");
-  await locator.pressSequentially(texto, { delay: teclado });
-}
+import { teclado, pausa, android, ios } from "../support/entorno.js";
+import { uiPlaywright } from "../support/ui-playwright.js";
+import { uiIos, conectarIos, reiniciarApp, simuladorArrancado } from "../support/ui-ios.js";
 
 /** Datos de una cuenta válida y única, para no depender del estado de la base de datos. */
 export function nuevaCuenta(extra = {}) {
@@ -25,27 +21,32 @@ export function nuevaCuenta(extra = {}) {
   };
 }
 
+/** Navega a una ruta de la app: URL en la web, hash (#/ruta) dentro de la app nativa. */
+async function abrirRuta(page, ruta) {
+  if (!android) return page.goto(ruta);
+  await page.evaluate((r) => { window.location.hash = `#${r}`; }, ruta);
+}
+
 const comunes = {
   /** Estado compartido entre los pasos de un mismo escenario. */
   ctx: async ({}, use) => use({}),
   /** Con E2E_PAUSA, deja el resultado a la vista unos segundos antes de cerrar el escenario. */
   verResultado: [
-    async ({ page }, use) => {
+    async ({ ui }, use) => {
       await use();
-      if (pausa) await page.waitForTimeout(pausa).catch(() => {});
+      if (pausa) await ui.pausar(pausa);
     },
     { auto: true },
   ],
 };
 
-/** Navega a una ruta de la app: URL en la web, hash (#/ruta) dentro de la app nativa. */
-export async function abrir(page, ruta) {
-  if (!android) return page.goto(ruta);
-  await page.evaluate((r) => { window.location.hash = `#${r}`; }, ruta);
-}
+// Web: el `page` de Playwright.
+const conWeb = {
+  ui: async ({ page }, use) => use(uiPlaywright(page, { abrir: (ruta) => abrirRuta(page, ruta), teclado })),
+};
 
-// Web: el `page` de Playwright. Android: el WebView de la app instalada en el emulador
-// (E2E_TARGET=android, ver docs/E2E.md); no se abre ningún navegador adicional.
+// Android: el WebView de la app instalada en el emulador (E2E_TARGET=android, ver
+// docs/E2E.md); no se abre ningún navegador adicional.
 const paquete = "com.tueventofun.app.pruebas";
 const adb = join(process.env.ANDROID_HOME || join(homedir(), "Library/Android/sdk"), "platform-tools/adb");
 const conAndroid = {
@@ -73,8 +74,33 @@ const conAndroid = {
         contentType: "image/png",
       });
   },
+  ui: conWeb.ui,
 };
 
-export const test = base.extend(android ? { ...comunes, ...conAndroid } : comunes);
+// iOS: el WebView de la app instalada en el simulador, conducido con Appium (XCUITest).
+// Playwright no maneja iOS, así que `page` no existe aquí: los pasos usan solo `ui`.
+const rutaAppIos = resolve("../mobile/.build/ios/Build/Products/Debug-iphonesimulator/App.app");
+const conIos = {
+  udid: [async ({}, use) => use(simuladorArrancado()), { scope: "worker" }],
+  driver: [
+    async ({ udid }, use) => {
+      const driver = await conectarIos(udid);
+      await use(driver);
+      await driver.deleteSession().catch(() => {});
+    },
+    { scope: "worker" },
+  ],
+  ui: async ({ driver }, use, testInfo) => {
+    await reiniciarApp(driver, rutaAppIos);
+    await use(uiIos(driver, { teclado }));
+    if (testInfo.status !== testInfo.expectedStatus)
+      await testInfo.attach("pantalla-simulador", {
+        body: Buffer.from(await driver.takeScreenshot(), "base64"),
+        contentType: "image/png",
+      });
+  },
+};
+
+export const test = base.extend({ ...comunes, ...(ios ? conIos : android ? conAndroid : conWeb) });
 
 export const { Given, When, Then } = createBdd(test);

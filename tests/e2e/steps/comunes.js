@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, escribir, abrir } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
 import { englishURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
-Given("que abro la página de registro", async ({ page }) => {
-  await abrir(page, "/registro");
+Given("que abro la página de registro", async ({ ui }) => {
+  await ui.abrir("/registro");
 });
 
 Given("que abro la página de registro en inglés", async ({ page }) => {
@@ -20,52 +20,52 @@ Given("que tengo una cuenta creada y abro mi perfil", async ({ page, ctx }) => {
   await page.goto("/perfil");
 });
 
-When("escribo {string} en el campo {string}", async ({ page }, texto, campo) => {
-  await escribir(page.getByLabel(campo, { exact: true }), texto);
+When("escribo {string} en el campo {string}", async ({ ui }, texto, campo) => {
+  await ui.escribir(campo, texto);
 });
 
-When("pego un texto de {int} letras en el campo {string}", async ({ page }, n, campo) => {
-  await page.getByLabel(campo, { exact: true }).fill("a".repeat(n));
+When("pego un texto de {int} letras en el campo {string}", async ({ ui }, n, campo) => {
+  await ui.pegar(campo, "a".repeat(n));
 });
 
-When("relleno el registro con datos válidos", async ({ page, ctx }) => {
+When("relleno el registro con datos válidos", async ({ ui, ctx }) => {
   ctx.cuenta = nuevaCuenta();
   const c = ctx.cuenta;
-  await escribir(page.getByLabel("Nombre(s)", { exact: true }), c.firstName);
-  await escribir(page.getByLabel("Apellido(s)", { exact: true }), c.lastName);
-  await escribir(page.getByLabel("Teléfono", { exact: true }), c.phone);
-  await escribir(page.getByLabel("Correo electrónico", { exact: true }), c.email);
-  await escribir(page.getByLabel("Contraseña", { exact: true }), c.password);
+  await ui.escribir("Nombre(s)", c.firstName);
+  await ui.escribir("Apellido(s)", c.lastName);
+  await ui.escribir("Teléfono", c.phone);
+  await ui.escribir("Correo electrónico", c.email);
+  await ui.escribir("Contraseña", c.password);
 });
 
-When("envío el formulario de registro", async ({ page }) => {
-  await page.getByRole("button", { name: "Crear mi cuenta", exact: true }).click();
+When("envío el formulario de registro", async ({ ui }) => {
+  await ui.pulsar("Crear mi cuenta");
 });
 
-When("guardo los cambios del perfil", async ({ page }) => {
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
+When("guardo los cambios del perfil", async ({ ui }) => {
+  await ui.pulsar("Guardar cambios");
 });
 
-Then("entro a mi espacio", async ({ page }) => {
-  await expect(page).toHaveURL(/\/app$/);
+Then("entro a mi espacio", async ({ ui }) => {
+  await ui.esperarUrl(/\/app$/);
 });
 
-Then("el campo {string} contiene {string}", async ({ page }, campo, valor) => {
-  await expect(page.getByLabel(campo, { exact: true })).toHaveValue(valor);
+Then("el campo {string} contiene {string}", async ({ ui }, campo, valor) => {
+  await ui.esperarValor(campo, valor);
 });
 
-Then("el campo {string} admite como máximo {int} caracteres", async ({ page }, campo, n) => {
-  await expect(page.getByLabel(campo, { exact: true })).toHaveAttribute("maxlength", String(n));
+Then("el campo {string} admite como máximo {int} caracteres", async ({ ui }, campo, n) => {
+  await ui.esperarAtributo(campo, "maxlength", String(n));
 });
 
-Then("veo el campo {string}", async ({ page }, campo) => {
-  await expect(page.getByLabel(campo, { exact: true })).toBeVisible();
+Then("veo el campo {string}", async ({ ui }, campo) => {
+  await ui.esperarVisible(campo);
 });
 
-Then("no existe el campo {string}", async ({ page }, campo) => {
-  await expect(page.getByLabel(campo, { exact: true })).toHaveCount(0);
+Then("no existe el campo {string}", async ({ ui }, campo) => {
+  await ui.esperarAusente(campo);
 });
 
-Then("veo el aviso {string}", async ({ page }, texto) => {
-  await expect(page.getByText(texto).first()).toBeVisible();
+Then("veo el aviso {string}", async ({ ui }, texto) => {
+  await ui.esperarTexto(texto);
 });

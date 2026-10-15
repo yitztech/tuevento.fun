@@ -33,3 +33,5 @@ tests/e2e/results/
 # CA de pruebas exportada por scripts/mobile-test-ca.sh
 tests/mobile/.ca/
 apps/web/android/app/src/debug/res/raw/test_ca.crt
+tests/mobile/.appium/
+tests/mobile/.build/
