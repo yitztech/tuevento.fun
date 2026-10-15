@@ -63,8 +63,8 @@ Lo que debe hacer la app:
 - Ofrecer el otro idioma con un enlace, sin redirigir solo: los buscadores rastrean en inglés.
 - Sesiones por dominio: la cookie de un dominio no vale en el otro. Guardar el idioma del usuario en su
   cuenta y enviarle los correos en ese idioma, desde su dominio.
-- Login con Google: los dos orígenes y las dos URI de redirección en el cliente OAuth, y las páginas de
-  privacidad y condiciones en cada dominio.
+- Login con Google: los dos orígenes como orígenes JavaScript autorizados en el cliente OAuth (el botón
+  usa popup, sin URI de redirección), y las páginas de privacidad y condiciones en cada dominio.
 - Fechas en UTC en la base de datos; mostrarlas en la zona horaria del usuario.
 
 Ejemplo completo que cumple el contrato: [yitztech/plantilla-cliente](https://github.com/yitztech/plantilla-cliente).
