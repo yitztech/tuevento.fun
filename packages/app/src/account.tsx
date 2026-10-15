@@ -174,26 +174,24 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
           <form onSubmit={submit} noValidate>
             {registerMode && (
               <>
-                <div className="form-row">
-                  <Field
-                    label={tr("common.firstName")}
-                    error={form.formState.errors.firstName?.message}
-                  >
-                    <input
-                      autoComplete="given-name"
-                      {...form.register("firstName")}
-                    />
-                  </Field>
-                  <Field
-                    label={tr("common.lastName")}
-                    error={form.formState.errors.lastName?.message}
-                  >
-                    <input
-                      autoComplete="family-name"
-                      {...form.register("lastName")}
-                    />
-                  </Field>
-                </div>
+                <Field
+                  label={tr("account.firstNames")}
+                  error={form.formState.errors.firstName?.message}
+                >
+                  <input
+                    autoComplete="given-name"
+                    {...form.register("firstName")}
+                  />
+                </Field>
+                <Field
+                  label={tr("account.lastNames")}
+                  error={form.formState.errors.lastName?.message}
+                >
+                  <input
+                    autoComplete="family-name"
+                    {...form.register("lastName")}
+                  />
+                </Field>
                 <div className="form-row">
                   <Field
                     label={tr("common.phone")}
