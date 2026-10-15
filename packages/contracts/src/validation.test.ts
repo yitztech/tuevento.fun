@@ -180,3 +180,25 @@ test("Recuperar contraseña: correo normalizado, token de 43 caracteres y mensaj
     );
   }
 });
+const newUser = {
+  firstName: "María José",
+  lastName: "O'Connor-Núñez",
+  email: "ana@example.com",
+  phone: "+52 (55) 1234-5678",
+  username: "ana_1",
+  password: "una-clave-larga-1",
+};
+test("Registro acepta nombres con acentos, apóstrofo y guion", () => {
+  assert.equal(registerSchema.safeParse(newUser).success, true);
+});
+test("Registro rechaza números y símbolos en nombre y apellidos", () => {
+  for (const value of ["Ana2", "123", "Ana_López", "Ana@", "<b>Ana</b>"]) {
+    assert.equal(registerSchema.safeParse({ ...newUser, firstName: value }).success, false, value);
+    assert.equal(registerSchema.safeParse({ ...newUser, lastName: value }).success, false, value);
+  }
+});
+test("Registro rechaza letras y teléfonos sin dígitos suficientes", () => {
+  for (const value of ["abc1234567", "555-CALL-NOW", "+++++++", "123456", "1234567890123456"]) {
+    assert.equal(registerSchema.safeParse({ ...newUser, phone: value }).success, false, value);
+  }
+});

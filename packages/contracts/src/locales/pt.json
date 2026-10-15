@@ -611,6 +611,7 @@
     "useLeast10Characters": "Use pelo menos 10 caracteres.",
     "useLeast3Characters": "Use pelo menos 3 caracteres.",
     "useLettersNumbersPeriods": "Use letras, números, ponto ou hífen.",
+    "useLettersSpaces": "Use apenas letras, espaços, apóstrofo ou hífen.",
     "useNoMoreThan": "Use no máximo 32 caracteres.",
     "useNumbersSpaces": "Use números, espaços ou +."
   }

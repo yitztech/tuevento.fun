@@ -97,6 +97,13 @@ function AuthShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+const filterInput =
+  (pattern: RegExp) => (event: { target: { value: string } }) => {
+    event.target.value = event.target.value.replace(pattern, "");
+  };
+const onlyNameChars = filterInput(/[^\p{L}\p{M}\s'’.-]/gu);
+const onlyPhoneChars = filterInput(/[^\d\s()+-]/g);
+
 export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const postAuthTarget = usePostAuthTarget();
   const { search } = useLocation();
@@ -180,7 +187,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <input
                     autoComplete="given-name"
-                    {...form.register("firstName")}
+                    {...form.register("firstName", { onChange: onlyNameChars })}
                   />
                 </Field>
                 <Field
@@ -189,7 +196,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <input
                     autoComplete="family-name"
-                    {...form.register("lastName")}
+                    {...form.register("lastName", { onChange: onlyNameChars })}
                   />
                 </Field>
                 <div className="form-row">
@@ -200,7 +207,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                     <input
                       type="tel"
                       autoComplete="tel"
-                      {...form.register("phone")}
+                      {...form.register("phone", { onChange: onlyPhoneChars })}
                     />
                   </Field>
                   <Field
@@ -631,13 +638,13 @@ export function ProfilePage() {
               label={tr("common.firstName")}
               error={form.formState.errors.firstName?.message}
             >
-              <input {...form.register("firstName")} />
+              <input {...form.register("firstName", { onChange: onlyNameChars })} />
             </Field>
             <Field
               label={tr("common.lastName")}
               error={form.formState.errors.lastName?.message}
             >
-              <input {...form.register("lastName")} />
+              <input {...form.register("lastName", { onChange: onlyNameChars })} />
             </Field>
           </div>
           <Field label={tr("common.email")}>
@@ -648,7 +655,7 @@ export function ProfilePage() {
               label={tr("common.phone")}
               error={form.formState.errors.phone?.message}
             >
-              <input type="tel" {...form.register("phone")} />
+              <input type="tel" {...form.register("phone", { onChange: onlyPhoneChars })} />
             </Field>
             <Field
               label={tr("common.username")}

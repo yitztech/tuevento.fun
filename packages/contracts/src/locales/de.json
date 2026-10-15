@@ -611,6 +611,7 @@
     "useLeast10Characters": "Verwende mindestens 10 Zeichen.",
     "useLeast3Characters": "Verwende mindestens 3 Zeichen.",
     "useLettersNumbersPeriods": "Verwende Buchstaben, Zahlen, Punkte oder Bindestriche.",
+    "useLettersSpaces": "Verwende nur Buchstaben, Leerzeichen, Apostrophe oder Bindestriche.",
     "useNoMoreThan": "Verwende höchstens 32 Zeichen.",
     "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +."
   }

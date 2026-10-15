@@ -65,7 +65,11 @@ const phone = z
   .trim()
   .min(7, "validation.enterValidPhoneNumber")
   .max(25)
-  .regex(/^[+\d\s()-]+$/, "validation.useNumbersSpaces");
+  .regex(/^\+?[\d\s()-]+$/, "validation.useNumbersSpaces")
+  .refine((v) => {
+    const digits = v.replace(/\D/g, "").length;
+    return digits >= 7 && digits <= 15;
+  }, "validation.enterValidPhoneNumber");
 const optionalEmail = z
   .union([email, z.literal("")])
   .optional()
@@ -79,9 +83,14 @@ const name = z
   .trim()
   .min(2, "validation.enterLeast2Characters")
   .max(100, "validation.maximum100Characters");
+/** Nombres y apellidos de personas: letras de cualquier idioma, espacios, apóstrofo, punto y guion. */
+const personName = name.regex(
+  /^\p{L}[\p{L}\p{M}\s'’.-]*$/u,
+  "validation.useLettersSpaces",
+);
 export const registerSchema = z.object({
-  firstName: name,
-  lastName: name,
+  firstName: personName,
+  lastName: personName,
   email,
   phone,
   username: z
@@ -97,8 +106,8 @@ export const loginSchema = z.object({
   password: z.string().min(1, "validation.enterPassword").max(128),
 });
 export const profileSchema = z.object({
-  firstName: name,
-  lastName: name,
+  firstName: personName,
+  lastName: personName,
   phone: optionalPhone,
   username: z
     .string()
