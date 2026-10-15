@@ -3,6 +3,7 @@ import es from "./locales/es.json";
 import en from "./locales/en.json";
 import pt from "./locales/pt.json";
 import de from "./locales/de.json";
+import fr from "./locales/fr.json";
 
 /** Estructura de un catálogo: la del idioma principal. Las demás deben tener las mismas claves. */
 export type Catalog = typeof es;
@@ -58,6 +59,14 @@ export const locales = {
     zod: "de",
     paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen" },
     messages: de,
+    hostedBy: "en",
+  },
+  fr: {
+    name: "Français",
+    intl: "fr-FR",
+    zod: "fr",
+    paths: { privacy: "/confidentialite", terms: "/conditions" },
+    messages: fr,
     hostedBy: "en",
   },
 } as const satisfies Record<string, LocaleConfig>;

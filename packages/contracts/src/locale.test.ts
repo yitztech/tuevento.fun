@@ -90,12 +90,14 @@ test("Dominios por idioma desde el entorno: SITE_URL_<IDIOMA> y SITE_URL para el
   assert.deepEqual(siteOriginsFromEnv({ SITE_URL_EN: "ftp://yourevent.fun" }), {});
 });
 
-test("Portugués y alemán viven en el dominio inglés bajo /pt y /de", () => {
+test("Portugués, alemán y francés viven en el dominio inglés bajo /pt, /de y /fr", () => {
   assert.deepEqual(domainLocales, ["es", "en"]);
   assert.equal(siteLocale("pt"), "en");
   assert.equal(siteLocale("de"), "en");
+  assert.equal(siteLocale("fr"), "en");
   assert.equal(siteLocale("es"), "es");
   assert.equal(localePrefix("pt"), "/pt");
+  assert.equal(localePrefix("fr"), "/fr");
   assert.equal(localePrefix("en"), "");
   // Un idioma alojado lo está en un idioma con dominio propio (sin cadenas)
   for (const locale of supportedLocales) {
@@ -115,6 +117,7 @@ test("URL de una página en cada idioma: dominio, prefijo y ruta traducida", () 
   assert.equal(localeUrl("pt", "/privacy", EN), "https://yourevent.fun/pt/privacidade");
   assert.equal(localeUrl("de", "/condiciones", EN), "https://yourevent.fun/de/nutzungsbedingungen");
   assert.equal(localeUrl("pt", "/", EN), "https://yourevent.fun/pt/");
+  assert.equal(localeUrl("fr", "/terms", EN), "https://yourevent.fun/fr/conditions");
   assert.equal(localeUrl("en", "/registro", EN), "https://yourevent.fun/registro");
   assert.equal(localeUrl("es", "/privacy", EN), "https://tuevento.fun/privacidad");
   assert.equal(localeUrl("pt", "/", { es: "https://tuevento.fun" }), null);
@@ -122,6 +125,7 @@ test("URL de una página en cada idioma: dominio, prefijo y ruta traducida", () 
 test("La API acepta el idioma de la página solo si el dominio lo aloja", () => {
   assert.equal(localeForRequest("yourevent.fun", "pt", false, EN), "pt");
   assert.equal(localeForRequest("yourevent.fun", "de", false, EN), "de");
+  assert.equal(localeForRequest("yourevent.fun", "fr", false, EN), "fr");
   assert.equal(localeForRequest("yourevent.fun", "es", false, EN), "en");
   assert.equal(localeForRequest("yourevent.fun", "xx", false, EN), "en");
   assert.equal(localeForRequest("yourevent.fun", undefined, false, EN), "en");

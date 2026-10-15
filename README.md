@@ -39,11 +39,11 @@ Variables que la plataforma pasa al compose (se usan las que haga falta):
 
 Otros secretos (base de datos, claves de la app) se piden a la plataforma: los genera y los pasa como variables.
 
-## Dos dominios; portugués y alemán en el inglés
+## Dos dominios; portugués, alemán y francés en el inglés
 
 La misma app responde en **https://tuevento.fun** (`es`) y en
 **https://yourevent.fun** (`en`); portugués y alemán viven en
-**https://yourevent.fun/pt** y **/de**, sin dominio propio. El proxy pasa el `Host`
+**https://yourevent.fun/pt**, **/de** y **/fr**, sin dominio propio. El proxy pasa el `Host`
 original: el idioma se decide por el dominio y la ruta, nunca por `Accept-Language` ni por la IP.
 
 Variables adicionales (las de arriba, sin sufijo, son las de `es`):

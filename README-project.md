@@ -18,7 +18,7 @@ El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PAS
 | ------------------- | -------------------------------- | ------------------------------------------- |
 | Aplicación (es)     | http://localhost:5187            | https://tueventofun.orb.local               |
 | Aplicación (en)     | —                                | https://en.tueventofun.orb.local            |
-| Aplicación (pt, de) | —                                | https://en.tueventofun.orb.local/pt y /de   |
+| Aplicación (pt, de, fr) | —                            | https://en.tueventofun.orb.local/pt, /de, /fr |
 | Salud del gateway   | http://localhost:5187/healthz    | https://tueventofun.orb.local/healthz       |
 | Salud API           | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health    |
 | PostgreSQL          | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432         |
@@ -55,7 +55,7 @@ Los eventos, nombres y lugares de la demo son sintéticos. Cada navegador obtien
 
 ## Idiomas
 
-`https://tuevento.fun` en español y `https://yourevent.fun` en inglés, con portugués y alemán en `https://yourevent.fun/pt` y `/de`. El idioma lo deciden el Host y ese prefijo (no `?lang=` ni `Accept-Language`); un Host desconocido usa español. El gateway lo pone en `<html lang>`, añade `canonical` y `hreflang` (es, en, pt, de, x-default) hacia la página equivalente en cada idioma y sirve `robots.txt` y `sitemap.xml` propios de cada dominio. Entre inglés, portugués y alemán se cambia sin recargar; el español se ofrece con un enlace a su dominio. Nunca se redirige por el idioma del navegador: en la primera visita solo se propone. Las rutas son iguales en todos los idiomas salvo las legales (`/privacidad`, `/privacy`, `/pt/privacidade`, `/de/datenschutz` y sus equivalentes de condiciones). Las sesiones son de cada dominio. Fechas, formularios, validaciones, ayudas y notificaciones se muestran en el idioma del dominio. El texto escrito por usuarios permanece en su idioma original.
+`https://tuevento.fun` en español y `https://yourevent.fun` en inglés, con portugués, alemán y francés en `https://yourevent.fun/pt`, `/de` y `/fr`. El idioma lo deciden el Host y ese prefijo (no `?lang=` ni `Accept-Language`); un Host desconocido usa español. El gateway lo pone en `<html lang>`, añade `canonical` y `hreflang` (es, en, pt, de, fr, x-default) hacia la página equivalente en cada idioma y sirve `robots.txt` y `sitemap.xml` propios de cada dominio. Entre inglés, portugués, alemán y francés se cambia sin recargar; el español se ofrece con un enlace a su dominio. Nunca se redirige por el idioma del navegador: en la primera visita solo se propone. Las rutas son iguales en todos los idiomas salvo las legales (`/privacidad`, `/privacy`, `/pt/privacidade`, `/de/datenschutz`, `/fr/confidentialite` y sus equivalentes de condiciones). Las sesiones son de cada dominio. Fechas, formularios, validaciones, ayudas y notificaciones se muestran en el idioma del dominio. El texto escrito por usuarios permanece en su idioma original.
 
 Se utilizan i18next/react-i18next y un catálogo compartido con el backend. Consulta [la guía de traducciones](docs/I18N.md) para ampliar idiomas.
 

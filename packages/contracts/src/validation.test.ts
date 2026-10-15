@@ -117,7 +117,8 @@ test("Idiomas admitidos, fallback y traducción sin alterar texto propio", async
   const { normalizeLocale, translateMessage, notificationMessage, translate, themes } =
     await import("./index");
   assert.equal(normalizeLocale("en-GB,en;q=0.9"), "en");
-  assert.equal(normalizeLocale("fr"), "es");
+  assert.equal(normalizeLocale("fr-CA"), "fr");
+  assert.equal(normalizeLocale("it"), "es");
   assert.equal(normalizeLocale(), "es");
   assert.equal(
     translateMessage("validation.enterValidEmailAddress", "en"),
