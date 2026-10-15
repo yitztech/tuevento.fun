@@ -18,6 +18,8 @@ El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PAS
 | ------------------- | -------------------------------- | ------------------------------------------- |
 | Aplicación (es)     | http://localhost:5187            | https://tueventofun.orb.local               |
 | Aplicación (en)     | —                                | https://en.tueventofun.orb.local            |
+| Aplicación (pt)     | —                                | https://pt.tueventofun.orb.local            |
+| Aplicación (de)     | —                                | https://de.tueventofun.orb.local            |
 | Salud del gateway   | http://localhost:5187/healthz    | https://tueventofun.orb.local/healthz       |
 | Salud API           | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health    |
 | PostgreSQL          | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432         |
@@ -25,7 +27,7 @@ El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PAS
 
 Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`. Si tenías un volumen de PostgreSQL 17, no sirve para la 18: bórralo (`docker compose down -v`, borra los datos) o migra los datos con `pg_dump`.
 
-Con OrbStack, el gateway responde en dos dominios con su certificado local de confianza: `tueventofun.orb.local` (español) y `en.tueventofun.orb.local` (inglés), igual que `tuevento.fun` y `yourevent.fun` en producción. También responde `gateway.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si cambias el nombre del proyecto Compose o los dominios, añádelos ahí o los POST darán 403. `localhost` es un Host desconocido y se sirve en español. Para Google, añade los dos orígenes de OrbStack como autorizados. Los enlaces de invitación generados desde estas URL solo se abren en este Mac.
+Con OrbStack, el gateway responde en un dominio por idioma con su certificado local de confianza: `tueventofun.orb.local` (español), `en.tueventofun.orb.local` (inglés), `pt.tueventofun.orb.local` (portugués) y `de.tueventofun.orb.local` (alemán), igual que `tuevento.fun` y `yourevent.fun` en producción. También responde `gateway.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si cambias el nombre del proyecto Compose o los dominios, añádelos ahí o los POST darán 403. `localhost` es un Host desconocido y se sirve en español. Para Google, añade los orígenes de OrbStack como autorizados. Los enlaces de invitación generados desde estas URL solo se abren en este Mac.
 
 ```bash
 docker compose ps
@@ -134,6 +136,7 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `IMAGE_PREFIX`, `IMAGE_TAG` | todos | Imágenes (`IMAGE_TAG` por defecto `main`) |
 | `TRUSTED_PROXY_CIDR` | gateway | Subred de Traefik: solo desde ella se acepta `X-Forwarded-For` |
 | `SITE_URL_ES`, `SITE_URL_EN` | web, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
+| `SITE_URL_PT`, `SITE_URL_DE` | web, api | Opcionales: origen del portugués y del alemán; sin ellos, esos idiomas no se publican en la web |
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | web | Analítica (vacío = sin analítica) |
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
@@ -144,6 +147,7 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `SMTP_USER_EN`, `SMTP_PASSWORD_EN`, `MAIL_FROM_EN` | api | Remitente en inglés (`no-reply@yourevent.fun`); sin él, el inglés sale del remitente español |
 | `LISTMONK_URL`, `LISTMONK_LIST_UUID` | api | Newsletter en español (Listmonk en `news.tuevento.fun`) |
 | `LISTMONK_URL_EN`, `LISTMONK_LIST_UUID_EN` | api | Newsletter en inglés (Listmonk en `news.yourevent.fun`) |
+| `SMTP_USER_<PT\|DE>`, `SMTP_PASSWORD_<PT\|DE>`, `MAIL_FROM_<PT\|DE>`, `LISTMONK_URL_<PT\|DE>`, `LISTMONK_LIST_UUID_<PT\|DE>` | api | Opcionales: remitente y newsletter del portugués y del alemán |
 
 ### Correos por idioma
 

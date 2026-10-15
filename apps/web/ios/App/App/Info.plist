@@ -18,6 +18,8 @@
 	<array>
 		<string>es</string>
 		<string>en</string>
+		<string>pt</string>
+		<string>de</string>
 	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
