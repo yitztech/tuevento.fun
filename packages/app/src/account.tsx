@@ -10,6 +10,7 @@ import {
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  accountLimits,
   registerSchema,
   loginSchema,
   profileSchema,
@@ -123,7 +124,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
       lastName: "",
       phone: "",
       email: "",
-      username: "",
       password: "",
     },
   });
@@ -187,6 +187,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <input
                     autoComplete="given-name"
+                    maxLength={accountLimits.personName}
                     {...form.register("firstName", { onChange: onlyNameChars })}
                   />
                 </Field>
@@ -196,30 +197,22 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <input
                     autoComplete="family-name"
+                    maxLength={accountLimits.personName}
                     {...form.register("lastName", { onChange: onlyNameChars })}
                   />
                 </Field>
-                <div className="form-row">
-                  <Field
-                    label={tr("common.phone")}
-                    error={form.formState.errors.phone?.message}
-                  >
-                    <input
-                      type="tel"
-                      autoComplete="tel"
-                      {...form.register("phone", { onChange: onlyPhoneChars })}
-                    />
-                  </Field>
-                  <Field
-                    label={tr("common.username")}
-                    error={form.formState.errors.username?.message}
-                  >
-                    <input
-                      autoComplete="username"
-                      {...form.register("username")}
-                    />
-                  </Field>
-                </div>
+                <Field
+                  label={tr("common.phone")}
+                  error={form.formState.errors.phone?.message}
+                >
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={accountLimits.phone}
+                    {...form.register("phone", { onChange: onlyPhoneChars })}
+                  />
+                </Field>
               </>
             )}
             <Field
@@ -229,6 +222,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               <input
                 type="email"
                 autoComplete="email"
+                maxLength={accountLimits.email}
                 {...form.register("email")}
               />
             </Field>
@@ -247,6 +241,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   autoComplete={
                     registerMode ? "new-password" : "current-password"
                   }
+                  maxLength={accountLimits.password}
                   {...form.register("password")}
                 />
                 <button
@@ -369,7 +364,12 @@ export function ForgotPasswordPage() {
             label={tr("common.email")}
             error={form.formState.errors.email?.message}
           >
-            <input type="email" autoComplete="email" {...form.register("email")} />
+            <input
+              type="email"
+              autoComplete="email"
+              maxLength={accountLimits.email}
+              {...form.register("email")}
+            />
           </Field>
           {error && <ErrorBox message={error} />}
           <button className="button full" disabled={form.formState.isSubmitting}>
@@ -438,6 +438,7 @@ export function ResetPasswordPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  maxLength={accountLimits.password}
                   {...form.register("password")}
                 />
                 <button
@@ -575,7 +576,6 @@ export function ProfilePage() {
       firstName: user?.firstName,
       lastName: user?.lastName,
       phone: user?.phone,
-      username: user?.username,
     },
   });
   if (!user) return null;
@@ -638,32 +638,35 @@ export function ProfilePage() {
               label={tr("common.firstName")}
               error={form.formState.errors.firstName?.message}
             >
-              <input {...form.register("firstName", { onChange: onlyNameChars })} />
+              <input
+                maxLength={accountLimits.personName}
+                {...form.register("firstName", { onChange: onlyNameChars })}
+              />
             </Field>
             <Field
               label={tr("common.lastName")}
               error={form.formState.errors.lastName?.message}
             >
-              <input {...form.register("lastName", { onChange: onlyNameChars })} />
+              <input
+                maxLength={accountLimits.personName}
+                {...form.register("lastName", { onChange: onlyNameChars })}
+              />
             </Field>
           </div>
           <Field label={tr("common.email")}>
             <input value={user.email} readOnly type="email" />
           </Field>
-          <div className="form-row">
-            <Field
-              label={tr("common.phone")}
-              error={form.formState.errors.phone?.message}
-            >
-              <input type="tel" {...form.register("phone", { onChange: onlyPhoneChars })} />
-            </Field>
-            <Field
-              label={tr("common.username")}
-              error={form.formState.errors.username?.message}
-            >
-              <input {...form.register("username")} />
-            </Field>
-          </div>
+          <Field
+            label={tr("common.phone")}
+            error={form.formState.errors.phone?.message}
+          >
+            <input
+              type="tel"
+              inputMode="tel"
+              maxLength={accountLimits.phone}
+              {...form.register("phone", { onChange: onlyPhoneChars })}
+            />
+          </Field>
           {error && <ErrorBox message={error} />}
           <div className="form-actions">
             <button className="button" disabled={form.formState.isSubmitting}>

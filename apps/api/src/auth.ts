@@ -69,7 +69,6 @@ export const userView = (r: any): User => ({
   lastName: r.last_name,
   email: r.email,
   phone: r.phone,
-  username: r.username,
   avatar: r.avatar,
   isDemo: r.is_demo,
   isOwner: r.is_owner === true,
@@ -92,14 +91,13 @@ export class AuthService {
     const passwordHash = await this.passwordHash(data.password);
     try {
       const [r] = await this.db.query(
-        "INSERT INTO users(id,first_name,last_name,email,phone,username,password_hash,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
         [
           randomUUID(),
           data.firstName,
           data.lastName,
           data.email,
           data.phone,
-          data.username,
           passwordHash,
           locale,
         ],
@@ -108,7 +106,7 @@ export class AuthService {
     } catch (e: any) {
       if (e.code === "23505")
         throw new ConflictException(
-          "errors.emailAddressUsernameAlready",
+          "errors.emailAddressAlreadyRegistered",
         );
       throw e;
     }
@@ -345,13 +343,12 @@ export class AuthService {
     const locale = requestLocale(req);
     try {
       const [r] = await this.db.query(
-        "INSERT INTO users(id,first_name,last_name,email,username,google_sub,locale) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
         [
           randomUUID(),
           payload.given_name || translate(locale, "common.host"),
           payload.family_name || "",
           payload.email.toLowerCase(),
-          "anfitrion_" + randomBytes(5).toString("hex"),
           payload.sub,
           locale,
         ],

@@ -20,8 +20,8 @@ export class DemoService {
     const id = randomUUID(),
       unique = randomBytes(8).toString("hex");
     const [row] = await this.db.query(
-      "INSERT INTO users(id,first_name,last_name,email,username,is_demo,locale) VALUES($1,'Andrea','López',$2,$3,true,$4) RETURNING *",
-      [id, `demo-${unique}@example.invalid`, `demo_${unique}`, locale],
+      "INSERT INTO users(id,first_name,last_name,email,is_demo,locale) VALUES($1,'Andrea','López',$2,true,$3) RETURNING *",
+      [id, `demo-${unique}@example.invalid`, locale],
     );
     try {
       const names = [

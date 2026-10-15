@@ -143,7 +143,6 @@
     "themeDecoration": "Dekoration {{theme}}",
     "timeConfirmed": "Uhrzeit folgt",
     "tueventofunHome": "TuEventoFun, Startseite",
-    "username": "Benutzername",
     "yetConfirm": "Noch offen",
     "youreInvited": "Du bist eingeladen"
   },
@@ -251,8 +250,8 @@
     "couldntReadImageTry": "Das Bild konnte nicht gelesen werden. Versuche es mit einem anderen.",
     "couldntVerifyGoogleSign": "Deine Anmeldung mit Google konnte nicht bestätigt werden.",
     "downloadHostNotAllowed": "Download-Host nicht erlaubt.",
+    "emailAddressAlreadyRegistered": "Diese E-Mail-Adresse ist bereits registriert.",
     "emailAddressPasswordIncorrect": "E-Mail-Adresse oder Passwort ist falsch.",
-    "emailAddressUsernameAlready": "Diese E-Mail-Adresse oder dieser Benutzername ist bereits registriert.",
     "googleDidntConfirmIdentity": "Google hat diese Identität nicht bestätigt.",
     "googleRequestHasExpired": "Die Google-Anfrage ist abgelaufen. Bitte versuche es noch einmal.",
     "googleSignHasntBeen": "Die Anmeldung mit Google ist noch nicht eingerichtet.",
@@ -268,8 +267,7 @@
     "sessionHasExpiredPlease": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
     "signInToContinue": "Melde dich an, um fortzufahren.",
     "tooManyAttemptsPlease": "Zu viele Versuche. Warte einen Moment und versuche es noch einmal.",
-    "usePngJpgWebp": "Verwende ein PNG-, JPG- oder WebP-Bild mit bis zu 2 MB.",
-    "usernameAlreadyTaken": "Dieser Benutzername ist bereits vergeben."
+    "usePngJpgWebp": "Verwende ein PNG-, JPG- oder WebP-Bild mit bis zu 2 MB."
   },
   "events": {
     "actions": "Aktionen",
@@ -606,13 +604,14 @@
     "invalidTimeZone": "Ungültige Zeitzone.",
     "iosRequiresTestflightApp": "iOS erfordert TestFlight oder den App Store.",
     "maximum100Characters": "Höchstens 100 Zeichen.",
+    "maximum128Characters": "Höchstens 128 Zeichen.",
+    "maximum20Characters": "Höchstens 20 Zeichen.",
+    "maximum254Characters": "Höchstens 254 Zeichen.",
+    "maximum50Characters": "Höchstens 50 Zeichen.",
     "thereDuplicateMembers": "Es gibt doppelte Mitglieder.",
     "useHttps": "Verwende HTTPS.",
     "useLeast10Characters": "Verwende mindestens 10 Zeichen.",
-    "useLeast3Characters": "Verwende mindestens 3 Zeichen.",
-    "useLettersNumbersPeriods": "Verwende Buchstaben, Zahlen, Punkte oder Bindestriche.",
     "useLettersSpaces": "Verwende nur Buchstaben, Leerzeichen, Apostrophe oder Bindestriche.",
-    "useNoMoreThan": "Verwende höchstens 32 Zeichen.",
     "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +."
   }
 }

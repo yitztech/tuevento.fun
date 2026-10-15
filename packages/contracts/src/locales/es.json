@@ -143,7 +143,6 @@
     "themeDecoration": "Decoración {{theme}}",
     "timeConfirmed": "Hora por confirmar",
     "tueventofunHome": "TuEventoFun, inicio",
-    "username": "Nombre de usuario",
     "yetConfirm": "Aún por confirmar",
     "youreInvited": "Estás invitado"
   },
@@ -251,8 +250,8 @@
     "couldntReadImageTry": "No se pudo leer la imagen. Prueba con otra.",
     "couldntVerifyGoogleSign": "No se pudo validar tu acceso con Google.",
     "downloadHostNotAllowed": "Host de descarga no permitido.",
+    "emailAddressAlreadyRegistered": "Este correo ya está registrado.",
     "emailAddressPasswordIncorrect": "El correo o la contraseña no coinciden.",
-    "emailAddressUsernameAlready": "El correo o nombre de usuario ya está registrado.",
     "googleDidntConfirmIdentity": "Google no confirmó esta identidad.",
     "googleRequestHasExpired": "La solicitud de Google caducó. Inténtalo de nuevo.",
     "googleSignHasntBeen": "El acceso con Google todavía no está configurado.",
@@ -268,8 +267,7 @@
     "sessionHasExpiredPlease": "Tu sesión terminó. Inicia sesión de nuevo.",
     "signInToContinue": "Inicia sesión para continuar.",
     "tooManyAttemptsPlease": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
-    "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB.",
-    "usernameAlreadyTaken": "Este nombre de usuario ya está en uso."
+    "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB."
   },
   "events": {
     "actions": "Acciones",
@@ -606,13 +604,14 @@
     "invalidTimeZone": "Zona horaria inválida.",
     "iosRequiresTestflightApp": "iOS requiere TestFlight o App Store.",
     "maximum100Characters": "Máximo 100 caracteres.",
+    "maximum128Characters": "Máximo 128 caracteres.",
+    "maximum20Characters": "Máximo 20 caracteres.",
+    "maximum254Characters": "Máximo 254 caracteres.",
+    "maximum50Characters": "Máximo 50 caracteres.",
     "thereDuplicateMembers": "Hay integrantes repetidos.",
     "useHttps": "Usa HTTPS.",
     "useLeast10Characters": "Usa al menos 10 caracteres.",
-    "useLeast3Characters": "Usa al menos 3 caracteres.",
-    "useLettersNumbersPeriods": "Usa letras, números, punto o guion.",
     "useLettersSpaces": "Usa solo letras, espacios, apóstrofo o guion.",
-    "useNoMoreThan": "Usa como máximo 32 caracteres.",
     "useNumbersSpaces": "Usa números, espacios o +."
   }
 }

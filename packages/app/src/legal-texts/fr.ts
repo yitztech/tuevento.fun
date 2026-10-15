@@ -20,7 +20,7 @@ export const fr: LegalTexts = {
       {
         title: "Les informations de ton compte",
         body: [
-          "Lors de ton inscription, nous enregistrons tes nom et prénom, ton e-mail, ton téléphone, ton nom d’utilisateur et un mot de passe protégé par scrypt (nous ne le conservons jamais en clair). Nous enregistrons aussi la langue de la page par laquelle tu t’inscris ; nous t’écrivons dans cette langue, depuis le domaine de cette langue.",
+          "Lors de ton inscription, nous enregistrons tes nom et prénom, ton e-mail, ton téléphone et un mot de passe protégé par scrypt (nous ne le conservons jamais en clair). Nous enregistrons aussi la langue de la page par laquelle tu t’inscris ; nous t’écrivons dans cette langue, depuis le domaine de cette langue.",
           "Si tu téléverses un avatar ou un logo, nous le réduisons à 256 × 256 pixels et ne conservons que cette copie.",
           "Si tu te connectes avec Google, nous recevons et vérifions ton nom, ton e-mail et l’identifiant de ton compte Google. Nous ne recevons pas ton mot de passe Google.",
         ],

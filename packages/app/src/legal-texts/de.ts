@@ -20,7 +20,7 @@ export const de: LegalTexts = {
       {
         title: "Angaben zu deinem Konto",
         body: [
-          "Bei der Registrierung speichern wir deinen Vor- und Nachnamen, deine E-Mail-Adresse, Telefonnummer, deinen Benutzernamen und ein mit scrypt geschütztes Passwort (wir speichern es nie im Klartext). Außerdem speichern wir die Sprache der Domain, über die du dich anmeldest: Jede Sprache hat ihre eigene Domain. Wir schreiben dir in dieser Sprache und von dieser Domain aus.",
+          "Bei der Registrierung speichern wir deinen Vor- und Nachnamen, deine E-Mail-Adresse, Telefonnummer und ein mit scrypt geschütztes Passwort (wir speichern es nie im Klartext). Außerdem speichern wir die Sprache der Domain, über die du dich anmeldest: Jede Sprache hat ihre eigene Domain. Wir schreiben dir in dieser Sprache und von dieser Domain aus.",
           "Wenn du einen Avatar oder ein Logo hochlädst, verkleinern wir es auf 256 × 256 Pixel und behalten nur diese Kopie.",
           "Wenn du dich mit Google anmeldest, erhalten und prüfen wir deinen Namen, deine E-Mail-Adresse und die Kennung deines Google-Kontos. Dein Google-Passwort erhalten wir nicht.",
         ],

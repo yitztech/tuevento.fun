@@ -56,15 +56,22 @@ export const themes = [
     color: "#f3d579",
   },
 ] as const;
+/** Longitudes máximas de los datos de cuenta; el frontend las usa como `maxLength`. */
+export const accountLimits = {
+  personName: 50,
+  email: 254,
+  phone: 20,
+  password: 128,
+} as const;
 const email = z
   .email("validation.enterValidEmailAddress")
-  .max(254)
+  .max(accountLimits.email, "validation.maximum254Characters")
   .transform((v) => v.toLowerCase().trim());
 const phone = z
   .string()
   .trim()
   .min(7, "validation.enterValidPhoneNumber")
-  .max(25)
+  .max(accountLimits.phone, "validation.maximum20Characters")
   .regex(/^\+?[\d\s()-]+$/, "validation.useNumbersSpaces")
   .refine((v) => {
     const digits = v.replace(/\D/g, "").length;
@@ -84,7 +91,9 @@ const name = z
   .min(2, "validation.enterLeast2Characters")
   .max(100, "validation.maximum100Characters");
 /** Nombres y apellidos de personas: letras de cualquier idioma, espacios, apóstrofo, punto y guion. */
-const personName = name.regex(
+const personName = name
+  .max(accountLimits.personName, "validation.maximum50Characters")
+  .regex(
   /^\p{L}[\p{L}\p{M}\s'’.-]*$/u,
   "validation.useLettersSpaces",
 );
@@ -93,28 +102,16 @@ export const registerSchema = z.object({
   lastName: personName,
   email,
   phone,
-  username: z
-    .string()
-    .trim()
-    .min(3, "validation.useLeast3Characters")
-    .max(32, "validation.useNoMoreThan")
-    .regex(/^[a-zA-Z0-9_.-]+$/, "validation.useLettersNumbersPeriods"),
-  password: z.string().min(10, "validation.useLeast10Characters").max(128),
+  password: z.string().min(10, "validation.useLeast10Characters").max(accountLimits.password, "validation.maximum128Characters"),
 });
 export const loginSchema = z.object({
   email,
-  password: z.string().min(1, "validation.enterPassword").max(128),
+  password: z.string().min(1, "validation.enterPassword").max(accountLimits.password, "validation.maximum128Characters"),
 });
 export const profileSchema = z.object({
   firstName: personName,
   lastName: personName,
   phone: optionalPhone,
-  username: z
-    .string()
-    .trim()
-    .min(3, "validation.useLeast3Characters")
-    .max(32, "validation.useNoMoreThan")
-    .regex(/^[a-zA-Z0-9_.-]+$/),
 });
 /** Rutas de recuperación de contraseña (iguales en los dos dominios, como /acceso). */
 export const passwordResetPaths = {
@@ -128,7 +125,7 @@ export const resetPasswordSchema = z.object({
   token: z
     .string()
     .regex(/^[A-Za-z0-9_-]{43}$/, "common.passwordResetLinkInvalid"),
-  password: z.string().min(10, "validation.useLeast10Characters").max(128),
+  password: z.string().min(10, "validation.useLeast10Characters").max(accountLimits.password, "validation.maximum128Characters"),
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export const newsletterSchema = z.object({
@@ -218,7 +215,6 @@ export type User = {
   lastName: string;
   email: string;
   phone: string;
-  username: string;
   avatar: string | null;
   isOwner?: boolean;
   isDemo: boolean;

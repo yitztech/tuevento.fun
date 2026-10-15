@@ -86,7 +86,6 @@ const account = (n) => ({
   lastName: "Automática",
   email: `qa-${unique}-${n}@example.invalid`,
   phone: "+527770000000",
-  username: `qa_${unique}_${n}`,
   password,
 });
 try {
@@ -426,7 +425,6 @@ try {
         firstName: "Organizador",
         lastName: "Pruebas",
         phone: "+527770000000",
-        username: account(1).username,
       });
       assert.equal(u.firstName, "Organizador");
     },

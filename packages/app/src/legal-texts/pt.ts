@@ -20,7 +20,7 @@ export const pt: LegalTexts = {
       {
         title: "Informações da sua conta",
         body: [
-          "Ao se cadastrar, guardamos seu nome e sobrenome, e-mail, telefone, nome de usuário e uma senha protegida com scrypt (nunca a guardamos em texto simples). Também guardamos o idioma do domínio pelo qual você entra: cada idioma tem o seu próprio domínio. Escrevemos para você nesse idioma e a partir desse domínio.",
+          "Ao se cadastrar, guardamos seu nome e sobrenome, e-mail, telefone e uma senha protegida com scrypt (nunca a guardamos em texto simples). Também guardamos o idioma do domínio pelo qual você entra: cada idioma tem o seu próprio domínio. Escrevemos para você nesse idioma e a partir desse domínio.",
           "Se você enviar um avatar ou logo, nós o reduzimos para 256 × 256 pixels e guardamos apenas essa cópia.",
           "Se você entrar com o Google, recebemos e verificamos seu nome, e-mail e identificador da conta Google. Não recebemos sua senha do Google.",
         ],

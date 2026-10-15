@@ -20,7 +20,7 @@ export const es: LegalTexts = {
       {
         title: "Información de tu cuenta",
         body: [
-          "Al registrarte guardamos tu nombre y apellidos, correo, teléfono, nombre de usuario y una contraseña protegida con scrypt (nunca la guardamos en texto plano). También guardamos el idioma del dominio por el que entras: tuevento.fun para español y yourevent.fun para inglés. Te escribimos en ese idioma y desde ese dominio.",
+          "Al registrarte guardamos tu nombre y apellidos, correo, teléfono y una contraseña protegida con scrypt (nunca la guardamos en texto plano). También guardamos el idioma del dominio por el que entras: tuevento.fun para español y yourevent.fun para inglés. Te escribimos en ese idioma y desde ese dominio.",
           "Si subes un avatar o logo, lo reducimos a 256 × 256 píxeles y solo conservamos esa copia.",
           "Si entras con Google, recibimos y verificamos tu nombre, correo e identificador de cuenta de Google. No recibimos tu contraseña de Google.",
         ],
