@@ -2,7 +2,6 @@ import { Fragment, useEffect, useState, type MouseEvent, type ReactElement } fro
 import i18next from "i18next";
 import { initReactI18next, Trans, useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
-import { Languages } from "lucide-react";
 import {
   defaultLocale,
   isLocale,
@@ -215,13 +214,10 @@ export function LanguageSwitcher() {
       switchPageLocale(other);
     }
   };
+  // Se ve el código ISO 639-1 (ES, EN, PT, DE); el nombre completo queda en el nombre accesible
+  const label = (target: Locale) => `${tr("language.changeLanguage")}: ${locales[target].name}`;
   const option = (other: Locale) => {
-    const content = (
-      <>
-        <Languages size={16} aria-hidden="true" />
-        <span className="language-switcher-label">{locales[other].name}</span>
-      </>
-    );
+    const content = <span className="language-switcher-label">{other.toUpperCase()}</span>;
     return sites ? (
       <a
         key={other}
@@ -229,7 +225,8 @@ export function LanguageSwitcher() {
         href={otherUrl(other, pathname, search, hash)}
         hrefLang={other}
         lang={other}
-        title={tr("language.changeLanguage")}
+        title={locales[other].name}
+        aria-label={label(other)}
         onClick={choose(other)}
       >
         {content}
@@ -241,8 +238,8 @@ export function LanguageSwitcher() {
         className="language-switcher"
         lang={other}
         onClick={choose(other)}
-        title={tr("language.changeLanguage")}
-        aria-label={`${tr("language.changeLanguage")}: ${locales[other].name}`}
+        title={locales[other].name}
+        aria-label={label(other)}
       >
         {content}
       </button>
@@ -251,9 +248,8 @@ export function LanguageSwitcher() {
   if (others.length === 1) return option(others[0]);
   return (
     <details className="language-menu">
-      <summary className="language-switcher" title={tr("language.changeLanguage")}>
-        <Languages size={16} aria-hidden="true" />
-        <span className="language-switcher-label">{locales[locale].name}</span>
+      <summary className="language-switcher" title={tr("language.changeLanguage")} aria-label={label(locale)}>
+        <span className="language-switcher-label">{locale.toUpperCase()}</span>
       </summary>
       <div className="language-menu-list">{others.map(option)}</div>
     </details>

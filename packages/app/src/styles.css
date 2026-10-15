@@ -4342,9 +4342,6 @@ small {
     font-size: 10px;
     padding: 7px 8px;
   }
-  .language-switcher > svg {
-    display: none;
-  }
   .topbar-actions .today {
     display: none;
   }
