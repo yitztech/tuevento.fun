@@ -174,5 +174,27 @@ services:
         - path: package-lock.json
           action: rebuild
 
+  # ── SOLO PARA PRUEBAS · NO SE DESPLIEGA ───────────────────────────────────────
+  # HTTPS local (https://localhost:8443) con una CA propia para probar las apps móviles
+  # en el emulador de Android o el simulador de iOS. Perfil `mobile`: no arranca con un
+  # `docker compose up` normal.
+  #   docker compose --profile mobile up -d mobile-tls && bash scripts/mobile-test-ca.sh
+  # No existe en compose.prod.yml; `npm test` (scripts/check-test-only.mjs) lo vigila.
+  mobile-tls:
+    profiles: ["mobile"]
+    image: caddy:2.11.7-alpine
+    labels:
+      tuevento.solo-pruebas: "true"
+    ports:
+      - "127.0.0.1:8443:8443"
+    volumes:
+      - ./services/mobile-tls/Caddyfile:/etc/caddy/Caddyfile:ro
+      - mobile_tls_data:/data
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  mobile_tls_data:

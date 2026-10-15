@@ -58,3 +58,20 @@ Variables: `E2E_BASE_URL` (por defecto `http://localhost:5187`), `E2E_BASE_URL_E
 
 `.github/workflows/ci.yml` ejecuta `npm run e2e` contra `compose.prod.yml` y sube
 `tests/e2e/results/` como artifact `qa-evidence`.
+
+## HTTPS local para las apps móviles (solo pruebas)
+
+La app móvil exige un origen HTTPS. El servicio `mobile-tls` (Caddy, `compose.yml`, perfil
+`mobile`) lo da en `https://localhost:8443` con una CA propia. **Es solo para pruebas: no
+existe en `compose.prod.yml` y nunca se despliega en un VPS** (`scripts/check-test-only.mjs`,
+dentro de `npm test`, falla si aparece en producción, en un Dockerfile o en un workflow).
+
+```
+docker compose --profile mobile up -d mobile-tls
+bash scripts/mobile-test-ca.sh        # exporta la CA a tests/mobile/.ca/root.crt
+curl --cacert tests/mobile/.ca/root.crt https://localhost:8443/api/health
+```
+
+La CA es pública y de pruebas (no se versiona). Android: se empaqueta solo en el build de
+depuración. iOS: se añade solo al simulador con `xcrun simctl keychain booted add-root-cert`.
+Un servicio nuevo solo de pruebas se añade a la lista de `scripts/check-test-only.mjs`.
