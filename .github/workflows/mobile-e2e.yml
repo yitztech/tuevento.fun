@@ -2,6 +2,10 @@ name: Mobile E2E
 # Escenarios @movil (tests/e2e) dentro de la app real: Android en un emulador y iOS en un
 # simulador. SIN COSTE: los runners de GitHub son gratuitos en repositorios públicos. Si el
 # repositorio pasa a privado, los jobs se omiten solos (los minutos de macOS cuestan 10x).
+# POR AHORA SOLO MANUAL: las pruebas móviles se ejecutan en local (docs/E2E.md) y este workflow
+# no corre en los PR. Se reactivará (añadiendo el disparador `pull_request` con las rutas
+# apps/web, packages, tests/e2e, scripts/mobile-*, services/mobile-tls y compose.yml) cuando
+# se decida pasarlas a CI, tras comprobar aquí que funcionan.
 on:
   workflow_dispatch:
     inputs:
@@ -9,15 +13,6 @@ on:
         type: choice
         options: [both, android, ios]
         default: both
-  pull_request:
-    paths:
-      - apps/web/**
-      - packages/**
-      - tests/e2e/**
-      - scripts/mobile-*
-      - services/mobile-tls/**
-      - compose.yml
-      - .github/workflows/mobile-e2e.yml
 permissions:
   contents: read
 concurrency:

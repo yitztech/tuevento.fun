@@ -35,3 +35,7 @@ Al crear o cambiar un límite, añade su columna a `packages/contracts/src/limit
 Todo comportamiento visible o regla de validación nueva o cambiada se entrega con su escenario Gherkin en español en `tests/e2e/features/` (ver [docs/E2E.md](docs/E2E.md)), en el mismo cambio. Los pasos están en `tests/e2e/steps/`; los escenarios usan datos únicos y no dependen del estado de la base de datos.
 
 Antes de cerrar un cambio, con la app arriba (`docker compose up -d`): `npm run e2e` y `npm run e2e:summary`. Si un escenario falla, se arregla el código o se actualiza el escenario con motivo: nunca se omite ni se borra para pasar. CI ejecuta lo mismo.
+
+## Primero en local, después en CI o producción
+
+Toda prueba, script o workflow nuevo se valida **primero en local** y solo cuando pasa ahí se lleva a CI o a producción; nunca al revés. Las pruebas de las apps móviles (emulador de Android, simulador de iOS: `npm run e2e:movil`) se ejecutan **solo en local** por ahora: `.github/workflows/mobile-e2e.yml` queda en manual y no se añade a los PR ni a ningún despliegue hasta que el usuario lo pida. Un cambio en un workflow de CI se prueba antes ejecutando en local lo mismo que hace (los mismos comandos), y se avisa de lo que no se pudo comprobar.

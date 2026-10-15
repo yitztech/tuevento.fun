@@ -156,5 +156,7 @@ resumen por plataforma y el código de salida es distinto de 0 si alguna falló.
 - **iOS** (`macos-latest`): macOS no tiene Docker, así que `scripts/mobile-native-stack.sh`
   levanta PostgreSQL 18, la API y Caddy (el mismo `Caddyfile` de `mobile-tls`, con
   `MOBILE_TLS_UPSTREAM=127.0.0.1:3087`) directamente en el runner (`MOBILE_STACK=native`).
-- Se ejecuta a mano (`workflow_dispatch`: android, ios o both) y en los PR que tocan la app, los
-  escenarios o los scripts móviles. Sube `tests/e2e/results/` como artifact.
+- **Por ahora solo manual** (`workflow_dispatch`: android, ios o both): las pruebas móviles se
+  ejecutan en local y el workflow no corre en los PR. Para activarlo en los PR, añadir el disparador
+  `pull_request` con las rutas que indica el comentario del propio workflow. Sube
+  `tests/e2e/results/` como artifact.
