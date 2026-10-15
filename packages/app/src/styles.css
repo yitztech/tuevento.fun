@@ -4272,6 +4272,31 @@ small {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
+/* Con más de dos idiomas el selector es un menú con un enlace por idioma */
+.language-menu {
+  position: relative;
+}
+.language-menu > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.language-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.language-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  display: grid;
+  gap: 6px;
+  min-width: 100%;
+  padding: 6px;
+  border: 1px solid #dfe1e5;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(23 39 76 / 12%);
+}
 .auth-language {
   display: flex;
   justify-content: flex-end;

@@ -15,6 +15,8 @@ import {
   type Member,
   type PublicInvitation,
   type Status,
+  defaultLocale,
+  notificationMessage,
 } from "@tuevento/contracts";
 const eventView = (r: any): Event => ({
   id: r.id,
@@ -62,7 +64,7 @@ export class EventsService {
       "SELECT * FROM events WHERE id=$1 AND user_id=$2",
       [id, userId],
     );
-    if (!r) throw new NotFoundException("No encontramos este evento.");
+    if (!r) throw new NotFoundException("errors.couldntFindEvent");
     return r;
   }
   async invitations(userId: string, eventId: string): Promise<Invitation[]> {
@@ -189,7 +191,7 @@ export class EventsService {
           ).rows[0]
         : null;
       if (id && !prior)
-        throw new NotFoundException("No encontramos la invitación.");
+        throw new NotFoundException("errors.couldntFindInvitation");
       const existing = id
         ? (
             await c.query("SELECT id FROM members WHERE invitation_id=$1", [id])
@@ -197,7 +199,7 @@ export class EventsService {
         : [];
       if (data.members.some((m) => m.id && !existing.includes(m.id)))
         throw new BadRequestException(
-          "Un integrante no pertenece a esta invitación.",
+          "errors.memberDoesntBelongInvitation",
         );
       if (id)
         await c.query(
@@ -265,7 +267,7 @@ export class EventsService {
     );
     if (!r)
       throw new NotFoundException(
-        "Esta invitación no está disponible. Consulta con tu anfitrión.",
+        "errors.invitationIsntAvailablePlease",
       );
     const members = await this.db.query(
       "SELECT id,name,kind,status FROM members WHERE invitation_id=$1 ORDER BY position",
@@ -301,7 +303,7 @@ export class EventsService {
         )
       ).rows[0];
       if (!r)
-        throw new NotFoundException("Esta invitación no está disponible.");
+        throw new NotFoundException("errors.invitationIsntAvailable");
       const existing = (
         await c.query(
           "SELECT id,status,name FROM members WHERE invitation_id=$1 ORDER BY position",
@@ -313,7 +315,7 @@ export class EventsService {
         members.some((m) => !existing.some((e) => e.id === m.id))
       )
         throw new BadRequestException(
-          "La lista de integrantes cambió. Recarga la invitación.",
+          "errors.memberListHasChanged",
         );
       const changed = members.some(
         (m) => existing.find((e) => e.id === m.id)?.status !== m.status,
@@ -327,7 +329,10 @@ export class EventsService {
       const accepted = members.filter((m) => m.status === "accepted").length,
         declined = members.filter((m) => m.status === "declined").length,
         pending = members.length - accepted - declined;
-      const message = `${accepted} ${accepted === 1 ? "confirmado" : "confirmados"}, ${declined} no ${declined === 1 ? "asistirá" : "asistirán"} y ${pending} en espera.`;
+      // Se guardan las cantidades; el texto se arma en el idioma de quien lo lee.
+      // `message` queda en el idioma principal para las lecturas directas de la tabla.
+      const counts = { accepted, declined, pending };
+      const message = notificationMessage(counts, defaultLocale);
       await c.query(
         "INSERT INTO notifications(id,user_id,event_id,guest_name,message,counts) VALUES($1,$2,$3,$4,$5,$6)",
         [
@@ -336,7 +341,7 @@ export class EventsService {
           r.event_id,
           r.name,
           message,
-          JSON.stringify({ accepted, declined, pending }),
+          JSON.stringify(counts),
         ],
       );
       owner = r.user_id;

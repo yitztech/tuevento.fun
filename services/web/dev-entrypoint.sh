@@ -3,7 +3,7 @@ set -e
 
 mkdir -p /run/nginx /etc/nginx/http.d /etc/nginx/conf.d
 
-# Configurar mapas de idiomas y SEO según SITE_URL_ES y SITE_URL_EN
+# Mapas de idioma y SEO según los idiomas de packages/contracts y sus SITE_URL_<IDIOMA>
 if [ -x /17-sites.sh ]; then
     /17-sites.sh
     if [ -f /etc/nginx/conf.d/sites.conf ]; then

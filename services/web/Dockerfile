@@ -19,6 +19,9 @@ RUN npm ci --no-audit --no-fund
 COPY packages packages
 COPY apps/web apps/web
 RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client
+# Idiomas y rutas traducidas de packages/contracts para 17-sites.sh
+COPY services/web/locales-manifest.cjs services/web/
+RUN node services/web/locales-manifest.cjs packages/contracts/dist > /etc/nginx/locales.txt
 COPY services/web/default.dev.conf.template /etc/nginx/templates/default.dev.conf.template
 COPY --chmod=755 services/web/17-sites.sh /17-sites.sh
 COPY --chmod=755 services/web/dev-entrypoint.sh /dev-entrypoint.sh
@@ -36,7 +39,9 @@ COPY packages/app/package.json packages/app/
 RUN npm ci --no-audit --no-fund
 COPY packages packages
 COPY apps apps
-RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/web
+COPY services/web/locales-manifest.cjs services/web/
+RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/web \
+ && node services/web/locales-manifest.cjs packages/contracts/dist > /app/locales.txt
 
 # Producción: Nginx 1.30.5 Alpine sirviendo la SPA estática en el puerto 8080
 FROM nginx:1.30.5-alpine AS production
@@ -44,6 +49,7 @@ ARG RELEASE_SHA=dev
 ENV RELEASE_SHA=${RELEASE_SHA} \
     NGINX_ENVSUBST_FILTER='^RELEASE_SHA$'
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+COPY --from=build /app/locales.txt /etc/nginx/locales.txt
 COPY services/web/snippets/ /etc/nginx/snippets/
 COPY services/web/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --chmod=755 services/web/16-analytics.sh /docker-entrypoint.d/16-analytics.sh

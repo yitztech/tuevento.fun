@@ -12,17 +12,50 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { themes, type Status } from "@tuevento/contracts";
+import { themes, type MessageKey, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { LegalLinks, legalPath } from "./legal";
 import "./landing.css";
 
 const family = [
-  { name: "Ana", kind: "Adulto", initial: "accepted" },
-  { name: "Leo", kind: "Niño", initial: "pending" },
-  { name: "Luz", kind: "Adulto", initial: "accepted" },
+  { name: "Ana", kind: "common.adult", initial: "accepted" },
+  { name: "Leo", kind: "common.child", initial: "pending" },
+  { name: "Luz", kind: "common.adult", initial: "accepted" },
 ] as const;
+
+const steps: [MessageKey, MessageKey][] = [
+  [
+    "landing.planSomethingSpecial",
+    "landing.giveCelebrationNameChoose",
+  ],
+  [
+    "landing.shareExcitement",
+    "landing.createInvitationEachPerson",
+  ],
+  [
+    "landing.knowWhoComing",
+    "landing.eachPersonConfirmsTheir",
+  ],
+];
+const faq: [MessageKey, MessageKey][] = [
+  [
+    "landing.doGuestsNeedSign",
+    "landing.noTheyOpenTheir",
+  ],
+  [
+    "landing.organizeMoreThanOne",
+    "landing.yesAccountBringsTogether",
+  ],
+  [
+    "landing.howDoSendInvitations",
+    "landing.eachInvitationHasPrivate",
+  ],
+  [
+    "landing.changeDesignDetails",
+    "landing.yesEditEventInformation",
+  ],
+];
 
 export function LandingPage() {
   const { locale } = useLocale();
@@ -55,34 +88,34 @@ export function LandingPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setNewsletterStatus("success");
-        setNewsletterMessage(data.message || tr("¡Gracias por suscribirte!"));
+        setNewsletterMessage(data.message || tr("newsletter.thanks"));
         setNewsletterEmail("");
       } else {
         setNewsletterStatus("error");
         setNewsletterMessage(
-          data.message || tr("No se pudo completar la solicitud."),
+          data.message || tr("common.couldntCompleteRequest"),
         );
       }
     } catch {
       setNewsletterStatus("error");
-      setNewsletterMessage(tr("No se pudo completar la solicitud."));
+      setNewsletterMessage(tr("common.couldntCompleteRequest"));
     }
   };
   const example = {
-    title: tr("Una noche para recordar"),
+    title: tr("landing.nightRemember"),
     date: "2026-12-12T23:00:00Z",
     timeZone: "America/Mexico_City",
-    location: tr("En nuestro lugar favorito"),
+    location: tr("landing.favoritePlace"),
     theme,
   };
   useEffect(() => {
-    document.title = tr("TuEventoFun · Invita, reúne y celebra");
+    document.title = tr("landing.tueventofunInviteGatherCelebrate");
     const meta = document.querySelector('meta[name="description"]');
     const previous = meta?.getAttribute("content");
     meta?.setAttribute(
       "content",
       tr(
-        "Crea invitaciones con tu estilo, comparte un enlace privado y conoce quién asistirá a tu celebración, persona por persona.",
+        "common.metaDescription",
       ),
     );
     return () => {
@@ -93,7 +126,7 @@ export function LandingPage() {
   return (
     <div className="landing-page">
       <a className="skip-link" href="#landing-main">
-        {tr("Saltar al contenido")}
+        {tr("common.skipContent")}
       </a>
       <header className="landing-header">
         <div className="landing-container landing-header-inner">
@@ -101,31 +134,31 @@ export function LandingPage() {
           <nav
             id="landing-navigation"
             className={menu ? "landing-nav open" : "landing-nav"}
-            aria-label={tr("Navegación del sitio")}
+            aria-label={tr("landing.siteNavigation")}
           >
-            <Link to="/descargas">{tr("Descargar la app")}</Link>
+            <Link to="/descargas">{tr("landing.downloadApp")}</Link>
           <a href="#como-funciona" onClick={closeMenu}>
-              {tr("Cómo funciona")}
+              {tr("landing.howWorks")}
             </a>
             <a href="#disenos" onClick={closeMenu}>
-              {tr("Los diseños")}
+              {tr("landing.designs")}
             </a>
             <a href="#preguntas" onClick={closeMenu}>
-              {tr("Preguntas frecuentes")}
+              {tr("landing.frequentlyAskedQuestions")}
             </a>
           </nav>
           <div className="landing-header-actions">
             <LanguageSwitcher />
             <Link className="landing-login" to="/acceso">
-              {tr("Entrar")}
+              {tr("landing.logIn")}
             </Link>
             <Link className="button landing-header-cta" to={primary}>
-              {tr("Crear un evento")}
+              {tr("landing.createEvent")}
               <ArrowRight size={16} />
             </Link>
             <button
               className="icon-button landing-menu-button"
-              aria-label={menu ? tr("Cerrar menú") : tr("Abrir menú")}
+              aria-label={menu ? tr("common.closeMenu") : tr("common.openMenu")}
               aria-expanded={menu}
               aria-controls="landing-navigation"
               onClick={() => setMenu(!menu)}
@@ -138,37 +171,37 @@ export function LandingPage() {
       <main id="landing-main">
         <section className="landing-container landing-hero">
           <div className="landing-hero-copy">
-            <h1>{tr("Lo bonito es estar juntos.")}</h1>
+            <h1>{tr("landing.joyBeingTogether")}</h1>
             <p>
               {tr(
-                "Invitaciones que ilusionan. Personas que hacen especial cada momento. Y una forma sencilla de reunirlas.",
+                "landing.invitationsSparkExcitementPeople",
               )}
             </p>
             <div className="landing-hero-actions">
               <Link className="button landing-primary" to={primary}>
-                {tr("Crear mi primer evento")}
+                {tr("common.createFirstEvent")}
                 <ArrowRight size={20} />
               </Link>
               <Link className="landing-demo-link" to="/app">
                 <span>
                   <Play size={15} fill="currentColor" />
                 </span>
-                {tr("Ver la demostración")}
+                {tr("landing.exploreDemo")}
               </Link>
             </div>
             <p className="landing-hero-note">
               <CheckCircle2 size={17} />
-              {tr("Tus invitados responden sin crear una cuenta.")}
+              {tr("landing.guestsReplyWithoutCreating")}
             </p>
           </div>
           <div
             className="landing-photo-story"
-            aria-label={tr("Momentos que merecen celebrarse")}
+            aria-label={tr("landing.momentsWorthCelebrating")}
           >
             <img
               className="landing-photo-toast"
               src="/images/minimal.jpg"
-              alt={tr("Amigos sonriendo mientras brindan juntos")}
+              alt={tr("landing.friendsSmilingTheyRaise")}
               fetchPriority="high"
               width="1200"
               height="800"
@@ -176,14 +209,14 @@ export function LandingPage() {
             <img
               className="landing-photo-wedding"
               src="/images/floral.jpg"
-              alt={tr("Una pareja de recién casados con un ramo de flores")}
+              alt={tr("landing.newlyMarriedCoupleBouquet")}
               width="1200"
               height="800"
             />
             <img
               className="landing-photo-balloons"
               src="/images/kids.jpg"
-              alt={tr("Globos de colores preparados para una fiesta")}
+              alt={tr("landing.colorfulBalloonsReadyParty")}
               width="1200"
               height="800"
             />
@@ -192,8 +225,8 @@ export function LandingPage() {
                 <Heart size={21} />
               </span>
               <div>
-                <strong>{tr("Que no falte tu gente.")}</strong>
-                <span>{tr("Los recuerdos empiezan con una invitación.")}</span>
+                <strong>{tr("landing.bringFavoritePeople")}</strong>
+                <span>{tr("landing.memoriesBeginInvitation")}</span>
               </div>
             </div>
           </div>
@@ -201,28 +234,15 @@ export function LandingPage() {
 
         <section id="como-funciona" className="landing-container landing-how">
           <div className="landing-section-heading">
-            <h2>{tr("Menos pendientes. Más momentos.")}</h2>
+            <h2>{tr("landing.lessPlanningStressMore")}</h2>
             <p>
               {tr(
-                "Del primer “hay que vernos” al último abrazo, ten a mano lo que importa.",
+                "landing.fromFirstLetsGet",
               )}
             </p>
           </div>
           <ol className="landing-steps">
-            {[
-              [
-                "Prepara algo especial",
-                "Ponle nombre a tu celebración, elige un diseño y añade cuándo y dónde se reunirán.",
-              ],
-              [
-                "Hazles llegar la ilusión",
-                "Crea una invitación para cada persona o familia. Comparte su enlace por WhatsApp, correo o como prefieras.",
-              ],
-              [
-                "Sabe quién viene",
-                "Cada integrante confirma su respuesta. Tú ves la asistencia y las novedades en tu espacio.",
-              ],
-            ].map(([title, description], index) => (
+            {steps.map(([title, description], index) => (
               <li key={title}>
                 <span className="landing-step-number" aria-hidden="true">
                   {index + 1}
@@ -239,16 +259,16 @@ export function LandingPage() {
         <section id="disenos" className="landing-design-section">
           <div className="landing-container landing-design-layout">
             <div className="landing-design-copy">
-              <h2>{tr("Una invitación tan especial como tu día.")}</h2>
+              <h2>{tr("landing.invitationSpecialDay")}</h2>
               <p>
                 {tr(
-                  "Una boda entre flores, un cumpleaños con todos los colores o un brindis porque sí. Encuentra el estilo que se siente tuyo.",
+                  "landing.weddingAmongFlowersBirthday",
                 )}
               </p>
               <div
                 className="landing-theme-choices"
                 role="group"
-                aria-label={tr("Elige un diseño de ejemplo")}
+                aria-label={tr("landing.chooseSampleDesign")}
               >
                 {themes.map((item) => (
                   <button
@@ -274,19 +294,19 @@ export function LandingPage() {
                 className="button landing-primary"
                 to={`/registro?tema=${theme}`}
               >
-                {tr("Crear con este diseño")}
+                {tr("landing.createDesign")}
                 <ArrowRight size={19} />
               </Link>
             </div>
             <figure className="landing-invitation-preview">
               <InvitationArt
                 event={example}
-                name={tr("Para tus personas favoritas")}
+                name={tr("landing.favoritePeople")}
                 large
               />
               <figcaption>
                 {tr(
-                  "Vista ilustrativa. Tu evento tendrá tus propios detalles.",
+                  "landing.samplePreviewEventHave",
                 )}
               </figcaption>
             </figure>
@@ -296,36 +316,36 @@ export function LandingPage() {
         <section className="landing-container landing-people">
           <div className="landing-people-copy">
             <Users size={32} strokeWidth={1.5} />
-            <h2>{tr("Cada persona cuenta. También dentro de una familia.")}</h2>
+            <h2>{tr("landing.everyPersonCountsWithin")}</h2>
             <p>
               {tr(
-                "Ana viene, Leo está por confirmar y Luz también se apunta. Cada respuesta tiene su lugar, para que prepares tu celebración con una idea clara de quién estará allí.",
+                "landing.anaComingLeoStill",
               )}
             </p>
             <ul>
               <li>
                 <CheckCircle2 size={18} />
-                {tr("Invitaciones individuales y familiares")}
+                {tr("landing.individualFamilyInvitations")}
               </li>
               <li>
                 <CheckCircle2 size={18} />
-                {tr("Adultos y niños, persona por persona")}
+                {tr("landing.adultsChildrenOnePerson")}
               </li>
               <li>
                 <CheckCircle2 size={18} />
-                {tr("Respuestas y notificaciones en tu panel")}
+                {tr("landing.repliesNotificationsDashboard")}
               </li>
             </ul>
             <Link className="landing-text-link" to="/app">
-              {tr("Explorar la demostración")}
+              {tr("common.exploreDemo")}
               <ArrowRight size={19} />
             </Link>
           </div>
           <div className="landing-rsvp-demo">
             <div className="landing-rsvp-demo-heading">
               <div>
-                <h3>{tr("Una familia, tres respuestas")}</h3>
-                <p>{tr("Prueba este ejemplo de asistencia.")}</p>
+                <h3>{tr("landing.oneFamilyThreeReplies")}</h3>
+                <p>{tr("landing.tryAttendanceExample")}</p>
               </div>
               <Heart size={23} />
             </div>
@@ -339,7 +359,7 @@ export function LandingPage() {
                   <div
                     className="landing-example-options"
                     role="group"
-                    aria-label={tr("Respuesta de {{name}}", {
+                    aria-label={tr("landing.replyFromName", {
                       name: person.name,
                     })}
                   >
@@ -353,10 +373,10 @@ export function LandingPage() {
                               : X;
                         const text =
                           status === "accepted"
-                            ? "Asistiré"
+                            ? "landing.attending"
                             : status === "pending"
-                              ? "En espera"
-                              : "No podré";
+                              ? "status.pending"
+                              : "landing.notAttending";
                         return (
                           <button
                             key={status}
@@ -387,11 +407,11 @@ export function LandingPage() {
             </div>
             <p className="landing-example-count" role="status">
               <CheckCircle2 size={18} />
-              {tr("{{count}} de 3 personas asistirán", { count: attending })}
+              {tr("landing.count3PeopleAttending", { count: attending })}
             </p>
             <small>
               {tr(
-                "Es una muestra interactiva; no se envían respuestas a ningún evento.",
+                "landing.interactiveExampleNoReplies",
               )}
             </small>
           </div>
@@ -399,28 +419,11 @@ export function LandingPage() {
 
         <section id="preguntas" className="landing-container landing-faq">
           <div>
-            <h2>{tr("Todo listo para dar el primer paso.")}</h2>
-            <p>{tr("Algunas respuestas antes de empezar a celebrar.")}</p>
+            <h2>{tr("landing.readyTakeFirstStep")}</h2>
+            <p>{tr("landing.fewAnswersBeforeCelebration")}</p>
           </div>
           <div className="landing-faq-list">
-            {[
-              [
-                "¿Mis invitados necesitan registrarse?",
-                "No. Abren su enlace privado y responden por cada integrante de la invitación, sin crear una cuenta.",
-              ],
-              [
-                "¿Puedo organizar más de un evento?",
-                "Sí. Tu cuenta reúne tus eventos, sus listas de invitados y las respuestas de cada celebración.",
-              ],
-              [
-                "¿Cómo envío las invitaciones?",
-                "Cada invitación tiene un enlace privado. Puedes copiarlo o abrir un mensaje preparado para compartirlo por WhatsApp o correo.",
-              ],
-              [
-                "¿Puedo cambiar el diseño y los detalles?",
-                "Sí. Puedes editar la información del evento, elegir otro diseño y ajustar las personas de cada invitación desde tu espacio.",
-              ],
-            ].map(([question, answer]) => (
+            {faq.map(([question, answer]) => (
               <details key={question}>
                 <summary>
                   {tr(question)}
@@ -435,21 +438,21 @@ export function LandingPage() {
         <section className="landing-container landing-closing">
           <div className="landing-closing-copy">
             <Heart size={32} strokeWidth={1.5} />
-            <h2>{tr("Tu próximo recuerdo empieza aquí.")}</h2>
+            <h2>{tr("landing.nextMemoryStartsHere")}</h2>
             <p>
               {tr(
-                "Tú pones el motivo. TuEventoFun te ayuda a reunir a las personas que lo hacen inolvidable.",
+                "landing.bringOccasionTueventofunHelps",
               )}
             </p>
             <Link className="button landing-primary" to={primary}>
-              {tr("Empezar mi celebración")}
+              {tr("landing.startCelebration")}
               <ArrowRight size={20} />
             </Link>
           </div>
           <img
             src="/images/gold.jpg"
             alt={tr(
-              "Flores coloridas y copas sobre una mesa lista para recibir invitados",
+              "landing.colorfulFlowersGlassesTable",
             )}
             loading="lazy"
             width="1200"
@@ -460,30 +463,30 @@ export function LandingPage() {
         <section className="landing-container landing-newsletter">
           <div className="landing-newsletter-card">
             <div className="landing-newsletter-copy">
-              <h2>{tr("Suscríbete a nuestra newsletter")}</h2>
-              <p>{tr("Recibe ideas de celebraciones e invitaciones exclusivas.")}</p>
+              <h2>{tr("landing.subscribeNewsletter")}</h2>
+              <p>{tr("landing.getCelebrationIdeasExclusive")}</p>
             </div>
             <form className="landing-newsletter-form" onSubmit={handleSubscribe}>
               <input
                 type="email"
                 required
-                placeholder={tr("Correo electrónico")}
+                placeholder={tr("common.email")}
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
                 disabled={newsletterStatus === "loading"}
-                aria-label={tr("Correo electrónico")}
+                aria-label={tr("common.email")}
               />
               <button
                 type="submit"
                 className="button landing-primary"
                 disabled={newsletterStatus === "loading"}
               >
-                {newsletterStatus === "loading" ? tr("Cargando…") : tr("Suscribirme")}
+                {newsletterStatus === "loading" ? tr("common.loadingEllipsis") : tr("landing.subscribe")}
               </button>
             </form>
             <p className="landing-newsletter-legal">
-              {tr("Te escribiremos en este idioma. Puedes darte de baja en cualquier momento.")}{" "}
-              <Link to={legalPath("privacy", locale)}>{tr("Aviso de privacidad")}</Link>
+              {tr("landing.wellWriteLanguageUnsubscribe")}{" "}
+              <Link to={legalPath("privacy", locale)}>{tr("legal.privacyPolicy")}</Link>
             </p>
             {newsletterMessage && (
               <p className={`landing-newsletter-msg ${newsletterStatus}`} role="status">
@@ -496,12 +499,12 @@ export function LandingPage() {
       <footer className="landing-footer landing-container">
         <div>
           <Logo />
-          <p>{tr("Hecho para reunir a tus personas favoritas.")}</p>
+          <p>{tr("common.madeBringFavoritePeople")}</p>
         </div>
-        <nav aria-label={tr("Enlaces del pie de página")}>
-          <Link to="/acceso">{tr("Entrar a mi espacio")}</Link>
-          <Link to="/app">{tr("Explorar la demostración")}</Link>
-          <a href="#preguntas">{tr("Preguntas frecuentes")}</a>
+        <nav aria-label={tr("landing.footerLinks")}>
+          <Link to="/acceso">{tr("common.signSpace")}</Link>
+          <Link to="/app">{tr("common.exploreDemo")}</Link>
+          <a href="#preguntas">{tr("landing.frequentlyAskedQuestions")}</a>
           <LegalLinks className="landing-legal-links" />
         </nav>
         <small>© {new Date().getFullYear()} TuEventoFun</small>

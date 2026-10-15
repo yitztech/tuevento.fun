@@ -33,11 +33,11 @@ export class LocaleExceptionFilter implements ExceptionFilter {
         : status === 429
           ? {
               message:
-                "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+                "errors.tooManyAttemptsPlease",
             }
           : status !== 500 && exception instanceof Error
             ? { message: exception.message }
-            : { message: "Error interno. Inténtalo de nuevo." };
+            : { message: "errors.internalErrorPleaseTry" };
     const translate = (value: unknown): unknown =>
       typeof value === "string"
         ? translateMessage(value, locale)

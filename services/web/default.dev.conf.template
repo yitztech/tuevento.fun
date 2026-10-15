@@ -40,7 +40,7 @@ server {
         proxy_read_timeout 86400s;
 
         sub_filter '<html lang="es">' '<html lang="$site_lang">';
-        sub_filter '<meta name="tuevento-seo"/>' '<meta name="tuevento:sites" content="es=$origin_es en=$origin_en"/>';
+        sub_filter '<meta name="tuevento-seo"/>' '$seo_sites_meta';
         sub_filter_types text/html;
         sub_filter_once on;
     }

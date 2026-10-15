@@ -1,5 +1,5 @@
 import { validationOptions } from "@tuevento/contracts";
-import { tr, getLocale, LanguageSwitcher } from "./i18n";
+import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useState, useEffect } from "react";
 import {
   Link,
@@ -11,21 +11,22 @@ import { useForm, useFieldArray, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
-const eventTimeZones = [
-  "America/Mexico_City",
-  "America/Cancun",
-  "America/Tijuana",
-  "America/Monterrey",
-  "America/Bogota",
-  "America/New_York",
-  "Europe/Madrid",
-  "UTC",
+/** Zonas horarias que ofrece el editor de eventos, con su nombre en cada idioma. */
+const timeZones: [string, MessageKey][] = [
+  ["America/Mexico_City", "events.timeZones.mexicoCity"],
+  ["America/Cancun", "events.timeZones.cancun"],
+  ["America/Tijuana", "events.timeZones.tijuana"],
+  ["America/Monterrey", "events.timeZones.monterrey"],
+  ["America/Bogota", "events.timeZones.bogota"],
+  ["America/New_York", "events.timeZones.newYork"],
+  ["Europe/Madrid", "events.timeZones.madrid"],
+  ["UTC", "events.timeZones.utc"],
 ];
 /** Zona del usuario para un evento nuevo, si está entre las ofrecidas. */
 function defaultTimeZone() {
   try {
     const own = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (eventTimeZones.includes(own)) return own;
+    if (timeZones.some(([value]) => value === own)) return own;
   } catch {}
   return "America/Mexico_City";
 }
@@ -63,6 +64,7 @@ import {
   type EventInput,
   type Invitation,
   type InvitationInput,
+  type MessageKey,
   type Status,
 } from "@tuevento/contracts";
 import { useApp, dateText, errorText } from "./context";
@@ -77,7 +79,7 @@ import {
   AttendanceBar,
 } from "./components";
 const formSchema = eventSchema.extend({
-  date: z.string().min(1, "Elige una fecha y hora."),
+  date: z.string().min(1, "events.chooseDateTime"),
 });
 export function EventEditor() {
   const { id } = useParams(),
@@ -134,101 +136,95 @@ export function EventEditor() {
       await reload();
       toast(
         id
-          ? tr("Cambios guardados.")
-          : tr("¡Tu evento está listo! Ahora invita a los tuyos."),
+          ? tr("events.changesSaved")
+          : tr("events.eventReadyNowInvite"),
       );
       navigate(`/eventos/${event.id}`);
     } catch (e) {
       setError(errorText(e));
     }
   });
-  if (loading) return <p role="status">{tr("Cargando tu evento…")}</p>;
+  if (loading) return <p role="status">{tr("events.loadingEvent")}</p>;
   return (
     <>
       <Link className="back-link" to={id ? `/eventos/${id}` : "/eventos"}>
         <ArrowLeft size={16} />
-        {tr("Volver a") + " "}
-        {id ? tr("mi evento") : tr("mis eventos")}
+        {tr(id ? "events.backToEvent" : "events.backToEvents")}
       </Link>
       <div className="page-heading">
         <div>
           <h1>
-            {id ? tr("Cada detalle cuenta.") : tr("Hay algo que celebrar.")}
+            {id ? tr("events.everyDetailCounts") : tr("events.theresSomethingCelebrate")}
           </h1>
           <p>
             {id
-              ? tr("Ajusta la información y dale tu toque personal.")
-              : tr("Empieza por los detalles. Lo mejor está por venir.")}
+              ? tr("events.fineTuneDetailsAdd")
+              : tr("events.startDetailsBestYet")}
           </p>
         </div>
       </div>
       <form onSubmit={save} className="editor-layout" noValidate>
         <div className="form-panel">
-          <h2>{tr("Cuéntanos de tu evento")}</h2>
+          <h2>{tr("events.tellUsAboutEvent")}</h2>
           <Field
-            label={tr("Nombre del evento")}
+            label={tr("events.eventName")}
             error={form.formState.errors.title?.message}
           >
             <input
               {...form.register("title")}
-              placeholder={tr("Por ejemplo: La boda de Sofía & Alejandro")}
+              placeholder={tr("events.exampleSofiaAlejandrosWedding")}
               maxLength={100}
             />
           </Field>
           <div className="form-row">
             <Field
-              label={tr("Fecha y hora")}
+              label={tr("events.dateTime")}
               error={form.formState.errors.date?.message}
             >
               <input type="datetime-local" {...form.register("date")} />
             </Field>
             <Field
-              label={tr("Zona horaria")}
+              label={tr("events.timeZone")}
               error={form.formState.errors.timeZone?.message}
             >
               <select {...form.register("timeZone")}>
-                <option value="America/Mexico_City">
-                  {tr("Ciudad de México")}
-                </option>
-                <option value="America/Cancun">Cancún</option>
-                <option value="America/Tijuana">Tijuana</option>
-                <option value="America/Monterrey">Monterrey</option>
-                <option value="America/Bogota">Bogotá</option>
-                <option value="America/New_York">{tr("Nueva York")}</option>
-                <option value="Europe/Madrid">Madrid</option>
-                <option value="UTC">UTC</option>
+                {timeZones.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {tr(label)}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
           <Field
-            label={tr("¿Dónde nos vemos?")}
+            label={tr("events.whereMeeting")}
             error={form.formState.errors.location?.message}
           >
             <input
               {...form.register("location")}
-              placeholder={tr("Nombre del lugar y dirección")}
+              placeholder={tr("events.venueNameAddress")}
               maxLength={300}
             />
           </Field>
           <Field
-            label={tr("Un mensaje para tus invitados")}
+            label={tr("events.messageGuests")}
             error={form.formState.errors.description?.message}
             hint={tr(
-              "Incluye indicaciones, código de vestimenta o lo que deben llevar.",
+              "events.includeDirectionsDressCode",
             )}
           >
             <textarea
               {...form.register("description")}
               rows={4}
               placeholder={tr(
-                "Nos hace mucha ilusión compartir este día contigo…",
+                "events.wereSoExcitedShare",
               )}
               maxLength={2500}
             />
           </Field>
           <div className="form-section-heading">
-            <h2>{tr("Elige el estilo de tu invitación")}</h2>
-            <p>{tr("Podrás cambiarlo cuando quieras.")}</p>
+            <h2>{tr("events.chooseInvitationStyle")}</h2>
+            <p>{tr("events.changeWheneverLike")}</p>
           </div>
           <ThemePicker
             value={values.theme}
@@ -242,7 +238,7 @@ export function EventEditor() {
               className="button secondary"
               to={id ? `/eventos/${id}` : "/eventos"}
             >
-              {tr("Cancelar")}
+              {tr("common.cancel")}
             </Link>
             <button
               className="button"
@@ -250,10 +246,10 @@ export function EventEditor() {
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting
-                ? tr("Guardando…")
+                ? tr("common.saving")
                 : id
-                  ? tr("Guardar cambios")
-                  : tr("Crear mi evento")}
+                  ? tr("common.saveChanges")
+                  : tr("common.createMyEvent")}
               <ArrowRight size={17} />
             </button>
           </div>
@@ -261,13 +257,11 @@ export function EventEditor() {
         <aside className="preview-panel">
           <div className="preview-label">
             <span className="dot accepted" />
-            {tr("Tu invitación cobra vida")}
+            {tr("events.invitationComesLife")}
           </div>
           <InvitationArt event={preview} />
           <p>
-            {tr("Vista previa del diseño. Cada invitado recibirá")}
-            <br />
-            {tr("su propio enlace y saludo personalizado.")}
+            <Lines k="events.previewNote" />
           </p>
         </aside>
       </form>
@@ -310,12 +304,12 @@ export function EventDetail() {
         await api.deleteEvent(event.id);
         await reload();
         navigate("/eventos");
-        toast(tr("Evento eliminado."));
+        toast(tr("events.eventDeleted"));
       } else {
         await api.deleteInvitation(event.id, deleting.id);
         await load();
         await reload();
-        toast(tr("Invitación eliminada."));
+        toast(tr("events.invitationDeleted"));
       }
       setDeleting(null);
     } catch (e) {
@@ -332,8 +326,8 @@ export function EventDetail() {
       await reload();
       toast(
         event.archived
-          ? tr("Evento reactivado.")
-          : tr("Evento archivado. Sus enlaces ya no aceptan respuestas."),
+          ? tr("events.eventReactivated")
+          : tr("events.eventArchivedLinksNo"),
       );
     } catch (e) {
       toast(errorText(e));
@@ -345,7 +339,7 @@ export function EventDetail() {
     return error ? (
       <ErrorBox message={error} />
     ) : (
-      <p role="status">{tr("Cargando evento…")}</p>
+      <p role="status">{tr("events.loadingEventShort")}</p>
     );
   const list = invitations.filter(
     (i) =>
@@ -358,14 +352,14 @@ export function EventDetail() {
     <>
       <Link className="back-link" to="/eventos">
         <ArrowLeft size={16} />
-        {tr("Mis eventos")}
+        {tr("common.events")}
       </Link>
       <div className="event-heading">
         <div>
           <span className="soft-label">
             {event.archived
-              ? tr("Archivado")
-              : tr(themes.find((t) => t.id === event.theme)?.name || "")}
+              ? tr("events.archivedBadge")
+              : tr(themes.find((t) => t.id === event.theme)!.name)}
           </span>
           <h1>{event.title}</h1>
           <div className="event-meta">
@@ -387,11 +381,11 @@ export function EventDetail() {
         <div className="button-group">
           <Link className="button secondary" to={`/eventos/${id}/pantalla`}>
             <Monitor size={17} />
-            {tr("Modo pantalla")}
+            {tr("events.displayMode")}
           </Link>
           <Link className="button secondary" to={`/eventos/${id}/editar`}>
             <Pencil size={17} />
-            {tr("Editar evento")}
+            {tr("events.editEvent")}
           </Link>
         </div>
       </div>
@@ -399,16 +393,16 @@ export function EventDetail() {
       <div className="section-heading">
         <div>
           <h2>
-            {tr("Tu lista de invitados")}{" "}
+            {tr("events.guestList")}{" "}
             <span className="count-inline">{invitations.length}</span>
           </h2>
           <p className="muted">
-            {tr("Una invitación por persona o familia. Cada respuesta cuenta.")}
+            {tr("events.oneInvitationPerPerson")}
           </p>
         </div>
         <button className="button" onClick={() => setEditing("new")}>
           <Plus size={18} />
-          {tr("Añadir invitación")}
+          {tr("events.addInvitation")}
         </button>
       </div>
       <div className="list-toolbar">
@@ -420,7 +414,7 @@ export function EventDetail() {
               className={filter === s ? "active" : ""}
               aria-pressed={filter === s}
             >
-              {s === "all" ? tr("Todos") : tr(statusLabels[s])}
+              {s === "all" ? tr("common.allMasculine") : tr(statusLabels[s])}
               {s !== "all" && <span className={`dot ${s}`} />}
             </button>
           ))}
@@ -430,21 +424,21 @@ export function EventDetail() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={tr("Buscar invitado o familia")}
-            aria-label={tr("Buscar invitado o familia")}
+            placeholder={tr("events.searchGuestsFamilies")}
+            aria-label={tr("events.searchGuestsFamilies")}
           />
         </label>
       </div>
       {error && <ErrorBox message={error} />}{" "}
       {loading ? (
-        <p role="status">{tr("Cargando invitaciones…")}</p>
+        <p role="status">{tr("events.loadingInvitations")}</p>
       ) : list.length ? (
         <div className="guest-table">
           <div className="guest-table-head">
-            <span>{tr("Invitación / integrantes")}</span>
-            <span>{tr("Tipo")}</span>
-            <span>{tr("Asistencia por persona")}</span>
-            <span>{tr("Acciones")}</span>
+            <span>{tr("events.invitationMembers")}</span>
+            <span>{tr("events.type")}</span>
+            <span>{tr("events.attendancePerPerson")}</span>
+            <span>{tr("events.actions")}</span>
           </div>
           {list.map((i) => (
             <div className="guest-row" key={i.id}>
@@ -466,7 +460,7 @@ export function EventDetail() {
                 </div>
               </div>
               <span className="type-tag">
-                {i.kind === "family" ? tr("Familiar") : tr("Individual")} ·{" "}
+                {i.kind === "family" ? tr("common.family") : tr("common.individual")} ·{" "}
                 {i.members.length}
               </span>
               <div className="member-statuses">
@@ -490,25 +484,25 @@ export function EventDetail() {
                 <button
                   className="icon-button"
                   onClick={() => setSharing(i)}
-                  aria-label={tr("Compartir invitación de {{name}}", {
+                  aria-label={tr("events.shareNameSInvitation", {
                     name: i.name,
                   })}
-                  title={tr("Compartir invitación")}
+                  title={tr("events.shareInvitation")}
                 >
                   <Share2 size={17} />
                 </button>
                 <button
                   className="icon-button"
                   onClick={() => setEditing(i)}
-                  aria-label={tr("Editar {{name}}", { name: i.name })}
-                  title={tr("Ficha de integrantes")}
+                  aria-label={tr("events.editName", { name: i.name })}
+                  title={tr("events.memberDetails")}
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   className="icon-button danger-text"
                   onClick={() => setDeleting(i)}
-                  aria-label={tr("Eliminar {{name}}", { name: i.name })}
+                  aria-label={tr("events.deleteName", { name: i.name })}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -520,14 +514,14 @@ export function EventDetail() {
         <Empty
           title={
             invitations.length
-              ? tr("No hay coincidencias")
-              : tr("Los mejores planes empiezan con tu gente")
+              ? tr("events.noMatchesFound")
+              : tr("events.bestPlansStartPeople")
           }
           action={
             !invitations.length ? (
               <button className="button" onClick={() => setEditing("new")}>
                 <Plus size={17} />
-                {tr("Añadir mi primera invitación")}
+                {tr("events.addFirstInvitation")}
               </button>
             ) : (
               <button
@@ -537,33 +531,31 @@ export function EventDetail() {
                   setSearch("");
                 }}
               >
-                {tr("Limpiar filtros")}
+                {tr("events.clearFilters")}
               </button>
             )
           }
         >
           {invitations.length
-            ? tr("Prueba otro nombre o estado de asistencia.")
+            ? tr("events.tryAnotherNameAttendance")
             : tr(
-                "Añade personas o familias y comparte una invitación hecha para ellas.",
+                "events.addPeopleFamiliesShare",
               )}
         </Empty>
       )}
       <div className="event-footnote">
         <span>
           <span className="dot accepted" />
-          {tr("Las respuestas se actualizan automáticamente")}
+          {tr("events.repliesUpdateAutomatically")}
         </span>
         <span>
-          {event.metrics.adults}
-          {" " + tr("adultos ·") + " "}
-          {event.metrics.children}
-          {" " + tr("niños ·")} {event.metrics.invitations}
-          {" " + tr("invitaciones")}
+          {tr("common.adultsCount", { count: event.metrics.adults })} ·{" "}
+          {tr("common.childrenCount", { count: event.metrics.children })} ·{" "}
+          {tr("common.invitationsCount", { count: event.metrics.invitations })}
         </span>
       </div>
       <details className="event-options">
-        <summary>{tr("Más opciones del evento")}</summary>
+        <summary>{tr("events.moreEventOptions")}</summary>
         <div>
           <button
             className="button secondary"
@@ -571,19 +563,19 @@ export function EventDetail() {
             onClick={archive}
           >
             <Archive size={17} />
-            {event.archived ? tr("Reactivar evento") : tr("Archivar evento")}
+            {event.archived ? tr("events.reactivateEvent") : tr("events.archiveEvent")}
           </button>
           <button
             className="button danger-outline"
             onClick={() => setDeleting("event")}
           >
             <Trash2 size={17} />
-            {tr("Eliminar evento")}
+            {tr("events.deleteEvent")}
           </button>
         </div>
         <p>
           {tr(
-            "Archivar conserva tus datos y desactiva las invitaciones públicas.",
+            "events.archivingKeepsDataDisables",
           )}
         </p>
       </details>
@@ -610,18 +602,18 @@ export function EventDetail() {
         <Modal
           title={
             deleting === "event"
-              ? tr("¿Eliminar este evento?")
-              : tr("¿Eliminar esta invitación?")
+              ? tr("events.deleteEventConfirm")
+              : tr("events.deleteInvitationConfirm")
           }
           onClose={() => setDeleting(null)}
         >
           <p>
             {deleting === "event"
               ? tr(
-                  "Se eliminarán también sus invitaciones, integrantes y notificaciones. Esta acción no se puede deshacer.",
+                  "events.invitationsMembersNotificationsAlso",
                 )
               : tr(
-                  "Se eliminarán la invitación de {{name}} y sus integrantes. Su enlace dejará de funcionar.",
+                  "events.invitationNameMembersDeleted",
                   { name: deleting.name },
                 )}
           </p>
@@ -630,10 +622,10 @@ export function EventDetail() {
               className="button secondary"
               onClick={() => setDeleting(null)}
             >
-              {tr("Cancelar")}
+              {tr("common.cancel")}
             </button>
             <button className="button danger" disabled={busy} onClick={remove}>
-              {busy ? tr("Eliminando…") : tr("Sí, eliminar")}
+              {busy ? tr("events.deleting") : tr("events.yesDelete")}
             </button>
           </div>
         </Modal>
@@ -680,8 +672,8 @@ function InvitationEditor({
       await api.saveInvitation(event.id, data, invitation?.id);
       toast(
         invitation
-          ? tr("Invitación actualizada.")
-          : tr("Invitación creada. Ya puedes compartirla."),
+          ? tr("events.invitationUpdated")
+          : tr("events.invitationCreatedReadyShare"),
       );
       await onSaved();
     } catch (e) {
@@ -692,8 +684,8 @@ function InvitationEditor({
     <Modal
       title={
         invitation
-          ? tr("Ficha de la invitación")
-          : tr("Hagamos sitio para alguien especial")
+          ? tr("events.invitationDetails")
+          : tr("events.makeRoomSomeoneSpecial")
       }
       onClose={onClose}
       wide
@@ -707,8 +699,8 @@ function InvitationEditor({
             onClick={() => form.setValue("kind", "individual")}
           >
             <UserRound size={20} />
-            <strong>{tr("Individual")}</strong>
-            <span>{tr("Una persona")}</span>
+            <strong>{tr("common.individual")}</strong>
+            <span>{tr("events.onePerson")}</span>
           </button>
           <button
             type="button"
@@ -716,37 +708,37 @@ function InvitationEditor({
             onClick={() => form.setValue("kind", "family")}
           >
             <Users size={20} />
-            <strong>{tr("Familiar o grupal")}</strong>
-            <span>{tr("Varios integrantes")}</span>
+            <strong>{tr("events.familyGroup")}</strong>
+            <span>{tr("events.multipleMembers")}</span>
           </button>
         </div>
         <Field
-          label={tr("Nombre de la invitación")}
+          label={tr("events.invitationName")}
           error={form.formState.errors.name?.message}
-          hint={tr("Puedes usar un nombre, correo o teléfono de contacto.")}
+          hint={tr("events.useNameEmailContact")}
         >
           <input
             {...form.register("name")}
             placeholder={
               kind === "family"
-                ? tr("Por ejemplo: Familia García")
-                : tr("Por ejemplo: Mariana Torres")
+                ? tr("events.exampleGarciaFamily")
+                : tr("events.exampleMarianaTorres")
             }
           />
         </Field>
         <div className="form-row">
           <Field
-            label={tr("Correo de contacto (opcional)")}
+            label={tr("events.contactEmailOptional")}
             error={form.formState.errors.email?.message}
           >
             <input
               type="email"
               {...form.register("email")}
-              placeholder="nombre@ejemplo.com"
+              placeholder={tr("events.emailPlaceholder")}
             />
           </Field>
           <Field
-            label={tr("Teléfono (opcional)")}
+            label={tr("events.phoneNumberOptional")}
             error={form.formState.errors.phone?.message}
           >
             <input
@@ -759,10 +751,10 @@ function InvitationEditor({
         <div className="form-section-heading">
           <h3>
             {kind === "family"
-              ? tr("Integrantes de la familia")
-              : tr("Persona invitada")}
+              ? tr("events.familyMembers")
+              : tr("events.guest")}
           </h3>
-          <p>{tr("Las notas son privadas y solo tú puedes verlas.")}</p>
+          <p>{tr("events.notesPrivateOnlySee")}</p>
         </div>
         <div className="member-edit-list">
           {fields.map((field, index) => (
@@ -770,15 +762,15 @@ function InvitationEditor({
               <div className="member-edit-top">
                 <strong>
                   {kind === "family"
-                    ? tr("Integrante {{number}}", { number: index + 1 })
-                    : tr("Sus datos")}
+                    ? tr("events.memberNumber", { number: index + 1 })
+                    : tr("events.guestDetails")}
                 </strong>
                 {fields.length > 1 && (
                   <button
                     type="button"
                     className="icon-button danger-text"
                     onClick={() => remove(index)}
-                    aria-label={tr("Eliminar integrante {{number}}", {
+                    aria-label={tr("events.removeMemberNumber", {
                       number: index + 1,
                     })}
                   >
@@ -788,28 +780,28 @@ function InvitationEditor({
               </div>
               <div className="form-row">
                 <Field
-                  label={tr("Nombre")}
+                  label={tr("common.firstName")}
                   error={form.formState.errors.members?.[index]?.name?.message}
                 >
                   <input
                     {...form.register(`members.${index}.name`)}
-                    placeholder={tr("Nombre de la persona")}
+                    placeholder={tr("events.personsName")}
                   />
                 </Field>
-                <Field label={tr("Tipo")}>
+                <Field label={tr("events.type")}>
                   <select {...form.register(`members.${index}.kind`)}>
-                    <option value="adult">{tr("Adulto")}</option>
-                    <option value="child">{tr("Niño")}</option>
+                    <option value="adult">{tr("common.adult")}</option>
+                    <option value="child">{tr("common.child")}</option>
                   </select>
                 </Field>
               </div>
               <Field
-                label={tr("Notas individuales (opcional)")}
+                label={tr("events.individualNotesOptional")}
                 error={form.formState.errors.members?.[index]?.notes?.message}
               >
                 <input
                   {...form.register(`members.${index}.notes`)}
-                  placeholder={tr("Alergias, menú especial, observaciones…")}
+                  placeholder={tr("events.allergiesSpecialMealsAdditional")}
                   maxLength={500}
                 />
               </Field>
@@ -824,11 +816,11 @@ function InvitationEditor({
             disabled={fields.length >= 50}
           >
             <Plus size={17} />
-            {tr("Añadir integrante")}
+            {tr("events.addMember")}
           </button>
         )}
         <Field
-          label={tr("Observaciones de la invitación (opcional)")}
+          label={tr("events.invitationNotesOptional")}
           error={form.formState.errors.notes?.message}
         >
           <textarea {...form.register("notes")} rows={2} maxLength={1000} />
@@ -839,14 +831,14 @@ function InvitationEditor({
         {error && <ErrorBox message={error} />}
         <div className="form-actions sticky-actions">
           <button className="button secondary" type="button" onClick={onClose}>
-            {tr("Cancelar")}
+            {tr("common.cancel")}
           </button>
           <button className="button" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting
-              ? tr("Guardando…")
+              ? tr("common.saving")
               : invitation
-                ? tr("Guardar cambios")
-                : tr("Crear invitación")}
+                ? tr("common.saveChanges")
+                : tr("events.createInvitation")}
             <Check size={17} />
           </button>
         </div>
@@ -868,29 +860,29 @@ export function ShareDialog({
   // El idioma lo da el dominio: el enlace usa el origen actual, sin ?lang=.
   const url = `${runtime.publicOrigin}/i/${invitation.token}`,
     message = tr(
-      "¡Hola, {{name}}! Te invitamos a {{event}}. Consulta los detalles y confirma tu asistencia aquí: {{url}}",
+      "events.hiNameYoureInvited",
       { name: invitation.name, event: event.title, url },
     );
   const copy = async () => {
     try {
       await runtime.copy(url);
       setCopied(true);
-      toast(tr("Enlace copiado."));
+      toast(tr("events.linkCopied"));
     } catch {
       toast(
-        tr("No pudimos copiarlo. Selecciona el enlace y cópialo manualmente."),
+        tr("events.couldntCopySelectLink"),
       );
     }
   };
   return (
-    <Modal title={tr("Lo bueno se comparte")} onClose={onClose}>
+    <Modal title={tr("events.goodThingsMeantShared")} onClose={onClose}>
       <p>
-        {tr("Esta invitación es para") + " "}
+        {tr("events.invitationFor") + " "}
         <strong>{invitation.name}</strong>.
       </p>
       <div className="share-link">
         <input
-          aria-label={tr("Enlace privado de invitación")}
+          aria-label={tr("events.privateInvitationLink")}
           value={url}
           readOnly
           onFocus={(e) => e.target.select()}
@@ -898,7 +890,7 @@ export function ShareDialog({
         <button
           className="icon-button"
           onClick={copy}
-          aria-label={tr("Copiar enlace")}
+          aria-label={tr("events.copyLink")}
         >
           {copied ? <Check size={19} /> : <Copy size={19} />}
         </button>
@@ -917,19 +909,19 @@ export function ShareDialog({
         </button>
         <a
           className="button secondary"
-          href={`mailto:${invitation.email}?subject=${encodeURIComponent(tr("Te invitamos: {{event}}", { event: event.title }))}&body=${encodeURIComponent(message)}`}
+          href={`mailto:${invitation.email}?subject=${encodeURIComponent(tr("events.youreInvitedEvent", { event: event.title }))}&body=${encodeURIComponent(message)}`}
         >
           <Mail size={18} />
-          {tr("Correo electrónico")}
+          {tr("common.email")}
         </a>
       </div>
       <a className="preview-link" href={url} target="_blank" rel="noreferrer">
         <ExternalLink size={16} />
-        {tr("Ver invitación como invitado")}
+        {tr("events.viewGuest")}
       </a>
       <p className="privacy-note">
         {tr(
-          "El enlace permite ver y responder esta invitación. Compártelo solo con sus destinatarios. WhatsApp y correo abren el mensaje; tú decides cuándo enviarlo.",
+          "events.linkAllowsAnyoneView",
         )}
       </p>
     </Modal>
@@ -942,8 +934,8 @@ export function TvPage() {
   if (!event)
     return (
       <div className="startup">
-        <p>{tr("Cargando tablero…")}</p>
-        <Link to="/eventos">{tr("Volver")}</Link>
+        <p>{tr("events.loadingDashboard")}</p>
+        <Link to="/eventos">{tr("common.back")}</Link>
       </div>
     );
   return (
@@ -952,11 +944,11 @@ export function TvPage() {
         <LanguageSwitcher />
         <Link to={`/eventos/${id}`} className="button secondary">
           <ArrowLeft size={20} />
-          {tr("Volver al evento")}
+          {tr("events.backEvent")}
         </Link>
         <span>
           <span className="dot accepted" />
-          {tr("En vivo")}
+          {tr("events.live")}
         </span>
         <button
           className="button secondary"
@@ -966,11 +958,11 @@ export function TvPage() {
           }}
         >
           <Monitor size={20} />
-          {tr("Pantalla completa")}
+          {tr("events.fullScreen")}
         </button>
       </header>
       <main>
-        <p className="greeting">{tr("Qué alegría tenerlos aquí.")}</p>
+        <p className="greeting">{tr("events.wereSoGladYoure")}</p>
         <h1>{event.title}</h1>
         <p className="tv-date">
           {dateText(event.date, event.timeZone)} · {event.location}
@@ -978,11 +970,9 @@ export function TvPage() {
         <Stats metrics={event.metrics} />
         <AttendanceBar metrics={event.metrics} />
         <p className="tv-footer">
-          {event.metrics.adults}
-          {" " + tr("adultos ·") + " "}
-          {event.metrics.children}
-          {" " + tr("niños ·")} {event.metrics.invitations}
-          {" " + tr("invitaciones")}
+          {tr("common.adultsCount", { count: event.metrics.adults })} ·{" "}
+          {tr("common.childrenCount", { count: event.metrics.children })} ·{" "}
+          {tr("common.invitationsCount", { count: event.metrics.invitations })}
         </p>
       </main>
     </div>

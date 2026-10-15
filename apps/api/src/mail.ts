@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { createTransport } from "nodemailer";
-import { supportedLocales, type Locale } from "@tuevento/contracts";
-import { localeEnv } from "./locale-env";
+import { defaultLocale, supportedLocales, type Locale } from "@tuevento/contracts";
+import { localeEnv, localeEnvName } from "./locale-env";
 
 export type MailMessage = {
   to: string;
@@ -17,8 +17,8 @@ type Sender = {
 
 /**
  * Correo transaccional por SMTP, un remitente por idioma: el usuario recibe el correo
- * en el idioma del dominio por el que entró y desde ese dominio (`MAIL_FROM` para es,
- * `MAIL_FROM_EN` para en). SMTP_HOST, SMTP_PORT y SMTP_SECURE son comunes.
+ * en el idioma del dominio por el que entró y desde ese dominio (`MAIL_FROM_<IDIOMA>`;
+ * para el principal vale `MAIL_FROM`). SMTP_HOST, SMTP_PORT y SMTP_SECURE son comunes.
  */
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -30,11 +30,11 @@ export class MailService implements OnModuleInit {
       const sender = this.sender(locale);
       if (!sender)
         this.logger.warn(
-          `Correo sin configurar: faltan SMTP_HOST o MAIL_FROM${locale === "es" ? "" : "_" + locale.toUpperCase()}.`,
+          `Correo sin configurar: faltan SMTP_HOST o ${localeEnvName("MAIL_FROM", locale, true)}.`,
         );
       else if (sender.locale !== locale)
         this.logger.warn(
-          `Sin MAIL_FROM_${locale.toUpperCase()}: los correos en "${locale}" saldrán desde el remitente de "${sender.locale}".`,
+          `Sin ${localeEnvName("MAIL_FROM", locale)}: los correos en "${locale}" saldrán desde el remitente de "${sender.locale}".`,
         );
     }
   }
@@ -73,8 +73,8 @@ export class MailService implements OnModuleInit {
     if (cached) return cached;
     const host = process.env.SMTP_HOST;
     const own = localeEnv("MAIL_FROM", locale);
-    const source: Locale = own ? locale : "es";
-    const from = own || localeEnv("MAIL_FROM", "es");
+    const source: Locale = own ? locale : defaultLocale;
+    const from = own || localeEnv("MAIL_FROM", defaultLocale);
     if (!host || !from) return null;
     const secure = process.env.SMTP_SECURE === "true";
     const user = localeEnv("SMTP_USER", source);

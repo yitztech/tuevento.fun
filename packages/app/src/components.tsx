@@ -1,4 +1,4 @@
-import { tr } from "./i18n";
+import { tr, trMessage } from "./i18n";
 import {
   useEffect,
   useRef,
@@ -38,7 +38,7 @@ export function Logo({
   to?: string;
 }) {
   return (
-    <Link to={to} className="logo" aria-label={tr("TuEventoFun, inicio")}>
+    <Link to={to} className="logo" aria-label={tr("common.tueventofunHome")}>
       <span className="logo-mark">
         <PartyPopper size={23} />
       </span>
@@ -61,7 +61,7 @@ export function Avatar({
   return (
     <span className={`avatar ${size}`}>
       {user.avatar ? (
-        <img src={user.avatar} alt={tr("Avatar del anfitrión")} />
+        <img src={user.avatar} alt={tr("common.hostAvatar")} />
       ) : (
         `${user.firstName[0] || ""}${user.lastName[0] || ""}`
       )}
@@ -91,7 +91,7 @@ export function Empty({
 export function ErrorBox({ message }: { message: string }) {
   return (
     <p className="error-box" role="alert">
-      {tr(message)}
+      {trMessage(message)}
     </p>
   );
 }
@@ -141,7 +141,7 @@ export function Field({
       {hint && <small id={`${id}-hint`}>{hint}</small>}
       {error && (
         <small id={`${id}-error`} className="field-error" role="alert">
-          {tr(error)}
+          {trMessage(error)}
         </small>
       )}
     </div>
@@ -186,7 +186,7 @@ export function Modal({
           <button
             className="icon-button"
             onClick={onClose}
-            aria-label={tr("Cerrar")}
+            aria-label={tr("common.close")}
           >
             <X size={20} />
           </button>
@@ -210,13 +210,11 @@ export function Stats({
           <Users size={20} />
         </span>
         <div>
-          <span>{tr("Personas invitadas")}</span>
+          <span>{tr("common.peopleInvited")}</span>
           <strong>{metrics.people}</strong>
           <small>
-            {metrics.adults}
-            {" " + tr("adultos ·") + " "}
-            {metrics.children}
-            {" " + tr("niños")}
+            {tr("common.adultsCount", { count: metrics.adults })} ·{" "}
+            {tr("common.childrenCount", { count: metrics.children })}
           </small>
         </div>
       </div>
@@ -225,13 +223,14 @@ export function Stats({
           <CheckCircle2 size={20} />
         </span>
         <div>
-          <span>{tr("Confirmados")}</span>
+          <span>{tr("status.accepted")}</span>
           <strong>{metrics.accepted}</strong>
           <small>
-            {metrics.people
-              ? Math.round((metrics.accepted / metrics.people) * 100)
-              : 0}
-            {tr("% de tus invitados")}
+            {tr("common.percentOfGuests", {
+              percent: metrics.people
+                ? Math.round((metrics.accepted / metrics.people) * 100)
+                : 0,
+            })}
           </small>
         </div>
       </div>
@@ -240,9 +239,9 @@ export function Stats({
           <Clock size={20} />
         </span>
         <div>
-          <span>{tr("En espera")}</span>
+          <span>{tr("status.pending")}</span>
           <strong>{metrics.pending}</strong>
-          <small>{tr("Aún por confirmar")}</small>
+          <small>{tr("common.yetConfirm")}</small>
         </div>
       </div>
       <div className="stat">
@@ -250,9 +249,9 @@ export function Stats({
           <X size={20} />
         </span>
         <div>
-          <span>{tr("No asistirán")}</span>
+          <span>{tr("status.declined")}</span>
           <strong>{metrics.declined}</strong>
-          <small>{tr("Para la próxima")}</small>
+          <small>{tr("common.maybeNextTime")}</small>
         </div>
       </div>
     </div>
@@ -263,7 +262,7 @@ export function AttendanceBar({ metrics }: { metrics: Metrics }) {
     <div
       className="attendance-bar"
       aria-label={tr(
-        "{{accepted}} confirmados, {{pending}} en espera y {{declined}} no asistirán",
+        "common.acceptedAttendingPendingPending",
         metrics,
       )}
     >
@@ -324,12 +323,10 @@ export function EventCard({ event }: { event: Event }) {
         <div className="event-bottom">
           <span>
             <span className="dot accepted" />
-            {event.metrics.accepted}
-            {" " + tr("confirmados")}
+            {tr("common.attendingCount", { count: event.metrics.accepted })}
           </span>
           <span>
-            {event.metrics.people}
-            {" " + tr("invitados")}
+            {tr("common.guestsCount", { count: event.metrics.people })}
           </span>
         </div>
       </div>
@@ -367,7 +364,7 @@ export function ThemePicker({
 }
 export function InvitationArt({
   event,
-  name = tr("Estás invitado"),
+  name = tr("common.youreInvited"),
   large = false,
 }: {
   event: Pick<Event, "title" | "date" | "timeZone" | "location" | "theme">;
@@ -381,7 +378,7 @@ export function InvitationArt({
     >
       <img
         src={`/images/${theme.image}`}
-        alt={tr("Decoración {{theme}}", { theme: tr(theme.name) })}
+        alt={tr("common.themeDecoration", { theme: tr(theme.name) })}
         className="invitation-photo"
       />
       <div className="invitation-words">
@@ -389,7 +386,7 @@ export function InvitationArt({
           <PartyPopper size={27} />
         </span>
         <p>{name}</p>
-        <h2>{event.title || tr("Un motivo para celebrar")}</h2>
+        <h2>{event.title || tr("common.reasonCelebrate")}</h2>
         <div className="invitation-rule" />
         <p className="invitation-date">
           {event.date && Number.isFinite(Date.parse(event.date))
@@ -398,7 +395,7 @@ export function InvitationArt({
                 month: "long",
                 year: "numeric",
               })
-            : tr("Una fecha especial")}
+            : tr("common.specialDate")}
         </p>
         <p>
           {event.date && Number.isFinite(Date.parse(event.date))
@@ -406,10 +403,10 @@ export function InvitationArt({
                 hour: "numeric",
                 minute: "2-digit",
               })
-            : tr("Hora por confirmar")}
+            : tr("common.timeConfirmed")}
         </p>
         <span className="invitation-location">
-          {event.location || tr("Un lugar para encontrarnos")}
+          {event.location || tr("common.placeComeTogether")}
         </span>
       </div>
     </div>

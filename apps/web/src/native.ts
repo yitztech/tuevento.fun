@@ -3,7 +3,7 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Clipboard } from '@capacitor/clipboard';
 import { EventApi } from '@tuevento/client';
-import type { Runtime } from '@tuevento/app';
+import { tr, type Runtime } from '@tuevento/app';
 const base64url=(buffer:ArrayBuffer)=>btoa(String.fromCharCode(...new Uint8Array(buffer))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 export async function nativeRuntime():Promise<Runtime> {
  const origin = new URL(import.meta.env.VITE_PUBLIC_ORIGIN || 'https://invalid.local');
@@ -21,7 +21,7 @@ export async function nativeRuntime():Promise<Runtime> {
   // porque cualquier app puede registrarlo y robar el código.
   const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!==origin.hostname||parsed.pathname!=='/app-link/auth')return;
   const verifier=localStorage.getItem('tueventofun:pkce');if(!verifier)return;
-  try{await api.request('/auth/mobile/exchange','POST',{code:parsed.searchParams.get('code'),verifier});localStorage.removeItem('tueventofun:pkce');await Browser.close().catch(()=>{});window.location.hash='/app';window.location.reload()}catch{window.alert('No se pudo conectar la sesión. Vuelve a intentarlo. / Could not connect your session. Please try again.')}
+  try{await api.request('/auth/mobile/exchange','POST',{code:parsed.searchParams.get('code'),verifier});localStorage.removeItem('tueventofun:pkce');await Browser.close().catch(()=>{});window.location.hash='/app';window.location.reload()}catch{window.alert(tr('app.sessionConnectError'))}
  };
  await App.addListener('appUrlOpen',({url})=>{void handleURL(url)});
  const launch=await App.getLaunchUrl();if(launch?.url)void handleURL(launch.url);

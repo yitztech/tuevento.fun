@@ -1,4 +1,4 @@
-import { tr, formatLocale } from "./i18n";
+import { tr, trMessage, formatLocale } from "./i18n";
 import { createContext, useContext } from "react";
 import { EventApi } from "@tuevento/client";
 import type { User, Event, Notification } from "@tuevento/contracts";
@@ -47,5 +47,5 @@ export const dateText = (
   );
 export const errorText = (error: unknown) =>
   error instanceof Error
-    ? tr(error.message)
-    : tr("No se pudo completar la acción. Vuelve a intentarlo.");
+    ? trMessage(error.message)
+    : tr("common.couldntCompleteActionPlease");

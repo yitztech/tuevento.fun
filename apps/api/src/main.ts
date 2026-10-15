@@ -9,7 +9,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { AppModule } from "./app.module";
 import { LocaleExceptionFilter } from "./locale.filter";
-import { translateMessage } from "@tuevento/contracts";
+import { translate } from "@tuevento/contracts";
 import { requestLocale } from "./request-locale";
 import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 async function bootstrap() {
@@ -61,10 +61,7 @@ async function bootstrap() {
           return reply
             .code(403)
             .send({
-              message: translateMessage(
-                "Origen de solicitud no permitido.",
-                requestLocale(req),
-              ),
+              message: translate(requestLocale(req), "errors.requestOriginNotAllowed"),
             });
       }
     });
