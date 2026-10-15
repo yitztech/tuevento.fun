@@ -18,7 +18,10 @@ for (const servicio of soloPruebas) {
 
 const prohibidos = [
   "compose.prod.yml",
-  ...readdirSync(".github/workflows").map((f) => `.github/workflows/${f}`),
+  // mobile-e2e.yml es el único workflow de pruebas: nombra el servicio, pero no despliega nada.
+  ...readdirSync(".github/workflows")
+    .filter((f) => f !== "mobile-e2e.yml")
+    .map((f) => `.github/workflows/${f}`),
   ...["api", "web", "gateway", "postgres"].map((s) => `services/${s}/Dockerfile`),
 ];
 for (const file of prohibidos) {

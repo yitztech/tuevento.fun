@@ -2,6 +2,7 @@
 # HTTPS local para las apps móviles (emulador Android / simulador iOS), que exigen un
 # origen HTTPS. Caddy genera su propia CA local (`tls internal`) y firma con ella el
 # certificado de `localhost`; la CA se exporta con scripts/mobile-test-ca.sh.
+# MOBILE_TLS_UPSTREAM: en Docker es el gateway; en CI de macOS (sin Docker) la API directa.
 {
 	local_certs
 	skip_install_trust
@@ -10,5 +11,5 @@
 
 https://localhost:8443 {
 	tls internal
-	reverse_proxy gateway:80
+	reverse_proxy {$MOBILE_TLS_UPSTREAM:gateway:80}
 }

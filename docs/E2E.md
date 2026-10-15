@@ -133,3 +133,28 @@ E2E_IOS_SIMULADOR="iPad Pro 13-inch (M5)" npm run e2e:ios
 - **Recursos:** emulador de Android + simuladores de iOS + Docker saturan la máquina. Con varios
   abiertos a la vez, las pruebas se vuelven lentas y fallan por tiempo: apaga los que no uses
   (`xcrun simctl shutdown all`).
+
+## Android e iOS, uno tras otro (nunca a la vez)
+
+```
+npm run e2e:movil                  # Android → se apaga → iOS → se apaga
+npm run e2e:movil:ios-primero      # iOS → se apaga → Android → se apaga
+bash scripts/mobile-test.sh ios    # solo una; MOBILE_VER=1 (ritmo humano), MOBILE_KEEP=1 (dejar encendida), SKIP_BUILD=1
+bash scripts/mobile-test-stop.sh android|ios     # apagar a mano (espera a que se apague del todo)
+```
+
+Antes de empezar una plataforma se apaga la otra, y al terminar se apaga ella. Al final queda un
+resumen por plataforma y el código de salida es distinto de 0 si alguna falló.
+
+## CI de las apps móviles (`.github/workflows/mobile-e2e.yml`)
+
+- **Sin coste:** los runners de GitHub son gratuitos en repositorios públicos. Cada job lleva
+  `github.event.repository.private == false`: si el repositorio pasa a privado se omiten solos
+  (los minutos de macOS cuestan 10x).
+- **Android** (`ubuntu-latest`, KVM): emulador API 35 con `android-emulator-runner`; la pila es la
+  de Docker (`compose.yml`, perfil `mobile`), igual que en local.
+- **iOS** (`macos-latest`): macOS no tiene Docker, así que `scripts/mobile-native-stack.sh`
+  levanta PostgreSQL 18, la API y Caddy (el mismo `Caddyfile` de `mobile-tls`, con
+  `MOBILE_TLS_UPSTREAM=127.0.0.1:3087`) directamente en el runner (`MOBILE_STACK=native`).
+- Se ejecuta a mano (`workflow_dispatch`: android, ios o both) y en los PR que tocan la app, los
+  escenarios o los scripts móviles. Sube `tests/e2e/results/` como artifact.

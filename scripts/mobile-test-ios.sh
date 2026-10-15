@@ -11,7 +11,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ORIGIN="https://localhost:8443"
-SIMULATOR="${SIMULATOR:-iPhone 17 Pro}"
+SIMULATOR="${SIMULATOR:-}"   # vacío: "iPhone 17 Pro" si existe; si no, el primer iPhone disponible
 APP_ID="com.tueventofun.app.pruebas"
 BUILD=tests/mobile/.build/ios
 APP="$BUILD/Build/Products/Debug-iphonesimulator/App.app"
@@ -19,13 +19,19 @@ APP="$BUILD/Build/Products/Debug-iphonesimulator/App.app"
 UDID="$(xcrun simctl list devices available -j | node -e '
   const nombre = process.argv[1];
   const todos = Object.values(JSON.parse(require("fs").readFileSync(0, "utf8")).devices).flat();
-  const d = todos.find((x) => x.name === nombre);
-  if (!d) { console.error(`No hay un simulador llamado "${nombre}"`); process.exit(1); }
-  console.log(d.udid);' "$SIMULATOR")"
+  const d = nombre
+    ? todos.find((x) => x.name === nombre)
+    : todos.find((x) => x.name === "iPhone 17 Pro") ?? todos.find((x) => x.name.startsWith("iPhone"));
+  if (!d) { console.error(`No hay un simulador ${nombre ? `llamado "${nombre}"` : "de iPhone"}`); process.exit(1); }
+  console.log(`${d.udid} ${d.name}`);' "$SIMULATOR")"
+NOMBRE="${UDID#* }"; UDID="${UDID%% *}"
 
 if [ -z "${SKIP_BUILD:-}" ]; then
   echo "▸ HTTPS de pruebas y CA"
-  docker compose --profile mobile up -d --wait gateway mobile-tls >/dev/null 2>&1 || docker compose --profile mobile up -d gateway mobile-tls
+  # MOBILE_STACK=native: CI de macOS sin Docker (scripts/mobile-native-stack.sh ya lo levantó).
+  if [ "${MOBILE_STACK:-}" != native ]; then
+    docker compose --profile mobile up -d --wait gateway mobile-tls >/dev/null 2>&1 || docker compose --profile mobile up -d gateway mobile-tls
+  fi
   bash scripts/mobile-test-ca.sh >/dev/null
 
   echo "▸ Web empaquetada contra $ORIGIN"
@@ -42,9 +48,9 @@ if [ -z "${SKIP_BUILD:-}" ]; then
 fi
 [ -d "$APP" ] || { echo "No existe $APP" >&2; exit 1; }
 
-echo "▸ Simulador $SIMULATOR"
+echo "▸ Simulador $NOMBRE"
 xcrun simctl boot "$UDID" 2>/dev/null || true
-open -a Simulator --args -CurrentDeviceUDID "$UDID" 2>/dev/null || true
+[ -n "${CI:-}" ] || open -a Simulator --args -CurrentDeviceUDID "$UDID" 2>/dev/null || true
 xcrun simctl bootstatus "$UDID" -b >/dev/null
 
 echo "▸ CA de pruebas (solo en este simulador), instalar y abrir"
@@ -52,4 +58,8 @@ xcrun simctl keychain "$UDID" add-root-cert tests/mobile/.ca/root.crt
 xcrun simctl install "$UDID" "$APP"
 xcrun simctl terminate "$UDID" "$APP_ID" 2>/dev/null || true
 xcrun simctl launch "$UDID" "$APP_ID" >/dev/null
-echo "✓ $APP_ID en el simulador $SIMULATOR (origen $ORIGIN)"
+echo "✓ $APP_ID en el simulador $NOMBRE (origen $ORIGIN)"
+
+# Appium (XCUITest) se instala una sola vez en tests/mobile/.appium (no se versiona).
+export APPIUM_HOME="$PWD/tests/mobile/.appium"
+npx appium driver list --installed 2>&1 | grep -q xcuitest || npx appium driver install xcuitest

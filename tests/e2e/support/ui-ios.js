@@ -9,14 +9,14 @@ const xCampo = (etiqueta) => `//input[@id=//label[normalize-space(.)=${literal(e
 
 /**
  * Simulador de iOS arrancado: E2E_IOS_UDID, o el que se llame E2E_IOS_SIMULADOR (p. ej.
- * "iPad Pro 13-inch (M5)"), o el primer iPhone. Se prepara con scripts/mobile-test-ios.sh.
+ * "iPad Pro 13-inch (M5)"), o el primer iPhone (o iPad) arrancado. Se prepara con scripts/mobile-test-ios.sh.
  */
 export function simuladorArrancado() {
   if (process.env.E2E_IOS_UDID) return process.env.E2E_IOS_UDID;
   const lista = JSON.parse(execFileSync("xcrun", ["simctl", "list", "devices", "booted", "-j"]));
   const arrancados = Object.values(lista.devices).flat();
   const nombre = process.env.E2E_IOS_SIMULADOR;
-  const elegido = nombre ? arrancados.find((d) => d.name === nombre) : arrancados.find((d) => d.name.startsWith("iPhone"));
+  const elegido = nombre ? arrancados.find((d) => d.name === nombre) : arrancados.find((d) => d.name.startsWith("iPhone")) ?? arrancados.find((d) => d.name.startsWith("iPad"));
   if (!elegido) throw new Error(`No hay simulador de iOS arrancado${nombre ? ` llamado "${nombre}"` : ""}: bash scripts/mobile-test-ios.sh`);
   return elegido.udid;
 }

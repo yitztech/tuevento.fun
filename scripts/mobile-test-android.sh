@@ -16,11 +16,17 @@ ADB="$SDK/platform-tools/adb"
 APK=apps/web/android/app/build/outputs/apk/debug/app-debug.apk
 APP_ID="com.tueventofun.app.pruebas"
 export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
-export JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home)}"
+# En CI, setup-java ya define JAVA_HOME; en local se busca el JDK 21 de macOS.
+if [ -z "${JAVA_HOME:-}" ]; then
+  export JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home)"
+fi
 
 if [ -z "${SKIP_BUILD:-}" ]; then
   echo "▸ HTTPS de pruebas y CA"
-  docker compose --profile mobile up -d --wait gateway mobile-tls >/dev/null 2>&1 || docker compose --profile mobile up -d gateway mobile-tls
+  # MOBILE_STACK=native: CI de macOS sin Docker (scripts/mobile-native-stack.sh ya lo levantó).
+  if [ "${MOBILE_STACK:-}" != native ]; then
+    docker compose --profile mobile up -d --wait gateway mobile-tls >/dev/null 2>&1 || docker compose --profile mobile up -d gateway mobile-tls
+  fi
   bash scripts/mobile-test-ca.sh >/dev/null
   mkdir -p apps/web/android/app/src/debug/res/raw
   cp tests/mobile/.ca/root.crt apps/web/android/app/src/debug/res/raw/test_ca.crt

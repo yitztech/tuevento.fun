@@ -26,7 +26,9 @@
     "e2e:android": "E2E_TARGET=android npm run test -w @tuevento/e2e --",
     "e2e:android:ver": "E2E_TARGET=android E2E_SLOWMO=${E2E_SLOWMO:-500} E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test -w @tuevento/e2e --",
     "e2e:ios": "E2E_TARGET=ios npm run test -w @tuevento/e2e --",
-    "e2e:ios:ver": "E2E_TARGET=ios E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test -w @tuevento/e2e --"
+    "e2e:ios:ver": "E2E_TARGET=ios E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test -w @tuevento/e2e --",
+    "e2e:movil": "bash scripts/mobile-test.sh android ios",
+    "e2e:movil:ios-primero": "bash scripts/mobile-test.sh ios android"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

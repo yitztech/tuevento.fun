@@ -6,7 +6,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 out=tests/mobile/.ca
 mkdir -p "$out"
+rm -f "$out/root.crt"   # nunca reutilizar la CA de una ejecución anterior
+if [ "${MOBILE_STACK:-}" = native ]; then
+  # CI de macOS sin Docker: la CA que generó Caddy al arrancar (scripts/mobile-native-stack.sh).
+  cp tests/mobile/.stack/caddy-data/caddy/pki/authorities/local/root.crt "$out/root.crt"
+fi
 for _ in $(seq 1 30); do
+  [ -s "$out/root.crt" ] && break
   docker compose --profile mobile cp mobile-tls:/data/caddy/pki/authorities/local/root.crt "$out/root.crt" 2>/dev/null && break
   sleep 1
 done
