@@ -15,3 +15,7 @@ Regla: **todo componente, pantalla, correo, error o validación que muestre text
 - Si se añade un idioma a la tabla, esta regla lo incluye automáticamente: actualiza la lista de arriba.
 
 Antes de cerrar un cambio con texto: `npm run build -w @tuevento/contracts`, `npm run typecheck` y `npm test` (paridad de claves, plurales, variables, marcas y claves sin uso o inexistentes en todos los idiomas).
+
+## Dependencias: una sola versión por paquete
+
+Un mismo paquete (zod, react…) lleva **el mismo rango en todos los workspaces**, y cada workspace declara en su `package.json` todo lo que importa (la imagen de producción instala solo `--workspace @tuevento/api`). `node scripts/check-versions.mjs` lo comprueba y corre dentro de `npm test` (y por tanto en CI). Si un paquete va atado a otro (p. ej. `fastify` fijado en `5.12.5` por `@nestjs/platform-fastify`), usa la versión que exige el otro, no la última.
