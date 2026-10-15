@@ -18,11 +18,16 @@ jobs:
       - run: npm run build && npm run typecheck && npm test
       - run: npx playwright install --with-deps chromium
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --build --wait
+      - run: npm run e2e
+      - run: npm run e2e:summary
+        if: always()
       - run: npm run test:api && npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: qa-evidence
-          path: qa-artifacts/
+          path: |
+            qa-artifacts/
+            tests/e2e/results/
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
         if: always()

@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tests/*"
   ],
   "scripts": {
     "build": "npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api && npm run build -w @tuevento/web",
@@ -16,7 +17,11 @@
     "test:landing": "node scripts/test-landing.cjs",
     "test:password": "node scripts/test-password-reset.cjs",
     "test:platform": "node scripts/test-platform.mjs",
-    "check:versions": "node scripts/check-versions.mjs"
+    "check:versions": "node scripts/check-versions.mjs",
+    "e2e": "npm test -w @tuevento/e2e",
+    "e2e:headed": "npm run test:headed -w @tuevento/e2e",
+    "e2e:ui": "npm run test:ui -w @tuevento/e2e",
+    "e2e:summary": "npm run summary -w @tuevento/e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

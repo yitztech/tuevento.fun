@@ -29,3 +29,9 @@ Todo límite de longitud de un dato (máximo de caracteres, dígitos…) vive en
 - **Base de datos:** una migración nueva (`apps/api/migrations/NNN_*.sql`, nunca editar una ya aplicada) con `ALTER TABLE t ADD CONSTRAINT t_col_max_length CHECK (char_length(col) <= N)`.
 
 Al crear o cambiar un límite, añade su columna a `packages/contracts/src/limits.test.ts`: ese test (dentro de `npm test`) falla si el valor de la base de datos y el de `accountLimits` difieren o si un límite no tiene columna. Un dato sin columna (p. ej. la contraseña, que se guarda como hash) se declara ahí como excepción.
+
+## Pruebas E2E: cada comportamiento tiene su escenario
+
+Todo comportamiento visible o regla de validación nueva o cambiada se entrega con su escenario Gherkin en español en `tests/e2e/features/` (ver [docs/E2E.md](docs/E2E.md)), en el mismo cambio. Los pasos están en `tests/e2e/steps/`; los escenarios usan datos únicos y no dependen del estado de la base de datos.
+
+Antes de cerrar un cambio, con la app arriba (`docker compose up -d`): `npm run e2e` y `npm run e2e:summary`. Si un escenario falla, se arregla el código o se actualiza el escenario con motivo: nunca se omite ni se borra para pasar. CI ejecuta lo mismo.

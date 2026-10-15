@@ -8,7 +8,7 @@ import { join } from "node:path";
 const read = (p) => JSON.parse(readFileSync(p, "utf8"));
 const dirs = [
   ".",
-  ...["apps", "packages"].flatMap((g) =>
+  ...["apps", "packages", "tests"].flatMap((g) =>
     readdirSync(g).map((d) => join(g, d)),
   ),
 ].filter((d) => existsSync(join(d, "package.json")));
@@ -38,15 +38,16 @@ for (const [name, seen] of ranges) {
 const walk = (d) =>
   readdirSync(d).flatMap((f) => {
     const p = join(d, f);
-    if (["node_modules", "dist", "android", "ios"].includes(f)) return [];
+    if (["node_modules", "dist", "android", "ios", ".features-gen", "results"].includes(f)) return [];
     return statSync(p).isDirectory() ? walk(p) : /\.(tsx?|mjs)$/.test(f) ? [p] : [];
   });
 const builtins = new Set(builtinModules);
-for (const dir of dirs.filter((d) => d !== "." && existsSync(join(d, "src")))) {
+for (const dir of dirs.filter((d) => d !== ".")) {
   const pkg = read(join(dir, "package.json"));
   const declared = new Set(kinds.flatMap((k) => Object.keys(pkg[k] ?? {})));
   const missing = new Set();
-  for (const file of walk(join(dir, "src"))) {
+  const sources = ["src", "steps", "support", "scripts", "features"].map((d) => join(dir, d)).filter(existsSync);
+  for (const file of sources.flatMap(walk)) {
     for (const m of readFileSync(file, "utf8").matchAll(
       /(?:from\s+|import\s*\(\s*|require\(\s*)["']([^."'/][^"']*)["']/g,
     )) {

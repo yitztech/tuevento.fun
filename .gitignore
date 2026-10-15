@@ -25,3 +25,7 @@ qa-artifacts/*.jsonl
 **/.gradle/
 **/build/
 **/local.properties
+
+# Pruebas E2E (Playwright + Gherkin): código generado y evidencias
+tests/e2e/.features-gen/
+tests/e2e/results/
