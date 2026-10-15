@@ -20,7 +20,8 @@ La app debe estar arriba: `docker compose up -d` (http://localhost:5187).
 | Qué | Comando (desde la raíz) |
 |---|---|
 | Todo, en terminal | `npm run e2e` |
-| Con el navegador visible | `npm run e2e:headed` (más lento: `E2E_SLOWMO=300 npm run e2e:headed`) |
+| Ver cómo se ejecuta (una ventana, escenario a escenario, con pausas) | `npm run e2e:ver` (más lento: `E2E_SLOWMO=1200 npm run e2e:ver`; uno solo: `npm run e2e:ver -- --grep "Crear una cuenta con datos válidos"`) |
+| Navegador visible, en paralelo | `npm run e2e:headed` |
 | Modo UI de Playwright (pasos, repetir, depurar) | `npm run e2e:ui` |
 | Solo algunos escenarios | `npm run e2e -- --grep @smoke` (o `@registro`, `@limites`, `@api`…) |
 | Un archivo | `npm run e2e -- features/perfil.feature` |
