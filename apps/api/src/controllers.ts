@@ -20,8 +20,11 @@ import sharp from "sharp";
 import { randomBytes } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import {
+  translate,
   translateMessage,
   notificationMessage,
+  validationOptions,
+  type Locale,
   registerSchema,
   loginSchema,
   eventSchema,
@@ -49,12 +52,10 @@ function parse<T extends z.ZodType>(
   req?: FastifyRequest,
 ): z.output<T> {
   const locale = requestLocale(req);
-  const result = schema.safeParse(body, {
-    error: z.locales[locale]().localeError,
-  });
+  const result = schema.safeParse(body, validationOptions(locale));
   if (!result.success)
     throw new BadRequestException({
-      message: result.error.issues[0]?.message || "Revisa los datos.",
+      message: result.error.issues[0]?.message || "errors.checkDetails",
       fields: z.flattenError(result.error).fieldErrors,
     });
   return result.data;
@@ -192,7 +193,7 @@ export class PublicController {
   }
   private token(token: string, req: FastifyRequest) {
     return parse(
-      z.string().regex(/^[\w-]{32}$/, "El enlace de invitación no es válido."),
+      z.string().regex(/^[\w-]{32}$/, "errors.invitationLinkInvalid"),
       token,
       req,
     );
@@ -298,8 +299,8 @@ export class OrganizerController {
       createdAt: r.created_at.toISOString(),
     }));
   }
-  private legacyNotification(message: string, locale: "es" | "en") {
-    if (locale === "es") return message;
+  /** Notificaciones guardadas antes de `counts`: solo tienen el texto en español. */
+  private legacyNotification(message: string, locale: Locale) {
     const reply = message.match(
       /^(\d+) confirmad[oa]s?, (\d+) no asistir[aá]n? y (\d+) en espera\.$/,
     );
@@ -314,7 +315,7 @@ export class OrganizerController {
       );
     const demo = message.match(/^(\d+) persona/);
     if (demo)
-      return `${demo[1]} ${demo[1] === "1" ? "person confirmed" : "people confirmed"} attendance.`;
+      return translate(locale, "notifications.demoConfirmed", { count: Number(demo[1]) });
     return translateMessage(message, locale);
   }
   @Post("notifications/read") async read(@Req() req: AuthedRequest) {
@@ -338,7 +339,7 @@ export class OrganizerController {
       return userView(r);
     } catch (e: any) {
       if (e.code === "23505")
-        throw new ConflictException("Este nombre de usuario ya está en uso.");
+        throw new ConflictException("errors.usernameAlreadyTaken");
       throw e;
     }
   }
@@ -353,7 +354,7 @@ export class OrganizerController {
           .max(2800000)
           .regex(
             /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/,
-            "Usa una imagen PNG, JPG o WebP de hasta 2 MB.",
+            "errors.usePngJpgWebp",
           ),
       }),
       body,
@@ -361,7 +362,7 @@ export class OrganizerController {
     );
     const bytes = Buffer.from(data.dataUrl.split(",")[1], "base64");
     if (bytes.length > 2 * 1024 * 1024)
-      throw new BadRequestException("La imagen debe pesar menos de 2 MB.");
+      throw new BadRequestException("errors.imageMustSmallerThan");
     let avatar: string;
     try {
       const image = sharp(bytes, { limitInputPixels: 25000000 });
@@ -376,7 +377,7 @@ export class OrganizerController {
       avatar = `data:image/jpeg;base64,${result.toString("base64")}`;
     } catch {
       throw new BadRequestException(
-        "No se pudo leer la imagen. Prueba con otra.",
+        "errors.couldntReadImageTry",
       );
     }
     const [r] = await this.db.query(

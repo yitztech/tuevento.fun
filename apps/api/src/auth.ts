@@ -25,7 +25,8 @@ import { Database } from "./database";
 import {
   passwordResetPaths,
   PASSWORD_RESET_MINUTES,
-  translateMessage,
+  normalizeLocale,
+  translate,
   type Locale,
   type RegisterInput,
   type User,
@@ -61,7 +62,7 @@ function allow(key: string, max: number, now = Date.now()) {
   return ++entry.count <= max;
 }
 const INVALID_RESET_LINK =
-  "El enlace para cambiar la contraseña no es válido o caducó.";
+  "common.passwordResetLinkInvalid";
 export const userView = (r: any): User => ({
   id: r.id,
   firstName: r.first_name,
@@ -72,7 +73,7 @@ export const userView = (r: any): User => ({
   avatar: r.avatar,
   isDemo: r.is_demo,
   isOwner: r.is_owner === true,
-  locale: r.locale === "en" ? "en" : "es",
+  locale: normalizeLocale(r.locale),
 });
 export type AuthedRequest = FastifyRequest & { user: User };
 @Injectable()
@@ -107,7 +108,7 @@ export class AuthService {
     } catch (e: any) {
       if (e.code === "23505")
         throw new ConflictException(
-          "El correo o nombre de usuario ya está registrado.",
+          "errors.emailAddressUsernameAlready",
         );
       throw e;
     }
@@ -121,7 +122,7 @@ export class AuthService {
     const failure = loginFailures.get(key);
     if (failure && failure.reset > now && failure.count >= LOGIN_MAX_FAILURES)
       throw new HttpException(
-        "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+        "errors.tooManyAttemptsPlease",
         HttpStatus.TOO_MANY_REQUESTS,
       );
     const [r] = await this.db.query(
@@ -143,7 +144,7 @@ export class AuthService {
       current.count++;
       loginFailures.set(key, current);
       throw new UnauthorizedException(
-        "El correo o la contraseña no coinciden.",
+        "errors.emailAddressPasswordIncorrect",
       );
     }
     loginFailures.delete(key);
@@ -192,7 +193,7 @@ export class AuthService {
     const locale = requestLocale(req);
     if (!allow(`ip:${req.ip}`, RESET_MAX_PER_IP))
       throw new HttpException(
-        "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+        "errors.tooManyAttemptsPlease",
         HttpStatus.TOO_MANY_REQUESTS,
       );
     const [user] = allow(`email:${email}`, RESET_MAX_PER_EMAIL)
@@ -228,10 +229,7 @@ export class AuthService {
     }
     return {
       ok: true,
-      message: translateMessage(
-        "Si ese correo tiene una cuenta, te enviamos un enlace para elegir una contraseña nueva. Revisa también la carpeta de spam.",
-        locale,
-      ),
+      message: translate(locale, "account.resetLinkSent"),
     };
   }
   /** Cambia la contraseña con un enlace válido, cierra todas las sesiones y avisa por correo. */
@@ -254,7 +252,7 @@ export class AuthService {
       if (!user) return null;
       await c.query("DELETE FROM password_resets WHERE user_id=$1", [user.id]);
       await c.query("DELETE FROM sessions WHERE user_id=$1", [user.id]);
-      return { user, locale: reset.locale as Locale };
+      return { user, locale: normalizeLocale(reset.locale) };
     });
     if (!result) throw new BadRequestException(INVALID_RESET_LINK);
     loginFailures.delete(result.user.email);
@@ -276,14 +274,14 @@ export class AuthService {
   }
   async current(req: FastifyRequest) {
     if (!req.cookies.session)
-      throw new UnauthorizedException("Inicia sesión para continuar.");
+      throw new UnauthorizedException("errors.signInToContinue");
     const [r] = await this.db.query(
       "SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at>now()",
       [hash(req.cookies.session)],
     );
     if (!r)
       throw new UnauthorizedException(
-        "Tu sesión terminó. Inicia sesión de nuevo.",
+        "errors.sessionHasExpiredPlease",
       );
     return userView(r);
   }
@@ -303,13 +301,13 @@ export class AuthService {
   ) {
     if (!process.env.GOOGLE_CLIENT_ID)
       throw new ServiceUnavailableException(
-        "El acceso con Google todavía no está configurado.",
+        "errors.googleSignHasntBeen",
       );
     const validNonce = req.cookies.google_nonce === nonce;
     reply.clearCookie("google_nonce", this.cookieOptions());
     if (!validNonce)
       throw new BadRequestException(
-        "La solicitud de Google caducó. Inténtalo de nuevo.",
+        "errors.googleRequestHasExpired",
       );
     let payload;
     try {
@@ -322,7 +320,7 @@ export class AuthService {
       payload = ticket.getPayload();
     } catch {
       throw new UnauthorizedException(
-        "No se pudo validar tu acceso con Google.",
+        "errors.couldntVerifyGoogleSign",
       );
     }
     if (
@@ -330,7 +328,7 @@ export class AuthService {
       !payload.email ||
       (payload as any).nonce !== nonce
     )
-      throw new UnauthorizedException("Google no confirmó esta identidad.");
+      throw new UnauthorizedException("errors.googleDidntConfirmIdentity");
     const [existing] = await this.db.query(
       "SELECT * FROM users WHERE google_sub=$1",
       [payload.sub],
@@ -342,19 +340,20 @@ export class AuthService {
     );
     if (sameEmail)
       throw new ConflictException(
-        "Ya tienes una cuenta con este correo. Accede con tu contraseña.",
+        "errors.alreadyHaveAccountEmail",
       );
+    const locale = requestLocale(req);
     try {
       const [r] = await this.db.query(
         "INSERT INTO users(id,first_name,last_name,email,username,google_sub,locale) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
         [
           randomUUID(),
-          payload.given_name || "Anfitrión",
+          payload.given_name || translate(locale, "common.host"),
           payload.family_name || "",
           payload.email.toLowerCase(),
           "anfitrion_" + randomBytes(5).toString("hex"),
           payload.sub,
-          requestLocale(req),
+          locale,
         ],
       );
       await this.db.query("INSERT INTO activity(id,kind,platform,user_id) VALUES($1,'registration',$2,$3)", [randomUUID(), clientPlatform(req), r.id]);
@@ -363,7 +362,7 @@ export class AuthService {
     } catch (e: any) {
       if (e.code === "23505")
         throw new ConflictException(
-          "La cuenta ya existe. Vuelve a iniciar sesión.",
+          "errors.accountAlreadyExistsPlease",
         );
       throw e;
     }

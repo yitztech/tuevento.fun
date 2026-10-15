@@ -1,4 +1,4 @@
-import { tr, formatLocale, useLocale, LanguageSwitcher } from "./i18n";
+import { tr, formatLocale, getLocale, useLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   Routes,
@@ -50,15 +50,12 @@ import { passwordResetPaths } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
 import { LegalPage, legalPageFor } from "./legal";
 export type { Runtime } from "./context";
-export { SeoLinks, getLocale, switchAppLocale } from "./i18n";
+export { SeoLinks, getLocale, switchAppLocale, tr } from "./i18n";
 export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const { locale } = useLocale();
   // <html lang> lo fija el gateway según el dominio; aquí solo el título.
   useEffect(() => {
-    document.title =
-      locale === "en"
-        ? "TuEventoFun · A good reason to celebrate"
-        : "TuEventoFun · Un buen motivo para celebrar";
+    document.title = tr("app.documentTitle");
   }, [locale]);
   const api = useMemo(
     () =>
@@ -67,6 +64,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         fetch: runtime.fetch,
         platform: runtime.platform,
         appVersion: runtime.appVersion,
+        // Las apps nativas usan un solo dominio: la API responde en el idioma de la app
+        locale: getLocale,
       }),
     [runtime],
   );
@@ -157,8 +156,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     return (
       <div className="startup">
         <Logo />
-        <div className="loading-dots" aria-label={tr("Cargando")} />
-        <p>{tr("Preparando buenos momentos…")}</p>
+        <div className="loading-dots" aria-label={tr("common.loading")} />
+        <p>{tr("app.gettingGoodTimesReady")}</p>
       </div>
     );
   if (error)
@@ -167,18 +166,18 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         <Logo />
         <ErrorBox message={error} />
         <button className="button" onClick={() => window.location.reload()}>
-          {tr("Volver a intentar")}
+          {tr("app.tryAgain")}
         </button>
       </div>
     );
   const unread = notifications.filter((n) => !n.read).length;
   const navigation = [
-    ...(user?.isOwner ? [{ to: "/administracion", text: tr("Panel del sistema"), icon: LayoutDashboard }] : []),
-    { to: "/app", text: tr("Mi resumen"), icon: LayoutDashboard },
-    { to: "/eventos", text: tr("Mis eventos"), icon: CalendarDays },
-    { to: "/invitados", text: tr("Invitados"), icon: Users },
-    { to: "/disenos", text: tr("Diseños de invitación"), icon: Palette },
-    { to: "/notificaciones", text: tr("Notificaciones"), icon: Bell },
+    ...(user?.isOwner ? [{ to: "/administracion", text: tr("app.systemDashboard"), icon: LayoutDashboard }] : []),
+    { to: "/app", text: tr("app.overview"), icon: LayoutDashboard },
+    { to: "/eventos", text: tr("common.events"), icon: CalendarDays },
+    { to: "/invitados", text: tr("app.guests"), icon: Users },
+    { to: "/disenos", text: tr("app.invitationDesigns"), icon: Palette },
+    { to: "/notificaciones", text: tr("app.notifications"), icon: Bell },
   ];
   const logout = async () => {
     try {
@@ -217,12 +216,12 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       ) : (
         <div className="app-shell">
           <a className="skip-link" href="#main">
-            {tr("Saltar al contenido")}
+            {tr("common.skipContent")}
           </a>
           {menu && (
             <button
               className="mobile-scrim"
-              aria-label={tr("Cerrar navegación")}
+              aria-label={tr("app.closeNavigation")}
               onClick={() => setMenu(false)}
             />
           )}
@@ -231,7 +230,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               <Logo to="/app" />
               <button
                 className="icon-button mobile-only"
-                aria-label={tr("Cerrar menú")}
+                aria-label={tr("common.closeMenu")}
                 onClick={() => setMenu(false)}
               >
                 <X />
@@ -239,9 +238,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
             </div>
             <div className="workspace-label">
               <span className="workspace-dot" />
-              {tr("Tu espacio para celebrar")}
+              {tr("app.spaceCelebrate")}
             </div>
-            <nav aria-label={tr("Navegación principal")}>
+            <nav aria-label={tr("app.mainNavigation")}>
               {navigation.map(({ to, text, icon: Icon }) => (
                 <NavLink key={to} to={to} end={to === "/app"}>
                   <Icon size={19} />
@@ -261,34 +260,30 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               <div className="celebrate-note">
                 <Heart size={24} />
                 <strong>
-                  {tr("Los buenos momentos")}
-                  <br />
-                  {tr("se comparten.")}
+                  <Lines k="app.goodTimesShared" />
                 </strong>
                 <p>
-                  {tr("Tú pones el motivo.")}
-                  <br />
-                  {tr("Nosotros, la invitación.")}
+                  <Lines k="app.occasionAndInvitation" />
                 </p>
                 <Link to="/eventos/nuevo">
-                  {tr("Vamos a celebrar") + " "}
+                  {tr("app.letsCelebrate") + " "}
                   <ArrowUpRightIcon />
                 </Link>
               </div>
               {user.isDemo && (
                 <Link to="/registro" className="demo-label">
                   <span className="dot pending" />
-                  {tr("Espacio de demostración")}
+                  {tr("app.demoWorkspace")}
                   <ChevronRight size={14} />
                 </Link>
               )}
               <NavLink className="side-secondary" to="/ayuda">
                 <CircleHelp size={18} />
-                {tr("Ayuda y primeros pasos")}
+                {tr("app.helpGettingStarted")}
               </NavLink>
               <NavLink className="side-secondary" to="/perfil">
                 <Settings size={18} />
-                {tr("Mi perfil")}
+                {tr("app.profile")}
               </NavLink>
               <div className="sidebar-profile">
                 <Avatar user={user} />
@@ -297,13 +292,13 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                     {user.firstName} {user.lastName}
                   </strong>
                   <span>
-                    {user.isDemo ? tr("Cuenta de ejemplo") : tr("Anfitrión")}
+                    {user.isDemo ? tr("app.demoAccount") : tr("common.host")}
                   </span>
                 </div>
                 <button
                   className="icon-button"
                   onClick={logout}
-                  aria-label={tr("Cerrar sesión")}
+                  aria-label={tr("app.signOut")}
                 >
                   <LogOut size={18} />
                 </button>
@@ -316,11 +311,11 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <button
                   className="icon-button mobile-only"
                   onClick={() => setMenu(true)}
-                  aria-label={tr("Abrir menú")}
+                  aria-label={tr("common.openMenu")}
                 >
                   <Menu />
                 </button>
-                <span>{tr("Mi espacio")}</span>
+                <span>{tr("app.space")}</span>
                 <ChevronRight size={13} />
                 <strong>
                   {navigation.find(
@@ -328,8 +323,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                       n.to !== "/app" && location.pathname.startsWith(n.to),
                   )?.text ||
                     (location.pathname === "/perfil"
-                      ? tr("Mi perfil")
-                      : tr("Mi resumen"))}
+                      ? tr("app.profile")
+                      : tr("app.overview"))}
                 </strong>
               </div>
               <div className="topbar-actions">
@@ -344,7 +339,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <Link
                   className="bell-button icon-button"
                   to="/notificaciones"
-                  aria-label={tr("Notificaciones, {{count}} sin leer", {
+                  aria-label={tr("app.notificationsCountUnread", {
                     count: unread,
                   })}
                 >
@@ -355,7 +350,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                     </span>
                   )}
                 </Link>
-                <Link to="/perfil" aria-label={tr("Mi perfil")}>
+                <Link to="/perfil" aria-label={tr("app.profile")}>
                   <Avatar user={user} />
                 </Link>
               </div>
@@ -379,9 +374,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   path="*"
                   element={
                     <div className="empty">
-                      <h1>{tr("No encontramos esta página")}</h1>
+                      <h1>{tr("app.couldntFindPage")}</h1>
                       <Link className="button" to="/app">
-                        {tr("Volver al resumen")}
+                        {tr("app.backOverview")}
                       </Link>
                     </div>
                   }
@@ -389,7 +384,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               </Routes>
             </main>
             <footer className="app-footer">
-              <span>{tr("Hecho para reunir a tus personas favoritas.")}</span>
+              <span>{tr("common.madeBringFavoritePeople")}</span>
               <span>
                 TuEventoFun <Heart size={12} />
               </span>
@@ -399,11 +394,11 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       )}
       {message && (
         <div className="toast" role="status">
-          {tr(message)}
+          {message}
           <button
             className="icon-button"
             onClick={() => setMessage("")}
-            aria-label={tr("Cerrar aviso")}
+            aria-label={tr("app.dismissNotification")}
           >
             <X size={17} />
           </button>

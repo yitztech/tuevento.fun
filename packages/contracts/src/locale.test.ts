@@ -5,8 +5,9 @@ import {
   localizedPage,
   translatePath,
   parseSiteOrigins,
+  siteOriginsFromEnv,
 } from "./index";
-const EN = "https://yourevent.fun";
+const EN = { es: "https://tuevento.fun", en: "https://yourevent.fun" };
 test("El idioma lo decide el Host: el dominio inglés y su www son en", () => {
   assert.equal(localeForHost("yourevent.fun", EN), "en");
   assert.equal(localeForHost("www.yourevent.fun", EN), "en");
@@ -15,7 +16,7 @@ test("El idioma lo decide el Host: el dominio inglés y su www son en", () => {
   assert.equal(localeForHost("tuevento.fun", EN), "es");
   assert.equal(localeForHost("www.tuevento.fun", EN), "es");
 });
-test("Un Host desconocido, vacío o sin SITE_URL_EN usa es", () => {
+test("Un Host desconocido, vacío o sin dominio del idioma usa el principal", () => {
   assert.equal(localeForHost("evil.example", EN), "es");
   assert.equal(localeForHost("sub.yourevent.fun", EN), "es");
   assert.equal(localeForHost("yourevent.fun.evil.example", EN), "es");
@@ -23,11 +24,14 @@ test("Un Host desconocido, vacío o sin SITE_URL_EN usa es", () => {
   assert.equal(localeForHost("[::1]:3087", EN), "es");
   assert.equal(localeForHost(undefined, EN), "es");
   assert.equal(localeForHost("", EN), "es");
-  assert.equal(localeForHost("yourevent.fun", undefined), "es");
-  assert.equal(localeForHost("yourevent.fun", "no es una url"), "es");
+  assert.equal(localeForHost("yourevent.fun", {}), "es");
+  assert.equal(
+    localeForHost("yourevent.fun", siteOriginsFromEnv({ SITE_URL_EN: "no es una url" })),
+    "es",
+  );
 });
 test("En desarrollo el dominio en de OrbStack es inglés", () => {
-  const dev = "https://en.tueventofun.orb.local";
+  const dev = { en: "https://en.tueventofun.orb.local" };
   assert.equal(localeForHost("en.tueventofun.orb.local", dev), "en");
   assert.equal(localeForHost("tueventofun.orb.local", dev), "es");
   assert.equal(localeForHost("localhost:5187", dev), "es");
@@ -56,7 +60,24 @@ test("Orígenes publicados por el gateway", () => {
     { es: "https://tuevento.fun", en: "https://yourevent.fun" },
   );
   assert.equal(parseSiteOrigins("es=https://tuevento.fun"), null);
+  assert.equal(parseSiteOrigins("en=https://yourevent.fun fr=https://tonevent.fun"), null);
+  // Idiomas que la app no conoce se ignoran
+  assert.deepEqual(
+    parseSiteOrigins("es=https://tuevento.fun en=https://yourevent.fun xx=https://x.fun"),
+    { es: "https://tuevento.fun", en: "https://yourevent.fun" },
+  );
   assert.equal(parseSiteOrigins("es=javascript:alert(1) en=https://yourevent.fun"), null);
   assert.equal(parseSiteOrigins(""), null);
   assert.equal(parseSiteOrigins(null), null);
+});
+test("Dominios por idioma desde el entorno: SITE_URL_<IDIOMA> y SITE_URL para el principal", () => {
+  assert.deepEqual(
+    siteOriginsFromEnv({ SITE_URL: "https://tuevento.fun/", SITE_URL_EN: "https://yourevent.fun" }),
+    { es: "https://tuevento.fun", en: "https://yourevent.fun" },
+  );
+  assert.deepEqual(
+    siteOriginsFromEnv({ SITE_URL: "https://a.fun", SITE_URL_ES: "https://tuevento.fun" }),
+    { es: "https://tuevento.fun" },
+  );
+  assert.deepEqual(siteOriginsFromEnv({ SITE_URL_EN: "ftp://yourevent.fun" }), {});
 });

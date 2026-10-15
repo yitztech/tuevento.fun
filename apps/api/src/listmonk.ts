@@ -1,11 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Database } from "./database";
-import { supportedLocales, translateMessage, type Locale } from "@tuevento/contracts";
-import { localeEnv } from "./locale-env";
+import { supportedLocales, translate, type Locale } from "@tuevento/contracts";
+import { localeEnvName, localeEnv } from "./locale-env";
 
 /**
  * Newsletter con un Listmonk por idioma (en `news.` de cada dominio), según el contrato
- * de la plataforma: `LISTMONK_URL` y `LISTMONK_LIST_UUID` para es, `_EN` para en.
+ * de la plataforma: `LISTMONK_URL_<IDIOMA>` y `LISTMONK_LIST_UUID_<IDIOMA>` (sin sufijo
+ * para el principal).
  * Se usa la suscripción pública de Listmonk, que no necesita credenciales: si la lista
  * es de doble confirmación, Listmonk envía el correo para confirmar desde su dominio,
  * y las campañas salen en el idioma de la lista.
@@ -20,7 +21,7 @@ export class ListmonkService implements OnModuleInit {
     for (const locale of supportedLocales)
       if (!this.target(locale))
         this.logger.warn(
-          `Newsletter "${locale}" sin Listmonk: faltan LISTMONK_URL${locale === "es" ? "" : "_EN"} o LISTMONK_LIST_UUID${locale === "es" ? "" : "_EN"}. Las altas se guardan solo en la base de datos.`,
+          `Newsletter "${locale}" sin Listmonk: faltan ${localeEnvName("LISTMONK_URL", locale, true)} o ${localeEnvName("LISTMONK_LIST_UUID", locale, true)}. Las altas se guardan solo en la base de datos.`,
         );
   }
 
@@ -70,11 +71,9 @@ export class ListmonkService implements OnModuleInit {
 
     return {
       ok: true,
-      message: translateMessage(
-        target
-          ? "¡Gracias! Revisa tu correo para confirmar la suscripción."
-          : "¡Gracias por suscribirte!",
+      message: translate(
         locale,
+        target ? "newsletter.thanksCheckEmailConfirm" : "newsletter.thanks",
       ),
     };
   }

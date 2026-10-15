@@ -3,14 +3,19 @@ import { randomUUID, randomBytes } from "node:crypto";
 import { Database } from "./database";
 import { EventsService } from "./events";
 import { userView } from "./auth";
-import type { Locale, Status } from "@tuevento/contracts";
+import {
+  defaultLocale,
+  notificationMessage,
+  type Locale,
+  type Status,
+} from "@tuevento/contracts";
 @Injectable()
 export class DemoService {
   constructor(
     private db: Database,
     private events: EventsService,
   ) {}
-  async create(locale: Locale = "es") {
+  async create(locale: Locale = defaultLocale) {
     if (process.env.DEMO_ENABLED !== "true") throw new NotFoundException();
     const id = randomUUID(),
       unique = randomBytes(8).toString("hex");
@@ -95,18 +100,21 @@ export class DemoService {
             "UPDATE members SET status=$1 WHERE invitation_id=$2",
             [status, invitation.id],
           );
-          if (i < 2 && index === 0)
+          if (i < 2 && index === 0) {
+            const counts = { accepted: invitation.members.length, declined: 0, pending: 0 };
             await this.db.query(
-              "INSERT INTO notifications(id,user_id,event_id,guest_name,message,created_at) VALUES($1,$2,$3,$4,$5,now()-($6 || ' minutes')::interval)",
+              "INSERT INTO notifications(id,user_id,event_id,guest_name,message,counts,created_at) VALUES($1,$2,$3,$4,$5,$6,now()-($7 || ' minutes')::interval)",
               [
                 randomUUID(),
                 id,
                 event.id,
                 name,
-                `${invitation.members.length} ${invitation.members.length === 1 ? "persona confirmó" : "personas confirmaron"} su asistencia.`,
+                notificationMessage(counts, defaultLocale),
+                JSON.stringify(counts),
                 String(i * 25 + 8),
               ],
             );
+          }
         }
       }
       return userView(row);

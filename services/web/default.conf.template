@@ -1,21 +1,9 @@
 # Frontend de producción: sirve la SPA detrás del gateway, que reenvía el Host original.
 # Las variables ${...} las sustituye el entrypoint de nginx al arrancar (solo RELEASE_SHA,
-# ver NGINX_ENVSUBST_FILTER). $site_lang, $site_origin, $origin_es y $origin_en los
-# define 17-sites.sh; $analytics_src, 16-analytics.sh.
+# ver NGINX_ENVSUBST_FILTER). $site_lang y $seo_links (canonical, hreflang de cada idioma
+# y tuevento:sites) los define 17-sites.sh a partir de packages/contracts;
+# $analytics_src, 16-analytics.sh.
 server_tokens off;
-
-# ── Rutas para canonical y hreflang ─────────────────────────────────
-# Ruta de la petición sin query. Solo caracteres seguros: se inserta en el HTML,
-# así que cualquier otra cosa se reduce a "/".
-map $request_uri $seo_raw_path {
-    "~^(?<seo_p>/[A-Za-z0-9/_.~-]*)(\?.*)?$" $seo_p;
-    default "/";
-}
-# Mapa común de rutas traducidas (el resto es igual en los dos idiomas).
-# Debe coincidir con el de packages/contracts y con 17-sites.sh.
-map $seo_raw_path $seo_path_es { default $seo_raw_path; /privacy /privacidad; /terms /condiciones; }
-map $seo_raw_path $seo_path_en { default $seo_raw_path; /privacidad /privacy; /condiciones /terms; }
-map $site_lang $seo_path { default $seo_path_es; en $seo_path_en; }
 
 server {
     # Puerto sin privilegios: no necesita NET_BIND_SERVICE
@@ -67,7 +55,7 @@ server {
         add_header Cache-Control "no-cache" always;
         add_header Vary "Host" always;
         sub_filter '<html lang="es">' '<html lang="$site_lang">';
-        sub_filter '<meta name="tuevento-seo"/>' '<link rel="canonical" href="$site_origin$seo_path"/><link rel="alternate" hreflang="es" href="$origin_es$seo_path_es"/><link rel="alternate" hreflang="en" href="$origin_en$seo_path_en"/><link rel="alternate" hreflang="x-default" href="$origin_es$seo_path_es"/><meta name="tuevento:sites" content="es=$origin_es en=$origin_en"/>';
+        sub_filter '<meta name="tuevento-seo"/>' '$seo_links';
         try_files $uri $uri/ /index.html;
     }
 }

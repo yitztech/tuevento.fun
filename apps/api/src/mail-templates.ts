@@ -1,4 +1,9 @@
-import type { Locale } from "@tuevento/contracts";
+import {
+  translate,
+  type Locale,
+  type MessageKey,
+  type MessageValues,
+} from "@tuevento/contracts";
 import type { MailMessage } from "./mail";
 
 const escape = (value: string) =>
@@ -46,62 +51,37 @@ export function passwordResetMail(
   locale: Locale,
   data: { to: string; name: string; url: string; site: string; minutes: number },
 ): MailMessage {
-  return locale === "en"
-    ? layout({
-        to: data.to,
-        site: data.site,
-        subject: "Reset your TuEventoFun password",
-        paragraphs: [
-          `Hi ${data.name},`,
-          "We received a request to reset the password for your account. Use the button below to choose a new one.",
-          `The link works once and expires in ${data.minutes} minutes.`,
-          "If you didn't ask for this, you can ignore this email: your password won't change.",
-        ],
-        action: { label: "Choose a new password", url: data.url },
-        footer: "You received this email because someone asked to reset the password of your account.",
-      })
-    : layout({
-        to: data.to,
-        site: data.site,
-        subject: "Restablece tu contraseña de TuEventoFun",
-        paragraphs: [
-          `Hola, ${data.name}:`,
-          "Recibimos una solicitud para restablecer la contraseña de tu cuenta. Usa el botón para elegir una nueva.",
-          `El enlace funciona una sola vez y caduca en ${data.minutes} minutos.`,
-          "Si no lo pediste tú, ignora este correo: tu contraseña no cambiará.",
-        ],
-        action: { label: "Elegir una contraseña nueva", url: data.url },
-        footer: "Recibes este correo porque alguien pidió restablecer la contraseña de tu cuenta.",
-      });
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.passwordReset.subject"),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.passwordReset.intro"),
+      t("mail.passwordReset.expiry", { minutes: data.minutes }),
+      t("mail.passwordReset.ignore"),
+    ],
+    action: { label: t("mail.passwordReset.action"), url: data.url },
+    footer: t("mail.passwordReset.footer"),
+  });
 }
 
 export function passwordChangedMail(
   locale: Locale,
   data: { to: string; name: string; site: string; resetUrl: string },
 ): MailMessage {
-  return locale === "en"
-    ? layout({
-        to: data.to,
-        site: data.site,
-        subject: "Your TuEventoFun password was changed",
-        paragraphs: [
-          `Hi ${data.name},`,
-          "The password for your account was just changed, and every open session was signed out.",
-          "If it wasn't you, reset your password right away.",
-        ],
-        action: { label: "Reset my password", url: data.resetUrl },
-        footer: "Security notice about your account.",
-      })
-    : layout({
-        to: data.to,
-        site: data.site,
-        subject: "Cambiaste tu contraseña de TuEventoFun",
-        paragraphs: [
-          `Hola, ${data.name}:`,
-          "La contraseña de tu cuenta acaba de cambiar y cerramos todas las sesiones abiertas.",
-          "Si no fuiste tú, restablece tu contraseña de inmediato.",
-        ],
-        action: { label: "Restablecer mi contraseña", url: data.resetUrl },
-        footer: "Aviso de seguridad sobre tu cuenta.",
-      });
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.passwordChanged.subject"),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.passwordChanged.intro"),
+      t("mail.passwordChanged.warning"),
+    ],
+    action: { label: t("mail.passwordChanged.action"), url: data.resetUrl },
+    footer: t("mail.passwordChanged.footer"),
+  });
 }

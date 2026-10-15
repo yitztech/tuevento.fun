@@ -1,4 +1,4 @@
-import { tr, LanguageSwitcher } from "./i18n";
+import { tr, LanguageSwitcher, RichText } from "./i18n";
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -62,18 +62,18 @@ export function PublicRsvp() {
     return (
       <div className="startup">
         <Logo />
-        <p role="status">{tr("Abriendo tu invitación…")}</p>
+        <p role="status">{tr("rsvp.openingInvitation")}</p>
       </div>
     );
   if (!invitation)
     return (
       <div className="startup">
         <Logo />
-        <h1>{tr("No encontramos tu invitación")}</h1>
+        <h1>{tr("rsvp.couldntFindInvitation")}</h1>
         <ErrorBox message={error} />
-        <p>{tr("Pide al anfitrión que te comparta de nuevo su enlace.")}</p>
+        <p>{tr("rsvp.askHostShareLink")}</p>
         <Link className="button secondary" to="/registro">
-          {tr("Crear mi propio evento")}
+          {tr("rsvp.createOwnEvent")}
         </Link>
       </div>
     );
@@ -83,12 +83,12 @@ export function PublicRsvp() {
       <header className="public-header">
         <Logo />
         <LanguageSwitcher />
-        <span>{tr("Un buen motivo para estar juntos.")}</span>
+        <span>{tr("rsvp.goodReasonTogether")}</span>
       </header>
       {invitation.isDemo && (
         <div className="public-demo">
           {tr(
-            "Invitación de demostración · Los nombres y datos son de ejemplo.",
+            "rsvp.demoInvitationNamesDetails",
           )}
         </div>
       )}
@@ -96,13 +96,13 @@ export function PublicRsvp() {
         <section className="public-art">
           <InvitationArt
             event={event}
-            name={tr("Para {{name}}", { name: invitation.name })}
+            name={tr("rsvp.forName", { name: invitation.name })}
             large
           />
           <div className="host-signature">
             <Avatar user={invitation.host} />
             <div>
-              <small>{tr("Con mucho cariño,")}</small>
+              <small>{tr("rsvp.withLove")}</small>
               <strong>
                 {invitation.host.firstName} {invitation.host.lastName}
               </strong>
@@ -114,11 +114,13 @@ export function PublicRsvp() {
           <span className="rsvp-heart">
             <Heart size={24} />
           </span>
-          <h1>{tr("Sin ti, no es lo mismo.")}</h1>
+          <h1>{tr("rsvp.wouldntSameWithout")}</h1>
           <p className="rsvp-greeting">
-            {tr("Hola,") + " "}
-            <strong>{invitation.name}</strong>
-            {tr(". Nos encantará compartir este momento contigo.")}
+            <RichText
+              k="rsvp.greeting"
+              values={{ name: invitation.name }}
+              components={{ strong: <strong /> }}
+            />
           </p>
           <div className="rsvp-details">
             <div>
@@ -151,7 +153,7 @@ export function PublicRsvp() {
                   rel="noreferrer"
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
                 >
-                  {tr("Ver ubicación")}
+                  {tr("rsvp.viewLocation")}
                   <ExternalLink size={13} />
                 </a>
               </p>
@@ -161,12 +163,12 @@ export function PublicRsvp() {
             <p className="host-message">{event.description}</p>
           )}
           <div className="rsvp-form">
-            <h2>{tr("¿Nos acompañas?")}</h2>
+            <h2>{tr("rsvp.joinUs")}</h2>
             <p>
               {invitation.members.length > 1
-                ? tr("Confirma la asistencia de cada integrante.")
+                ? tr("rsvp.confirmAttendanceEachMember")
                 : tr(
-                    "Elige tu respuesta y guárdala. Puedes cambiarla después.",
+                    "rsvp.chooseReplySaveChange",
                   )}
             </p>
             {invitation.members.length > 1 && (
@@ -182,7 +184,7 @@ export function PublicRsvp() {
                 }}
               >
                 <CheckCheckIcon />
-                {tr("Todos asistirán")}
+                {tr("rsvp.everyoneAttending")}
               </button>
             )}
             <div className="rsvp-members">
@@ -191,7 +193,7 @@ export function PublicRsvp() {
                   <legend>
                     {m.name}
                     <small>
-                      {m.kind === "child" ? tr("Niño") : tr("Adulto")}
+                      {m.kind === "child" ? tr("common.child") : tr("common.adult")}
                     </small>
                   </legend>
                   <div className="rsvp-options">
@@ -199,17 +201,17 @@ export function PublicRsvp() {
                       [
                         {
                           value: "accepted",
-                          label: tr("¡Sí, asistiré!"),
+                          label: tr("rsvp.yesIllThere"),
                           icon: Check,
                         },
                         {
                           value: "declined",
-                          label: tr("No podré ir"),
+                          label: tr("rsvp.cantMake"),
                           icon: X,
                         },
                         {
                           value: "pending",
-                          label: tr("En espera"),
+                          label: tr("status.pending"),
                           icon: Clock,
                         },
                       ] as const
@@ -237,10 +239,10 @@ export function PublicRsvp() {
               <div className="success-box" role="status">
                 <CheckCircle2 size={23} />
                 <div>
-                  <strong>{tr("¡Tu respuesta está guardada!")}</strong>
+                  <strong>{tr("rsvp.replySaved")}</strong>
                   <span>
                     {tr(
-                      "Tu anfitrión ya puede verla. Puedes modificarla cuando lo necesites.",
+                      "rsvp.hostSeeNowChange",
                     )}
                   </span>
                 </div>
@@ -252,32 +254,32 @@ export function PublicRsvp() {
               disabled={busy || saved}
             >
               {busy
-                ? tr("Guardando tu respuesta…")
+                ? tr("rsvp.savingReply")
                 : saved
-                  ? tr("Respuesta guardada")
-                  : tr("Guardar mi respuesta")}
+                  ? tr("rsvp.replySavedShort")
+                  : tr("rsvp.saveReply")}
               <Check size={18} />
             </button>
             <small className="rsvp-no-account">
-              {tr("Sin registros. Solo las ganas de compartir el momento.")}
+              {tr("rsvp.noAccountNeededJust")}
             </small>
           </div>
         </section>
       </main>
       <section className="public-cta">
         <div>
-          <h2>{tr("Ahora, el motivo lo pones tú.")}</h2>
+          <h2>{tr("rsvp.nowTurnCelebrate")}</h2>
           <p>
-            {tr("Crea una invitación especial para tu próxima celebración.")}
+            {tr("rsvp.createSpecialInvitationNext")}
           </p>
         </div>
         <Link className="button" to="/registro">
-          {tr("Crear mi propio evento")}
+          {tr("rsvp.createOwnEvent")}
           <ArrowRight size={17} />
         </Link>
       </section>
       <footer className="public-footer">
-        {tr("Con cariño y TuEventoFun") + " "}
+        {tr("rsvp.loveTueventofun") + " "}
         <Heart size={13} />
       </footer>
     </div>

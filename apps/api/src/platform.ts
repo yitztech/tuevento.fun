@@ -36,7 +36,7 @@ export class PlatformController {
   }
   @Get('owner/metrics') async metrics(@Req() req: FastifyRequest, @Query('days') raw?: string) {
     const user = await this.auth.current(req);
-    if (!user.isOwner || user.isDemo) throw new ForbiddenException('Acceso exclusivo del dueño del sistema.');
+    if (!user.isOwner || user.isDemo) throw new ForbiddenException('errors.accessRestrictedSystemOwner');
     const days = parse(z.coerce.number().int().min(1).max(90).default(30), raw,req);
     const counts = `count(*) FILTER(WHERE kind='visit')::int AS visits, count(*) FILTER(WHERE kind='registration')::int AS registrations, count(*) FILTER(WHERE kind='login')::int AS logins, count(*) FILTER(WHERE kind='download')::int AS downloads`;
     const where = "created_at >= (date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') - (($1::int-1)*interval '1 day')";
@@ -68,7 +68,7 @@ export class PlatformController {
   @Post('releases/:id/download') async download(@Param('id') id: string, @Req() req: FastifyRequest) {
     parse(z.uuid(),id,req);
     const [release] = await this.db.query('SELECT id FROM app_releases WHERE id=$1',[id]);
-    if (!release) throw new BadRequestException('Versión no encontrada.');
+    if (!release) throw new BadRequestException('errors.releaseNotFound');
     await this.db.query("INSERT INTO activity(id,kind,platform,route) VALUES($1,'download',$2,$3)",[randomUUID(),clientPlatform(req),id]);
     return {ok:true};
   }
@@ -78,7 +78,7 @@ export class PlatformController {
     if (!expected || expected.length < 32 || !supplied || !timingSafeEqual(createHash('sha256').update(expected).digest(),createHash('sha256').update(supplied).digest())) throw new UnauthorizedException();
     const v = parse(releaseSchema, body,req);
     const allowed = (process.env.RELEASE_DOWNLOAD_HOSTS || 'github.com,apps.apple.com,testflight.apple.com,play.google.com').split(',');
-    if (!allowed.includes(new URL(v.url).hostname)) throw new BadRequestException('Host de descarga no permitido.');
+    if (!allowed.includes(new URL(v.url).hostname)) throw new BadRequestException('errors.downloadHostNotAllowed');
     const [r] = await this.db.query(`INSERT INTO app_releases(id,platform,version,build,channel,url,sha256,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8)
       ON CONFLICT(platform,channel,build) DO UPDATE SET version=EXCLUDED.version,url=EXCLUDED.url,sha256=EXCLUDED.sha256,notes=EXCLUDED.notes,published_at=now() RETURNING id`,[randomUUID(),v.platform,v.version,v.build,v.channel,v.url,v.sha256 || null,v.notes]);
     return r;

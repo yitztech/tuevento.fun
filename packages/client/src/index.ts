@@ -9,6 +9,7 @@ import type {
   RegisterInput,
   ProfileInput,
   Status,
+  Locale,
 } from "@tuevento/contracts";
 export class ApiError extends Error {
   constructor(
@@ -24,7 +25,7 @@ export type ApiOptions = {
   baseUrl: string;
   platform?: "web" | "android" | "ios";
   appVersion?: string;
-  locale?: "es" | "en" | (() => "es" | "en");
+  locale?: Locale | (() => Locale);
   fetch?: typeof globalThis.fetch;
 };
 /**
@@ -59,7 +60,7 @@ export class EventApi {
         response.status,
         typeof data.message === "string"
           ? data.message
-          : "No se pudo completar la solicitud.",
+          : "common.couldntCompleteRequest",
         data.fields,
       );
     return data;

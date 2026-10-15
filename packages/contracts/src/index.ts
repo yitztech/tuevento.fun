@@ -1,5 +1,6 @@
 import { z } from "zod";
-z.config(z.locales.es());
+import { defaultLocale, locales, type Locale, type MessageKey } from "./i18n";
+z.config(z.locales[locales[defaultLocale].zod]());
 
 export const themeIds = [
   "gold",
@@ -14,57 +15,57 @@ export type Status = z.infer<typeof statusSchema>;
 export const themes = [
   {
     id: "gold",
-    name: "Elegante Dorado",
-    description: "Brindis que merecen brillar",
+    name: "themes.gold.name",
+    description: "themes.gold.description",
     image: "gold.jpg",
     color: "#d9b967",
   },
   {
     id: "neon",
-    name: "Fiesta Neón",
-    description: "La noche apenas empieza",
+    name: "themes.neon.name",
+    description: "themes.neon.description",
     image: "neon.jpg",
     color: "#b3a0ec",
   },
   {
     id: "tropical",
-    name: "Tropical",
-    description: "Al sol, entre amigos",
+    name: "themes.tropical.name",
+    description: "themes.tropical.description",
     image: "tropical.jpg",
     color: "#92a2c8",
   },
   {
     id: "minimal",
-    name: "Minimalista",
-    description: "Lo especial está en los detalles",
+    name: "themes.minimal.name",
+    description: "themes.minimal.description",
     image: "minimal.jpg",
     color: "#bfccdc",
   },
   {
     id: "floral",
-    name: "Bodas Florales",
-    description: "Un sí lleno de flores",
+    name: "themes.floral.name",
+    description: "themes.floral.description",
     image: "floral.jpg",
     color: "#edb7c9",
   },
   {
     id: "kids",
-    name: "Infantil",
-    description: "Un mundo por celebrar",
+    name: "themes.kids.name",
+    description: "themes.kids.description",
     image: "kids.jpg",
     color: "#f3d579",
   },
 ] as const;
 const email = z
-  .email("Escribe un correo válido.")
+  .email("validation.enterValidEmailAddress")
   .max(254)
   .transform((v) => v.toLowerCase().trim());
 const phone = z
   .string()
   .trim()
-  .min(7, "Escribe un teléfono válido.")
+  .min(7, "validation.enterValidPhoneNumber")
   .max(25)
-  .regex(/^[+\d\s()-]+$/, "Usa números, espacios o +.");
+  .regex(/^[+\d\s()-]+$/, "validation.useNumbersSpaces");
 const optionalEmail = z
   .union([email, z.literal("")])
   .optional()
@@ -76,8 +77,8 @@ const optionalPhone = z
 const name = z
   .string()
   .trim()
-  .min(2, "Escribe al menos 2 caracteres.")
-  .max(100, "Máximo 100 caracteres.");
+  .min(2, "validation.enterLeast2Characters")
+  .max(100, "validation.maximum100Characters");
 export const registerSchema = z.object({
   firstName: name,
   lastName: name,
@@ -86,14 +87,14 @@ export const registerSchema = z.object({
   username: z
     .string()
     .trim()
-    .min(3, "Usa al menos 3 caracteres.")
-    .max(32, "Usa como máximo 32 caracteres.")
-    .regex(/^[a-zA-Z0-9_.-]+$/, "Usa letras, números, punto o guion."),
-  password: z.string().min(10, "Usa al menos 10 caracteres.").max(128),
+    .min(3, "validation.useLeast3Characters")
+    .max(32, "validation.useNoMoreThan")
+    .regex(/^[a-zA-Z0-9_.-]+$/, "validation.useLettersNumbersPeriods"),
+  password: z.string().min(10, "validation.useLeast10Characters").max(128),
 });
 export const loginSchema = z.object({
   email,
-  password: z.string().min(1, "Escribe tu contraseña.").max(128),
+  password: z.string().min(1, "validation.enterPassword").max(128),
 });
 export const profileSchema = z.object({
   firstName: name,
@@ -102,8 +103,8 @@ export const profileSchema = z.object({
   username: z
     .string()
     .trim()
-    .min(3, "Usa al menos 3 caracteres.")
-    .max(32, "Usa como máximo 32 caracteres.")
+    .min(3, "validation.useLeast3Characters")
+    .max(32, "validation.useNoMoreThan")
     .regex(/^[a-zA-Z0-9_.-]+$/),
 });
 /** Rutas de recuperación de contraseña (iguales en los dos dominios, como /acceso). */
@@ -117,8 +118,8 @@ export const forgotPasswordSchema = z.object({ email });
 export const resetPasswordSchema = z.object({
   token: z
     .string()
-    .regex(/^[A-Za-z0-9_-]{43}$/, "El enlace para cambiar la contraseña no es válido o caducó."),
-  password: z.string().min(10, "Usa al menos 10 caracteres.").max(128),
+    .regex(/^[A-Za-z0-9_-]{43}$/, "common.passwordResetLinkInvalid"),
+  password: z.string().min(10, "validation.useLeast10Characters").max(128),
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export const newsletterSchema = z.object({
@@ -131,7 +132,7 @@ export const eventSchema = z.object({
   description: z.string().trim().max(2500).default(""),
   date: z.iso.datetime({
     offset: true,
-    message: "Selecciona fecha y hora válidas.",
+    message: "validation.chooseValidDateTime",
   }),
   timeZone: z
     .string()
@@ -143,8 +144,8 @@ export const eventSchema = z.object({
       } catch {
         return false;
       }
-    }, "Zona horaria inválida."),
-  location: z.string().trim().min(3, "Indica el lugar del evento.").max(300),
+    }, "validation.invalidTimeZone"),
+  location: z.string().trim().min(3, "validation.enterEventLocation").max(300),
   theme: z.enum(themeIds),
   archived: z.boolean().default(false),
 });
@@ -163,7 +164,7 @@ export const invitationSchema = z
     kind: z.enum(["individual", "family"]),
     members: z
       .array(memberSchema)
-      .min(1, "Añade al menos una persona.")
+      .min(1, "validation.addLeastOnePerson")
       .max(50),
   })
   .superRefine((v, ctx) => {
@@ -171,20 +172,20 @@ export const invitationSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["name"],
-        message: "Indica nombre, teléfono o correo.",
+        message: "validation.enterNamePhoneNumber",
       });
     if (v.kind === "individual" && v.members.length !== 1)
       ctx.addIssue({
         code: "custom",
         path: ["members"],
-        message: "Una invitación individual tiene una persona.",
+        message: "validation.individualInvitationMustHave",
       });
     const ids = v.members.map((m) => m.id).filter(Boolean);
     if (new Set(ids).size !== ids.length)
       ctx.addIssue({
         code: "custom",
         path: ["members"],
-        message: "Hay integrantes repetidos.",
+        message: "validation.thereDuplicateMembers",
       });
   });
 export const rsvpSchema = z
@@ -196,7 +197,7 @@ export const rsvpSchema = z
   })
   .refine(
     (v) => new Set(v.members.map((m) => m.id)).size === v.members.length,
-    "Hay integrantes repetidos.",
+    "validation.thereDuplicateMembers",
   );
 export type EventInput = z.infer<typeof eventSchema>;
 export type InvitationInput = z.infer<typeof invitationSchema>;
@@ -213,7 +214,7 @@ export type User = {
   isOwner?: boolean;
   isDemo: boolean;
   /** Idioma de la cuenta: el del dominio donde se registró. */
-  locale: "es" | "en";
+  locale: Locale;
 };
 export type Metrics = {
   invitations: number;
@@ -290,18 +291,13 @@ export function countMetrics(
     }
   return result;
 }
-export const statusLabels: Record<Status, string> = {
-  accepted: "Confirmados",
-  declined: "No asistirán",
-  pending: "En espera",
-};
+export const statusLabels = {
+  accepted: "status.accepted",
+  declined: "status.declined",
+  pending: "status.pending",
+} as const satisfies Record<Status, MessageKey>;
 
 export * from "./i18n";
-
-/** Per-parse locale: no global language mutation across simultaneous API requests. */
-export const validationOptions = (locale: "es" | "en") => ({
-  error: (locale === "en" ? z.locales.en() : z.locales.es()).localeError,
-});
 
 export const clientPlatformSchema = z.enum(["web", "android", "ios"]);
 export type ClientPlatform = z.infer<typeof clientPlatformSchema>;
@@ -309,12 +305,12 @@ export const visitSchema = z.object({ visitorId: z.uuid(), route: z.enum(["landi
 export const releaseSchema = z.object({
   platform: z.enum(["android", "ios"]), version: z.string().regex(/^\d+\.\d+\.\d+$/),
   build: z.number().int().positive(), channel: z.enum(["direct", "testflight", "store"]),
-  url: z.url().refine(v => new URL(v).protocol === "https:", "Usa HTTPS."),
+  url: z.url().refine(v => new URL(v).protocol === "https:", "validation.useHttps"),
   sha256: z.string().regex(/^[a-f0-9]{64}$/).optional(), notes: z.string().max(2000).default(""),
 }).superRefine((v, ctx) => {
   const host = new URL(v.url).hostname;
   if (v.platform === "ios" && !(v.channel === "testflight" && host === "testflight.apple.com" || v.channel === "store" && host === "apps.apple.com"))
-    ctx.addIssue({code:"custom", message:"iOS requiere TestFlight o App Store."});
+    ctx.addIssue({code:"custom", message:"validation.iosRequiresTestflightApp"});
   if (v.platform === "android" && (v.channel === "testflight" || v.channel === "direct" && !v.sha256 || v.channel === "store" && host !== "play.google.com"))
     ctx.addIssue({code:"custom", message:"Revisa el canal y la suma SHA-256 de Android."});
 });

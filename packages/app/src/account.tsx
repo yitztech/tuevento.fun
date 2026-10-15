@@ -1,5 +1,5 @@
 import { validationOptions } from "@tuevento/contracts";
-import { tr, getLocale, LanguageSwitcher } from "./i18n";
+import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -45,13 +45,13 @@ function usePostAuthTarget() {
 }
 async function readAvatar(file: File): Promise<string> {
   if (file.size > 2 * 1024 * 1024)
-    throw new Error(tr("Elige una imagen de hasta 2 MB."));
+    throw new Error(tr("account.chooseImageNoLarger"));
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
-    throw new Error(tr("Elige una imagen JPG, PNG o WebP."));
+    throw new Error(tr("account.chooseJpgPngWebp"));
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error(tr("No se pudo leer la imagen.")));
+    reader.onerror = () => reject(new Error(tr("account.couldntReadImage")));
     reader.readAsDataURL(file);
   });
 }
@@ -66,24 +66,20 @@ function AuthShell({ children }: { children: React.ReactNode }) {
             <Heart size={30} />
           </span>
           <h1>
-            {tr("Que no falte")}
-            <br />
-            {tr("nadie en tus")}
-            <br />
-            {tr("mejores historias.")}
+            <Lines k="account.heroTitle" />
           </h1>
           <p>
-            {tr("Invita, reúne y celebra.")}
+            {tr("account.inviteGatherCelebrate")}
             <br />
-            {tr("Los recuerdos empiezan aquí.")}
+            {tr("account.memoriesStartHere")}
           </p>
         </div>
         <img
           src="/images/gold.jpg"
-          alt={tr("Flores y copas en una mesa preparada para una celebración")}
+          alt={tr("account.flowersGlassesTableSet")}
         />
         <span className="auth-story-footer">
-          {tr("TuEventoFun · Hecho para compartir momentos.")}
+          {tr("account.tueventofunMadeSharedMoments")}
         </span>
       </section>
       <section className="auth-form-wrap">
@@ -92,7 +88,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
         </div>
         <Link className="back-link" to="/">
           <ArrowLeft size={16} />
-          {tr("Volver al inicio")}
+          {tr("common.backHome")}
         </Link>
         <Container width="auth" className="auth-form">
           {children}
@@ -136,7 +132,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
         } catch (e) {
           toast(
             tr(
-              "Tu cuenta está lista. {{error}} Puedes añadir la foto en tu perfil.",
+              "account.accountReadyErrorAdd",
               { error: errorText(e) },
             ),
           );
@@ -163,24 +159,24 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     <AuthShell>
           <h2>
             {registerMode
-              ? tr("Empieza algo bonito.")
-              : tr("Qué bueno verte de nuevo.")}
+              ? tr("account.startSomethingWonderful")
+              : tr("account.goodSeeAgain")}
           </h2>
           <p>
             {registerMode
-              ? tr("Crea tu cuenta y prepara tu primera celebración.")
-              : tr("Tus eventos y tus personas te están esperando.")}
+              ? tr("account.createAccountPlanFirst")
+              : tr("account.eventsPeopleWaiting")}
           </p>
           <GoogleLogin onError={setError} />
           <div className="or-divider">
-            <span>{tr("o continúa con tu correo")}</span>
+            <span>{tr("account.continueEmail")}</span>
           </div>
           <form onSubmit={submit} noValidate>
             {registerMode && (
               <>
                 <div className="form-row">
                   <Field
-                    label={tr("Nombre")}
+                    label={tr("common.firstName")}
                     error={form.formState.errors.firstName?.message}
                   >
                     <input
@@ -189,7 +185,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                     />
                   </Field>
                   <Field
-                    label={tr("Apellidos")}
+                    label={tr("common.lastName")}
                     error={form.formState.errors.lastName?.message}
                   >
                     <input
@@ -200,7 +196,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 </div>
                 <div className="form-row">
                   <Field
-                    label={tr("Teléfono")}
+                    label={tr("common.phone")}
                     error={form.formState.errors.phone?.message}
                   >
                     <input
@@ -210,7 +206,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                     />
                   </Field>
                   <Field
-                    label={tr("Nombre de usuario")}
+                    label={tr("common.username")}
                     error={form.formState.errors.username?.message}
                   >
                     <input
@@ -222,7 +218,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               </>
             )}
             <Field
-              label={tr("Correo electrónico")}
+              label={tr("common.email")}
               error={form.formState.errors.email?.message}
             >
               <input
@@ -232,11 +228,11 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               />
             </Field>
             <Field
-              label={tr("Contraseña")}
+              label={tr("common.password")}
               error={form.formState.errors.password?.message}
               hint={
                 registerMode
-                  ? tr("Al menos 10 caracteres. Usa una contraseña única.")
+                  ? tr("account.least10CharactersUse")
                   : undefined
               }
             >
@@ -254,8 +250,8 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={
                     showPassword
-                      ? tr("Ocultar contraseña")
-                      : tr("Mostrar contraseña")
+                      ? tr("account.hidePassword")
+                      : tr("account.showPassword")
                   }
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -265,25 +261,25 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
             {!registerMode && (
               <p className="auth-forgot">
                 <Link to={passwordResetPaths.request}>
-                  {tr("¿Olvidaste tu contraseña?")}
+                  {tr("account.forgotPassword")}
                 </Link>
               </p>
             )}
             {registerMode && (
               <label className="upload-inline">
                 {avatar ? (
-                  <img src={avatar} alt={tr("Vista previa de tu avatar")} />
+                  <img src={avatar} alt={tr("account.avatarPreview")} />
                 ) : (
                   <Upload size={20} />
                 )}
                 <span>
-                  {tr("Tu foto o logotipo")}{" "}
-                  <small>{tr("Opcional · JPG, PNG o WebP · Hasta 2 MB")}</small>
+                  {tr("account.photoLogo")}{" "}
+                  <small>{tr("account.optionalJpgPngWebp")}</small>
                 </span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  aria-label={tr("Cargar avatar de registro")}
+                  aria-label={tr("account.uploadProfileImage")}
                   onChange={async (e) => {
                     if (e.target.files?.[0])
                       try {
@@ -302,26 +298,26 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting
-                ? tr("Un momento…")
+                ? tr("account.justMoment")
                 : registerMode
-                  ? tr("Crear mi cuenta")
-                  : tr("Entrar a mi espacio")}
+                  ? tr("common.createMyAccount")
+                  : tr("common.signSpace")}
               <ArrowRight size={18} />
             </button>
           </form>
           <p className="auth-switch">
             {registerMode
-              ? tr("¿Ya tienes una cuenta?")
-              : tr("¿Tu primera vez aquí?")}{" "}
+              ? tr("account.alreadyHaveAccount")
+              : tr("account.firstTimeHere")}{" "}
             <Link to={`${registerMode ? "/acceso" : "/registro"}${search}`}>
-              {registerMode ? tr("Inicia sesión") : tr("Crea tu cuenta")}
+              {registerMode ? tr("account.signIn") : tr("account.createAccount")}
             </Link>
           </p>
           {config.demoEnabled && (
             <button className="demo-button" disabled={demoBusy} onClick={demo}>
               {demoBusy
-                ? tr("Preparando demostración…")
-                : tr("Explorar la demostración")}
+                ? tr("account.gettingDemoReady")
+                : tr("common.exploreDemo")}
               <ArrowRight size={16} />
             </button>
           )}
@@ -348,24 +344,24 @@ export function ForgotPasswordPage() {
   });
   return (
     <AuthShell>
-      <h2>{tr("Recupera tu acceso.")}</h2>
+      <h2>{tr("account.getBackIntoAccount")}</h2>
       <p>
         {tr(
-          "Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.",
+          "account.enterAccountEmailWell",
         )}
       </p>
       {sent ? (
         <div className="success-box" role="status">
           <MailCheck size={22} />
           <div>
-            <strong>{tr("Revisa tu correo")}</strong>
+            <strong>{tr("account.checkEmail")}</strong>
             <span>{sent}</span>
           </div>
         </div>
       ) : (
         <form onSubmit={submit} noValidate>
           <Field
-            label={tr("Correo electrónico")}
+            label={tr("common.email")}
             error={form.formState.errors.email?.message}
           >
             <input type="email" autoComplete="email" {...form.register("email")} />
@@ -373,14 +369,14 @@ export function ForgotPasswordPage() {
           {error && <ErrorBox message={error} />}
           <button className="button full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting
-              ? tr("Un momento…")
-              : tr("Enviarme el enlace")}
+              ? tr("account.justMoment")
+              : tr("account.sendMeLink")}
             <ArrowRight size={18} />
           </button>
         </form>
       )}
       <p className="auth-switch">
-        {tr("¿Ya la recordaste?")} <Link to="/acceso">{tr("Inicia sesión")}</Link>
+        {tr("account.remembered")} <Link to="/acceso">{tr("account.signIn")}</Link>
       </p>
     </AuthShell>
   );
@@ -406,7 +402,7 @@ export function ResetPasswordPage() {
     setError("");
     try {
       setUser(await api.resetPassword(data.token, data.password));
-      toast(tr("Listo: tu contraseña cambió y cerramos tus otras sesiones."));
+      toast(tr("account.donePasswordChangedOther"));
       navigate("/app");
     } catch (e) {
       setError(errorText(e));
@@ -415,23 +411,23 @@ export function ResetPasswordPage() {
   const invalid = !/^[A-Za-z0-9_-]{43}$/.test(token);
   return (
     <AuthShell>
-      <h2>{tr("Elige una contraseña nueva.")}</h2>
+      <h2>{tr("account.chooseNewPassword")}</h2>
       {invalid ? (
         <>
-          <ErrorBox message="El enlace para cambiar la contraseña no es válido o caducó." />
+          <ErrorBox message="common.passwordResetLinkInvalid" />
           <Link className="button full" to={passwordResetPaths.request}>
-            {tr("Pedir un enlace nuevo")}
+            {tr("account.requestNewLink")}
             <ArrowRight size={18} />
           </Link>
         </>
       ) : (
         <>
-          <p>{tr("Al guardarla cerraremos las sesiones abiertas en otros dispositivos.")}</p>
+          <p>{tr("account.savingSignOutOther")}</p>
           <form onSubmit={submit} noValidate>
             <Field
-              label={tr("Contraseña nueva")}
+              label={tr("account.newPassword")}
               error={form.formState.errors.password?.message}
-              hint={tr("Al menos 10 caracteres. Usa una contraseña única.")}
+              hint={tr("account.least10CharactersUse")}
             >
               <span className="password-input">
                 <input
@@ -444,7 +440,7 @@ export function ResetPasswordPage() {
                   className="icon-button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={
-                    showPassword ? tr("Ocultar contraseña") : tr("Mostrar contraseña")
+                    showPassword ? tr("account.hidePassword") : tr("account.showPassword")
                   }
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -455,12 +451,12 @@ export function ResetPasswordPage() {
               <>
                 <ErrorBox message={error} />
                 <p className="auth-forgot">
-                  <Link to={passwordResetPaths.request}>{tr("Pedir un enlace nuevo")}</Link>
+                  <Link to={passwordResetPaths.request}>{tr("account.requestNewLink")}</Link>
                 </p>
               </>
             )}
             <button className="button full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? tr("Un momento…") : tr("Guardar y entrar")}
+              {form.formState.isSubmitting ? tr("account.justMoment") : tr("account.saveAndSignIn")}
               <ArrowRight size={18} />
             </button>
           </form>
@@ -521,7 +517,7 @@ function GoogleLogin({ onError }: { onError: (error: string) => void }) {
       script.addEventListener("error", () =>
         onError(
           tr(
-            "No se pudo conectar con Google. Usa tu correo o inténtalo de nuevo.",
+            "account.couldntConnectGoogleUse",
           ),
         ),
       );
@@ -531,7 +527,7 @@ function GoogleLogin({ onError }: { onError: (error: string) => void }) {
       script?.removeEventListener("load", init);
     };
   }, [config.googleClientId, getLocale(), postAuthTarget]);
-  if (runtime.startNativeLogin && config.googleClientId) return <button type="button" className="google-button" onClick={() => { void runtime.startNativeLogin!().catch(e=>onError(errorText(e))); }}>{tr("Continuar con Google")}</button>;
+  if (runtime.startNativeLogin && config.googleClientId) return <button type="button" className="google-button" onClick={() => { void runtime.startNativeLogin!().catch(e=>onError(errorText(e))); }}>{tr("account.continueGoogle")}</button>;
   if (!config.googleClientId)
     return (
       <div className="google-unavailable">
@@ -554,9 +550,9 @@ function GoogleLogin({ onError }: { onError: (error: string) => void }) {
               fill="#ea4335"
             />
           </svg>
-          {tr("Continuar con Google")}
+          {tr("account.continueGoogle")}
         </button>
-        <small>{tr("Este acceso aún no está habilitado.")}</small>
+        <small>{tr("account.signOptionIsntEnabled")}</small>
       </div>
     );
   return <div ref={ref} className="google-container" />;
@@ -582,7 +578,7 @@ export function ProfilePage() {
     setError("");
     try {
       setUser(await api.profile(data));
-      toast(tr("Tu perfil está actualizado."));
+      toast(tr("account.profileUpdated"));
     } catch (e) {
       setError(errorText(e));
     }
@@ -591,8 +587,8 @@ export function ProfilePage() {
     <>
       <div className="page-heading">
         <div>
-          <h1>{tr("El alma de la fiesta.")}</h1>
-          <p>{tr("Así te conocerán tus invitados.")}</p>
+          <h1>{tr("account.heartCelebration")}</h1>
+          <p>{tr("account.howGuestsSee")}</p>
         </div>
       </div>
       <div className="profile-layout">
@@ -602,15 +598,15 @@ export function ProfilePage() {
             {user.firstName} {user.lastName}
           </h2>
           <p>
-            {user.isDemo ? tr("Anfitriona de demostración") : tr("Anfitrión")}
+            {user.isDemo ? tr("account.demoHost") : tr("common.host")}
           </p>
           <label className="button secondary upload-button">
             <Upload size={17} />
-            {uploading ? tr("Cargando…") : tr("Cambiar foto o logo")}
+            {uploading ? tr("common.loadingEllipsis") : tr("account.changePhotoLogo")}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              aria-label={tr("Cambiar foto o logo")}
+              aria-label={tr("account.changePhotoLogo")}
               disabled={uploading}
               onChange={async (e) => {
                 const file = e.target.files?.[0];
@@ -619,7 +615,7 @@ export function ProfilePage() {
                 setError("");
                 try {
                   setUser(await api.avatar(await readAvatar(file)));
-                  toast(tr("Imagen actualizada."));
+                  toast(tr("account.imageUpdated"));
                 } catch (error) {
                   setError(errorText(error));
                 } finally {
@@ -628,36 +624,36 @@ export function ProfilePage() {
               }}
             />
           </label>
-          <small>{tr("JPG, PNG o WebP · Hasta 2 MB")}</small>
+          <small>{tr("account.jpgPngWebp2")}</small>
         </aside>
         <form onSubmit={submit} className="form-panel" noValidate>
-          <h2>{tr("Tu información")}</h2>
+          <h2>{tr("account.yourInformation")}</h2>
           <div className="form-row">
             <Field
-              label={tr("Nombre")}
+              label={tr("common.firstName")}
               error={form.formState.errors.firstName?.message}
             >
               <input {...form.register("firstName")} />
             </Field>
             <Field
-              label={tr("Apellidos")}
+              label={tr("common.lastName")}
               error={form.formState.errors.lastName?.message}
             >
               <input {...form.register("lastName")} />
             </Field>
           </div>
-          <Field label={tr("Correo electrónico")}>
+          <Field label={tr("common.email")}>
             <input value={user.email} readOnly type="email" />
           </Field>
           <div className="form-row">
             <Field
-              label={tr("Teléfono")}
+              label={tr("common.phone")}
               error={form.formState.errors.phone?.message}
             >
               <input type="tel" {...form.register("phone")} />
             </Field>
             <Field
-              label={tr("Nombre de usuario")}
+              label={tr("common.username")}
               error={form.formState.errors.username?.message}
             >
               <input {...form.register("username")} />
@@ -667,8 +663,8 @@ export function ProfilePage() {
           <div className="form-actions">
             <button className="button" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting
-                ? tr("Guardando…")
-                : tr("Guardar cambios")}
+                ? tr("common.saving")
+                : tr("common.saveChanges")}
               <Check size={17} />
             </button>
           </div>

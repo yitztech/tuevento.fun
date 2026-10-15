@@ -1,4 +1,4 @@
-import { tr } from "./i18n";
+import { tr, Lines } from "./i18n";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -51,33 +51,32 @@ export function Dashboard() {
       <div className="page-heading">
         <div>
           <p className="greeting">
-            {tr("Hola,") + " "}
-            {user?.firstName}{" "}
+            {tr("common.helloName", { name: user?.firstName ?? "" })}{" "}
             <span className="greeting-spark">
               <Sparkles size={16} />
             </span>
           </p>
-          <h1>{tr("La vida se celebra juntos.")}</h1>
+          <h1>{tr("dashboard.lifeBetterCelebratedTogether")}</h1>
           <p>
             {tr(
-              "Un espacio para tus planes y las personas que los hacen especiales.",
+              "dashboard.spacePlansPeopleWho",
             )}
           </p>
         </div>
         <Link to="/eventos/nuevo" className="button">
           <Plus size={18} />
-          {tr("Crear evento")}
+          {tr("dashboard.createEvent")}
         </Link>
       </div>
       {user?.isDemo && (
         <div className="demo-notice" role="note">
           <p>
             {tr(
-              "Estás explorando una demostración. Los eventos y sus datos son de ejemplo.",
+              "dashboard.exploringDemoEventsTheir",
             )}
           </p>
           <Link to="/registro">
-            {tr("Crear mi cuenta")}
+            {tr("common.createMyAccount")}
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -85,18 +84,14 @@ export function Dashboard() {
       <section className="welcome-banner">
         <div className="welcome-copy">
           <h2>
-            {tr("Tú imagina el momento.")}
-            <br />
-            {tr("Nosotros te ayudamos")}
-            <br />
-            {tr("a reunirlos.")}
+            <Lines k="dashboard.welcomeTitle" />
           </h2>
           <p>
-            {tr("Invitaciones con tu estilo. Todos tus invitados.")} <br />
-            {tr("Y cada detalle, en su lugar.")}
+            {tr("dashboard.invitationsStyleAllFavorite")} <br />
+            {tr("dashboard.everyDetailTakenCare")}
           </p>
           <Link to="/disenos" className="button pink">
-            {tr("Encuentra tu invitación") + " "}
+            {tr("dashboard.findInvitation") + " "}
             <ArrowUpRight size={18} />
           </Link>
         </div>
@@ -104,7 +99,7 @@ export function Dashboard() {
           <img
             src="/images/gold.jpg"
             alt={tr(
-              "Mesa festiva con flores coloridas y copas listas para celebrar",
+              "dashboard.celebrationTableColorfulFlowers",
             )}
             fetchPriority="high"
           />
@@ -113,8 +108,8 @@ export function Dashboard() {
               <Heart size={19} />
             </span>
             <div>
-              <strong>{tr("Los detalles hacen la fiesta.")}</strong>
-              <small>{tr("Lo importante es estar juntos.")}</small>
+              <strong>{tr("dashboard.detailsMakeParty")}</strong>
+              <small>{tr("dashboard.beingTogetherWhatMatters")}</small>
             </div>
           </div>
         </div>
@@ -123,17 +118,17 @@ export function Dashboard() {
         </div>
       </section>
       <div className="summary-label">
-        <h2>{tr("Así van tus celebraciones")}</h2>
+        <h2>{tr("dashboard.celebrationsGlance")}</h2>
         <span>
           <span className="dot accepted" />
-          {tr("Actualizado en vivo")}
+          {tr("dashboard.liveUpdates")}
         </span>
       </div>
       <Stats metrics={metrics} />
       <section className="events-section">
-        <SectionHeading title={tr("Tus próximos eventos")}>
+        <SectionHeading title={tr("dashboard.upcomingEvents")}>
           <ArrowLink to="/eventos">
-            {tr("Ver todos") + " "}
+            {tr("dashboard.viewAll") + " "}
             <span className="count-inline">{active.length}</span>
           </ArrowLink>
         </SectionHeading>
@@ -145,24 +140,24 @@ export function Dashboard() {
           </div>
         ) : (
           <Empty
-            title={tr("Tu próxima historia empieza aquí")}
+            title={tr("dashboard.nextStoryStartsHere")}
             action={
               <Link className="button" to="/eventos/nuevo">
                 <Plus size={17} />
-                {tr("Crear mi primer evento")}
+                {tr("common.createFirstEvent")}
               </Link>
             }
           >
             {tr(
-              "Elige una fecha, invita a tus personas favoritas y deja que empiece la celebración.",
+              "dashboard.pickDateInviteFavorite",
             )}
           </Empty>
         )}
       </section>
       <div className="dashboard-lower">
         <section className="activity-section">
-          <SectionHeading title={tr("Las últimas noticias")}>
-            <ArrowLink to="/notificaciones">{tr("Ver actividad")}</ArrowLink>
+          <SectionHeading title={tr("dashboard.latestUpdates")}>
+            <ArrowLink to="/notificaciones">{tr("dashboard.viewActivity")}</ArrowLink>
           </SectionHeading>
           {notifications.length ? (
             <div className="activity-list">
@@ -191,7 +186,7 @@ export function Dashboard() {
             </div>
           ) : (
             <p className="muted empty-small">
-              {tr("Cuando alguien responda, aquí te enterarás primero.")}
+              {tr("dashboard.whenSomeoneRepliesYoull")}
             </p>
           )}
         </section>
@@ -201,35 +196,27 @@ export function Dashboard() {
               <PartyPopper size={25} />
             </span>
             <h2>
-              {tr("Cada fiesta tiene")}
-              <br />
-              {tr("su propia personalidad.")}
+              <Lines k="dashboard.designsTitle" />
             </h2>
             <p>
-              {tr("Descubre nuestros 6 diseños y encuentra")}
-              <br />
-              {tr("ese que se siente tan tú.")}
+              <Lines k="dashboard.designsText" />
             </p>
-            <ArrowLink to="/disenos">{tr("Explorar diseños")}</ArrowLink>
+            <ArrowLink to="/disenos">{tr("dashboard.exploreDesigns")}</ArrowLink>
           </div>
           <div className="mini-invites" aria-hidden="true">
             <div className="mini-invite mint">
               <Heart size={24} />
               <strong>
-                {tr("Un sí,")}
-                <br />
-                {tr("para siempre.")}
+                <Lines k="dashboard.miniWedding" />
               </strong>
               <span>Sofía & Alejandro</span>
             </div>
             <div className="mini-invite rose">
               <PartyPopper size={23} />
               <strong>
-                {tr("¡Hoy se")}
-                <br />
-                {tr("celebra!")}
+                <Lines k="dashboard.miniParty" />
               </strong>
-              <span>{tr("Que empiece lo bueno")}</span>
+              <span>{tr("dashboard.letGoodTimesBegin")}</span>
             </div>
           </div>
         </section>
@@ -254,22 +241,22 @@ export function EventsPage() {
     <>
       <div className="page-heading">
         <div>
-          <h1>{tr("Mis eventos")}</h1>
+          <h1>{tr("common.events")}</h1>
           <p>
-            {tr("Cada celebración, con todos sus detalles en un solo lugar.")}
+            {tr("dashboard.everyCelebrationAllDetails")}
           </p>
         </div>
         <Link className="button" to="/eventos/nuevo">
           <Plus size={18} />
-          {tr("Crear evento")}
+          {tr("dashboard.createEvent")}
         </Link>
       </div>
       <div className="list-toolbar">
-        <div className="tabs" aria-label={tr("Filtrar eventos")}>
+        <div className="tabs" aria-label={tr("dashboard.filterEvents")}>
           {[
-            ["active", tr("Próximos")],
-            ["past", tr("Pasados")],
-            ["archived", tr("Archivados")],
+            ["active", tr("dashboard.upcoming")],
+            ["past", tr("dashboard.past")],
+            ["archived", tr("events.filters.archived")],
           ].map(([id, label]) => (
             <button
               className={filter === id ? "active" : ""}
@@ -284,8 +271,8 @@ export function EventsPage() {
         <label className="search-field">
           <Search size={18} />
           <input
-            placeholder={tr("Buscar un evento")}
-            aria-label={tr("Buscar un evento")}
+            placeholder={tr("dashboard.searchEvents")}
+            aria-label={tr("dashboard.searchEvents")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -299,16 +286,16 @@ export function EventsPage() {
         </div>
       ) : (
         <Empty
-          title={tr("Nada por aquí todavía")}
+          title={tr("dashboard.nothingHereYet")}
           action={
             filter === "active" ? (
               <Link to="/eventos/nuevo" className="button">
-                {tr("Crear evento")}
+                {tr("dashboard.createEvent")}
               </Link>
             ) : undefined
           }
         >
-          {tr("Prueba otra búsqueda o prepara una nueva celebración.")}
+          {tr("dashboard.tryAnotherSearchPlan")}
         </Empty>
       )}
     </>
@@ -320,14 +307,14 @@ export function TemplatesPage() {
     <>
       <div className="page-heading">
         <div>
-          <h1>{tr("Invitaciones con personalidad.")}</h1>
+          <h1>{tr("dashboard.invitationsPersonality")}</h1>
           <p>
-            {tr("Seis formas de decir «quiero que estés ahí». Elige la tuya.")}
+            {tr("dashboard.sixWaysSayWant")}
           </p>
         </div>
         <span className="soft-label">
           <PaletteIcon />
-          {tr("6 diseños para celebrar")}
+          {tr("dashboard.step6DesignsCelebrate")}
         </span>
       </div>
       <div className="templates-grid">
@@ -336,7 +323,7 @@ export function TemplatesPage() {
             <button
               className="template-preview"
               onClick={() => setPreview(t)}
-              aria-label={tr("Vista previa de {{theme}}", {
+              aria-label={tr("dashboard.previewTheme", {
                 theme: tr(t.name),
               })}
             >
@@ -344,19 +331,19 @@ export function TemplatesPage() {
                 event={{
                   title:
                     t.id === "floral"
-                      ? tr("Un sí para siempre")
+                      ? tr("dashboard.doForever")
                       : t.id === "kids"
-                        ? tr("¡A soplar las velitas!")
+                        ? tr("dashboard.makeWish")
                         : t.id === "neon"
-                          ? tr("Esta noche es nuestra")
+                          ? tr("dashboard.tonightOurs")
                           : t.id === "tropical"
-                            ? tr("Bajo el mismo sol")
+                            ? tr("dashboard.underSameSun")
                             : t.id === "gold"
-                              ? tr("Una noche inolvidable")
-                              : tr("Celebremos lo simple"),
+                              ? tr("dashboard.nightRemember")
+                              : tr("dashboard.celebrateSimpleThings"),
                   date: "2026-12-12T23:00:00Z",
                   timeZone: "America/Mexico_City",
-                  location: tr("Un lugar especial"),
+                  location: tr("dashboard.specialPlace"),
                   theme: t.id,
                 }}
               />
@@ -369,7 +356,7 @@ export function TemplatesPage() {
               <Link
                 className="icon-button"
                 to={`/eventos/nuevo?tema=${t.id}`}
-                aria-label={tr("Usar {{theme}}", { theme: tr(t.name) })}
+                aria-label={tr("dashboard.useTheme", { theme: tr(t.name) })}
               >
                 <ArrowUpRight size={23} />
               </Link>
@@ -381,23 +368,23 @@ export function TemplatesPage() {
         <Modal title={tr(preview.name)} onClose={() => setPreview(null)}>
           <InvitationArt
             event={{
-              title: tr("Tu próxima gran celebración"),
+              title: tr("dashboard.nextGreatCelebration"),
               date: "2026-12-12T23:00:00Z",
               timeZone: "America/Mexico_City",
-              location: tr("El lugar que tú elijas"),
+              location: tr("dashboard.placeChoose"),
               theme: preview.id,
             }}
           />
           <p className="muted">
             {tr(
-              "Personaliza el nombre, la fecha y los detalles de tu celebración.",
+              "dashboard.makeYoursEventName",
             )}
           </p>
           <Link
             className="button full"
             to={`/eventos/nuevo?tema=${preview.id}`}
           >
-            {tr("Crear evento con este diseño")}
+            {tr("dashboard.createEventDesign")}
             <ArrowRight size={17} />
           </Link>
         </Modal>
@@ -415,7 +402,7 @@ export function NotificationsPage() {
     try {
       await api.readNotifications();
       await reload();
-      toast(tr("Notificaciones marcadas como leídas."));
+      toast(tr("dashboard.notificationsMarkedRead"));
     } catch (e) {
       toast(errorText(e));
     } finally {
@@ -427,8 +414,8 @@ export function NotificationsPage() {
     <>
       <div className="page-heading">
         <div>
-          <h1>{tr("Las buenas noticias llegan aquí.")}</h1>
-          <p>{tr("Respuestas y cambios de asistencia de tus invitados.")}</p>
+          <h1>{tr("dashboard.goodNewsComesHere")}</h1>
+          <p>{tr("dashboard.repliesAttendanceUpdatesFrom")}</p>
         </div>
         <button
           className="button secondary"
@@ -436,7 +423,7 @@ export function NotificationsPage() {
           onClick={mark}
         >
           <CheckCheck size={18} />
-          {tr("Marcar todas como leídas")}
+          {tr("dashboard.markAllRead")}
         </button>
       </div>
       <div className="tabs">
@@ -444,14 +431,15 @@ export function NotificationsPage() {
           className={!onlyUnread ? "active" : ""}
           onClick={() => setOnlyUnread(false)}
         >
-          {tr("Todas")}
+          {tr("common.allFeminine")}
         </button>
         <button
           className={onlyUnread ? "active" : ""}
           onClick={() => setOnlyUnread(true)}
         >
-          {tr("Sin leer (")}
-          {notifications.filter((n) => !n.read).length})
+          {tr("dashboard.unreadCount", {
+            count: notifications.filter((n) => !n.read).length,
+          })}
         </button>
       </div>
       {list.length ? (
@@ -480,14 +468,14 @@ export function NotificationsPage() {
                 })}
               </time>
               {!n.read && (
-                <span className="dot accepted" aria-label={tr("Sin leer")} />
+                <span className="dot accepted" aria-label={tr("dashboard.unread")} />
               )}
             </Link>
           ))}
         </div>
       ) : (
-        <Empty title={tr("Todo al día")}>
-          {tr("Las nuevas respuestas aparecerán aquí automáticamente.")}
+        <Empty title={tr("dashboard.youreAllCaught")}>
+          {tr("dashboard.newRepliesAppearHere")}
         </Empty>
       )}
     </>
@@ -529,30 +517,31 @@ export function AllGuests() {
     <>
       <div className="page-heading">
         <div>
-          <h1>{tr("Tus personas favoritas.")}</h1>
+          <h1>{tr("dashboard.favoritePeople")}</h1>
           <p>
             {tr(
-              "Consulta todas tus invitaciones y abre un evento para administrarlas.",
+              "dashboard.viewAllInvitationsOpen",
             )}
           </p>
         </div>
         <span className="soft-label">
           <Users size={17} />
-          {rows.reduce((n, i) => n + i.members.length, 0)}
-          {" " + tr("personas invitadas")}
+          {tr("dashboard.peopleInvitedCount", {
+            count: rows.reduce((n, i) => n + i.members.length, 0),
+          })}
         </span>
       </div>
       <label className="search-field standalone">
         <Search size={18} />
         <input
-          placeholder={tr("Buscar persona o familia")}
-          aria-label={tr("Buscar persona o familia")}
+          placeholder={tr("dashboard.searchPeopleFamilies")}
+          aria-label={tr("dashboard.searchPeopleFamilies")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </label>
       {loading ? (
-        <p role="status">{tr("Cargando invitados…")}</p>
+        <p role="status">{tr("dashboard.loadingGuests")}</p>
       ) : filtered.length ? (
         <div className="guest-directory">
           {filtered.map((i) => (
@@ -565,8 +554,7 @@ export function AllGuests() {
                 <span>{i.event.title}</span>
               </div>
               <span className="directory-members">
-                {i.members.length}{" "}
-                {i.members.length === 1 ? tr("persona") : tr("personas")}
+                {tr("common.peopleCount", { count: i.members.length })}
               </span>
               <ArrowUpRight size={18} />
             </Link>
@@ -574,14 +562,14 @@ export function AllGuests() {
         </div>
       ) : (
         <Empty
-          title={tr("Hagamos la lista")}
+          title={tr("dashboard.letsMakeGuestList")}
           action={
             <Link className="button" to="/eventos">
-              {tr("Ir a mis eventos")}
+              {tr("dashboard.goEvents")}
             </Link>
           }
         >
-          {tr("Añade a tus invitados desde cada evento y encuéntralos aquí.")}
+          {tr("dashboard.addGuestsEachEvent")}
         </Empty>
       )}
     </>
@@ -592,58 +580,58 @@ export function HelpPage() {
     <>
       <div className="page-heading">
         <div>
-          <h1>{tr("De la idea a la fiesta.")}</h1>
+          <h1>{tr("dashboard.fromIdeaParty")}</h1>
           <p>
-            {tr("Todo lo que necesitas para empezar a reunir a los tuyos.")}
+            {tr("dashboard.everythingNeedBringPeople")}
           </p>
         </div>
       </div>
       <div className="help-content">
         <section>
-          <h2>{tr("1. Dale forma a tu evento")}</h2>
+          <h2>{tr("dashboard.step1ShapeEvent")}</h2>
           <p>
             {tr(
-              "Elige «Crear evento», completa fecha, hora, zona horaria y lugar, y selecciona uno de los seis diseños. Puedes editarlo después.",
+              "dashboard.chooseCreateEventAdd",
             )}
           </p>
           <Link className="text-link" to="/eventos/nuevo">
-            {tr("Crear mi evento")}
+            {tr("common.createMyEvent")}
             <ArrowRight size={16} />
           </Link>
         </section>
         <section>
-          <h2>{tr("2. Prepara tu lista")}</h2>
+          <h2>{tr("dashboard.step2BuildGuestList")}</h2>
           <p>
             {tr(
-              "Dentro del evento, añade invitaciones individuales o familiares. Cada integrante tiene su nombre, clasificación de adulto o niño y notas privadas para ti. Las notas no aparecen en la invitación pública.",
+              "dashboard.addIndividualFamilyInvitations",
             )}
           </p>
         </section>
         <section>
-          <h2>{tr("3. Comparte su invitación")}</h2>
+          <h2>{tr("dashboard.step3ShareInvitation")}</h2>
           <p>
             {tr(
-              "Cada invitación tiene un enlace único. Cópialo o abre WhatsApp o tu cliente de correo con el mensaje preparado. Tú decides cuándo enviarlo. Cualquier persona que reciba el enlace puede ver y responder esa invitación; compártelo únicamente con sus destinatarios.",
+              "dashboard.eachInvitationHasOwn",
             )}
           </p>
         </section>
         <section>
-          <h2>{tr("4. Recibe sus respuestas")}</h2>
+          <h2>{tr("dashboard.step4GetTheirReplies")}</h2>
           <p>
             {tr(
-              "No necesitan crear una cuenta. Pueden confirmar, declinar o dejar su respuesta en espera por cada persona. Tus métricas y notificaciones se actualizan automáticamente. Abre «Modo pantalla» desde un evento para consultar el tablero en el recinto.",
+              "dashboard.guestsDontNeedAccount",
             )}
           </p>
         </section>
         <section>
-          <h2>{tr("Tu espacio de demostración")}</h2>
+          <h2>{tr("dashboard.demoWorkspace")}</h2>
           <p>
             {tr(
-              "Los nombres, eventos y lugares de la demostración son ejemplos. Puedes probar todos los flujos sin afectar a otras cuentas. Regístrate para empezar con un espacio vacío y tus propios datos.",
+              "dashboard.demoNamesEventsLocations",
             )}
           </p>
           <Link className="text-link" to="/registro">
-            {tr("Crear mi cuenta")}
+            {tr("common.createMyAccount")}
             <ArrowRight size={16} />
           </Link>
         </section>
