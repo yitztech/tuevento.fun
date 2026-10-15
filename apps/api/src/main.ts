@@ -38,10 +38,7 @@ async function bootstrap() {
   });
   const origins = (
     process.env.ALLOWED_ORIGINS || "http://localhost:5187,http://127.0.0.1:5187"
-  )
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  ).split(",");
   app.enableCors({
     origin: origins,
     credentials: true,

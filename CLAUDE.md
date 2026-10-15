@@ -2,7 +2,7 @@
 
 ## Idiomas: todo texto nace en los cuatro
 
-La aplicación se publica en español (`es`, principal), inglés (`en`), portugués (`pt`) y alemán (`de`). La lista vive en `locales` (`packages/contracts/src/i18n.ts`); el detalle está en [docs/I18N.md](docs/I18N.md).
+La aplicación se publica en español (`es`, principal, tuevento.fun), inglés (`en`, yourevent.fun), portugués (`pt`, yourevent.fun/pt) y alemán (`de`, yourevent.fun/de). La lista vive en `locales` (`packages/contracts/src/i18n.ts`); el detalle está en [docs/I18N.md](docs/I18N.md).
 
 Regla: **todo componente, pantalla, correo, error o validación que muestre texto se entrega traducido a todos los idiomas de la tabla en el mismo cambio.** No hay "luego lo traduzco" ni textos que caen al español.
 

@@ -457,7 +457,10 @@
     "yesEditEventInformation": "Sim. Você pode editar as informações do evento, escolher outro modelo e ajustar as pessoas de cada convite no seu espaço."
   },
   "language": {
-    "changeLanguage": "Mudar idioma"
+    "changeLanguage": "Mudar idioma",
+    "suggest": "Quer ver esta página em português?",
+    "suggestAccept": "Ver em português",
+    "suggestDismiss": "Não, obrigado"
   },
   "legal": {
     "acceptOnRegister": "Ao criar sua conta, você aceita os <terms>Termos de uso</terms> e a <privacy>Política de privacidade</privacy>.",

@@ -52,12 +52,9 @@ services:
     mem_limit: 64m
     cpus: 0.25
     environment:
-      # Un idioma por dominio: el Host decide el idioma, canonical, hreflang, robots y sitemap.
-      # pt y de se publican cuando la plataforma define su dominio.
+      # Un idioma por dominio: el Host decide es/en, canonical, hreflang, robots y sitemap
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
       SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
-      SITE_URL_PT: ${SITE_URL_PT:-}
-      SITE_URL_DE: ${SITE_URL_DE:-}
       # Analítica con Umami (vacío = sin analítica)
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
@@ -82,16 +79,13 @@ services:
       # La API se conecta como rol `api` (no como dueño de la base)
       DATABASE_URL: postgres://api@postgres:5432/tueventofun
       PGPASSWORD: ${API_DB_PASSWORD:?Define API_DB_PASSWORD}
-      # Los dominios de la web y los orígenes de las apps Capacitor (los vacíos se ignoran)
-      ALLOWED_ORIGINS: ${SITE_URL_ES:?Define SITE_URL_ES},${SITE_URL_EN:?Define SITE_URL_EN},${SITE_URL_PT:-},${SITE_URL_DE:-},capacitor://localhost,https://localhost
+      # Los dos dominios de la web y los orígenes de las apps Capacitor
+      ALLOWED_ORIGINS: ${SITE_URL_ES:?Define SITE_URL_ES},${SITE_URL_EN:?Define SITE_URL_EN},capacitor://localhost,https://localhost
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
       SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
-      SITE_URL_PT: ${SITE_URL_PT:-}
-      SITE_URL_DE: ${SITE_URL_DE:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       # Correo transaccional (recuperar contraseña). Sin sufijo = es (tuevento.fun),
-      # _EN = en (yourevent.fun), _PT = pt, _DE = de: cada usuario lo recibe desde el dominio
-      # por el que entró.
+      # _EN = en (yourevent.fun): cada usuario lo recibe desde el dominio por el que entró.
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-}
       SMTP_SECURE: ${SMTP_SECURE:-}
@@ -101,21 +95,11 @@ services:
       SMTP_USER_EN: ${SMTP_USER_EN:-}
       SMTP_PASSWORD_EN: ${SMTP_PASSWORD_EN:-}
       MAIL_FROM_EN: ${MAIL_FROM_EN:-}
-      SMTP_USER_PT: ${SMTP_USER_PT:-}
-      SMTP_PASSWORD_PT: ${SMTP_PASSWORD_PT:-}
-      MAIL_FROM_PT: ${MAIL_FROM_PT:-}
-      SMTP_USER_DE: ${SMTP_USER_DE:-}
-      SMTP_PASSWORD_DE: ${SMTP_PASSWORD_DE:-}
-      MAIL_FROM_DE: ${MAIL_FROM_DE:-}
       # Newsletter: un Listmonk por idioma, en news. de cada dominio (suscripción pública)
       LISTMONK_URL: ${LISTMONK_URL:-}
       LISTMONK_LIST_UUID: ${LISTMONK_LIST_UUID:-}
       LISTMONK_URL_EN: ${LISTMONK_URL_EN:-}
       LISTMONK_LIST_UUID_EN: ${LISTMONK_LIST_UUID_EN:-}
-      LISTMONK_URL_PT: ${LISTMONK_URL_PT:-}
-      LISTMONK_LIST_UUID_PT: ${LISTMONK_LIST_UUID_PT:-}
-      LISTMONK_URL_DE: ${LISTMONK_URL_DE:-}
-      LISTMONK_LIST_UUID_DE: ${LISTMONK_LIST_UUID_DE:-}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:?Define RELEASE_PUBLISH_TOKEN}
       COOKIE_SECURE: "true"
       DEMO_ENABLED: "false"

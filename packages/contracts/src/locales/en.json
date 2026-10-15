@@ -457,7 +457,10 @@
     "yesEditEventInformation": "Yes. You can edit the event information, choose another design and update the people in each invitation from your space."
   },
   "language": {
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "suggest": "Would you like to see this page in English?",
+    "suggestAccept": "View in English",
+    "suggestDismiss": "No, thanks"
   },
   "legal": {
     "acceptOnRegister": "By creating your account you accept the <terms>Terms of use</terms> and the <privacy>Privacy policy</privacy>.",

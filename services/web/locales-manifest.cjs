@@ -2,6 +2,7 @@
 // en un formato que 17-sites.sh lee con awk (la imagen de nginx no tiene Node):
 //   default es
 //   locale es
+//   hosted pt en        (pt se sirve en el dominio de en, bajo /pt)
 //   path privacy es /privacidad
 // Uso: node services/web/locales-manifest.cjs packages/contracts/dist > locales.txt
 const { resolve } = require("node:path");
@@ -10,6 +11,7 @@ const {
   supportedLocales,
   localizedPages,
   localizedPath,
+  siteLocale,
 } = require(resolve(process.argv[2] || "packages/contracts/dist"));
 
 const lines = [`default ${defaultLocale}`];
@@ -18,6 +20,8 @@ for (const locale of supportedLocales) {
   if (!/^[a-z]{2,3}$/.test(locale)) throw new Error(`Código de idioma no válido: ${locale}`);
   lines.push(`locale ${locale}`);
 }
+for (const locale of supportedLocales)
+  if (siteLocale(locale) !== locale) lines.push(`hosted ${locale} ${siteLocale(locale)}`);
 for (const page of localizedPages)
   for (const locale of supportedLocales) {
     const path = localizedPath(page, locale);

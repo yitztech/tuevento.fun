@@ -857,7 +857,7 @@ export function ShareDialog({
 }) {
   const { runtime, toast } = useApp(),
     [copied, setCopied] = useState(false);
-  // El idioma lo da el dominio: el enlace usa el origen actual, sin ?lang=.
+  // El idioma lo dan el dominio y su prefijo (publicOrigin los incluye), sin ?lang=.
   const url = `${runtime.publicOrigin}/i/${invitation.token}`,
     message = tr(
       "events.hiNameYoureInvited",

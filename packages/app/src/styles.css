@@ -4248,7 +4248,8 @@ small {
   }
 }
 
-/* Enlace al mismo contenido en el dominio del otro idioma (no cambia el idioma en el sitio). */
+/* Selector de idioma: enlace al mismo contenido en el dominio de otro idioma o, entre los
+   idiomas de un mismo dominio (en, pt, de), cambio en el sitio sin recargar. */
 .language-switcher {
   display: inline-flex;
   align-items: center;
@@ -4296,6 +4297,33 @@ small {
   border-radius: 9px;
   background: #fff;
   box-shadow: 0 10px 30px rgb(23 39 76 / 12%);
+}
+/* Propuesta del idioma del navegador en la primera visita (sin redirigir) */
+.language-suggestion {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 60;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 12px 14px 12px 18px;
+  border: 1px solid #dfe1e5;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgb(23 39 76 / 16%);
+}
+.language-suggestion p {
+  margin: 0;
+  font-weight: 650;
+}
+.language-suggestion-actions {
+  display: flex;
+  gap: 8px;
 }
 .auth-language {
   display: flex;

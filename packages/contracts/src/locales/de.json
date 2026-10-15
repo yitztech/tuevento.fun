@@ -457,7 +457,10 @@
     "yesEditEventInformation": "Ja. Du kannst die Angaben zum Event bearbeiten, ein anderes Design wählen und die Personen jeder Einladung in deinem Bereich anpassen."
   },
   "language": {
-    "changeLanguage": "Sprache ändern"
+    "changeLanguage": "Sprache ändern",
+    "suggest": "Möchtest du diese Seite auf Deutsch sehen?",
+    "suggestAccept": "Auf Deutsch ansehen",
+    "suggestDismiss": "Nein, danke"
   },
   "legal": {
     "acceptOnRegister": "Mit der Erstellung deines Kontos akzeptierst du die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy>.",

@@ -16,7 +16,7 @@ services:
     environment:
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
     labels:
-      dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local,pt.tueventofun.orb.local,de.tueventofun.orb.local
+      dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
 
   web:
     build:
@@ -27,8 +27,6 @@ services:
     environment:
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
-      SITE_URL_PT: ${SITE_URL_PT:-https://pt.tueventofun.orb.local}
-      SITE_URL_DE: ${SITE_URL_DE:-https://de.tueventofun.orb.local}
 
   api:
     build:
@@ -41,11 +39,9 @@ services:
     environment:
       COOKIE_SECURE: "false"
       DEMO_ENABLED: "true"
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://pt.tueventofun.orb.local,http://pt.tueventofun.orb.local,http://pt.tueventofun.orb.local:5187,https://de.tueventofun.orb.local,http://de.tueventofun.orb.local,http://de.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
-      SITE_URL_PT: ${SITE_URL_PT:-https://pt.tueventofun.orb.local}
-      SITE_URL_DE: ${SITE_URL_DE:-https://de.tueventofun.orb.local}
       # Las pruebas leen los correos en Mailpit para comprobar idioma, remitente y enlace
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
@@ -56,12 +52,6 @@ services:
       SMTP_USER_EN: dev
       SMTP_PASSWORD_EN: dev
       MAIL_FROM_EN: no-reply@en.tueventofun.orb.local
-      SMTP_USER_PT: dev
-      SMTP_PASSWORD_PT: dev
-      MAIL_FROM_PT: no-reply@pt.tueventofun.orb.local
-      SMTP_USER_DE: dev
-      SMTP_PASSWORD_DE: dev
-      MAIL_FROM_DE: no-reply@de.tueventofun.orb.local
 
   # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
   mailpit:

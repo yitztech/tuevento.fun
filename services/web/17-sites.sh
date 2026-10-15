@@ -1,13 +1,15 @@
 #!/bin/sh
-# Un idioma por dominio. Los idiomas y sus rutas traducidas salen de packages/contracts:
+# Un dominio por idioma, salvo los idiomas alojados en el dominio de otro bajo /<código>
+# (yourevent.fun/pt). Los idiomas y sus rutas traducidas salen de packages/contracts:
 # locales-manifest.cjs los escribe en /etc/nginx/locales.txt al construir la imagen. El
 # dominio de cada idioma llega en SITE_URL_<IDIOMA> (lo pone la plataforma; para el
 # principal vale también SITE_URL). Genera:
 #   - /etc/nginx/conf.d/sites.conf: $site_lang según el Host (el dominio de un idioma o su
-#     www → ese idioma; cualquier otro Host → el principal), el origen y la ruta de la
-#     petición en cada idioma, y $seo_links / $seo_sites_meta para el HTML.
-#   - /etc/nginx/seo/robots-<idioma>.txt y sitemap-<idioma>.xml.
-# Un idioma sin dominio no se publica: no tiene Host, hreflang ni sitemap.
+#     www → ese idioma; cualquier otro Host → el principal), $page_lang (el del dominio o
+#     el alojado si la ruta empieza por su prefijo), el origen y la ruta de la petición en
+#     cada idioma, y $seo_links / $seo_sites_meta para el HTML.
+#   - /etc/nginx/seo/robots-<dominio>.txt y sitemap-<dominio>.xml (con sus idiomas alojados).
+# Un idioma cuyo dominio no se publica tampoco: no tiene Host, hreflang ni sitemap.
 # Igual que 16-analytics.sh, se lee el entorno aquí y no en la plantilla, para no
 # ampliar NGINX_ENVSUBST_FILTER.
 set -eu
@@ -37,9 +39,12 @@ path_of() {
   esac
 }
 
-# Idiomas con dominio, el principal primero
+hosted_of() { awk -v lang="$1" '$1 == "hosted" && $2 == lang { print $3 }' "$manifest"; }
+
+# Idiomas con dominio propio, el principal primero
 locales=""
 for lang in $default $(awk -v d="$default" '$1 == "locale" && $2 != d { print $2 }' "$manifest"); do
+  [ -n "$(hosted_of "$lang")" ] && continue
   var="SITE_URL_$(upper "$lang")"
   eval "origin=\${$var:-}"
   if [ -z "$origin" ] && [ "$lang" = "$default" ]; then
@@ -64,9 +69,27 @@ for lang in $default $(awk -v d="$default" '$1 == "locale" && $2 != d { print $2
       exit 1
     fi
   done
-  eval "origin_$lang=\$origin; host_$lang=\$host"
+  eval "origin_$lang=\$origin; host_$lang=\$host; site_$lang=\$lang; prefix_$lang="
   locales="$locales $lang"
 done
+
+# Todos los idiomas publicados: los de dominio propio y los alojados en uno publicado
+pages_locales="$locales"
+for lang in $(awk '$1 == "hosted" { print $2 }' "$manifest"); do
+  site=$(hosted_of "$lang")
+  case " $locales " in
+    *" $site "*) ;;
+    *) echo "17-sites.sh: el dominio de $site no se publica: el idioma $lang tampoco" >&2; continue ;;
+  esac
+  eval "site_$lang=\$site; prefix_$lang=/\$lang"
+  pages_locales="$pages_locales $lang"
+done
+# URL de una ruta ya traducida en un idioma: origen de su sitio + prefijo + ruta
+url_of() {
+  eval "site=\$site_$1; prefix=\$prefix_$1"
+  eval "origin=\$origin_$site"
+  if [ -n "$prefix" ] && [ "$2" = "/" ]; then printf '%s%s/' "$origin" "$prefix"; else printf '%s%s%s' "$origin" "$prefix" "$2"; fi
+}
 
 conf=/etc/nginx/conf.d/sites.conf
 {
@@ -103,21 +126,45 @@ conf=/etc/nginx/conf.d/sites.conf
     echo '}'
   done
   echo ''
-  echo 'map $site_lang $site_origin {'
-  echo "    default \$origin_$default;"
-  for lang in $locales; do echo "    $lang \$origin_$lang;"; done
-  echo '}'
-  echo ''
   echo '# Ruta de la petición sin query. Solo caracteres seguros: se inserta en el HTML,'
   echo '# así que cualquier otra cosa se reduce a "/".'
   echo 'map $request_uri $seo_raw_path {'
   echo '    "~^(?<seo_p>/[A-Za-z0-9/_.~-]*)(\?.*)?$" $seo_p;'
   echo '    default "/";'
   echo '}'
+  echo '# Idioma de la página: el del dominio o, si la ruta empieza por /<código>, el alojado.'
+  echo '# $seo_rest es la ruta sin ese prefijo.'
+  echo 'map "$site_lang $seo_raw_path" $page_lang {'
+  echo '    default $site_lang;'
+  for lang in $pages_locales; do
+    eval "site=\$site_$lang; prefix=\$prefix_$lang"
+    if [ -n "$prefix" ]; then echo "    \"~^$site $prefix(/.*)?\$\" $lang;"; fi
+  done
+  echo '}'
+  echo 'map "$site_lang $seo_raw_path" $seo_rest {'
+  echo '    default $seo_raw_path;'
+  for lang in $pages_locales; do
+    eval "site=\$site_$lang; prefix=\$prefix_$lang"
+    [ -z "$prefix" ] && continue
+    echo "    \"~^$site $prefix\$\" /;"
+    echo "    \"~^$site $prefix(?<seo_rest_$lang>/.*)\$\" \$seo_rest_$lang;"
+  done
+  echo '}'
+  echo '# Prefijo de un idioma alojado en otro dominio (tuevento.fun/pt/…): 301 a su dominio'
+  echo 'map "$site_lang $seo_raw_path" $locale_redirect {'
+  echo '    default "";'
+  for lang in $pages_locales; do
+    eval "site=\$site_$lang; prefix=\$prefix_$lang"
+    [ -z "$prefix" ] && continue
+    for other in $locales; do
+      if [ "$other" != "$site" ]; then echo "    \"~^$other $prefix(/.*)?\$\" \$origin_$site\$request_uri;"; fi
+    done
+  done
+  echo '}'
   echo '# La misma ruta en cada idioma (mapa común de packages/contracts)'
-  for lang in $locales; do
-    echo "map \$seo_raw_path \$seo_path_$lang {"
-    echo '    default $seo_raw_path;'
+  for lang in $pages_locales; do
+    echo "map \$seo_rest \$seo_path_$lang {"
+    echo '    default $seo_rest;'
     for page in $pages; do
       own=$(path_of "@$page" "$lang")
       awk -v page="$page" -v own="$own" '$1 == "path" && $2 == page && $4 != own { print $4 }' "$manifest" |
@@ -125,21 +172,28 @@ conf=/etc/nginx/conf.d/sites.conf
     done
     echo '}'
   done
-  echo 'map $site_lang $seo_path {'
-  echo "    default \$seo_path_$default;"
-  for lang in $locales; do echo "    $lang \$seo_path_$lang;"; done
+  # URL de la petición en cada idioma: origen de su sitio + prefijo + ruta traducida
+  seo_url() {
+    eval "site=\$site_$1; prefix=\$prefix_$1"
+    printf '$origin_%s%s$seo_path_%s' "$site" "$prefix" "$1"
+  }
+  echo '# canonical: la URL de la página en su propio idioma'
+  echo 'map $page_lang $seo_canonical {'
+  echo "    default \"$(seo_url "$default")\";"
+  for lang in $pages_locales; do echo "    $lang \"$(seo_url "$lang")\";"; done
   echo '}'
   echo ''
-  # canonical en su propio dominio, hreflang hacia cada idioma y x-default al principal
+  # canonical en su propia URL, hreflang hacia cada idioma y x-default al principal.
+  # tuevento:sites solo lleva los dominios: la SPA calcula los prefijos con la tabla.
   sites=""
   alternates=""
-  for lang in $locales; do
-    sites="$sites${sites:+ }$lang=\$origin_$lang"
-    alternates="$alternates<link rel=\"alternate\" hreflang=\"$lang\" href=\"\$origin_$lang\$seo_path_$lang\"/>"
+  for lang in $locales; do sites="$sites${sites:+ }$lang=\$origin_$lang"; done
+  for lang in $pages_locales; do
+    alternates="$alternates<link rel=\"alternate\" hreflang=\"$lang\" href=\"$(seo_url "$lang")\"/>"
   done
   echo '# Marcas que sustituyen a <meta name="tuevento-seo"/> en index.html'
   echo "map \$site_lang \$seo_sites_meta { default '<meta name=\"tuevento:sites\" content=\"$sites\"/>'; }"
-  echo "map \$site_lang \$seo_links { default '<link rel=\"canonical\" href=\"\$site_origin\$seo_path\"/>$alternates<link rel=\"alternate\" hreflang=\"x-default\" href=\"\$origin_$default\$seo_path_$default\"/>\$seo_sites_meta'; }"
+  echo "map \$site_lang \$seo_links { default '<link rel=\"canonical\" href=\"\$seo_canonical\"/>$alternates<link rel=\"alternate\" hreflang=\"x-default\" href=\"\$origin_$default\$seo_path_$default\"/>\$seo_sites_meta'; }"
 } > "$conf"
 
 mkdir -p /etc/nginx/seo
@@ -175,16 +229,19 @@ for lang in $locales; do
   {
     echo '<?xml version="1.0" encoding="UTF-8"?>'
     echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
-    for page in $public_pages; do
-      echo '  <url>'
-      echo "    <loc>$own$(path_of "$page" "$lang")</loc>"
-      for alt in $locales; do
-        eval "alt_origin=\$origin_$alt"
-        echo "    <xhtml:link rel=\"alternate\" hreflang=\"$alt\" href=\"$alt_origin$(path_of "$page" "$alt")\"/>"
+    # Las páginas de este dominio y las de los idiomas que aloja
+    for page_lang in $pages_locales; do
+      eval "page_site=\$site_$page_lang"
+      [ "$page_site" = "$lang" ] || continue
+      for page in $public_pages; do
+        echo '  <url>'
+        echo "    <loc>$(url_of "$page_lang" "$(path_of "$page" "$page_lang")")</loc>"
+        for alt in $pages_locales; do
+          echo "    <xhtml:link rel=\"alternate\" hreflang=\"$alt\" href=\"$(url_of "$alt" "$(path_of "$page" "$alt")")\"/>"
+        done
+        echo "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"$(url_of "$default" "$(path_of "$page" "$default")")\"/>"
+        echo '  </url>'
       done
-      eval "default_origin=\$origin_$default"
-      echo "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"$default_origin$(path_of "$page" "$default")\"/>"
-      echo '  </url>'
     done
     echo '</urlset>'
   } > "/etc/nginx/seo/sitemap-$lang.xml"

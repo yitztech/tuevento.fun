@@ -39,18 +39,19 @@ Variables que la plataforma pasa al compose (se usan las que haga falta):
 
 Otros secretos (base de datos, claves de la app) se piden a la plataforma: los genera y los pasa como variables.
 
-## Un dominio por idioma
+## Dos dominios; portugués y alemán en el inglés
 
-La misma app responde en **https://tuevento.fun** (`es`), en
-**https://yourevent.fun** (`en`) y en los dominios que se asignen a `pt` y `de`. El proxy pasa el `Host` original: el idioma
-se decide por el dominio, nunca por `Accept-Language` ni por la IP.
+La misma app responde en **https://tuevento.fun** (`es`) y en
+**https://yourevent.fun** (`en`); portugués y alemán viven en
+**https://yourevent.fun/pt** y **/de**, sin dominio propio. El proxy pasa el `Host`
+original: el idioma se decide por el dominio y la ruta, nunca por `Accept-Language` ni por la IP.
 
 Variables adicionales (las de arriba, sin sufijo, son las de `es`):
 
 | Variable | Para qué |
 |---|---|
-| `IDIOMAS` | `es,en,pt,de`: el primero es el principal |
-| `SITE_URL_<IDIOMA>` | URL pública de cada idioma (`SITE_URL_ES`, `SITE_URL_EN`, `SITE_URL_PT`, `SITE_URL_DE`) |
+| `IDIOMAS` | `es,en`: el primero es el principal |
+| `SITE_URL_<IDIOMA>` | URL pública de cada idioma (`SITE_URL_ES`, `SITE_URL_EN`) |
 | `SMTP_USER_<IDIOMA>`, `SMTP_PASSWORD_<IDIOMA>`, `MAIL_FROM_<IDIOMA>` | Correo transaccional desde el dominio del idioma del usuario |
 | `LISTMONK_URL_<IDIOMA>`, `LISTMONK_LIST_UUID_<IDIOMA>` | Newsletter: un Listmonk por idioma, en `news.` de cada dominio |
 

@@ -18,8 +18,7 @@ El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PAS
 | ------------------- | -------------------------------- | ------------------------------------------- |
 | Aplicación (es)     | http://localhost:5187            | https://tueventofun.orb.local               |
 | Aplicación (en)     | —                                | https://en.tueventofun.orb.local            |
-| Aplicación (pt)     | —                                | https://pt.tueventofun.orb.local            |
-| Aplicación (de)     | —                                | https://de.tueventofun.orb.local            |
+| Aplicación (pt, de) | —                                | https://en.tueventofun.orb.local/pt y /de   |
 | Salud del gateway   | http://localhost:5187/healthz    | https://tueventofun.orb.local/healthz       |
 | Salud API           | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health    |
 | PostgreSQL          | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432         |
@@ -27,7 +26,7 @@ El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PAS
 
 Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`. Si tenías un volumen de PostgreSQL 17, no sirve para la 18: bórralo (`docker compose down -v`, borra los datos) o migra los datos con `pg_dump`.
 
-Con OrbStack, el gateway responde en un dominio por idioma con su certificado local de confianza: `tueventofun.orb.local` (español), `en.tueventofun.orb.local` (inglés), `pt.tueventofun.orb.local` (portugués) y `de.tueventofun.orb.local` (alemán), igual que `tuevento.fun` y `yourevent.fun` en producción. También responde `gateway.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si cambias el nombre del proyecto Compose o los dominios, añádelos ahí o los POST darán 403. `localhost` es un Host desconocido y se sirve en español. Para Google, añade los orígenes de OrbStack como autorizados. Los enlaces de invitación generados desde estas URL solo se abren en este Mac.
+Con OrbStack, el gateway responde en dos dominios con su certificado local de confianza: `tueventofun.orb.local` (español) y `en.tueventofun.orb.local` (inglés), igual que `tuevento.fun` y `yourevent.fun` en producción. También responde `gateway.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si cambias el nombre del proyecto Compose o los dominios, añádelos ahí o los POST darán 403. `localhost` es un Host desconocido y se sirve en español. Para Google, añade los dos orígenes de OrbStack como autorizados. Los enlaces de invitación generados desde estas URL solo se abren en este Mac.
 
 ```bash
 docker compose ps
@@ -56,7 +55,7 @@ Los eventos, nombres y lugares de la demo son sintéticos. Cada navegador obtien
 
 ## Idiomas
 
-Un idioma por dominio: `https://tuevento.fun` en español y `https://yourevent.fun` en inglés. El idioma lo decide el Host (no `?lang=`, el navegador ni `Accept-Language`); un Host desconocido usa español. El gateway lo pone en `<html lang>`, añade `canonical` y `hreflang` (es, en, x-default) hacia la página equivalente del otro dominio y sirve `robots.txt` y `sitemap.xml` propios de cada dominio. El otro idioma se ofrece con un enlace a su dominio, nunca con una redirección. Las rutas son iguales en los dos idiomas salvo `/privacidad`↔`/privacy` y `/condiciones`↔`/terms`. Las sesiones son de cada dominio. Fechas, formularios, validaciones, ayudas y notificaciones se muestran en el idioma del dominio. El texto escrito por usuarios permanece en su idioma original.
+`https://tuevento.fun` en español y `https://yourevent.fun` en inglés, con portugués y alemán en `https://yourevent.fun/pt` y `/de`. El idioma lo deciden el Host y ese prefijo (no `?lang=` ni `Accept-Language`); un Host desconocido usa español. El gateway lo pone en `<html lang>`, añade `canonical` y `hreflang` (es, en, pt, de, x-default) hacia la página equivalente en cada idioma y sirve `robots.txt` y `sitemap.xml` propios de cada dominio. Entre inglés, portugués y alemán se cambia sin recargar; el español se ofrece con un enlace a su dominio. Nunca se redirige por el idioma del navegador: en la primera visita solo se propone. Las rutas son iguales en todos los idiomas salvo las legales (`/privacidad`, `/privacy`, `/pt/privacidade`, `/de/datenschutz` y sus equivalentes de condiciones). Las sesiones son de cada dominio. Fechas, formularios, validaciones, ayudas y notificaciones se muestran en el idioma del dominio. El texto escrito por usuarios permanece en su idioma original.
 
 Se utilizan i18next/react-i18next y un catálogo compartido con el backend. Consulta [la guía de traducciones](docs/I18N.md) para ampliar idiomas.
 
@@ -136,7 +135,6 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `IMAGE_PREFIX`, `IMAGE_TAG` | todos | Imágenes (`IMAGE_TAG` por defecto `main`) |
 | `TRUSTED_PROXY_CIDR` | gateway | Subred de Traefik: solo desde ella se acepta `X-Forwarded-For` |
 | `SITE_URL_ES`, `SITE_URL_EN` | web, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
-| `SITE_URL_PT`, `SITE_URL_DE` | web, api | Opcionales: origen del portugués y del alemán; sin ellos, esos idiomas no se publican en la web |
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | web | Analítica (vacío = sin analítica) |
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
@@ -147,7 +145,6 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `SMTP_USER_EN`, `SMTP_PASSWORD_EN`, `MAIL_FROM_EN` | api | Remitente en inglés (`no-reply@yourevent.fun`); sin él, el inglés sale del remitente español |
 | `LISTMONK_URL`, `LISTMONK_LIST_UUID` | api | Newsletter en español (Listmonk en `news.tuevento.fun`) |
 | `LISTMONK_URL_EN`, `LISTMONK_LIST_UUID_EN` | api | Newsletter en inglés (Listmonk en `news.yourevent.fun`) |
-| `SMTP_USER_<PT\|DE>`, `SMTP_PASSWORD_<PT\|DE>`, `MAIL_FROM_<PT\|DE>`, `LISTMONK_URL_<PT\|DE>`, `LISTMONK_LIST_UUID_<PT\|DE>` | api | Opcionales: remitente y newsletter del portugués y del alemán |
 
 ### Correos por idioma
 
