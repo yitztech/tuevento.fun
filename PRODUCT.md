@@ -28,7 +28,7 @@ Registro con avatar, sesiones y Google; múltiples eventos; seis temas; familias
 
 ## Brand Commitments
 
-Fondo blanco puro (#FFFFFF), elegante, colorido y acogedor. Paleta activa: Terracota Festivo (#882D17), Ámbar Caléndula (#FFCA66), Lino Cálido Marfil (#FDF8F5) y Granada (#E25C80), implementada con variables CSS flexibles que admiten variantes como Cassis y Buganvilla. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio y contacto: YunitzTech.
+Fondo blanco puro (#FFFFFF), elegante, colorido y acogedor. Paleta activa: Terracota Festivo (#882D17), Ámbar Caléndula (#FFCA66), Lino Cálido Marfil (#FDF8F5) y Granada (#E25C80), implementada con variables CSS flexibles que admiten variantes como Cassis y Buganvilla. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio: YunitzTech; contacto: contacto@tuevento.fun.
 
 ## Evidence on Hand
 
@@ -47,7 +47,7 @@ Confirmado: construcción directa del sitio. La nueva solicitud añade una landi
 
 ## Idiomas
 
-En la web, un idioma por dominio: https://tuevento.fun en español y https://yourevent.fun en inglés. El idioma lo decide el dominio (un dominio desconocido usa español). El otro idioma se ofrece con un enlace a su dominio, sin redirección forzada. Cada página lleva su `canonical` y sus `hreflang`; `robots.txt` y `sitemap.xml` van por dominio. En las apps móviles (Capacitor/nativas), se ofrece selector de idioma bilingüe (ES/EN) con persistencia local y cabecera `X-App-Locale` hacia la API. Privacidad y condiciones están en `/privacidad` y `/condiciones` (es) y en `/privacy` y `/terms` (en), con titular y contacto asignados a YunitzTech. Detalle técnico en [docs/I18N.md](docs/I18N.md).
+En la web, un idioma por dominio: https://tuevento.fun en español y https://yourevent.fun en inglés. El idioma lo decide el dominio (un dominio desconocido usa español). El otro idioma se ofrece con un enlace a su dominio, sin redirección forzada. Cada página lleva su `canonical` y sus `hreflang`; `robots.txt` y `sitemap.xml` van por dominio. En las apps móviles (Capacitor/nativas), se ofrece selector de idioma bilingüe (ES/EN) con persistencia local y cabecera `X-App-Locale` hacia la API. Privacidad y condiciones están en `/privacidad` y `/condiciones` (es) y en `/privacy` y `/terms` (en), con titular YunitzTech y contacto contacto@tuevento.fun. Detalle técnico en [docs/I18N.md](docs/I18N.md).
 
 ## Administración, descargas y apps
 

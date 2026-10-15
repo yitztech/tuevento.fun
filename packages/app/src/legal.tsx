@@ -22,7 +22,7 @@ export const LEGAL_OWNER: {
 } = {
   name: "YunitzTech",
   address: { es: "Cuernavaca, Morelos, México", en: "Cuernavaca, Morelos, Mexico" },
-  contact: "YunitzTech",
+  contact: "contacto@tuevento.fun",
 };
 /** Fecha de la última revisión del texto (AAAA-MM-DD). */
 export const LEGAL_UPDATED = "2026-10-14";
@@ -37,6 +37,21 @@ export const legalPath = (kind: LegalKind, locale: Locale) =>
   localizedPaths[kind][locale];
 
 type Section = { title: string; body: string[] };
+/** Enlaza el correo de contacto (no los remitentes no-reply) con mailto. */
+const withMailLinks = (text: string) => {
+  const mail = LEGAL_OWNER.contact;
+  if (!mail?.includes("@") || !text.includes(mail)) return text;
+  return text.split(mail).flatMap((part, i) =>
+    i
+      ? [
+          <a key={i} href={`mailto:${mail}`}>
+            {mail}
+          </a>,
+          part,
+        ]
+      : [part],
+  );
+};
 type Content = { title: string; intro: string; sections: Section[] };
 
 const owner = (locale: Locale) => {
@@ -388,7 +403,7 @@ export function LegalPage({ page }: { page: LegalKind }) {
             <section key={section.title}>
               <h2>{section.title}</h2>
               {section.body.map((text) => (
-                <p key={text}>{text}</p>
+                <p key={text}>{withMailLinks(text)}</p>
               ))}
             </section>
           ))}
