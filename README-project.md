@@ -63,7 +63,7 @@ Se utilizan i18next/react-i18next y un catálogo compartido con el backend. Cons
 La integración usa Google Identity Services en la web y `google-auth-library` para verificar la firma, audiencia, expiración y nonce en el backend. Nunca confía en un correo enviado por el frontend.
 
 1. Crea un cliente OAuth **Aplicación web** en tu proyecto de Google y configura la pantalla de consentimiento y los usuarios de prueba cuando aplique.
-2. Añade como orígenes JavaScript autorizados los dos dominios de producción (`https://tuevento.fun`, `https://yourevent.fun`), sus URI de redirección si la plataforma las requiere, y en local `http://localhost:5187` y los dos dominios de OrbStack. La CSP del gateway ya admite Google Identity Services.
+2. Añade como orígenes JavaScript autorizados los dos dominios de producción (`https://tuevento.fun`, `https://yourevent.fun`) y en local `http://localhost:5187`, `https://tueventofun.orb.local` y `https://en.tueventofun.orb.local`. No hacen falta URI de redirección: el botón abre un popup y la app móvil reutiliza ese acceso web. La CSP del gateway ya admite Google Identity Services.
 3. Pon su ID público en `.env`: `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`. En producción lo pasa la plataforma.
 4. Ejecuta `docker compose up -d --force-recreate api` y recarga la web.
 
