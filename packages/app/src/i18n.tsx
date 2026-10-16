@@ -215,14 +215,9 @@ export function LanguageSwitcher() {
       switchPageLocale(other);
     }
   };
-  // Se ve la bandera y el código ISO 639-1 en minúsculas (es, en, pt, de, fr); el nombre completo queda en el nombre accesible
+  // Se ve solo la bandera; el nombre completo queda en el nombre accesible
   const label = (target: Locale) => `${tr("language.changeLanguage")}: ${locales[target].name}`;
-  const content = (target: Locale) => (
-    <>
-      <LocaleFlag locale={target} />
-      <span className="language-switcher-label">{target}</span>
-    </>
-  );
+  const content = (target: Locale) => <LocaleFlag locale={target} />;
   const option = (other: Locale) => {
     return sites ? (
       <a

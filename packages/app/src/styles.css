@@ -4266,29 +4266,10 @@ small {
   position: relative;
   flex-shrink: 0;
 }
-.language-switcher:hover {
-  text-decoration: underline;
-}
 .locale-flag {
   flex-shrink: 0;
   width: 18px;
   height: 12px;
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgb(23 39 76 / 15%);
-}
-/* El código (es, en…) solo se ve al pasar el ratón o enfocar, y siempre con contraste alto
-   o colores forzados; el nombre completo queda en aria-label. */
-.language-switcher-label {
-  display: none;
-}
-.language-switcher:hover .language-switcher-label,
-.language-switcher:focus-visible .language-switcher-label {
-  display: inline;
-}
-@media (prefers-contrast: more), (forced-colors: active) {
-  .language-switcher-label {
-    display: inline;
-  }
 }
 .language-switcher:focus-visible {
   outline: 2px solid var(--blue);
