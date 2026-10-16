@@ -8,6 +8,10 @@ Given("que abro la página de registro", async ({ ui }) => {
   await ui.abrir("/registro");
 });
 
+Given("que abro la página de acceso", async ({ ui }) => {
+  await ui.abrir("/acceso");
+});
+
 Given("que abro la página de registro en inglés", async ({ page }) => {
   await page.goto(`${englishURL}/registro`);
 });
@@ -40,6 +44,10 @@ When("relleno el registro con datos válidos", async ({ ui, ctx }) => {
 
 When("envío el formulario de registro", async ({ ui }) => {
   await ui.pulsar("Crear mi cuenta");
+});
+
+When("envío el formulario de acceso", async ({ ui }) => {
+  await ui.pulsar("Entrar a mi espacio");
 });
 
 When("guardo los cambios del perfil", async ({ ui }) => {

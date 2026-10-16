@@ -99,6 +99,7 @@ try {
     await mal("/auth/login", "POST", {});
     await mal("/auth/login", "POST", { email: "mal", password: "x" }, "email");
     await mal("/auth/login", "POST", { email: "a@b.co", password: largo(129) }, "password");
+    await mal("/auth/login", "POST", { email: "a@b.co", password: "corta" }, "password");
     // registro: nombres, teléfono, longitudes
     for (const [campo, valor] of [["firstName", "Ana2"], ["lastName", "123"], ["phone", "abc1234567"], ["phone", "+++++++"], ["password", "corta"], ["firstName", largo(51)], ["email", `${largo(250)}@x.co`]])
       await mal("/auth/register", "POST", { ...account(P, "inv"), [campo]: valor }, campo);
