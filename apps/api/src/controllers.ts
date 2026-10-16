@@ -12,6 +12,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
   BadRequestException,
+  ForbiddenException,
   Sse,
 } from "@nestjs/common";
 import { z } from "zod";
@@ -130,10 +131,13 @@ export class PublicController {
       reply,
     );
   }
+  // Solo una cuenta registrada puede abrir una demostración, también por la API
   @Post("auth/demo") async demoLogin(
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
+    const user = await this.auth.current(req);
+    if (user.isDemo) throw new ForbiddenException();
     return this.auth.session(await this.demo.create(requestLocale(req)), req, reply);
   }
   @Post("auth/google/nonce") googleNonce(
