@@ -620,6 +620,7 @@
     "perEvent": "por evento",
     "payService": "Pagar el servicio",
     "paymentPending": "El cobro todavía no está conectado. Cuando esté disponible, aquí podrás pagar tu evento.",
-    "back": "Volver a los precios"
+    "back": "Volver a los precios",
+    "buy": "Comprar"
   }
 }

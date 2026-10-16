@@ -620,6 +620,7 @@
     "perEvent": "per event",
     "payService": "Pay for the service",
     "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
-    "back": "Back to pricing"
+    "back": "Back to pricing",
+    "buy": "Buy"
   }
 }

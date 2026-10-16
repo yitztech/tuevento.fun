@@ -3,18 +3,13 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { guestTiers, localizedPath, type GuestTier, type Locale } from "@tuevento/contracts";
 import { Logo, Container } from "./components";
-import { LanguageSwitcher, formatLocale, tr, useLocale } from "./i18n";
+import { LanguageSwitcher, tr, useLocale } from "./i18n";
 
 /** Ruta de la página de precios en un idioma (/precios, /pricing…). */
 export const pricingPath = (locale: Locale) => localizedPath("pricing", locale);
 
-/** Precio en dólares tal como se escribe en el idioma del dominio (US$5, 5 US$…). */
-const price = (usd: number) =>
-  new Intl.NumberFormat(formatLocale(), {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(usd);
+/** Precio en dólares: $5.00, $10.00… (igual en todos los idiomas). */
+const price = (usd: number) => `$${usd.toFixed(2)}`;
 
 /** Rótulo de un tramo: «Hasta 50 invitados» o «Más de 150 invitados». */
 function tierLabel(tier: GuestTier, index: number) {
@@ -61,7 +56,7 @@ export function PricingPage() {
           <p className="legal-intro">{tr("pricing.intro")}</p>
           <TierList />
           <Link to="/registro" className="button pricing-cta">
-            {tr("common.createMyAccount")}
+            {tr("pricing.buy")}
             <ArrowRight size={18} />
           </Link>
         </main>

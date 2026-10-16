@@ -620,6 +620,7 @@
     "perEvent": "pro Veranstaltung",
     "payService": "Service bezahlen",
     "paymentPending": "Die Zahlung ist noch nicht angebunden. Sobald sie verfügbar ist, kannst du deine Veranstaltung hier bezahlen.",
-    "back": "Zurück zu den Preisen"
+    "back": "Zurück zu den Preisen",
+    "buy": "Kaufen"
   }
 }
