@@ -108,12 +108,11 @@ const onlyPhoneChars = filterInput(/[^\d\s()+-]/g);
 export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const postAuthTarget = usePostAuthTarget();
   const { search } = useLocation();
-  const { api, setUser, config, toast } = useApp(),
+  const { api, setUser, toast } = useApp(),
     navigate = useNavigate(),
     [error, setError] = useState(""),
     [showPassword, setShowPassword] = useState(false),
-    [avatar, setAvatar] = useState(""),
-    [demoBusy, setDemoBusy] = useState(false);
+    [avatar, setAvatar] = useState("");
   const form = useForm<RegisterInput>({
     resolver: zodResolver(
       registerMode ? registerSchema : loginSchema,
@@ -151,17 +150,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
       setError(errorText(e));
     }
   });
-  const demo = async () => {
-    setDemoBusy(true);
-    try {
-      setUser(await api.demo());
-      navigate("/app");
-    } catch (e) {
-      setError(errorText(e));
-    } finally {
-      setDemoBusy(false);
-    }
-  };
   return (
     <AuthShell>
           <h2>
@@ -313,14 +301,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               {registerMode ? tr("account.signIn") : tr("account.createAccount")}
             </Link>
           </p>
-          {config.demoEnabled && (
-            <button className="demo-button" disabled={demoBusy} onClick={demo}>
-              {demoBusy
-                ? tr("account.gettingDemoReady")
-                : tr("common.exploreDemo")}
-              <ArrowRight size={16} />
-            </button>
-          )}
           <AuthLegalNotice registerMode={registerMode} />
     </AuthShell>
   );

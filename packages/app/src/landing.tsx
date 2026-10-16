@@ -182,7 +182,7 @@ export function LandingPage() {
                 {tr("common.createFirstEvent")}
                 <ArrowRight size={20} />
               </Link>
-              <Link className="landing-demo-link" to="/app">
+              <Link className="landing-demo-link" to="/registro">
                 <span>
                   <Play size={15} fill="currentColor" />
                 </span>
@@ -336,7 +336,7 @@ export function LandingPage() {
                 {tr("landing.repliesNotificationsDashboard")}
               </li>
             </ul>
-            <Link className="landing-text-link" to="/app">
+            <Link className="landing-text-link" to="/registro">
               {tr("common.exploreDemo")}
               <ArrowRight size={19} />
             </Link>
@@ -503,7 +503,7 @@ export function LandingPage() {
         </div>
         <nav aria-label={tr("landing.footerLinks")}>
           <Link to="/acceso">{tr("common.signSpace")}</Link>
-          <Link to="/app">{tr("common.exploreDemo")}</Link>
+          <Link to="/registro">{tr("common.exploreDemo")}</Link>
           <a href="#preguntas">{tr("landing.frequentlyAskedQuestions")}</a>
           <LegalLinks className="landing-legal-links" />
         </nav>

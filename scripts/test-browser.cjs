@@ -66,6 +66,14 @@ fs.mkdirSync(artifacts, { recursive: true });
     });
   };
   try {
+    // Sin sesión, /app no abre la demostración: pide acceder primero
+    await page.goto(target + "/app");
+    await expect(page).toHaveURL(/\/acceso$/);
+    // La demostración exige una cuenta: el script la abre por la API, como un usuario registrado
+    for (const origen of [target, targetEn]) {
+      await page.goto(origen + "/acceso");
+      await page.evaluate(() => fetch("/api/auth/demo", { method: "POST", headers: { "x-tuevento-client": "1" } }));
+    }
     await page.goto(target + "/app");
     await expect(
       page.getByRole("heading", { name: "La vida se celebra juntos." }),

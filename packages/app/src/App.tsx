@@ -109,7 +109,6 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
           u = await api.me();
         } catch (e) {
           if (!(e instanceof ApiError && e.status === 401)) throw e;
-          if (!isPublic && !isAuth && c.demoEnabled && (!runtime.platform || runtime.platform === "web")) u = await api.demo();
         }
         if (alive) setUser(u);
       } catch (e) {
