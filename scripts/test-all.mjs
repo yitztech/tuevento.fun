@@ -1,5 +1,5 @@
 // npm test → todas las pruebas, una tras otra, con un resumen al final.
-//   npm test                      unit, api, endpoints, security, db y e2e (web)
+//   npm test                      unit, api, endpoints, security, db, browser, landing y e2e (web)
 //   npm test -- security db       solo esas suites
 //   npm test -- movil             Android e iOS, uno tras otro (solo local; no entra por defecto)
 //   npm test -- --lista           muestra las suites
@@ -13,6 +13,8 @@ const suites = {
   endpoints: { desc: "API: endpoints restantes, idiomas es/en/pt/de/fr y validación de entradas", cmd: "npm run test:endpoints", stack: true },
   security: { desc: "API: seguridad (auth, CSRF, IDOR, privilegios, sesión, fuerza bruta, fugas, inyección)", cmd: "npm run test:security", stack: true },
   db: { desc: "Base de datos: migraciones, restricciones, cascadas y permisos (solo local)", cmd: "npm run test:db", stack: true },
+  browser: { desc: "Web: recorrido completo en dos dominios (registro, evento, invitación, RSVP, pantalla)", cmd: "npm run test:browser", stack: true },
+  landing: { desc: "Web: landing, CTAs y cuenta creada desde la landing", cmd: "npm run test:landing", stack: true },
   e2e: { desc: "Web: escenarios Gherkin en Chromium", cmd: "npm run e2e", stack: true },
   movil: { desc: "Apps: Android e iOS, uno tras otro (solo local)", cmd: "npm run e2e:movil", stack: true, soloSiSePide: true },
 };

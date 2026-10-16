@@ -104,6 +104,8 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page.setViewportSize({ width: 1512, height: 1100 });
     // El inglés se ofrece como enlace a su dominio; la página no se redirige sola
     expect(new URL(page.url()).origin).toBe(new URL(target).origin);
+    // El selector es un menú (varios idiomas): se abre y se elige el inglés
+    await page.locator(".landing-header summary.language-switcher").first().click();
     await page
       .locator('.landing-header a.language-switcher[hreflang="en"]')
       .first()

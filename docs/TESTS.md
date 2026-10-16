@@ -5,7 +5,7 @@ comando para repetir la que falle). Una suite que falla no detiene a las demás.
 arriba, `npm test` la levanta con `docker compose up -d --wait`.
 
 ```
-npm test                      # unit, api, endpoints, security, db y e2e (web)
+npm test                      # unit, api, endpoints, security, db, browser, landing y e2e (web)
 npm test -- security db       # solo esas suites
 npm test -- movil             # Android e iOS, uno tras otro (solo local; no entra por defecto)
 npm test -- --lista           # qué suites hay y su comando
@@ -18,6 +18,8 @@ npm test -- --lista           # qué suites hay y su comando
 | `endpoints` | Endpoints restantes (`/config`, demo, Google, App Links), **idiomas es/en/pt/de/fr** y validación de entradas | `npm run test:endpoints` | sí |
 | `security` | Autenticación, CSRF/origen/CORS, aislamiento entre cuentas (IDOR), escalada de privilegios, sesión, fuerza bruta, enumeración, fugas, inyección, cabeceras y límites | `npm run test:security` | sí |
 | `db` | Migraciones desde cero como el rol `api`, restricciones (longitudes, idiomas, valores permitidos), integridad, cascadas, permisos del rol | `npm run test:db` | **no, solo local** |
+| `browser` | Recorrido completo en los dos dominios: demo, registro, evento, invitación familiar, RSVP con SSE, pantalla TV | `npm run test:browser` | sí |
+| `landing` | Landing, CTAs, preguntas frecuentes y cuenta creada desde la landing (es y en) | `npm run test:landing` | sí |
 | `e2e` | Escenarios Gherkin en español sobre la web (Chromium), ver [E2E.md](E2E.md) | `npm run e2e` | sí |
 | `movil` | Los escenarios `@movil` en Android (emulador) e iOS (simulador), uno tras otro | `npm run e2e:movil` | **no, solo local** |
 
@@ -46,4 +48,4 @@ cabeceras de seguridad y `no-store`; los cuerpos enormes y los avatares no váli
 - El flujo real de Google (necesita credenciales de Google): solo se prueba que rechaza credenciales falsas.
 - El puente de autenticación móvil (App Link + PKCE) dentro de las apps; lo cubre `test:platform` solo en la API.
 - Los escenarios `@perfil` y la sesión en las apps móviles.
-- `test:browser` y `test:landing` (antiguos) siguen rotos por el selector de idioma; falta migrarlos a escenarios.
+- `test:browser` y `test:landing` son scripts largos anteriores a los escenarios Gherkin; falta migrarlos a `.feature`.

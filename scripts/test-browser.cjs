@@ -80,6 +80,8 @@ fs.mkdirSync(artifacts, { recursive: true });
     const toEnglish = page.locator('a.language-switcher[hreflang="en"]').first();
     await expect(toEnglish).toHaveAttribute("href", `${targetEn}/app`);
     expect(new URL(page.url()).origin).toBe(new URL(target).origin);
+    // Con varios idiomas el selector es un menú: se abre y se elige el inglés
+    await page.locator("summary.language-switcher").first().click();
     await toEnglish.click();
     await page.waitForURL(`${targetEn}/app`);
     await expect(
