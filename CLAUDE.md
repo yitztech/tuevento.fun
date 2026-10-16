@@ -38,13 +38,13 @@ Antes de cerrar un cambio, con la app arriba (`docker compose up -d`): `npm run 
 
 ## Primero en local, después en CI o producción
 
-Toda prueba, script o workflow nuevo se valida **primero en local** y solo cuando pasa ahí se lleva a CI o a producción; nunca al revés. **Solo las pruebas de las apps móviles** (emulador de Android, simulador de iOS: `npm run e2e:movil`) se ejecutan **solo en local** por ahora: `.github/workflows/mobile-e2e.yml` queda en manual y no se añade a los PR ni a ningún despliegue hasta que el usuario lo pida. El resto (web, API, contracts) sí corre en CI como siempre, después de pasar en local. Un cambio en un workflow de CI se prueba antes ejecutando en local lo mismo que hace (los mismos comandos), y se avisa de lo que no se pudo comprobar.
+Toda prueba, script o workflow nuevo se valida **primero en local** y solo cuando pasa ahí se lleva a CI o a producción; nunca al revés. **Solo dos grupos de pruebas se ejecutan solo en local** por ahora, por decisión del usuario: las de las **apps móviles** (emulador de Android, simulador de iOS: `npm run e2e:movil`; `.github/workflows/mobile-e2e.yml` queda en manual) y las de la **base de datos** (`tests/db`, `npm run test:db`). Ninguna se añade a los PR ni a un despliegue hasta que el usuario lo pida. El resto (web, API, contracts) sí corre en CI como siempre, después de pasar en local. Un cambio en un workflow de CI se prueba antes ejecutando en local lo mismo que hace (los mismos comandos), y se avisa de lo que no se pudo comprobar.
 
 ## Pruebas: cada capa tiene las suyas
 
 `npm test` ejecuta todas las suites (unit, api, endpoints, security, db, e2e) con un resumen; cada una tiene su comando (`npm run test:api`, `test:endpoints`, `test:security`, `test:db`, `e2e`). Detalle en [docs/TESTS.md](docs/TESTS.md).
 
-- Un endpoint nuevo o cambiado se entrega con su prueba de API; si toca autenticación, permisos, datos de otras cuentas o entradas del usuario, también con su caso en `scripts/test-security.mjs`.
+- Un endpoint nuevo o cambiado se entrega con su prueba de API; si toca autenticación, permisos, datos de otras cuentas o entradas del usuario, también con su caso en `tests/api/test-security.mjs`.
 - Una migración, restricción o columna nueva se entrega con su prueba en `tests/db/specs/`.
 - Idiomas soportados: es, en, pt, de y fr; cualquier prueba que dependa del idioma cubre los cinco.
 - **La API siempre corre en GitHub Actions** (`test:api`, `test:endpoints`, `test:security`: la sirve a varios clientes). **Base de datos (`tests/db`) y móviles, solo en local** hasta que el usuario pida pasarlas a CI.

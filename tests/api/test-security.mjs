@@ -3,7 +3,7 @@
 // cabeceras y límites. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password } from "./lib/api.mjs";
+import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-sec";

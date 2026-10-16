@@ -68,7 +68,7 @@ Un servicio de pruebas (p. ej. `mobile-tls`) vive en `compose.yml` bajo `profile
   (pila nativa sin Docker, `scripts/mobile-native-stack.sh`); gratis en repos públicos (`private == false`).
   **Solo manual y sin verificar en GitHub** hasta decidir activarlo.
 
-### 2.6 Pruebas de la API (`scripts/test-api.mjs`, `test-endpoints.mjs`, `test-security.mjs`, `scripts/lib/api.mjs`)
+### 2.6 Pruebas de la API (`tests/api/`: `test-api.mjs`, `test-endpoints.mjs`, `test-security.mjs`, cliente en `api.mjs`)
 - Cliente mínimo con sesión por cookie, `Host` fijable (el idioma depende del dominio), `raw` y `call(path, método, cuerpo, estado)`.
 - **Seguridad** (checklist reutilizable): sin sesión todo lo privado da 401 · escrituras exigen cabecera propia y
   origen permitido · CORS no abre a orígenes ajenos · una cuenta no toca lo de otra (IDOR) · el cuerpo no da
@@ -94,7 +94,7 @@ los móviles. Cada suite tiene su propio comando. **En CI se usa `npm run test:u
 ## 3. Cómo adoptarlo en otro proyecto (orden recomendado)
 1. **Contratos y límites:** un paquete compartido con Zod y `accountLimits`; test de sincronía con las migraciones.
 2. **`check-versions` y `check-test-only`** dentro de `test:unit`.
-3. **Cliente de API + suites** `api`, `endpoints` y `security` (copiar `scripts/lib/api.mjs` y adaptar rutas).
+3. **Cliente de API + suites** `api`, `endpoints` y `security` (copiar `tests/api/api.mjs` y adaptar rutas).
 4. **Suite `db`** con base temporal y rol de aplicación.
 5. **E2E web:** `playwright-bdd`, `ui`, `calentar`, etiquetas y `summary`.
 6. **Orquestador** `test-all.mjs` y la regla en `CLAUDE.md` (o equivalente) de que cada cambio llega con su prueba.

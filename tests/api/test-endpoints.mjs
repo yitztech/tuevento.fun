@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales } from "@tuevento/contracts";
-import { client, account, cleanup, englishHost, spanishHost, suiteRunner, eventData, invitationData } from "./lib/api.mjs";
+import { client, account, cleanup, englishHost, spanishHost, suiteRunner, eventData, invitationData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";

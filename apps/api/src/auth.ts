@@ -47,7 +47,9 @@ const loginFailures = new Map<string, { count: number; reset: number }>();
 // y por correo (no inunda un buzón). Pasado el límite por correo se responde igual,
 // sin enviar nada, para no revelar si la cuenta existe.
 const RESET_WINDOW_MS = 15 * 60 * 1000,
-  RESET_MAX_PER_IP = 10,
+  // Configurable solo para pruebas (compose.yml y compose.ci.yml lo suben): varias ejecuciones
+  // seguidas de las suites de la API salen todas de la misma IP. En producción vale 10.
+  RESET_MAX_PER_IP = Number(process.env.RESET_MAX_PER_IP) || 10,
   RESET_MAX_PER_EMAIL = 3;
 const resetRequests = new Map<string, { count: number; reset: number }>();
 function allow(key: string, max: number, now = Date.now()) {
