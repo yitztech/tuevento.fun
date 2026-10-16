@@ -46,7 +46,7 @@ for (const dir of dirs.filter((d) => d !== ".")) {
   const pkg = read(join(dir, "package.json"));
   const declared = new Set(kinds.flatMap((k) => Object.keys(pkg[k] ?? {})));
   const missing = new Set();
-  const sources = ["src", "steps", "support", "scripts", "features"].map((d) => join(dir, d)).filter(existsSync);
+  const sources = ["src", "steps", "support", "scripts", "features", "specs"].map((d) => join(dir, d)).filter(existsSync);
   for (const file of sources.flatMap(walk)) {
     for (const m of readFileSync(file, "utf8").matchAll(
       /(?:from\s+|import\s*\(\s*|require\(\s*)["']([^."'/][^"']*)["']/g,

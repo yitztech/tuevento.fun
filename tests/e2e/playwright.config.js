@@ -17,6 +17,8 @@ const testDir = defineBddConfig({
 export default defineConfig({
   testDir,
   outputDir: "results/artifacts",
+  // Web: calienta Vite antes de empezar (ver support/calentar.js).
+  globalSetup: android || ios ? undefined : "./support/calentar.js",
   // A ritmo humano un escenario tarda mucho más que los 30 s por defecto.
   timeout: lento ? 180_000 : 30_000,
   expect: { timeout: lento ? 15_000 : 5_000 },

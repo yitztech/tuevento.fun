@@ -15,13 +15,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build && npm run typecheck && npm test
+      - run: npm run build && npm run typecheck && npm run test:unit
       - run: npx playwright install --with-deps chromium
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --build --wait
+      # La API sirve a varios clientes (web, Android, iOS): sus pruebas siempre corren en CI.
+      # Las de base de datos (tests/db) y las móviles son solo locales, ver docs/TESTS.md.
+      - run: npm run test:api && npm run test:endpoints && npm run test:security
       - run: npm run e2e
       - run: npm run e2e:summary
         if: always()
-      - run: npm run test:api && npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
+      - run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
       - uses: actions/upload-artifact@v7
         if: always()
         with:
