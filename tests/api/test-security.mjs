@@ -63,6 +63,12 @@ try {
     assert.equal((await a.call(`/events/${evento.id}/invitations`)).length, 1);
   });
 
+  await suite("Demostración: sin cuenta registrada no hay sesión demo", async () => {
+    const r = await guest.raw("/auth/demo", { method: "POST", body: {} });
+    assert.equal(r.status, 401);
+    assert.ok(!(r.headers["set-cookie"] ?? "").includes("session="), "no debe emitir sesión");
+  });
+
   await suite("Privilegios: no se puede escalar por el cuerpo de la petición", async () => {
     const c = client();
     const extra = { isOwner: true, is_owner: true, isDemo: true, id: UUID, locale: "xx", emailVerified: true };

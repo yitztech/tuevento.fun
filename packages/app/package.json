@@ -10,6 +10,7 @@
     "./landing": "./src/landing.tsx",
     "./downloads": "./src/downloads.tsx",
     "./legal": "./src/legal.tsx",
+    "./pricing": "./src/pricing.tsx",
     "./i18n": "./src/i18n.tsx"
   },
   "dependencies": {

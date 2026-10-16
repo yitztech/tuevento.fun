@@ -308,6 +308,7 @@ export const statusLabels = {
 } as const satisfies Record<Status, MessageKey>;
 
 export * from "./i18n";
+export * from "./pricing";
 
 export const clientPlatformSchema = z.enum(["web", "android", "ios"]);
 export type ClientPlatform = z.infer<typeof clientPlatformSchema>;

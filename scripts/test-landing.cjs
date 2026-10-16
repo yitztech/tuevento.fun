@@ -235,17 +235,10 @@ fs.mkdirSync(artifacts, { recursive: true });
     await demo
       .getByRole("link", { name: "Ver la demostración", exact: true })
       .click();
-    await expect(demo).toHaveURL(/\/app$/);
-    await expect(
-      demo.getByRole("heading", { name: "La vida se celebra juntos." }),
-    ).toBeVisible();
-    await expect(
-      demo.getByText(
-        "Estás explorando una demostración. Los eventos y sus datos son de ejemplo.",
-      ),
-    ).toBeVisible();
+    // La demostración exige registrarse primero: el CTA lleva al registro
+    await expect(demo).toHaveURL(/\/registro/);
     await demoContext.close();
-    checks.push("CTA de demostración abre el panel aislado sin registro");
+    checks.push("CTA de demostración lleva a registrarse antes de explorarla");
     expect(errors).toEqual([]);
     fs.writeFileSync(
       path.join(artifacts, "landing-results.json"),

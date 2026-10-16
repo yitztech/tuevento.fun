@@ -66,6 +66,27 @@ fs.mkdirSync(artifacts, { recursive: true });
     });
   };
   try {
+    // Sin sesión, /app no abre la demostración: pide acceder primero
+    await page.goto(target + "/app");
+    await expect(page).toHaveURL(/\/acceso$/);
+    // La demostración exige una cuenta registrada: el script se registra y abre la demo desde la página
+    for (const origen of [target, targetEn]) {
+      await page.goto(origen + "/acceso");
+      const estado = await page.evaluate(async () => {
+        const cabeceras = { "content-type": "application/json", "x-tuevento-client": "1" };
+        const cuenta = {
+          firstName: "Prueba",
+          lastName: "Automática",
+          email: `navegador-${Date.now()}@example.invalid`,
+          phone: "+527771234567",
+          password: "clave-navegador-1",
+        };
+        await fetch("/api/auth/register", { method: "POST", headers: cabeceras, body: JSON.stringify(cuenta) });
+        const demo = await fetch("/api/auth/demo", { method: "POST", headers: { "x-tuevento-client": "1" } });
+        return demo.status;
+      });
+      expect(estado).toBe(201);
+    }
     await page.goto(target + "/app");
     await expect(
       page.getByRole("heading", { name: "La vida se celebra juntos." }),

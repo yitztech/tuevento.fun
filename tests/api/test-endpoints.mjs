@@ -17,15 +17,20 @@ try {
     assert.equal(typeof config.googleClientId, "string");
   });
 
-  await suite("Acceso demo: sesión de demostración sin privilegios", async () => {
+  await suite("Acceso demo: solo para cuentas registradas, sin privilegios", async () => {
     const { demoEnabled } = await guest.call("/config");
-    if (!demoEnabled) return void (await client().call("/auth/demo", "POST", {}, 404));
-    const demo = client();
-    const user = await demo.call("/auth/demo", "POST", {}, 201);
+    // Sin sesión nunca se crea una demostración
+    await guest.call("/auth/demo", "POST", {}, 401);
+    const cuenta = client();
+    await cuenta.call("/auth/register", "POST", account("demo-reg", "a"), 201);
+    if (!demoEnabled) return void (await cuenta.call("/auth/demo", "POST", {}, 404));
+    const user = await cuenta.call("/auth/demo", "POST", {}, 201);
     assert.equal(user.isDemo, true);
     assert.equal(user.isOwner, false);
-    assert.ok(demo.cookie().startsWith("session="));
-    await demo.call("/owner/metrics", "GET", undefined, 403);
+    assert.ok(cuenta.cookie().startsWith("session="));
+    await cuenta.call("/owner/metrics", "GET", undefined, 403);
+    // Una demostración no abre otra
+    await cuenta.call("/auth/demo", "POST", {}, 403);
     // La cuenta demo no puede entrar con contraseña
     await client().call("/auth/login", "POST", { email: user.email, password: "cualquiera-123" }, 401);
   });
