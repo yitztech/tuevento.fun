@@ -20,7 +20,7 @@ export const en: LegalTexts = {
       {
         title: "Information about your account",
         body: [
-          "When you sign up we store your first and last name, email, phone number, username and a password protected with scrypt (we never store it in plain text). We also store the language of the domain you use to sign in: tuevento.fun for Spanish and yourevent.fun for English. We write to you in that language and from that domain.",
+          "When you sign up we store your first and last name, email, phone number and a password protected with scrypt (we never store it in plain text). We also store the language of the domain you use to sign in: tuevento.fun for Spanish and yourevent.fun for English. We write to you in that language and from that domain.",
           "If you upload an avatar or logo, we resize it to 256 × 256 pixels and keep only that copy.",
           "If you sign in with Google, we receive and verify your name, email and Google account identifier. We do not receive your Google password.",
         ],

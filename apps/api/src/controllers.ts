@@ -13,7 +13,6 @@ import {
   ParseUUIDPipe,
   BadRequestException,
   Sse,
-  ConflictException,
 } from "@nestjs/common";
 import { z } from "zod";
 import sharp from "sharp";
@@ -331,17 +330,11 @@ export class OrganizerController {
     @Body() body: unknown,
   ) {
     const d = parse(profileSchema, body, req);
-    try {
-      const [r] = await this.db.query(
-        "UPDATE users SET first_name=$1,last_name=$2,phone=$3,username=$4 WHERE id=$5 RETURNING *",
-        [d.firstName, d.lastName, d.phone, d.username, req.user.id],
-      );
-      return userView(r);
-    } catch (e: any) {
-      if (e.code === "23505")
-        throw new ConflictException("errors.usernameAlreadyTaken");
-      throw e;
-    }
+    const [r] = await this.db.query(
+      "UPDATE users SET first_name=$1,last_name=$2,phone=$3 WHERE id=$4 RETURNING *",
+      [d.firstName, d.lastName, d.phone, req.user.id],
+    );
+    return userView(r);
   }
   @Put("profile/avatar") async avatar(
     @Req() req: AuthedRequest,

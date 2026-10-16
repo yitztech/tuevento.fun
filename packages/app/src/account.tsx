@@ -10,6 +10,7 @@ import {
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  accountLimits,
   registerSchema,
   loginSchema,
   profileSchema,
@@ -97,6 +98,13 @@ function AuthShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+const filterInput =
+  (pattern: RegExp) => (event: { target: { value: string } }) => {
+    event.target.value = event.target.value.replace(pattern, "");
+  };
+const onlyNameChars = filterInput(/[^\p{L}\p{M}\s'’.-]/gu);
+const onlyPhoneChars = filterInput(/[^\d\s()+-]/g);
+
 export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const postAuthTarget = usePostAuthTarget();
   const { search } = useLocation();
@@ -116,7 +124,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
       lastName: "",
       phone: "",
       email: "",
-      username: "",
       password: "",
     },
   });
@@ -174,47 +181,38 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
           <form onSubmit={submit} noValidate>
             {registerMode && (
               <>
-                <div className="form-row">
-                  <Field
-                    label={tr("common.firstName")}
-                    error={form.formState.errors.firstName?.message}
-                  >
-                    <input
-                      autoComplete="given-name"
-                      {...form.register("firstName")}
-                    />
-                  </Field>
-                  <Field
-                    label={tr("common.lastName")}
-                    error={form.formState.errors.lastName?.message}
-                  >
-                    <input
-                      autoComplete="family-name"
-                      {...form.register("lastName")}
-                    />
-                  </Field>
-                </div>
-                <div className="form-row">
-                  <Field
-                    label={tr("common.phone")}
-                    error={form.formState.errors.phone?.message}
-                  >
-                    <input
-                      type="tel"
-                      autoComplete="tel"
-                      {...form.register("phone")}
-                    />
-                  </Field>
-                  <Field
-                    label={tr("common.username")}
-                    error={form.formState.errors.username?.message}
-                  >
-                    <input
-                      autoComplete="username"
-                      {...form.register("username")}
-                    />
-                  </Field>
-                </div>
+                <Field
+                  label={tr("account.firstNames")}
+                  error={form.formState.errors.firstName?.message}
+                >
+                  <input
+                    autoComplete="given-name"
+                    maxLength={accountLimits.personName}
+                    {...form.register("firstName", { onChange: onlyNameChars })}
+                  />
+                </Field>
+                <Field
+                  label={tr("account.lastNames")}
+                  error={form.formState.errors.lastName?.message}
+                >
+                  <input
+                    autoComplete="family-name"
+                    maxLength={accountLimits.personName}
+                    {...form.register("lastName", { onChange: onlyNameChars })}
+                  />
+                </Field>
+                <Field
+                  label={tr("common.phone")}
+                  error={form.formState.errors.phone?.message}
+                >
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={accountLimits.phone}
+                    {...form.register("phone", { onChange: onlyPhoneChars })}
+                  />
+                </Field>
               </>
             )}
             <Field
@@ -224,6 +222,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               <input
                 type="email"
                 autoComplete="email"
+                maxLength={accountLimits.email}
                 {...form.register("email")}
               />
             </Field>
@@ -242,6 +241,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   autoComplete={
                     registerMode ? "new-password" : "current-password"
                   }
+                  maxLength={accountLimits.password}
                   {...form.register("password")}
                 />
                 <button
@@ -364,7 +364,12 @@ export function ForgotPasswordPage() {
             label={tr("common.email")}
             error={form.formState.errors.email?.message}
           >
-            <input type="email" autoComplete="email" {...form.register("email")} />
+            <input
+              type="email"
+              autoComplete="email"
+              maxLength={accountLimits.email}
+              {...form.register("email")}
+            />
           </Field>
           {error && <ErrorBox message={error} />}
           <button className="button full" disabled={form.formState.isSubmitting}>
@@ -433,6 +438,7 @@ export function ResetPasswordPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  maxLength={accountLimits.password}
                   {...form.register("password")}
                 />
                 <button
@@ -570,7 +576,6 @@ export function ProfilePage() {
       firstName: user?.firstName,
       lastName: user?.lastName,
       phone: user?.phone,
-      username: user?.username,
     },
   });
   if (!user) return null;
@@ -633,32 +638,35 @@ export function ProfilePage() {
               label={tr("common.firstName")}
               error={form.formState.errors.firstName?.message}
             >
-              <input {...form.register("firstName")} />
+              <input
+                maxLength={accountLimits.personName}
+                {...form.register("firstName", { onChange: onlyNameChars })}
+              />
             </Field>
             <Field
               label={tr("common.lastName")}
               error={form.formState.errors.lastName?.message}
             >
-              <input {...form.register("lastName")} />
+              <input
+                maxLength={accountLimits.personName}
+                {...form.register("lastName", { onChange: onlyNameChars })}
+              />
             </Field>
           </div>
           <Field label={tr("common.email")}>
             <input value={user.email} readOnly type="email" />
           </Field>
-          <div className="form-row">
-            <Field
-              label={tr("common.phone")}
-              error={form.formState.errors.phone?.message}
-            >
-              <input type="tel" {...form.register("phone")} />
-            </Field>
-            <Field
-              label={tr("common.username")}
-              error={form.formState.errors.username?.message}
-            >
-              <input {...form.register("username")} />
-            </Field>
-          </div>
+          <Field
+            label={tr("common.phone")}
+            error={form.formState.errors.phone?.message}
+          >
+            <input
+              type="tel"
+              inputMode="tel"
+              maxLength={accountLimits.phone}
+              {...form.register("phone", { onChange: onlyPhoneChars })}
+            />
+          </Field>
           {error && <ErrorBox message={error} />}
           <div className="form-actions">
             <button className="button" disabled={form.formState.isSubmitting}>

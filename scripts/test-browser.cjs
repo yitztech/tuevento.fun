@@ -80,6 +80,8 @@ fs.mkdirSync(artifacts, { recursive: true });
     const toEnglish = page.locator('a.language-switcher[hreflang="en"]').first();
     await expect(toEnglish).toHaveAttribute("href", `${targetEn}/app`);
     expect(new URL(page.url()).origin).toBe(new URL(target).origin);
+    // Con varios idiomas el selector es un menú: se abre y se elige el inglés
+    await page.locator("summary.language-switcher").first().click();
     await toEnglish.click();
     await page.waitForURL(`${targetEn}/app`);
     await expect(
@@ -182,12 +184,9 @@ fs.mkdirSync(artifacts, { recursive: true });
     const unique = Date.now(),
       email = `ui-${unique}@example.invalid`,
       password = crypto.randomBytes(20).toString("hex");
-    await page.getByLabel("Nombre", { exact: true }).fill("Paula");
-    await page.getByLabel("Apellidos", { exact: true }).fill("Prueba");
+    await page.getByLabel("Nombre(s)", { exact: true }).fill("Paula");
+    await page.getByLabel("Apellido(s)", { exact: true }).fill("Prueba");
     await page.getByLabel("Teléfono", { exact: true }).fill("+527771234567");
-    await page
-      .getByLabel("Nombre de usuario", { exact: true })
-      .fill(`ui_${unique}`);
     await page.getByLabel("Correo electrónico", { exact: true }).fill(email);
     await page.getByLabel("Contraseña", { exact: true }).fill(password);
     await page

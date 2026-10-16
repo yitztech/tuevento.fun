@@ -4,29 +4,46 @@
   "version": "1.0.0",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tests/*"
   ],
   "scripts": {
     "build": "npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api && npm run build -w @tuevento/web",
     "dev": "npm run dev -w @tuevento/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "tsx --test packages/contracts/src/*.test.ts",
-    "test:api": "node scripts/test-api.mjs",
+    "test": "node scripts/test-all.mjs",
+    "test:unit": "node scripts/check-versions.mjs && node scripts/check-test-only.mjs && tsx --test packages/contracts/src/*.test.ts",
+    "test:api": "node tests/api/test-api.mjs",
+    "test:endpoints": "node tests/api/test-endpoints.mjs",
+    "test:security": "node tests/api/test-security.mjs",
+    "test:db": "npm test -w @tuevento/db-tests",
     "test:browser": "node scripts/test-browser.cjs",
     "test:landing": "node scripts/test-landing.cjs",
     "test:password": "node scripts/test-password-reset.cjs",
-    "test:platform": "node scripts/test-platform.mjs"
+    "test:platform": "node tests/api/test-platform.mjs",
+    "check:versions": "node scripts/check-versions.mjs",
+    "e2e": "npm run test -w @tuevento/e2e --",
+    "e2e:headed": "npm run test:headed -w @tuevento/e2e --",
+    "e2e:ui": "npm run test:ui -w @tuevento/e2e --",
+    "e2e:summary": "npm run summary -w @tuevento/e2e",
+    "e2e:ver": "E2E_SLOWMO=${E2E_SLOWMO:-500} E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test:headed -w @tuevento/e2e -- --workers=1",
+    "e2e:android": "E2E_TARGET=android npm run test -w @tuevento/e2e --",
+    "e2e:android:ver": "E2E_TARGET=android E2E_SLOWMO=${E2E_SLOWMO:-500} E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test -w @tuevento/e2e --",
+    "e2e:ios": "E2E_TARGET=ios npm run test -w @tuevento/e2e --",
+    "e2e:ios:ver": "E2E_TARGET=ios E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test -w @tuevento/e2e --",
+    "e2e:movil": "bash scripts/mobile-test.sh android ios",
+    "e2e:movil:ios-primero": "bash scripts/mobile-test.sh ios android"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
-    "@types/node": "^22.18.6",
-    "tsx": "^4.20.6",
-    "typescript": "~5.9.3",
-    "uuid": "^11.1.1"
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.19.2",
+    "tsx": "^4.23.15",
+    "typescript": "~7.0.2",
+    "uuid": "^14.0.3"
   },
   "overrides": {
     "xcode": {
-      "uuid": "^11.1.1"
+      "uuid": "^14.0.3"
     }
   }
 }

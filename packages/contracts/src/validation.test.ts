@@ -91,7 +91,6 @@ test("Registro exige contraseña y contacto válidos", () => {
       lastName: "López",
       email: "mal",
       phone: "x",
-      username: "ana",
       password: "123",
     }).success,
     false,
@@ -117,7 +116,8 @@ test("Idiomas admitidos, fallback y traducción sin alterar texto propio", async
   const { normalizeLocale, translateMessage, notificationMessage, translate, themes } =
     await import("./index");
   assert.equal(normalizeLocale("en-GB,en;q=0.9"), "en");
-  assert.equal(normalizeLocale("fr"), "es");
+  assert.equal(normalizeLocale("fr-CA"), "fr");
+  assert.equal(normalizeLocale("it"), "es");
   assert.equal(normalizeLocale(), "es");
   assert.equal(
     translateMessage("validation.enterValidEmailAddress", "en"),
@@ -178,4 +178,40 @@ test("Recuperar contraseña: correo normalizado, token de 43 caracteres y mensaj
       "The password reset link is invalid or has expired.",
     );
   }
+});
+const newUser = {
+  firstName: "María José",
+  lastName: "O'Connor-Núñez",
+  email: "ana@example.com",
+  phone: "+52 (55) 1234-5678",
+  password: "una-clave-larga-1",
+};
+test("Registro acepta nombres con acentos, apóstrofo y guion", () => {
+  assert.equal(registerSchema.safeParse(newUser).success, true);
+});
+test("Registro rechaza números y símbolos en nombre y apellidos", () => {
+  for (const value of ["Ana2", "123", "Ana_López", "Ana@", "<b>Ana</b>"]) {
+    assert.equal(registerSchema.safeParse({ ...newUser, firstName: value }).success, false, value);
+    assert.equal(registerSchema.safeParse({ ...newUser, lastName: value }).success, false, value);
+  }
+});
+test("Registro rechaza letras y teléfonos sin dígitos suficientes", () => {
+  for (const value of ["abc1234567", "555-CALL-NOW", "+++++++", "123456", "1234567890123456"]) {
+    assert.equal(registerSchema.safeParse({ ...newUser, phone: value }).success, false, value);
+  }
+});
+test("Registro limita la longitud de nombre, correo, teléfono y contraseña", () => {
+  const long = (n: number, c = "a") => c.repeat(n);
+  const ok = (patch: object) => registerSchema.safeParse({ ...newUser, ...patch }).success;
+  assert.equal(ok({ firstName: long(50) }), true);
+  assert.equal(ok({ firstName: long(51) }), false);
+  assert.equal(ok({ lastName: long(51) }), false);
+  assert.equal(ok({ email: `${long(243)}@example.com` }), false);
+  assert.equal(ok({ phone: "1".repeat(21) }), false);
+  assert.equal(ok({ password: long(128) }), true);
+  assert.equal(ok({ password: long(129) }), false);
+});
+test("El registro ya no pide nombre de usuario", () => {
+  assert.equal(registerSchema.safeParse(newUser).success, true);
+  assert.equal("username" in registerSchema.shape, false);
 });

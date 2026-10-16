@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Database } from "./database";
-import { supportedLocales, translate, type Locale } from "@tuevento/contracts";
+import { domainLocales, translate, type Locale } from "@tuevento/contracts";
 import { localeEnvName, localeEnv } from "./locale-env";
 
 /**
@@ -18,7 +18,7 @@ export class ListmonkService implements OnModuleInit {
   constructor(private db: Database) {}
 
   onModuleInit() {
-    for (const locale of supportedLocales)
+    for (const locale of domainLocales)
       if (!this.target(locale))
         this.logger.warn(
           `Newsletter "${locale}" sin Listmonk: faltan ${localeEnvName("LISTMONK_URL", locale, true)} o ${localeEnvName("LISTMONK_LIST_UUID", locale, true)}. Las altas se guardan solo en la base de datos.`,

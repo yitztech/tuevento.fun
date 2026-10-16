@@ -18,6 +18,7 @@
     "donePasswordChangedOther": "Listo: tu contraseña cambió y cerramos tus otras sesiones.",
     "enterAccountEmailWell": "Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.",
     "eventsPeopleWaiting": "Tus eventos y tus personas te están esperando.",
+    "firstNames": "Nombre(s)",
     "firstTimeHere": "¿Tu primera vez aquí?",
     "flowersGlassesTableSet": "Flores y copas en una mesa preparada para una celebración",
     "forgotPassword": "¿Olvidaste tu contraseña?",
@@ -32,6 +33,7 @@
     "inviteGatherCelebrate": "Invita, reúne y celebra.",
     "jpgPngWebp2": "JPG, PNG o WebP · Hasta 2 MB",
     "justMoment": "Un momento…",
+    "lastNames": "Apellido(s)",
     "least10CharactersUse": "Al menos 10 caracteres. Usa una contraseña única.",
     "memoriesStartHere": "Los recuerdos empiezan aquí.",
     "newPassword": "Contraseña nueva",
@@ -141,7 +143,6 @@
     "themeDecoration": "Decoración {{theme}}",
     "timeConfirmed": "Hora por confirmar",
     "tueventofunHome": "TuEventoFun, inicio",
-    "username": "Nombre de usuario",
     "yetConfirm": "Aún por confirmar",
     "youreInvited": "Estás invitado"
   },
@@ -249,8 +250,8 @@
     "couldntReadImageTry": "No se pudo leer la imagen. Prueba con otra.",
     "couldntVerifyGoogleSign": "No se pudo validar tu acceso con Google.",
     "downloadHostNotAllowed": "Host de descarga no permitido.",
+    "emailAddressAlreadyRegistered": "Este correo ya está registrado.",
     "emailAddressPasswordIncorrect": "El correo o la contraseña no coinciden.",
-    "emailAddressUsernameAlready": "El correo o nombre de usuario ya está registrado.",
     "googleDidntConfirmIdentity": "Google no confirmó esta identidad.",
     "googleRequestHasExpired": "La solicitud de Google caducó. Inténtalo de nuevo.",
     "googleSignHasntBeen": "El acceso con Google todavía no está configurado.",
@@ -266,8 +267,7 @@
     "sessionHasExpiredPlease": "Tu sesión terminó. Inicia sesión de nuevo.",
     "signInToContinue": "Inicia sesión para continuar.",
     "tooManyAttemptsPlease": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
-    "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB.",
-    "usernameAlreadyTaken": "Este nombre de usuario ya está en uso."
+    "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB."
   },
   "events": {
     "actions": "Acciones",
@@ -457,7 +457,10 @@
     "yesEditEventInformation": "Sí. Puedes editar la información del evento, elegir otro diseño y ajustar las personas de cada invitación desde tu espacio."
   },
   "language": {
-    "changeLanguage": "Cambiar idioma"
+    "changeLanguage": "Cambiar idioma",
+    "suggest": "¿Quieres ver esta página en español?",
+    "suggestAccept": "Ver en español",
+    "suggestDismiss": "No, gracias"
   },
   "legal": {
     "acceptOnRegister": "Al crear tu cuenta aceptas las <terms>Condiciones de uso</terms> y el <privacy>Aviso de privacidad</privacy>.",
@@ -601,12 +604,14 @@
     "invalidTimeZone": "Zona horaria inválida.",
     "iosRequiresTestflightApp": "iOS requiere TestFlight o App Store.",
     "maximum100Characters": "Máximo 100 caracteres.",
+    "maximum128Characters": "Máximo 128 caracteres.",
+    "maximum20Characters": "Máximo 20 caracteres.",
+    "maximum254Characters": "Máximo 254 caracteres.",
+    "maximum50Characters": "Máximo 50 caracteres.",
     "thereDuplicateMembers": "Hay integrantes repetidos.",
     "useHttps": "Usa HTTPS.",
     "useLeast10Characters": "Usa al menos 10 caracteres.",
-    "useLeast3Characters": "Usa al menos 3 caracteres.",
-    "useLettersNumbersPeriods": "Usa letras, números, punto o guion.",
-    "useNoMoreThan": "Usa como máximo 32 caracteres.",
+    "useLettersSpaces": "Usa solo letras, espacios, apóstrofo o guion.",
     "useNumbersSpaces": "Usa números, espacios o +."
   }
 }

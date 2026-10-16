@@ -104,6 +104,8 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page.setViewportSize({ width: 1512, height: 1100 });
     // El inglés se ofrece como enlace a su dominio; la página no se redirige sola
     expect(new URL(page.url()).origin).toBe(new URL(target).origin);
+    // El selector es un menú (varios idiomas): se abre y se elige el inglés
+    await page.locator(".landing-header summary.language-switcher").first().click();
     await page
       .locator('.landing-header a.language-switcher[hreflang="en"]')
       .first()
@@ -168,14 +170,11 @@ fs.mkdirSync(artifacts, { recursive: true });
     const unique = Date.now(),
       password = crypto.randomBytes(20).toString("hex"),
       email = `landing-${unique}@example.invalid`;
-    await page.getByLabel("First name", { exact: true }).fill("Paula");
-    await page.getByLabel("Last name", { exact: true }).fill("Landing");
+    await page.getByLabel("First name(s)", { exact: true }).fill("Paula");
+    await page.getByLabel("Last name(s)", { exact: true }).fill("Landing");
     await page
       .getByLabel("Phone number", { exact: true })
       .fill("+527771234567");
-    await page
-      .getByLabel("Username", { exact: true })
-      .fill(`landing_${unique}`);
     await page.getByLabel("Email address", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
     await page

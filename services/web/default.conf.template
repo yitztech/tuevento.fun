@@ -50,11 +50,13 @@ server {
     # su valor por defecto (text/html, una vez) porque el snippet de analítica los define.
     # El HTML varía por Host: nunca se cachea en el gateway sin incluir $host en la clave.
     location / {
+        # /pt/… en un dominio que no aloja ese idioma → el dominio que sí
+        if ($locale_redirect) { return 301 $locale_redirect; }
         include /etc/nginx/snippets/security-headers.conf;
         include /etc/nginx/snippets/analytics*.conf;
         add_header Cache-Control "no-cache" always;
         add_header Vary "Host" always;
-        sub_filter '<html lang="es">' '<html lang="$site_lang">';
+        sub_filter '<html lang="es">' '<html lang="$page_lang">';
         sub_filter '<meta name="tuevento-seo"/>' '$seo_links';
         try_files $uri $uri/ /index.html;
     }

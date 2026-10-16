@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { createTransport } from "nodemailer";
-import { defaultLocale, supportedLocales, type Locale } from "@tuevento/contracts";
+import { defaultLocale, domainLocales, siteLocale, type Locale } from "@tuevento/contracts";
 import { localeEnv, localeEnvName } from "./locale-env";
 
 export type MailMessage = {
@@ -26,7 +26,8 @@ export class MailService implements OnModuleInit {
   private readonly senders = new Map<Locale, Sender>();
 
   onModuleInit() {
-    for (const locale of supportedLocales) {
+    // Un remitente por dominio: los idiomas alojados (pt en yourevent.fun) usan el suyo
+    for (const locale of domainLocales) {
       const sender = this.sender(locale);
       if (!sender)
         this.logger.warn(
@@ -73,7 +74,7 @@ export class MailService implements OnModuleInit {
     if (cached) return cached;
     const host = process.env.SMTP_HOST;
     const own = localeEnv("MAIL_FROM", locale);
-    const source: Locale = own ? locale : defaultLocale;
+    const source: Locale = own ? siteLocale(locale) : defaultLocale;
     const from = own || localeEnv("MAIL_FROM", defaultLocale);
     if (!host || !from) return null;
     const secure = process.env.SMTP_SECURE === "true";

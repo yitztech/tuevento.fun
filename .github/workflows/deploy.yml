@@ -35,7 +35,7 @@ jobs:
       # El typecheck necesita los paquetes compartidos compilados
       - run: npm run build -w @tuevento/contracts && npm run build -w @tuevento/client
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:unit
 
   publicar:
     name: Publicar ${{ matrix.name }}

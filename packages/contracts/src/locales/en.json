@@ -18,6 +18,7 @@
     "donePasswordChangedOther": "Done: your password changed and your other sessions were signed out.",
     "enterAccountEmailWell": "Enter your account email and we'll send you a link to choose a new password.",
     "eventsPeopleWaiting": "Your events and your people are waiting for you.",
+    "firstNames": "First name(s)",
     "firstTimeHere": "First time here?",
     "flowersGlassesTableSet": "Flowers and glasses on a table set for a celebration",
     "forgotPassword": "Forgot your password?",
@@ -32,6 +33,7 @@
     "inviteGatherCelebrate": "Invite, gather and celebrate.",
     "jpgPngWebp2": "JPG, PNG or WebP · Up to 2 MB",
     "justMoment": "Just a moment…",
+    "lastNames": "Last name(s)",
     "least10CharactersUse": "At least 10 characters. Use a unique password.",
     "memoriesStartHere": "The memories start here.",
     "newPassword": "New password",
@@ -141,7 +143,6 @@
     "themeDecoration": "{{theme}} decoration",
     "timeConfirmed": "Time to be confirmed",
     "tueventofunHome": "TuEventoFun, home",
-    "username": "Username",
     "yetConfirm": "Yet to confirm",
     "youreInvited": "You're invited"
   },
@@ -249,8 +250,8 @@
     "couldntReadImageTry": "Couldn't read the image. Try a different one.",
     "couldntVerifyGoogleSign": "Couldn't verify your Google sign-in.",
     "downloadHostNotAllowed": "Download host is not allowed.",
+    "emailAddressAlreadyRegistered": "This email address is already registered.",
     "emailAddressPasswordIncorrect": "The email address or password is incorrect.",
-    "emailAddressUsernameAlready": "This email address or username is already registered.",
     "googleDidntConfirmIdentity": "Google didn't confirm this identity.",
     "googleRequestHasExpired": "The Google request has expired. Please try again.",
     "googleSignHasntBeen": "Google sign-in hasn't been set up yet.",
@@ -266,8 +267,7 @@
     "sessionHasExpiredPlease": "Your session has expired. Please sign in again.",
     "signInToContinue": "Sign in to continue.",
     "tooManyAttemptsPlease": "Too many attempts. Please wait a moment and try again.",
-    "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB.",
-    "usernameAlreadyTaken": "This username is already taken."
+    "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB."
   },
   "events": {
     "actions": "Actions",
@@ -457,7 +457,10 @@
     "yesEditEventInformation": "Yes. You can edit the event information, choose another design and update the people in each invitation from your space."
   },
   "language": {
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "suggest": "Would you like to see this page in English?",
+    "suggestAccept": "View in English",
+    "suggestDismiss": "No, thanks"
   },
   "legal": {
     "acceptOnRegister": "By creating your account you accept the <terms>Terms of use</terms> and the <privacy>Privacy policy</privacy>.",
@@ -601,12 +604,14 @@
     "invalidTimeZone": "Invalid time zone.",
     "iosRequiresTestflightApp": "iOS requires TestFlight or the App Store.",
     "maximum100Characters": "Maximum 100 characters.",
+    "maximum128Characters": "Maximum 128 characters.",
+    "maximum20Characters": "Maximum 20 characters.",
+    "maximum254Characters": "Maximum 254 characters.",
+    "maximum50Characters": "Maximum 50 characters.",
     "thereDuplicateMembers": "There are duplicate members.",
     "useHttps": "Use HTTPS.",
     "useLeast10Characters": "Use at least 10 characters.",
-    "useLeast3Characters": "Use at least 3 characters.",
-    "useLettersNumbersPeriods": "Use letters, numbers, periods or hyphens.",
-    "useNoMoreThan": "Use no more than 32 characters.",
+    "useLettersSpaces": "Use only letters, spaces, apostrophes or hyphens.",
     "useNumbersSpaces": "Use numbers, spaces or +."
   }
 }

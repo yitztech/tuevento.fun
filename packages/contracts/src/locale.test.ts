@@ -1,7 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  domainLocales,
   localeForHost,
+  localeForRequest,
+  localePrefix,
+  localeUrl,
+  locales,
+  prefixedLocale,
+  siteLocale,
+  supportedLocales,
   localizedPage,
   translatePath,
   parseSiteOrigins,
@@ -80,4 +88,62 @@ test("Dominios por idioma desde el entorno: SITE_URL_<IDIOMA> y SITE_URL para el
     { es: "https://tuevento.fun" },
   );
   assert.deepEqual(siteOriginsFromEnv({ SITE_URL_EN: "ftp://yourevent.fun" }), {});
+});
+
+test("Portugués, alemán y francés viven en el dominio inglés bajo /pt, /de y /fr", () => {
+  assert.deepEqual(domainLocales, ["es", "en"]);
+  assert.equal(siteLocale("pt"), "en");
+  assert.equal(siteLocale("de"), "en");
+  assert.equal(siteLocale("fr"), "en");
+  assert.equal(siteLocale("es"), "es");
+  assert.equal(localePrefix("pt"), "/pt");
+  assert.equal(localePrefix("fr"), "/fr");
+  assert.equal(localePrefix("en"), "");
+  // Un idioma alojado lo está en un idioma con dominio propio (sin cadenas)
+  for (const locale of supportedLocales) {
+    const host = (locales[locale] as { hostedBy?: string }).hostedBy;
+    if (host) assert.ok(domainLocales.includes(siteLocale(locale)), `${locale}: hostedBy ${host}`);
+  }
+});
+test("Prefijo de idioma en la ruta", () => {
+  assert.deepEqual(prefixedLocale("/pt"), { locale: "pt", path: "/" });
+  assert.deepEqual(prefixedLocale("/pt/"), { locale: "pt", path: "/" });
+  assert.deepEqual(prefixedLocale("/de/registro"), { locale: "de", path: "/registro" });
+  assert.equal(prefixedLocale("/ptx"), null);
+  assert.equal(prefixedLocale("/privacy"), null);
+  assert.equal(prefixedLocale("/en/registro"), null);
+});
+test("URL de una página en cada idioma: dominio, prefijo y ruta traducida", () => {
+  assert.equal(localeUrl("pt", "/privacy", EN), "https://yourevent.fun/pt/privacidade");
+  assert.equal(localeUrl("de", "/condiciones", EN), "https://yourevent.fun/de/nutzungsbedingungen");
+  assert.equal(localeUrl("pt", "/", EN), "https://yourevent.fun/pt/");
+  assert.equal(localeUrl("fr", "/terms", EN), "https://yourevent.fun/fr/conditions");
+  assert.equal(localeUrl("en", "/registro", EN), "https://yourevent.fun/registro");
+  assert.equal(localeUrl("es", "/privacy", EN), "https://tuevento.fun/privacidad");
+  assert.equal(localeUrl("pt", "/", { es: "https://tuevento.fun" }), null);
+});
+test("La API acepta el idioma de la página solo si el dominio lo aloja", () => {
+  assert.equal(localeForRequest("yourevent.fun", "pt", false, EN), "pt");
+  assert.equal(localeForRequest("yourevent.fun", "de", false, EN), "de");
+  assert.equal(localeForRequest("yourevent.fun", "fr", false, EN), "fr");
+  assert.equal(localeForRequest("yourevent.fun", "es", false, EN), "en");
+  assert.equal(localeForRequest("yourevent.fun", "xx", false, EN), "en");
+  assert.equal(localeForRequest("yourevent.fun", undefined, false, EN), "en");
+  assert.equal(localeForRequest("tuevento.fun", "pt", false, EN), "es");
+  assert.equal(localeForRequest("tuevento.fun", "en", false, EN), "es");
+  // Apps móviles: dominio principal y el idioma elegido en la app
+  assert.equal(localeForRequest("tuevento.fun", "pt", true, EN), "pt");
+  assert.equal(localeForRequest("tuevento.fun", "en", true, EN), "en");
+  assert.equal(localeForRequest("yourevent.fun", "es", true, EN), "en");
+});
+test("Los idiomas alojados no tienen dominio propio ni en el entorno ni en tuevento:sites", () => {
+  assert.deepEqual(
+    siteOriginsFromEnv({ SITE_URL_ES: "https://tuevento.fun", SITE_URL_PT: "https://pt.fun" }),
+    { es: "https://tuevento.fun" },
+  );
+  assert.deepEqual(
+    parseSiteOrigins("es=https://tuevento.fun en=https://yourevent.fun pt=https://pt.fun"),
+    { es: "https://tuevento.fun", en: "https://yourevent.fun" },
+  );
+  assert.equal(localeForHost("pt.fun", { ...EN, pt: "https://pt.fun" }), "es");
 });

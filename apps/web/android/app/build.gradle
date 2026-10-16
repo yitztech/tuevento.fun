@@ -29,6 +29,10 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // Convive con la app real en el mismo dispositivo y se reconoce como de pruebas.
+            applicationIdSuffix ".pruebas"
+        }
         release {
             signingConfig signingConfigs.release
             minifyEnabled false

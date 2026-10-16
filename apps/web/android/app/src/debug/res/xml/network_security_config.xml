@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SOLO PRUEBAS (build de depuración). test_ca.crt lo copia scripts/mobile-test-android.sh
+     desde la CA de mobile-tls; no se versiona. -->
+<network-security-config>
+    <base-config>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/test_ca" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

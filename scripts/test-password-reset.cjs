@@ -38,7 +38,6 @@ async function mailTo(address, subject) {
       lastName: "Recuperación",
       email,
       phone: "+527770000000",
-      username: `ui_reset_${unique}`,
       password: crypto.randomBytes(16).toString("hex"),
     }),
   }).then((r) => r.json());

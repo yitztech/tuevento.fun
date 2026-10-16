@@ -1,6 +1,9 @@
 import { z } from "zod";
 import es from "./locales/es.json";
 import en from "./locales/en.json";
+import pt from "./locales/pt.json";
+import de from "./locales/de.json";
+import fr from "./locales/fr.json";
 
 /** Estructura de un catálogo: la del idioma principal. Las demás deben tener las mismas claves. */
 export type Catalog = typeof es;
@@ -15,12 +18,17 @@ type LocaleConfig = {
   zod: keyof typeof z.locales;
   paths: Record<LocalizedPage, string>;
   messages: Catalog;
+  /**
+   * Idioma con dominio propio que sirve a este bajo el prefijo /<código>
+   * (yourevent.fun/pt/…). Sin él, el idioma tiene su propio dominio.
+   */
+  hostedBy?: string;
 };
 
 /**
  * Idiomas disponibles: la única lista que hay que tocar para añadir uno (ver docs/I18N.md).
- * Cada idioma tiene su dominio en `SITE_URL_<CÓDIGO>`; el gateway, la API y la SPA se
- * generan a partir de esta tabla.
+ * Un idioma tiene su dominio en `SITE_URL_<CÓDIGO>` o vive en el de otro bajo /<código>
+ * (`hostedBy`); el gateway, la API y la SPA se generan a partir de esta tabla.
  */
 export const locales = {
   es: {
@@ -37,6 +45,30 @@ export const locales = {
     paths: { privacy: "/privacy", terms: "/terms" },
     messages: en,
   },
+  pt: {
+    name: "Português",
+    intl: "pt-BR",
+    zod: "pt",
+    paths: { privacy: "/privacidade", terms: "/termos" },
+    messages: pt,
+    hostedBy: "en",
+  },
+  de: {
+    name: "Deutsch",
+    intl: "de-DE",
+    zod: "de",
+    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen" },
+    messages: de,
+    hostedBy: "en",
+  },
+  fr: {
+    name: "Français",
+    intl: "fr-FR",
+    zod: "fr",
+    paths: { privacy: "/confidentialite", terms: "/conditions" },
+    messages: fr,
+    hostedBy: "en",
+  },
 } as const satisfies Record<string, LocaleConfig>;
 export type Locale = keyof typeof locales;
 /** Idioma principal: el de un Host desconocido y el fallback de cualquier texto que falte. */
@@ -46,6 +78,32 @@ export const localizedPages: readonly LocalizedPage[] = ["privacy", "terms"];
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && Object.hasOwn(locales, value);
+}
+/** Idioma dueño del dominio en el que se sirve `locale` (él mismo si tiene dominio propio). */
+export function siteLocale(locale: Locale): Locale {
+  const host = (locales[locale] as LocaleConfig).hostedBy;
+  return isLocale(host) ? host : locale;
+}
+/** Idiomas con dominio propio, el principal primero. */
+export const domainLocales = supportedLocales.filter((locale) => siteLocale(locale) === locale);
+/** Idiomas que se sirven en el dominio de `domain`: él mismo y los que aloja. */
+export const localesOfSite = (domain: Locale) =>
+  supportedLocales.filter((locale) => siteLocale(locale) === domain);
+/** Prefijo de ruta de un idioma: "" con dominio propio, "/pt" si vive en otro dominio. */
+export const localePrefix = (locale: Locale): string =>
+  siteLocale(locale) === locale ? "" : `/${locale}`;
+/**
+ * Idioma alojado al que pertenece una ruta (/pt, /pt/…) y la ruta sin el prefijo, o null
+ * si la ruta no empieza por el prefijo de ningún idioma alojado.
+ */
+export function prefixedLocale(pathname: string): { locale: Locale; path: string } | null {
+  for (const locale of supportedLocales) {
+    const prefix = localePrefix(locale);
+    if (!prefix) continue;
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`))
+      return { locale, path: pathname.slice(prefix.length) || "/" };
+  }
+  return null;
 }
 /** Etiqueta de idioma ("en-GB", "pt_BR,pt;q=0.9") → idioma admitido; si no hay, el principal. */
 export function normalizeLocale(value?: string | null): Locale {
@@ -121,7 +179,7 @@ export type SiteOrigins = Partial<Record<Locale, string>>;
  */
 export function siteOriginsFromEnv(env: Record<string, string | undefined>): SiteOrigins {
   const found: SiteOrigins = {};
-  for (const locale of supportedLocales) {
+  for (const locale of domainLocales) {
     const value =
       env[`SITE_URL_${locale.toUpperCase()}`] ||
       (locale === defaultLocale ? env.SITE_URL : undefined);
@@ -148,7 +206,7 @@ function httpOrigin(value: string | null | undefined): string | null {
 export function localeForHost(host: string | null | undefined, origins: SiteOrigins): Locale {
   const requested = hostname(host);
   if (!requested) return defaultLocale;
-  for (const locale of supportedLocales) {
+  for (const locale of domainLocales) {
     if (locale === defaultLocale) continue;
     const origin = origins[locale];
     if (!origin) continue;
@@ -163,6 +221,23 @@ function hostname(host: string | null | undefined): string {
   // IPv6 entre corchetes: [::1]:3087 → ::1
   if (value.startsWith("[")) return value.slice(1, value.indexOf("]"));
   return value.replace(/:\d+$/, "").replace(/\.$/, "");
+}
+
+/**
+ * Idioma de una petición a la API: el del dominio (Host) o, si la SPA indica en
+ * X-App-Locale un idioma que ese dominio aloja (yourevent.fun/pt), ese. Las apps móviles
+ * usan solo el dominio principal y pueden pedir cualquier idioma.
+ */
+export function localeForRequest(
+  host: string | null | undefined,
+  appLocale: unknown,
+  mobile: boolean,
+  origins: SiteOrigins,
+): Locale {
+  const domain = localeForHost(host, origins);
+  if (!isLocale(appLocale)) return domain;
+  if (siteLocale(appLocale) === domain) return appLocale;
+  return mobile && domain === defaultLocale ? appLocale : domain;
 }
 
 /** Ruta de una página traducida en un idioma. */
@@ -182,6 +257,18 @@ export function translatePath(pathname: string, locale: Locale): string {
 }
 
 /**
+ * URL pública de una ruta en un idioma: dominio de su sitio, prefijo y ruta traducida
+ * (/privacy → https://yourevent.fun/pt/privacidade). null si ese dominio no se publica.
+ */
+export function localeUrl(locale: Locale, pathname: string, origins: SiteOrigins): string | null {
+  const origin = origins[siteLocale(locale)];
+  if (!origin) return null;
+  const path = translatePath(pathname, locale);
+  const prefix = localePrefix(locale);
+  return `${origin}${prefix && path === "/" ? `${prefix}/` : `${prefix}${path}`}`;
+}
+
+/**
  * Lee el contenido de <meta name="tuevento:sites">, que publica el gateway:
  * "es=https://… en=https://…". Solo idiomas admitidos y orígenes http(s). Sin el
  * principal y al menos otro idioma no hay a dónde cambiar: devuelve null.
@@ -192,7 +279,7 @@ export function parseSiteOrigins(content: string | null | undefined): SiteOrigin
   for (const part of content.trim().split(/\s+/)) {
     const [key, value] = part.split("=", 2);
     const origin = httpOrigin(value);
-    if (isLocale(key) && origin) found[key] = origin;
+    if (isLocale(key) && siteLocale(key) === key && origin) found[key] = origin;
   }
   return found[defaultLocale] && Object.keys(found).length > 1 ? found : null;
 }

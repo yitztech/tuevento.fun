@@ -25,3 +25,14 @@ qa-artifacts/*.jsonl
 **/.gradle/
 **/build/
 **/local.properties
+
+# Pruebas E2E (Playwright + Gherkin): código generado y evidencias
+tests/e2e/.features-gen/
+tests/e2e/results/
+
+# CA de pruebas exportada por scripts/mobile-test-ca.sh
+tests/mobile/.ca/
+apps/web/android/app/src/debug/res/raw/test_ca.crt
+tests/mobile/.appium/
+tests/mobile/.build/
+tests/mobile/.stack/

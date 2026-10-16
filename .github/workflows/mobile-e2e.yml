@@ -1,0 +1,82 @@
+name: Mobile E2E
+# Escenarios @movil (tests/e2e) dentro de la app real: Android en un emulador y iOS en un
+# simulador. SIN COSTE: los runners de GitHub son gratuitos en repositorios públicos. Si el
+# repositorio pasa a privado, los jobs se omiten solos (los minutos de macOS cuestan 10x).
+# POR AHORA SOLO MANUAL: las pruebas móviles se ejecutan en local (docs/E2E.md) y este workflow
+# no corre en los PR. Se reactivará (añadiendo el disparador `pull_request` con las rutas
+# apps/web, packages, tests/e2e, scripts/mobile-*, services/mobile-tls y compose.yml) cuando
+# se decida pasarlas a CI, tras comprobar aquí que funcionan.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options: [both, android, ios]
+        default: both
+permissions:
+  contents: read
+concurrency:
+  group: mobile-e2e-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    if: >-
+      github.event.repository.private == false &&
+      (github.event_name != 'workflow_dispatch' || inputs.platform != 'ios')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with: {distribution: temurin, java-version: '21'}
+      - run: npm ci
+      # KVM: sin esto el emulador de Android corre sin aceleración y no llega a arrancar a tiempo.
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash scripts/mobile-test.sh android
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mobile-e2e-android
+          path: tests/e2e/results/
+  ios:
+    if: >-
+      github.event.repository.private == false &&
+      (github.event_name != 'workflow_dispatch' || inputs.platform != 'android')
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      MOBILE_STACK: native
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # macOS no tiene Docker: PostgreSQL, la API y Caddy corren directamente en el runner.
+      - run: bash scripts/mobile-native-stack.sh start
+      - run: bash scripts/mobile-test.sh ios
+      - if: always()
+        run: bash scripts/mobile-native-stack.sh stop
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mobile-e2e-ios
+          path: |
+            tests/e2e/results/
+            tests/mobile/.stack/*.log
