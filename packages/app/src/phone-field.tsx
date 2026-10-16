@@ -36,7 +36,7 @@ type PhoneParts = { iso: string; national: string };
 
 /** Separa un teléfono guardado ("+34 612…") en país y número. Sin prefijo conocido, el valor entero es el número. */
 function parsePhone(value: string, fallbackIso: string): PhoneParts {
-  if (!value.startsWith("+")) return { iso: fallbackIso, national: value };
+  if (!value.startsWith("+")) return { iso: fallbackIso, national: value.replace(/^[\s()-]+/, "") };
   const digits = value.replace(/\D/g, "");
   const found = longestDialFirst.find(([, dial]) => digits.startsWith(dial.slice(1)));
   if (!found) return { iso: fallbackIso, national: value };
@@ -88,11 +88,13 @@ export function PhoneField({
   useEffect(() => {
     if (value !== composePhone(parts)) setParts(parsePhone(value, defaultIso));
   }, [value]);
+  // El límite es el del teléfono completo (prefijo incluido): si no cabe, el cambio se descarta.
   const update = (next: PhoneParts) => {
+    const phone = composePhone(next);
+    if (phone.length > accountLimits.phone) return;
     setParts(next);
-    onChange(composePhone(next));
+    onChange(phone);
   };
-  const dial = dialByIso.get(parts.iso) ?? "";
 
   return (
     <div className="field">
@@ -116,7 +118,7 @@ export function PhoneField({
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
-          maxLength={accountLimits.phone - dial.length - 1}
+          maxLength={accountLimits.phone}
           value={parts.national}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}

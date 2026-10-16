@@ -64,8 +64,9 @@ Then("el campo {string} contiene {string}", async ({ ui }, campo, valor) => {
 
 // Selector de país del teléfono: solo web (el selector nativo no existe en las apps móviles).
 When("elijo el prefijo {string} en el campo {string}", async ({ page }, prefijo, campo) => {
-  const etiqueta = new RegExp(`\\(${prefijo.replace(/[+]/g, "\\$&")}\\)$`);
-  await page.getByLabel(campo, { exact: true }).selectOption({ label: etiqueta });
+  const select = page.getByLabel(campo, { exact: true });
+  const valor = await select.locator("option", { hasText: `(${prefijo})` }).getAttribute("value");
+  await select.selectOption(valor);
 });
 
 Then("el selector {string} muestra el prefijo {string}", async ({ page }, campo, prefijo) => {
