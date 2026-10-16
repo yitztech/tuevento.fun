@@ -97,16 +97,21 @@ const personName = name
   /^\p{L}[\p{L}\p{M}\s'’.-]*$/u,
   "validation.useLettersSpaces",
 );
+/** Contraseña: la misma regla al crear cuenta, al entrar y al restablecerla. */
+const password = z
+  .string()
+  .min(10, "validation.useLeast10Characters")
+  .max(accountLimits.password, "validation.maximum128Characters");
 export const registerSchema = z.object({
   firstName: personName,
   lastName: personName,
   email,
   phone,
-  password: z.string().min(10, "validation.useLeast10Characters").max(accountLimits.password, "validation.maximum128Characters"),
+  password,
 });
 export const loginSchema = z.object({
   email,
-  password: z.string().min(1, "validation.enterPassword").max(accountLimits.password, "validation.maximum128Characters"),
+  password,
 });
 export const profileSchema = z.object({
   firstName: personName,
@@ -125,7 +130,7 @@ export const resetPasswordSchema = z.object({
   token: z
     .string()
     .regex(/^[A-Za-z0-9_-]{43}$/, "common.passwordResetLinkInvalid"),
-  password: z.string().min(10, "validation.useLeast10Characters").max(accountLimits.password, "validation.maximum128Characters"),
+  password,
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export const newsletterSchema = z.object({

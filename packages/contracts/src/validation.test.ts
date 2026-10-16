@@ -4,6 +4,7 @@ import {
   invitationSchema,
   rsvpSchema,
   registerSchema,
+  loginSchema,
   eventSchema,
   countMetrics,
 } from "./index";
@@ -211,6 +212,24 @@ test("Registro limita la longitud de nombre, correo, teléfono y contraseña", (
   assert.equal(ok({ password: long(128) }), true);
   assert.equal(ok({ password: long(129) }), false);
 });
+test("Inicio de sesión aplica las mismas reglas de correo y contraseña que el registro", () => {
+  const login = { email: "ana@example.com", password: "una-clave-larga-1" };
+  const ok = (patch: object) => loginSchema.safeParse({ ...login, ...patch }).success;
+  assert.equal(ok({}), true);
+  assert.equal(ok({ password: "x".repeat(9) }), false);
+  assert.equal(ok({ password: "x".repeat(10) }), true);
+  assert.equal(ok({ password: "x".repeat(128) }), true);
+  assert.equal(ok({ password: "x".repeat(129) }), false);
+  assert.equal(ok({ password: "" }), false);
+  assert.equal(ok({ email: "no-es-correo" }), false);
+  assert.equal(ok({ email: `${"a".repeat(243)}@example.com` }), false);
+  for (const password of ["x".repeat(9), "x".repeat(129)]) {
+    const r = loginSchema.safeParse({ ...login, password });
+    assert.equal(r.success, false);
+    assert.equal(r.error?.issues[0].path[0], "password");
+  }
+});
+
 test("El registro ya no pide nombre de usuario", () => {
   assert.equal(registerSchema.safeParse(newUser).success, true);
   assert.equal("username" in registerSchema.shape, false);
