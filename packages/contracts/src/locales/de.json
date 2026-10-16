@@ -611,5 +611,15 @@
     "useLeast10Characters": "Verwende mindestens 10 Zeichen.",
     "useLettersSpaces": "Verwende nur Buchstaben, Leerzeichen, Apostrophe oder Bindestriche.",
     "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +."
+  },
+  "pricing": {
+    "title": "Preise",
+    "intro": "Eine einmalige Zahlung pro Veranstaltung, je nach Anzahl der Gäste. Kein Abo.",
+    "upTo": "Bis zu {{guests}} Gäste",
+    "moreThan": "Mehr als {{guests}} Gäste",
+    "perEvent": "pro Veranstaltung",
+    "payService": "Service bezahlen",
+    "paymentPending": "Die Zahlung ist noch nicht angebunden. Sobald sie verfügbar ist, kannst du deine Veranstaltung hier bezahlen.",
+    "back": "Zurück zu den Preisen"
   }
 }

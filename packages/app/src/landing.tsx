@@ -16,6 +16,7 @@ import { themes, type MessageKey, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { LegalLinks, legalPath } from "./legal";
+import { pricingPath } from "./pricing";
 import "./landing.css";
 
 const family = [
@@ -146,6 +147,9 @@ export function LandingPage() {
             <a href="#preguntas" onClick={closeMenu}>
               {tr("landing.frequentlyAskedQuestions")}
             </a>
+            <Link to={pricingPath(locale)} onClick={closeMenu}>
+              {tr("pricing.title")}
+            </Link>
           </nav>
           <div className="landing-header-actions">
             <LanguageSwitcher />
@@ -503,6 +507,7 @@ export function LandingPage() {
         </div>
         <nav aria-label={tr("landing.footerLinks")}>
           <Link to="/acceso">{tr("common.signSpace")}</Link>
+          <Link to={pricingPath(locale)}>{tr("pricing.title")}</Link>
           <Link to="/registro">{tr("common.exploreDemo")}</Link>
           <a href="#preguntas">{tr("landing.frequentlyAskedQuestions")}</a>
           <LegalLinks className="landing-legal-links" />

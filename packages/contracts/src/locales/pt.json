@@ -611,5 +611,15 @@
     "useLeast10Characters": "Use pelo menos 10 caracteres.",
     "useLettersSpaces": "Use apenas letras, espaços, apóstrofo ou hífen.",
     "useNumbersSpaces": "Use números, espaços ou +."
+  },
+  "pricing": {
+    "title": "Preços",
+    "intro": "Um pagamento único por evento, de acordo com o número de convidados. Sem assinatura.",
+    "upTo": "Até {{guests}} convidados",
+    "moreThan": "Mais de {{guests}} convidados",
+    "perEvent": "por evento",
+    "payService": "Pagar pelo serviço",
+    "paymentPending": "A cobrança ainda não está conectada. Quando estiver, você poderá pagar pelo seu evento aqui.",
+    "back": "Voltar aos preços"
   }
 }

@@ -46,9 +46,10 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
 } from "./account";
-import { passwordResetPaths } from "@tuevento/contracts";
+import { localizedPage, passwordResetPaths } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
 import { LegalPage, legalPageFor } from "./legal";
+import { PaymentPage, PricingPage } from "./pricing";
 export type { Runtime } from "./context";
 export { SeoLinks, getLocale, switchAppLocale, tr } from "./i18n";
 export function TuEventoApp({ runtime }: { runtime: Runtime }) {
@@ -81,7 +82,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     navigate = useNavigate(),
     timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const legal = legalPageFor(location.pathname);
-  const isPublic = location.pathname.startsWith("/i/") || legal !== null,
+  const pricing = localizedPage(location.pathname) === "pricing";
+  const isPublic = location.pathname.startsWith("/i/") || legal !== null || pricing,
     isAuth = [
       "/registro",
       "/acceso",
@@ -193,6 +195,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     <AppContext.Provider value={context}>
       {legal ? (
         <LegalPage page={legal} />
+      ) : pricing ? (
+        <PricingPage />
       ) : isPublic ? (
         <Routes>
           <Route path="/i/:token" element={<PublicRsvp />} />
@@ -208,6 +212,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         />
       ) : !user ? (
         <Navigate to="/acceso" replace />
+      ) : location.pathname === "/pago" ? (
+        <PaymentPage />
       ) : location.pathname.endsWith("/pantalla") ? (
         <Routes>
           <Route path="/eventos/:id/pantalla" element={<TvPage />} />

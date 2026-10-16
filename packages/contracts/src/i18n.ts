@@ -8,7 +8,7 @@ import fr from "./locales/fr.json";
 /** Estructura de un catálogo: la del idioma principal. Las demás deben tener las mismas claves. */
 export type Catalog = typeof es;
 /** Páginas cuya ruta cambia con el idioma. El resto de rutas es igual en todos los dominios. */
-export type LocalizedPage = "privacy" | "terms";
+export type LocalizedPage = "privacy" | "terms" | "pricing";
 type LocaleConfig = {
   /** Nombre del idioma en ese mismo idioma, para el selector. */
   name: string;
@@ -35,21 +35,21 @@ export const locales = {
     name: "Español",
     intl: "es-MX",
     zod: "es",
-    paths: { privacy: "/privacidad", terms: "/condiciones" },
+    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/precios" },
     messages: es,
   },
   en: {
     name: "English",
     intl: "en-US",
     zod: "en",
-    paths: { privacy: "/privacy", terms: "/terms" },
+    paths: { privacy: "/privacy", terms: "/terms", pricing: "/pricing" },
     messages: en,
   },
   pt: {
     name: "Português",
     intl: "pt-BR",
     zod: "pt",
-    paths: { privacy: "/privacidade", terms: "/termos" },
+    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/precos" },
     messages: pt,
     hostedBy: "en",
   },
@@ -57,7 +57,7 @@ export const locales = {
     name: "Deutsch",
     intl: "de-DE",
     zod: "de",
-    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen" },
+    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/preise" },
     messages: de,
     hostedBy: "en",
   },
@@ -65,7 +65,7 @@ export const locales = {
     name: "Français",
     intl: "fr-FR",
     zod: "fr",
-    paths: { privacy: "/confidentialite", terms: "/conditions" },
+    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/tarifs" },
     messages: fr,
     hostedBy: "en",
   },
@@ -74,7 +74,7 @@ export type Locale = keyof typeof locales;
 /** Idioma principal: el de un Host desconocido y el fallback de cualquier texto que falte. */
 export const defaultLocale: Locale = "es";
 export const supportedLocales = Object.keys(locales) as Locale[];
-export const localizedPages: readonly LocalizedPage[] = ["privacy", "terms"];
+export const localizedPages: readonly LocalizedPage[] = ["privacy", "terms", "pricing"];
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && Object.hasOwn(locales, value);

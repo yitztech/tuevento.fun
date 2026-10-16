@@ -4470,3 +4470,45 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .auth-forgot {margin:-6px 0 16px;text-align:right;font-size:12px;}
 .auth-forgot > a {color:var(--primary);font-weight:650;text-decoration:underline;text-underline-offset:3px;}
 .auth-form .success-box > svg {flex:none;}
+
+/* Demostración: botón de pago destacado; precios por número de invitados */
+.demo-notice .demo-pay {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 6px 16px rgb(23 39 76 / 18%);
+}
+.demo-notice .demo-pay:hover {
+  filter: brightness(1.08);
+}
+.pricing-tiers {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  display: grid;
+  gap: 10px;
+}
+.pricing-tier {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #dfe1e5;
+  border-radius: 10px;
+  background: #fff;
+}
+.pricing-tier strong {
+  font-size: 20px;
+  white-space: nowrap;
+}
+.pricing-tier small {
+  font-size: 12px;
+  font-weight: 500;
+  color: #5b6478;
+}
+.pricing-cta {
+  margin-top: 8px;
+}

@@ -611,5 +611,15 @@
     "useLeast10Characters": "Utilise au moins 10 caractères.",
     "useLettersSpaces": "Utilise uniquement des lettres, des espaces, des apostrophes ou des tirets.",
     "useNumbersSpaces": "Utilise des chiffres, des espaces ou +."
+  },
+  "pricing": {
+    "title": "Tarifs",
+    "intro": "Un paiement unique par événement, selon le nombre d’invités. Sans abonnement.",
+    "upTo": "Jusqu’à {{guests}} invités",
+    "moreThan": "Plus de {{guests}} invités",
+    "perEvent": "par événement",
+    "payService": "Payer le service",
+    "paymentPending": "Le paiement n’est pas encore disponible. Une fois en place, tu pourras payer ton événement ici.",
+    "back": "Retour aux tarifs"
   }
 }

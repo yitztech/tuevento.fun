@@ -37,7 +37,21 @@ import {
   Modal,
 } from "./components";
 export function Dashboard() {
-  const { user, events, notifications } = useApp();
+  const { user, events, notifications, api, setUser, toast } = useApp(),
+    navigate = useNavigate(),
+    [demoBusy, setDemoBusy] = useState(false);
+  // Una cuenta registrada abre la demostración desde su espacio
+  const exploreDemo = async () => {
+    setDemoBusy(true);
+    try {
+      setUser(await api.demo());
+      navigate("/app");
+    } catch (e) {
+      toast(errorText(e));
+    } finally {
+      setDemoBusy(false);
+    }
+  };
   const active = events.filter(
     (e) => !e.archived && new Date(e.date) >= new Date(),
   );
@@ -63,6 +77,11 @@ export function Dashboard() {
             )}
           </p>
         </div>
+        {user && !user.isDemo && (
+          <button className="button secondary" disabled={demoBusy} onClick={exploreDemo}>
+            {tr("common.exploreDemo")}
+          </button>
+        )}
         <Link to="/eventos/nuevo" className="button">
           <Plus size={18} />
           {tr("dashboard.createEvent")}
@@ -75,6 +94,10 @@ export function Dashboard() {
               "dashboard.exploringDemoEventsTheir",
             )}
           </p>
+          <Link to="/pago" className="button demo-pay">
+            {tr("pricing.payService")}
+            <ArrowRight size={16} />
+          </Link>
           <Link to="/registro">
             {tr("common.createMyAccount")}
             <ArrowRight size={16} />

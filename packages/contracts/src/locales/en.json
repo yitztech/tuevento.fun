@@ -611,5 +611,15 @@
     "useLeast10Characters": "Use at least 10 characters.",
     "useLettersSpaces": "Use only letters, spaces, apostrophes or hyphens.",
     "useNumbersSpaces": "Use numbers, spaces or +."
+  },
+  "pricing": {
+    "title": "Pricing",
+    "intro": "A one-time payment per event, based on the number of guests. No subscription.",
+    "upTo": "Up to {{guests}} guests",
+    "moreThan": "More than {{guests}} guests",
+    "perEvent": "per event",
+    "payService": "Pay for the service",
+    "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
+    "back": "Back to pricing"
   }
 }
