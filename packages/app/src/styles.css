@@ -4253,12 +4253,12 @@ small {
 .language-switcher {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   min-height: 38px;
-  border: 1px solid #dfe1e5;
-  background: #fff;
-  padding: 7px 10px;
-  border-radius: 7px;
+  border: 0;
+  background: none;
+  padding: 7px 4px;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 650;
   color: var(--blue);
@@ -4267,7 +4267,14 @@ small {
   flex-shrink: 0;
 }
 .language-switcher:hover {
-  border-color: var(--blue);
+  text-decoration: underline;
+}
+.locale-flag {
+  flex-shrink: 0;
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(23 39 76 / 15%);
 }
 .language-switcher:focus-visible {
   outline: 2px solid var(--blue);
