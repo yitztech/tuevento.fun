@@ -4512,3 +4512,8 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .pricing-cta {
   margin-top: 8px;
 }
+/* La regla de enlaces de las páginas legales pondría el texto azul sobre el botón azul */
+.legal-page a:not(.language-switcher):not(.logo).pricing-cta,
+.legal-page a:not(.language-switcher):not(.logo).pricing-cta:hover {
+  color: #fff;
+}
