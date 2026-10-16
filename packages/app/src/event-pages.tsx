@@ -7,7 +7,12 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { useForm, useFieldArray, type Resolver } from "react-hook-form";
+import {
+  Controller,
+  useForm,
+  useFieldArray,
+  type Resolver,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
@@ -68,6 +73,7 @@ import {
   type Status,
 } from "@tuevento/contracts";
 import { useApp, dateText, errorText } from "./context";
+import { PhoneField } from "./phone-field";
 import {
   ThemePicker,
   InvitationArt,
@@ -737,16 +743,18 @@ function InvitationEditor({
               placeholder={tr("events.emailPlaceholder")}
             />
           </Field>
-          <Field
-            label={tr("events.phoneNumberOptional")}
-            error={form.formState.errors.phone?.message}
-          >
-            <input
-              type="tel"
-              {...form.register("phone")}
-              placeholder="+52 777 123 4567"
-            />
-          </Field>
+          <Controller
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <PhoneField
+                label={tr("events.phoneNumberOptional")}
+                error={form.formState.errors.phone?.message}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+              />
+            )}
+          />
         </div>
         <div className="form-section-heading">
           <h3>
