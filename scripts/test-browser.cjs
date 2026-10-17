@@ -98,7 +98,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     checks.push("Demostración con eventos y métricas persistidas");
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
     // El otro idioma es un enlace a su dominio, nunca una redirección
-    const toEnglish = page.locator('a.language-switcher[hreflang="en"]').first();
+    const toEnglish = page.locator('a.language-option[hreflang="en"]').first();
     await expect(toEnglish).toHaveAttribute("href", `${targetEn}/app`);
     expect(new URL(page.url()).origin).toBe(new URL(target).origin);
     // Con varios idiomas el selector es un menú: se abre y se elige el inglés
@@ -118,7 +118,7 @@ fs.mkdirSync(artifacts, { recursive: true });
       }),
     ).toBeVisible();
     await expect(
-      page.locator('a.language-switcher[hreflang="es"]').first(),
+      page.locator('a.language-option[hreflang="es"]').first(),
     ).toHaveAttribute("href", `${target}/app`);
     await shot("dashboard-en-desktop");
     await page.setViewportSize({ width: 390, height: 844 });
@@ -377,7 +377,7 @@ fs.mkdirSync(artifacts, { recursive: true });
       fullPage: true,
     });
     await expect(
-      guest.locator('a.language-switcher[hreflang="es"]').first(),
+      guest.locator('a.language-option[hreflang="es"]').first(),
     ).toHaveAttribute("href", link);
     await guest.goto(link);
     await expect(
