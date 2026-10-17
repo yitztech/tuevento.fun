@@ -267,7 +267,10 @@
     "sessionHasExpiredPlease": "Your session has expired. Please sign in again.",
     "signInToContinue": "Sign in to continue.",
     "tooManyAttemptsPlease": "Too many attempts. Please wait a moment and try again.",
-    "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB."
+    "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB.",
+    "postcardPhotoLimit": "This postcard already has the maximum number of photos.",
+    "postcardPhotoNotFound": "A photo in this postcard doesn’t exist in this event.",
+    "postcardVersionNotFound": "We couldn’t find that postcard version."
   },
   "events": {
     "actions": "Actions",

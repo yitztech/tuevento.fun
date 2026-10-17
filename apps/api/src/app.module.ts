@@ -7,6 +7,7 @@ import { DemoService } from "./demo";
 import { PublicController, OrganizerController } from "./controllers";
 import { ListmonkService } from "./listmonk";
 import { MailService } from "./mail";
+import { PostcardsService } from "./postcards";
 @Module({
   controllers: [PlatformController, PublicController, OrganizerController],
   providers: [
@@ -18,6 +19,7 @@ import { MailService } from "./mail";
     DemoService,
     ListmonkService,
     MailService,
+    PostcardsService,
   ],
 })
 export class AppModule {}

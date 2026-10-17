@@ -267,7 +267,10 @@
     "sessionHasExpiredPlease": "Ta session a expiré. Reconnecte-toi.",
     "signInToContinue": "Connecte-toi pour continuer.",
     "tooManyAttemptsPlease": "Trop de tentatives. Attends un instant et réessaie.",
-    "usePngJpgWebp": "Utilise une image PNG, JPG ou WebP de 2 Mo maximum."
+    "usePngJpgWebp": "Utilise une image PNG, JPG ou WebP de 2 Mo maximum.",
+    "postcardPhotoLimit": "Cette carte postale a déjà le nombre maximal de photos.",
+    "postcardPhotoNotFound": "Une photo de cette carte n’existe pas dans cet événement.",
+    "postcardVersionNotFound": "Nous n’avons pas trouvé cette version de la carte."
   },
   "events": {
     "actions": "Actions",

@@ -267,7 +267,10 @@
     "sessionHasExpiredPlease": "Tu sesión terminó. Inicia sesión de nuevo.",
     "signInToContinue": "Inicia sesión para continuar.",
     "tooManyAttemptsPlease": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
-    "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB."
+    "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB.",
+    "postcardPhotoLimit": "Esta postal ya tiene el máximo de fotos.",
+    "postcardPhotoNotFound": "Una foto de la postal no existe en este evento.",
+    "postcardVersionNotFound": "No encontramos esa versión de la postal."
   },
   "events": {
     "actions": "Acciones",

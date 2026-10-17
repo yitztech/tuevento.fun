@@ -488,3 +488,10 @@ export const emptyPostcard: PostcardDesign = {
   photos: [],
   texts: [],
 };
+/** Postal de un evento tal como la lee el editor: diseño, fecha y fotos subidas. */
+export type Postcard = {
+  design: PostcardDesign;
+  updatedAt: string | null;
+  photos: { id: string; url: string }[];
+};
+export type PostcardVersion = { id: string; createdAt: string };

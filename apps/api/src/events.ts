@@ -6,6 +6,7 @@ import {
 import { randomUUID, randomBytes } from "node:crypto";
 import { Subject, filter, map, merge, interval } from "rxjs";
 import { Database } from "./database";
+import { PostcardsService } from "./postcards";
 import {
   countMetrics,
   type EventInput,
@@ -58,6 +59,7 @@ export class EventsService {
   constructor(
     private db: Database,
     private updates: Updates,
+    private postcards: PostcardsService,
   ) {}
   async owned(userId: string, id: string) {
     const [r] = await this.db.query(
@@ -166,6 +168,7 @@ export class EventsService {
   }
   async removeEvent(userId: string, id: string) {
     await this.owned(userId, id);
+    await this.postcards.purge(id);
     await this.db.query("DELETE FROM events WHERE id=$1 AND user_id=$2", [
       id,
       userId,

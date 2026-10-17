@@ -267,7 +267,10 @@
     "sessionHasExpiredPlease": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
     "signInToContinue": "Melde dich an, um fortzufahren.",
     "tooManyAttemptsPlease": "Zu viele Versuche. Warte einen Moment und versuche es noch einmal.",
-    "usePngJpgWebp": "Verwende ein PNG-, JPG- oder WebP-Bild mit bis zu 2 MB."
+    "usePngJpgWebp": "Verwende ein PNG-, JPG- oder WebP-Bild mit bis zu 2 MB.",
+    "postcardPhotoLimit": "Diese Postkarte hat schon die maximale Anzahl Fotos.",
+    "postcardPhotoNotFound": "Ein Foto dieser Postkarte existiert in diesem Event nicht.",
+    "postcardVersionNotFound": "Diese Version der Postkarte wurde nicht gefunden."
   },
   "events": {
     "actions": "Aktionen",

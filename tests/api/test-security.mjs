@@ -63,6 +63,25 @@ try {
     assert.equal((await a.call(`/events/${evento.id}/invitations`)).length, 1);
   });
 
+  await suite("Postal: sin sesión o de otra cuenta responde 401 o 404, y las fotos sin id no existen", async () => {
+    const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    const ruta = `/events/${evento.id}/postcard`;
+    const sinSesion = [["GET", ruta], ["PUT", ruta], ["GET", `${ruta}/versions`], ["POST", `${ruta}/images`], ["DELETE", `${ruta}/images/${UUID}`]];
+    for (const [metodo, path] of sinSesion) {
+      const r = await guest.raw(path, { method: metodo, body: metodo === "PUT" || metodo === "POST" ? { dataUrl: PNG, background: { type: "color", color: "#ffffff" }, photos: [], texts: [] } : undefined });
+      assert.equal(r.status, 401, `${metodo} ${path}`);
+    }
+    const ajena = [["GET", ruta, undefined], ["PUT", ruta, { background: { type: "color", color: "#ffffff" }, photos: [], texts: [] }], ["GET", `${ruta}/versions`, undefined], ["POST", `${ruta}/images`, { dataUrl: PNG }], ["DELETE", `${ruta}/images/${UUID}`, undefined]];
+    for (const [metodo, path, body] of ajena) {
+      const r = await b.raw(path, { method: metodo, body });
+      assert.equal(r.status, 404, `${metodo} ${path} → ${r.status}`);
+    }
+    const inexistente = await send(new URL(`/api/postcards/images/${UUID}`, base));
+    assert.equal(inexistente.status, 404);
+    const malformado = await send(new URL("/api/postcards/images/..%2Fetc%2Fpasswd", base));
+    assert.ok([400, 404].includes(malformado.status), String(malformado.status));
+  });
+
   await suite("Demostración: sin cuenta registrada no hay sesión demo", async () => {
     const r = await guest.raw("/auth/demo", { method: "POST", body: {} });
     assert.equal(r.status, 401);

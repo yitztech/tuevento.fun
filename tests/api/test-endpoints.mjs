@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
-import { client, account, cleanup, englishHost, spanishHost, suiteRunner, eventData, invitationData } from "./api.mjs";
+import { base, client, account, cleanup, englishHost, send, spanishHost, suiteRunner, eventData, invitationData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -29,6 +29,37 @@ try {
       assert.equal(publica.event.theme, theme);
     }
     await organizador.call(`/events/${evento.id}`, "DELETE");
+  });
+
+  await suite("Postal de evento: se guarda con versiones, usa sus fotos y se lee sin sesión", async () => {
+    const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "postal"), 201);
+    const evento = await organizador.call("/events", "POST", eventData(), 201);
+    const ruta = `/events/${evento.id}/postcard`;
+    assert.equal((await organizador.call(ruta)).design.background.type, "color");
+    const foto = await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 201);
+    assert.match(foto.url, /^\/api\/postcards\/images\//);
+    const imagen = await send(new URL(foto.url, base), { headers: { "x-tuevento-client": "1" } });
+    assert.equal(imagen.status, 200);
+    assert.equal(imagen.headers["content-type"], "image/jpeg");
+    const diseno = {
+      background: { type: "photo", photo: foto.id },
+      photos: [],
+      texts: [{ content: "Hola", font: "playfair", size: 64, color: "#112233", align: "center", x: 10, y: 20, width: 80 }],
+    };
+    assert.deepEqual((await organizador.call(ruta, "PUT", diseno)).design.texts, diseno.texts);
+    const [primera] = await organizador.call(`${ruta}/versions`);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [] });
+    assert.equal((await organizador.call(`${ruta}/versions`)).length, 2);
+    assert.equal((await organizador.call(`${ruta}/versions/${primera.id}/restore`, "POST", {}, 201)).design.texts.length, 1);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...diseno.texts[0], content: "x".repeat(201) }] }, 400);
+    await organizador.call(ruta, "PUT", { background: { type: "photo", photo: "00000000-0000-4000-8000-000000000000" }, photos: [], texts: [] }, 400);
+    await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 201);
+    await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 400);
+    await organizador.call(`/events/${evento.id}`, "DELETE");
+    const borrada = await send(new URL(foto.url, base), { headers: { "x-tuevento-client": "1" } });
+    assert.equal(borrada.status, 404);
   });
 
   await suite("Acceso demo: solo para cuentas registradas, sin privilegios", async () => {
