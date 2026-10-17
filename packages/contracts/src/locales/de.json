@@ -272,7 +272,10 @@
     "postcardPhotoNotFound": "Ein Foto dieser Postkarte existiert in diesem Event nicht.",
     "postcardVersionNotFound": "Diese Version der Postkarte wurde nicht gefunden.",
     "eventSlugTaken": "Diese Adresse wird bereits von einem anderen Event genutzt. Wähle eine andere.",
-    "eventIsntAvailable": "Dieses Event ist nicht verfügbar."
+    "eventIsntAvailable": "Dieses Event ist nicht verfügbar.",
+    "eventCancelled": "Dieses Event ist abgesagt.",
+    "openInvitationFull": "Dieser Link hat die maximale Anzahl an Anmeldungen erreicht.",
+    "eventPasswordIncorrect": "Das Passwort ist nicht korrekt."
   },
   "events": {
     "actions": "Aktionen",
@@ -394,7 +397,19 @@
     "yesDelete": "Ja, löschen",
     "youreInvitedEvent": "Du bist eingeladen: {{event}}",
     "publicAddress": "Öffentliche Adresse (optional)",
-    "publicAddressHint": "Wenn du sie ausfüllst, sehen alle mit diesem Link das Event und seine Postkarte: {{url}}. Lass sie leer, um nichts zu veröffentlichen."
+    "publicAddressHint": "Wenn du sie ausfüllst, sehen alle mit diesem Link das Event und seine Postkarte: {{url}}. Lass sie leer, um nichts zu veröffentlichen.",
+    "cancelEvent": "Event absagen",
+    "cancelEventHint": "Gäste werden benachrichtigt und können nicht mehr antworten.",
+    "cancelledBadge": "Abgesagt",
+    "openLinkNoPeople": "Diese Einladung hat keine Personen: Jeder Gast trägt seine Daten über den Link selbst ein.",
+    "openLinkType": "Offener Link",
+    "openLinkTypeHint": "Ein Link für alle; jeder Gast trägt seine Daten ein.",
+    "publicAddressTaken": "Diese Adresse nutzt bereits ein anderes Event.",
+    "publicPassword": "Passwort für die öffentliche Seite (optional)",
+    "publicPasswordHint": "Wer die Seite sehen will, muss es eingeben. Leer lassen, um keines zu verwenden.",
+    "publicPasswordKept": "Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.",
+    "removePublicPassword": "Passwort der öffentlichen Seite entfernen",
+    "viaOpenLink": "über offenen Link"
   },
   "landing": {
     "adultsChildrenOnePerson": "Erwachsene und Kinder, Person für Person",
@@ -547,6 +562,30 @@
       "ignore": "Falls du das nicht angefordert hast, ignoriere diese E-Mail: Dein Passwort bleibt unverändert.",
       "intro": "Wir haben eine Anfrage erhalten, das Passwort deines Kontos zurückzusetzen. Wähle über die Schaltfläche unten ein neues.",
       "subject": "Setze dein TuEventoFun-Passwort zurück"
+    },
+    "eventCancelled": {
+      "intro": "Leider müssen wir dir mitteilen, dass {{event}} abgesagt wurde.",
+      "subject": "Abgesagt: {{event}}"
+    },
+    "eventChanged": {
+      "dateChanged": "Datum und Uhrzeit sind jetzt {{date}}",
+      "intro": "Der Gastgeber hat {{event}} geändert: {{changes}}. Schau bitte in deine Einladung.",
+      "placeChanged": "der Ort ist jetzt {{location}}",
+      "subject": "Änderungen bei {{event}}"
+    },
+    "footer": "Du erhältst diese E-Mail, weil du eine Einladung auf TuEventoFun hast.",
+    "guestReply": {
+      "change": "Du kannst deine Antwort jederzeit über deinen Einladungslink ändern.",
+      "intro": "Wir haben deine Antwort zu {{event}} gespeichert:",
+      "member": "{{name}}: {{status}}",
+      "subject": "Wir haben deine Antwort zu {{event}} gespeichert"
+    },
+    "openEvent": "Event ansehen",
+    "openInvitation": "Meine Einladung öffnen",
+    "ownerReply": {
+      "counts": "Zugesagt: {{accepted}}. Absagen: {{declined}}. Warteliste: {{pending}}.",
+      "intro": "{{guest}} hat auf {{event}} geantwortet.",
+      "subject": "{{guest}} hat auf {{event}} geantwortet"
     }
   },
   "mobileConnect": {
@@ -618,7 +657,8 @@
     "viewLocation": "Ort ansehen",
     "withLove": "Herzlich,",
     "wouldntSameWithout": "Ohne dich wäre es nicht dasselbe.",
-    "yesIllThere": "Ja, ich komme!"
+    "yesIllThere": "Ja, ich komme!",
+    "eventCancelled": "Dieses Event wurde abgesagt; Antworten sind nicht mehr möglich."
   },
   "status": {
     "accepted": "Zugesagt",
@@ -725,7 +765,8 @@
     "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +.",
     "useHexColor": "Wähle eine Farbe aus der Palette.",
     "maximum60Characters": "Höchstens 60 Zeichen.",
-    "eventSlugFormat": "Verwende nur Kleinbuchstaben, Ziffern und Bindestriche zwischen Wörtern, 3 bis 60 Zeichen."
+    "eventSlugFormat": "Verwende nur Kleinbuchstaben, Ziffern und Bindestriche zwischen Wörtern, 3 bis 60 Zeichen.",
+    "openInvitationNoMembers": "Eine offene Einladung hat keine Personen: Jeder Gast fügt seine eigenen hinzu."
   },
   "pricing": {
     "title": "Preise",
@@ -742,6 +783,33 @@
     "opening": "Event wird geöffnet…",
     "unavailable": "Wir konnten dieses Event nicht finden",
     "hostedBy": "Veranstaltet von",
-    "inviteHint": "Du hast eine Einladung? Öffne den privaten Link, den du bekommen hast, um deine Teilnahme zu bestätigen."
+    "inviteHint": "Du hast eine Einladung? Öffne den privaten Link, den du bekommen hast, um deine Teilnahme zu bestätigen.",
+    "cancelled": "Dieses Event wurde abgesagt.",
+    "lockedText": "Der Gastgeber hat diese Seite geschützt. Gib das Passwort ein, um die Details zu sehen.",
+    "lockedTitle": "Geschütztes Event",
+    "passwordLabel": "Passwort",
+    "unlock": "Event ansehen"
+  },
+  "calendar": {
+    "downloadIcs": "Kalender herunterladen (.ics)",
+    "googleCalendar": "Zu Google Kalender hinzufügen"
+  },
+  "registration": {
+    "addPerson": "Weitere Person hinzufügen",
+    "email": "E-Mail (optional)",
+    "full": "Dieser Link nimmt keine weiteren Anmeldungen mehr an.",
+    "intro": "Trag deine Daten und die der Personen ein, die mit dir kommen. Deine Antwort kannst du später ändern.",
+    "name": "Dein Name",
+    "people": "Personen",
+    "personKind": "Art",
+    "personName": "Name",
+    "personNumber": "Person {{number}}",
+    "personStatus": "Antwort",
+    "phone": "Telefon (optional)",
+    "removePerson": "Entfernen",
+    "saved": "Deine Antwort ist gespeichert.",
+    "sending": "Wird gesendet…",
+    "submit": "Meine Antwort senden",
+    "title": "Für das Event anmelden"
   }
 }

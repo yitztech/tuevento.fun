@@ -38,6 +38,7 @@ export const de: LegalTexts = {
           "In jedem Event kannst du Einladungen mit Name, E-Mail-Adresse, Telefonnummer und privaten Notizen hinzufügen, dazu den Namen jedes Mitglieds, ob es erwachsen oder ein Kind ist, und seine Notizen. Notizen und Kontaktdaten siehst nur du; die Einladungsseite zeigt den Gästen nur ihre Namen und die Angaben zum Event.",
           "Gäste antworten, ohne ein Konto zu erstellen. Wir speichern die Antwort jedes Mitglieds (Zusage, Absage oder offen) und benachrichtigen dich.",
           "Du bist dafür verantwortlich, die Erlaubnis deiner Gäste einzuholen, bevor du ihre Daten hinzufügst.",
+          "Wenn du einen offenen Link teilst, trägt die Person, die sich anmeldet, ihre eigenen Daten und die der Personen ein, die mit ihr kommen. Diese Daten siehst du, wie die deiner übrigen Einladungen.",
         ],
       },
       {
@@ -47,6 +48,7 @@ export const de: LegalTexts = {
           "Die Fotos der Postkarte werden allen gezeigt, die die Einladung oder die öffentliche Adresse des Events haben. Jedes Foto hat eine zufällige Kennung, die nicht erraten werden kann. Du kannst ein Foto jederzeit entfernen; beim Löschen des Events werden auch seine Fotos gelöscht.",
           "Wenn du dem Event eine öffentliche Adresse gibst, sehen alle, die sie kennen, Titel, Beschreibung, Datum, Ort, den Namen des Gastgebers und die Postkarte. Deine Gäste, ihre Kontaktdaten und ihre Antworten werden nie angezeigt. Du kannst die Adresse jederzeit entfernen oder ändern; sie wird nicht mehr angezeigt, wenn du das Event archivierst.",
           "Wir bewahren bis zu 20 frühere Versionen der Postkarte auf, damit du zu ihnen zurückkehren kannst. Sie werden beim Löschen des Events gelöscht.",
+          "Du kannst die öffentliche Seite mit einem Passwort schützen. Wir speichern nur einen Hash des Passworts und des Zugangs, den es gewährt; dieser läuft nach 24 Stunden ab. Die heruntergeladene Kalenderdatei (.ics) enthält nur die Daten des Events.",
         ],
       },
       {
@@ -64,6 +66,7 @@ export const de: LegalTexts = {
         body: [
           "Wenn du das Zurücksetzen deines Passworts anforderst, schicken wir dir einen Link, der nur einmal funktioniert und nach 60 Minuten abläuft; wir speichern nur einen Fingerabdruck (Hash) dieses Links. Wenn sich das Passwort ändert, beenden wir alle offenen Sitzungen und schicken dir einen Sicherheitshinweis.",
           "Diese E-Mails werden in der Sprache der Domain verschickt, die du genutzt hast, und von dieser Domain aus, über einen E-Mail-Versanddienst, der nur erhält, was für die Zustellung nötig ist.",
+          "Wir schicken dir eine E-Mail, wenn jemand auf dein Event antwortet oder sich anmeldet, und wenn du Datum oder Ort änderst oder das Event absagst. Gästen, die ihre E-Mail-Adresse hinterlassen haben, schicken wir die Bestätigung ihrer Antwort und diese Hinweise. Diese Adresse nutzen wir nur dafür.",
         ],
       },
       {

@@ -272,7 +272,10 @@
     "postcardPhotoNotFound": "Uma foto desta postal não existe neste evento.",
     "postcardVersionNotFound": "Não encontramos essa versão da postal.",
     "eventSlugTaken": "Outro evento já usa esse endereço. Escolha outro.",
-    "eventIsntAvailable": "Este evento não está disponível."
+    "eventIsntAvailable": "Este evento não está disponível.",
+    "eventCancelled": "Este evento está cancelado.",
+    "openInvitationFull": "Este link já atingiu o número máximo de registros.",
+    "eventPasswordIncorrect": "A senha não está correta."
   },
   "events": {
     "actions": "Ações",
@@ -394,7 +397,19 @@
     "yesDelete": "Sim, excluir",
     "youreInvitedEvent": "Você está convidado: {{event}}",
     "publicAddress": "Endereço público (opcional)",
-    "publicAddressHint": "Se preencher, qualquer pessoa com este link verá o evento e o seu cartão postal: {{url}}. Deixe em branco para não publicar."
+    "publicAddressHint": "Se preencher, qualquer pessoa com este link verá o evento e o seu cartão postal: {{url}}. Deixe em branco para não publicar.",
+    "cancelEvent": "Cancelar o evento",
+    "cancelEventHint": "Os convidados serão avisados e não poderão mais responder.",
+    "cancelledBadge": "Cancelado",
+    "openLinkNoPeople": "Este convite não tem pessoas: cada convidado preenche os próprios dados pelo link.",
+    "openLinkType": "Link genérico",
+    "openLinkTypeHint": "Um link para quem você quiser; cada convidado preenche seus dados.",
+    "publicAddressTaken": "Outro evento já usa esse endereço.",
+    "publicPassword": "Senha para ver a página pública (opcional)",
+    "publicPasswordHint": "Quem quiser ver a página precisará digitá-la. Deixe em branco para não usar nenhuma.",
+    "publicPasswordKept": "Há uma senha salva. Deixe em branco para mantê-la.",
+    "removePublicPassword": "Remover a senha da página pública",
+    "viaOpenLink": "pelo link genérico"
   },
   "landing": {
     "adultsChildrenOnePerson": "Adultos e crianças, pessoa por pessoa",
@@ -547,6 +562,30 @@
       "ignore": "Se não foi você quem pediu, ignore este e-mail: sua senha não será alterada.",
       "intro": "Recebemos uma solicitação para redefinir a senha da sua conta. Use o botão abaixo para escolher uma nova.",
       "subject": "Redefina sua senha do TuEventoFun"
+    },
+    "eventCancelled": {
+      "intro": "Lamentamos avisar que {{event}} foi cancelado.",
+      "subject": "Cancelado: {{event}}"
+    },
+    "eventChanged": {
+      "dateChanged": "a data e a hora agora são {{date}}",
+      "intro": "O anfitrião alterou {{event}}: {{changes}}. Confira seu convite.",
+      "placeChanged": "o local agora é {{location}}",
+      "subject": "Mudanças em {{event}}"
+    },
+    "footer": "Você recebe este e-mail porque tem um convite no TuEventoFun.",
+    "guestReply": {
+      "change": "Você pode mudar sua resposta a qualquer momento pelo link do seu convite.",
+      "intro": "Guardamos sua resposta para {{event}}:",
+      "member": "{{name}}: {{status}}",
+      "subject": "Guardamos sua resposta para {{event}}"
+    },
+    "openEvent": "Ver o evento",
+    "openInvitation": "Abrir meu convite",
+    "ownerReply": {
+      "counts": "Confirmados: {{accepted}}. Não vão: {{declined}}. Em espera: {{pending}}.",
+      "intro": "{{guest}} respondeu a {{event}}.",
+      "subject": "{{guest}} respondeu a {{event}}"
     }
   },
   "mobileConnect": {
@@ -618,7 +657,8 @@
     "viewLocation": "Ver localização",
     "withLove": "Com muito carinho,",
     "wouldntSameWithout": "Sem você, não seria a mesma coisa.",
-    "yesIllThere": "Sim, eu vou!"
+    "yesIllThere": "Sim, eu vou!",
+    "eventCancelled": "Este evento foi cancelado; não é possível enviar respostas."
   },
   "status": {
     "accepted": "Confirmados",
@@ -725,7 +765,8 @@
     "useNumbersSpaces": "Use números, espaços ou +.",
     "useHexColor": "Escolha uma cor da paleta.",
     "maximum60Characters": "Máximo de 60 caracteres.",
-    "eventSlugFormat": "Use apenas letras minúsculas sem acentos, números e hífens entre palavras, de 3 a 60 caracteres."
+    "eventSlugFormat": "Use apenas letras minúsculas sem acentos, números e hífens entre palavras, de 3 a 60 caracteres.",
+    "openInvitationNoMembers": "Um convite genérico não tem pessoas: cada convidado adiciona as suas."
   },
   "pricing": {
     "title": "Preços",
@@ -742,6 +783,33 @@
     "opening": "Abrindo o evento…",
     "unavailable": "Não encontramos este evento",
     "hostedBy": "Organizado por",
-    "inviteHint": "Você recebeu um convite? Abra o link privado que recebeu para confirmar sua presença."
+    "inviteHint": "Você recebeu um convite? Abra o link privado que recebeu para confirmar sua presença.",
+    "cancelled": "Este evento foi cancelado.",
+    "lockedText": "O anfitrião protegeu esta página. Digite a senha para ver os detalhes.",
+    "lockedTitle": "Evento protegido",
+    "passwordLabel": "Senha",
+    "unlock": "Ver o evento"
+  },
+  "calendar": {
+    "downloadIcs": "Baixar calendário (.ics)",
+    "googleCalendar": "Adicionar ao Google Agenda"
+  },
+  "registration": {
+    "addPerson": "Adicionar outra pessoa",
+    "email": "E-mail (opcional)",
+    "full": "Este link não aceita mais registros.",
+    "intro": "Preencha seus dados e os das pessoas que vêm com você. Depois você pode mudar sua resposta.",
+    "name": "Seu nome",
+    "people": "Pessoas",
+    "personKind": "Tipo",
+    "personName": "Nome",
+    "personNumber": "Pessoa {{number}}",
+    "personStatus": "Resposta",
+    "phone": "Telefone (opcional)",
+    "removePerson": "Remover",
+    "saved": "Sua resposta foi salva.",
+    "sending": "Enviando…",
+    "submit": "Enviar minha resposta",
+    "title": "Cadastre-se no evento"
   }
 }

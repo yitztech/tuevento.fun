@@ -85,3 +85,104 @@ export function passwordChangedMail(
     footer: t("mail.passwordChanged.footer"),
   });
 }
+
+/** Resumen en el correo del invitado tras guardar su respuesta. */
+export function guestReplyMail(
+  locale: Locale,
+  data: {
+    to: string;
+    name: string;
+    event: string;
+    members: { name: string; status: string }[];
+    url: string;
+    site: string;
+  },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.guestReply.subject", { event: data.event }),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.guestReply.intro", { event: data.event }),
+      ...data.members.map((m) => t("mail.guestReply.member", { name: m.name, status: m.status })),
+      t("mail.guestReply.change"),
+    ],
+    action: { label: t("mail.openInvitation"), url: data.url },
+    footer: t("mail.footer"),
+  });
+}
+
+/** Aviso al organizador cuando alguien responde o se registra por su enlace genérico. */
+export function ownerReplyMail(
+  locale: Locale,
+  data: {
+    to: string;
+    name: string;
+    guest: string;
+    event: string;
+    counts: { accepted: number; declined: number; pending: number };
+    url: string;
+    site: string;
+  },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.ownerReply.subject", { guest: data.guest, event: data.event }),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.ownerReply.intro", { guest: data.guest, event: data.event }),
+      t("mail.ownerReply.counts", data.counts),
+    ],
+    action: { label: t("mail.openEvent"), url: data.url },
+    footer: t("mail.footer"),
+  });
+}
+
+/** Aviso a un invitado cuando cambian la fecha o el lugar del evento. */
+export function eventChangedMail(
+  locale: Locale,
+  data: {
+    to: string;
+    name: string;
+    event: string;
+    changes: string[];
+    url: string;
+    site: string;
+  },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.eventChanged.subject", { event: data.event }),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.eventChanged.intro", { event: data.event, changes: data.changes.join("; ") }),
+    ],
+    action: { label: t("mail.openInvitation"), url: data.url },
+    footer: t("mail.footer"),
+  });
+}
+
+/** Aviso a un invitado cuando el organizador cancela el evento. */
+export function eventCancelledMail(
+  locale: Locale,
+  data: { to: string; name: string; event: string; url: string; site: string },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.eventCancelled.subject", { event: data.event }),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.eventCancelled.intro", { event: data.event }),
+    ],
+    action: { label: t("mail.openInvitation"), url: data.url },
+    footer: t("mail.footer"),
+  });
+}
