@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState, type MouseEvent, type ReactElement } fro
 import i18next from "i18next";
 import { initReactI18next, Trans, useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
+import { Check, ChevronDown } from "lucide-react";
 import { LocaleFlag } from "./locale-flags";
 import {
   defaultLocale,
@@ -247,12 +248,50 @@ export function LanguageSwitcher() {
     );
   };
   if (others.length === 1) return option(others[0]);
+  // Menú: todos los idiomas; el actual aparece marcado y no es un enlace.
+  const item = (target: Locale) => {
+    const current = target === locale;
+    const body = (
+      <>
+        <LocaleFlag locale={target} />
+        <span className="language-option-name">{locales[target].name}</span>
+        {current && <Check className="language-option-check" size={16} aria-hidden="true" />}
+      </>
+    );
+    if (current)
+      return (
+        <span key={target} className="language-option is-current" lang={target} aria-current="true">
+          {body}
+        </span>
+      );
+    return sites ? (
+      <a
+        key={target}
+        className="language-option"
+        href={otherUrl(target, pathname, search, hash)}
+        hrefLang={target}
+        lang={target}
+        onClick={choose(target)}
+      >
+        {body}
+      </a>
+    ) : (
+      <button key={target} type="button" className="language-option" lang={target} onClick={choose(target)}>
+        {body}
+      </button>
+    );
+  };
   return (
     <details className="language-menu">
       <summary className="language-switcher" title={tr("language.changeLanguage")} aria-label={label(locale)}>
-        {content(locale)}
+        <LocaleFlag locale={locale} />
+        <span className="language-code">{locale.toUpperCase()}</span>
+        <ChevronDown className="language-chevron" size={14} aria-hidden="true" />
       </summary>
-      <div className="language-menu-list">{others.map(option)}</div>
+      <div className="language-menu-list">
+        <p className="language-menu-title">{tr("language.viewThisSite")}</p>
+        {reachableLocales().map(item)}
+      </div>
     </details>
   );
 }

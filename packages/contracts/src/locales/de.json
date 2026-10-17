@@ -458,6 +458,7 @@
   },
   "language": {
     "changeLanguage": "Sprache ändern",
+    "viewThisSite": "Diese Seite auf Deutsch ansehen",
     "suggest": "Möchtest du diese Seite auf Deutsch sehen?",
     "suggestAccept": "Auf Deutsch ansehen",
     "suggestDismiss": "Nein, danke"

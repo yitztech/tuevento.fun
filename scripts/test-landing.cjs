@@ -107,7 +107,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     // El selector es un menú (varios idiomas): se abre y se elige el inglés
     await page.locator(".landing-header summary.language-switcher").first().click();
     await page
-      .locator('.landing-header a.language-switcher[hreflang="en"]')
+      .locator('.landing-header a.language-option[hreflang="en"]')
       .first()
       .click();
     // El enlace conserva la ruta, la query y el ancla actuales (aquí #preguntas)
