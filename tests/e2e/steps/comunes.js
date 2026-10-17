@@ -62,6 +62,21 @@ Then("el campo {string} contiene {string}", async ({ ui }, campo, valor) => {
   await ui.esperarValor(campo, valor);
 });
 
+// Selector de país del teléfono: solo web (el selector nativo no existe en las apps móviles).
+When("elijo el prefijo {string} en el campo {string}", async ({ page }, prefijo, campo) => {
+  const select = page.getByLabel(campo, { exact: true });
+  const valor = await select.locator("option", { hasText: `(${prefijo})` }).getAttribute("value");
+  await select.selectOption(valor);
+});
+
+Then("el selector {string} muestra el prefijo {string}", async ({ page }, campo, prefijo) => {
+  await expect(page.getByLabel(campo, { exact: true }).locator("option:checked")).toContainText(`(${prefijo})`);
+});
+
+When("recargo la página", async ({ page }) => {
+  await page.reload();
+});
+
 Then("el campo {string} admite como máximo {int} caracteres", async ({ ui }, campo, n) => {
   await ui.esperarAtributo(campo, "maxlength", String(n));
 });

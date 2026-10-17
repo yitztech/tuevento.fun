@@ -7,7 +7,7 @@ import {
   useLocation,
   useSearchParams,
 } from "react-router-dom";
-import { useForm, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   accountLimits,
@@ -35,6 +35,7 @@ import {
 import { useApp, errorText } from "./context";
 import { Logo, Field, ErrorBox, Avatar, Container, Card } from "./components";
 import { AuthLegalNotice } from "./legal";
+import { PhoneField } from "./phone-field";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
   const challenge = query.get("appChallenge");
@@ -103,7 +104,6 @@ const filterInput =
     event.target.value = event.target.value.replace(pattern, "");
   };
 const onlyNameChars = filterInput(/[^\p{L}\p{M}\s'’.-]/gu);
-const onlyPhoneChars = filterInput(/[^\d\s()+-]/g);
 
 export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const postAuthTarget = usePostAuthTarget();
@@ -189,18 +189,18 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                     {...form.register("lastName", { onChange: onlyNameChars })}
                   />
                 </Field>
-                <Field
-                  label={tr("common.phone")}
-                  error={form.formState.errors.phone?.message}
-                >
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    maxLength={accountLimits.phone}
-                    {...form.register("phone", { onChange: onlyPhoneChars })}
-                  />
-                </Field>
+                <Controller
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <PhoneField
+                      label={tr("common.phone")}
+                      error={form.formState.errors.phone?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
               </>
             )}
             <Field
@@ -636,17 +636,18 @@ export function ProfilePage() {
           <Field label={tr("common.email")}>
             <input value={user.email} readOnly type="email" />
           </Field>
-          <Field
-            label={tr("common.phone")}
-            error={form.formState.errors.phone?.message}
-          >
-            <input
-              type="tel"
-              inputMode="tel"
-              maxLength={accountLimits.phone}
-              {...form.register("phone", { onChange: onlyPhoneChars })}
-            />
-          </Field>
+          <Controller
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <PhoneField
+                label={tr("common.phone")}
+                error={form.formState.errors.phone?.message}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+              />
+            )}
+          />
           {error && <ErrorBox message={error} />}
           <div className="form-actions">
             <button className="button" disabled={form.formState.isSubmitting}>

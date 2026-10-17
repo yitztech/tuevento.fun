@@ -1611,6 +1611,11 @@ small {
 .field textarea {
   resize: vertical;
 }
+.phone-field {
+  display: grid;
+  grid-template-columns: minmax(9rem, 45%) minmax(0, 1fr);
+  gap: 8px;
+}
 .field > small {
   font-size: 10px;
   color: var(--muted);

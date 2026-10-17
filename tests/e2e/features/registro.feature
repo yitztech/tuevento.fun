@@ -47,7 +47,7 @@ Característica: Crear una cuenta
 
     Ejemplos:
       | escrito              | queda            |
-      | +52 abc 555-12(3)x4  | +52  555-12(3)4  |
+      | +52 abc 555-12(3)x4  | 555-12(3)4       |
       | llamame              |                  |
 
   @limites
