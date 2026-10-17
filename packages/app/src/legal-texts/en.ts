@@ -41,6 +41,15 @@ export const en: LegalTexts = {
         ],
       },
       {
+        title: "Event postcard and public address",
+        body: [
+          "Each event's postcard can include up to two photos that you upload. Before saving them we remove their metadata, such as where they were taken, rotate them according to their orientation and reduce them to a maximum of 2048 pixels.",
+          "Postcard photos are shown to anyone with the invitation or the event's public address. Each photo has a random identifier that can't be guessed. You can remove a photo at any time, and deleting the event deletes its photos too.",
+          "If you give the event a public address, anyone who has it can see the title, description, date, location, the host's name and the postcard. Your guests, their contact details and their responses are never shown. You can remove or change the address at any time, and it stops showing if you archive the event.",
+          "We keep up to 20 earlier versions of the postcard so you can go back to them. They are deleted when you delete the event.",
+        ],
+      },
+      {
         title: "Sessions and storage on your device",
         body: [
           "We use a session cookie that cannot be read by scripts (HttpOnly) and lasts 7 days, and a temporary cookie of 5 minutes to verify Google sign-in. We do not use advertising cookies.",
@@ -67,6 +76,7 @@ export const en: LegalTexts = {
       {
         title: "Where information is stored and for how long",
         body: [
+          "Postcard photos are stored on the server's disk, in their own volume separate from the database. They are kept as long as the event exists.",
           "Data is stored in a PostgreSQL database on the service's servers.",
           "Your events, invitations and replies remain until you delete them. Deleting an event or an invitation also deletes its guests and replies.",
           "Visit and access records are deleted after 90 days. Demonstration spaces are deleted after 7 days. Expired sessions and password reset links are deleted automatically.",

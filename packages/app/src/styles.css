@@ -4873,3 +4873,35 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   line-height: 1.5;
   color: var(--muted);
 }
+
+/* Página pública de evento (/e/:slug) */
+.rsvp-event-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0 0 0.75rem;
+}
+.rsvp-detail {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.35rem 0;
+}
+.rsvp-description {
+  white-space: pre-line;
+  margin: 1rem 0;
+}
+.public-event-note {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 1.25rem;
+}
+.event-public-link {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+}
+.event-public-link a {
+  overflow-wrap: anywhere;
+}

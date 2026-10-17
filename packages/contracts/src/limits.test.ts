@@ -27,6 +27,7 @@ const columns: Record<string, [string, string][]> = {
   personName: [["users", "first_name"], ["users", "last_name"]],
   email: [["users", "email"]],
   phone: [["users", "phone"]],
+  eventSlug: [["events", "slug"]],
 };
 
 test("accountLimits coincide con las restricciones CHECK de la base de datos", () => {

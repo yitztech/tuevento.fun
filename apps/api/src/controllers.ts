@@ -197,6 +197,9 @@ export class PublicController {
   ) {
     return this.events.publicInvitation(this.token(token, req));
   }
+  @Get("public/events/:slug") publicEvent(@Param("slug") slug: string) {
+    return this.events.publicEvent(slug);
+  }
   @Post("invitations/:token/rsvp") rsvp(
     @Req() req: FastifyRequest,
     @Param("token") token: string,

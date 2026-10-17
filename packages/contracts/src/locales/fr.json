@@ -270,7 +270,9 @@
     "usePngJpgWebp": "Utilise une image PNG, JPG ou WebP de 2 Mo maximum.",
     "postcardPhotoLimit": "Cette carte postale a déjà le nombre maximal de photos.",
     "postcardPhotoNotFound": "Une photo de cette carte n’existe pas dans cet événement.",
-    "postcardVersionNotFound": "Nous n’avons pas trouvé cette version de la carte."
+    "postcardVersionNotFound": "Nous n’avons pas trouvé cette version de la carte.",
+    "eventSlugTaken": "Cette adresse est déjà utilisée par un autre événement. Choisis-en une autre.",
+    "eventIsntAvailable": "Cet événement n’est pas disponible."
   },
   "events": {
     "actions": "Actions",
@@ -390,7 +392,9 @@
     "wereSoGladYoure": "Quel bonheur de vous avoir ici.",
     "whereMeeting": "Où se retrouve-t-on ?",
     "yesDelete": "Oui, supprimer",
-    "youreInvitedEvent": "Tu es invité : {{event}}"
+    "youreInvitedEvent": "Tu es invité : {{event}}",
+    "publicAddress": "Adresse publique (facultative)",
+    "publicAddressHint": "Si vous la renseignez, toute personne disposant de ce lien verra l’événement et sa carte postale : {{url}}. Laissez-la vide pour ne rien publier."
   },
   "landing": {
     "adultsChildrenOnePerson": "Adultes et enfants, personne par personne",
@@ -719,7 +723,9 @@
     "useLeast10Characters": "Utilise au moins 10 caractères.",
     "useLettersSpaces": "Utilise uniquement des lettres, des espaces, des apostrophes ou des tirets.",
     "useNumbersSpaces": "Utilise des chiffres, des espaces ou +.",
-    "useHexColor": "Choisis une couleur dans la palette."
+    "useHexColor": "Choisis une couleur dans la palette.",
+    "maximum60Characters": "60 caractères maximum.",
+    "eventSlugFormat": "Utilisez uniquement des lettres minuscules sans accents, des chiffres et des tirets entre les mots, de 3 à 60 caractères."
   },
   "pricing": {
     "title": "Tarifs",
@@ -731,5 +737,11 @@
     "paymentPending": "Le paiement n’est pas encore disponible. Une fois en place, tu pourras payer ton événement ici.",
     "back": "Retour aux tarifs",
     "buy": "Acheter"
+  },
+  "publicEvent": {
+    "opening": "Ouverture de l’événement…",
+    "unavailable": "Nous n’avons pas trouvé cet événement",
+    "hostedBy": "Organisé par",
+    "inviteHint": "Tu as une invitation ? Ouvre le lien privé qu’on t’a envoyé pour confirmer ta présence."
   }
 }

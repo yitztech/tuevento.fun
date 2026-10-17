@@ -270,7 +270,9 @@
     "usePngJpgWebp": "Usa una imagen PNG, JPG o WebP de hasta 2 MB.",
     "postcardPhotoLimit": "Esta postal ya tiene el máximo de fotos.",
     "postcardPhotoNotFound": "Una foto de la postal no existe en este evento.",
-    "postcardVersionNotFound": "No encontramos esa versión de la postal."
+    "postcardVersionNotFound": "No encontramos esa versión de la postal.",
+    "eventSlugTaken": "Esa dirección ya la usa otro evento. Elige otra.",
+    "eventIsntAvailable": "Este evento no está disponible."
   },
   "events": {
     "actions": "Acciones",
@@ -390,7 +392,9 @@
     "wereSoGladYoure": "Qué alegría tenerlos aquí.",
     "whereMeeting": "¿Dónde nos vemos?",
     "yesDelete": "Sí, eliminar",
-    "youreInvitedEvent": "Te invitamos: {{event}}"
+    "youreInvitedEvent": "Te invitamos: {{event}}",
+    "publicAddress": "Dirección pública (opcional)",
+    "publicAddressHint": "Si la rellenas, cualquiera con este enlace verá el evento y su postal: {{url}}. Déjala vacía para no publicarlo."
   },
   "landing": {
     "adultsChildrenOnePerson": "Adultos y niños, persona por persona",
@@ -719,7 +723,9 @@
     "useLeast10Characters": "Usa al menos 10 caracteres.",
     "useLettersSpaces": "Usa solo letras, espacios, apóstrofo o guion.",
     "useNumbersSpaces": "Usa números, espacios o +.",
-    "useHexColor": "Elige un color de la paleta."
+    "useHexColor": "Elige un color de la paleta.",
+    "maximum60Characters": "Máximo 60 caracteres.",
+    "eventSlugFormat": "Usa solo letras minúsculas sin acentos, números y guiones entre palabras, de 3 a 60 caracteres."
   },
   "pricing": {
     "title": "Precios",
@@ -731,5 +737,11 @@
     "paymentPending": "El cobro todavía no está conectado. Cuando esté disponible, aquí podrás pagar tu evento.",
     "back": "Volver a los precios",
     "buy": "Comprar"
+  },
+  "publicEvent": {
+    "opening": "Abriendo el evento…",
+    "unavailable": "No encontramos este evento",
+    "hostedBy": "Lo organiza",
+    "inviteHint": "¿Tienes una invitación? Abre el enlace privado que te enviaron para confirmar tu asistencia."
   }
 }

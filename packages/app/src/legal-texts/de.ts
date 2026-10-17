@@ -41,6 +41,15 @@ export const de: LegalTexts = {
         ],
       },
       {
+        title: "Postkarte und öffentliche Adresse des Events",
+        body: [
+          "Die Postkarte jedes Events kann bis zu zwei Fotos enthalten, die du hochlädst. Bevor wir sie speichern, entfernen wir ihre Metadaten, etwa den Aufnahmeort, drehen sie entsprechend ihrer Ausrichtung und verkleinern sie auf höchstens 2048 Pixel.",
+          "Die Fotos der Postkarte werden allen gezeigt, die die Einladung oder die öffentliche Adresse des Events haben. Jedes Foto hat eine zufällige Kennung, die nicht erraten werden kann. Du kannst ein Foto jederzeit entfernen; beim Löschen des Events werden auch seine Fotos gelöscht.",
+          "Wenn du dem Event eine öffentliche Adresse gibst, sehen alle, die sie kennen, Titel, Beschreibung, Datum, Ort, den Namen des Gastgebers und die Postkarte. Deine Gäste, ihre Kontaktdaten und ihre Antworten werden nie angezeigt. Du kannst die Adresse jederzeit entfernen oder ändern; sie wird nicht mehr angezeigt, wenn du das Event archivierst.",
+          "Wir bewahren bis zu 20 frühere Versionen der Postkarte auf, damit du zu ihnen zurückkehren kannst. Sie werden beim Löschen des Events gelöscht.",
+        ],
+      },
+      {
         title: "Sitzungen und Speicherung auf deinem Gerät",
         body: [
           "Wir verwenden ein Sitzungscookie, das Skripte nicht lesen können (HttpOnly) und das 7 Tage gültig ist, sowie ein temporäres Cookie für 5 Minuten, um die Anmeldung mit Google zu prüfen. Wir verwenden keine Werbecookies.",
@@ -67,6 +76,7 @@ export const de: LegalTexts = {
       {
         title: "Wo und wie lange die Daten gespeichert werden",
         body: [
+          "Die Fotos der Postkarten werden auf der Festplatte des Servers gespeichert, in einem eigenen Volume getrennt von der Datenbank. Sie bleiben erhalten, solange das Event besteht.",
           "Die Daten werden in einer PostgreSQL-Datenbank auf den Servern des Dienstes gespeichert.",
           "Deine Events, Einladungen und Antworten bleiben gespeichert, bis du sie löschst. Wenn du ein Event oder eine Einladung löschst, werden auch die zugehörigen Gäste und Antworten gelöscht.",
           "Besuchs- und Zugriffsprotokolle werden nach 90 Tagen gelöscht. Demo-Bereiche werden nach 7 Tagen gelöscht. Abgelaufene Sitzungen und Wiederherstellungslinks werden automatisch entfernt.",

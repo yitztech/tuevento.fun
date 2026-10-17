@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
-import { base, client, account, cleanup, englishHost, send, spanishHost, suiteRunner, eventData, invitationData } from "./api.mjs";
+import { base, client, account, cleanup, englishHost, send, spanishHost, suiteRunner, eventData, invitationData, unique } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -65,6 +65,41 @@ try {
     await organizador.call(`/events/${evento.id}`, "DELETE");
     const borrada = await send(new URL(foto.url, base), { headers: { "x-tuevento-client": "1" } });
     assert.equal(borrada.status, 404);
+  });
+
+  await suite("Dirección pública del evento: se elige, es única, se lee sin sesión y no muestra invitados", async () => {
+    const organizador = client();
+    const otro = client();
+    await organizador.call("/auth/register", "POST", account(P, "url-a"), 201);
+    await otro.call("/auth/register", "POST", account(P, "url-b"), 201);
+    const slug = `evento-${unique}`;
+    const evento = await organizador.call("/events", "POST", eventData(), 201);
+    assert.equal(evento.slug, "");
+    const publicado = await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }));
+    assert.equal(publicado.slug, slug);
+    const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData({ email: `url-${unique}@example.invalid` }), 201);
+    const publico = await guest.call(`/public/events/${slug}`);
+    assert.deepEqual(Object.keys(publico).sort(), ["date", "description", "host", "location", "postcard", "theme", "timeZone", "title"]);
+    assert.deepEqual(Object.keys(publico.host).sort(), ["avatar", "firstName", "lastName"]);
+    assert.equal(JSON.stringify(publico).includes(invitacion.token), false);
+    assert.equal(JSON.stringify(publico).includes(`url-${unique}@example.invalid`), false);
+    // Dos eventos no comparten dirección, ni al crear ni al editar
+    const ajeno = await otro.call("/events", "POST", eventData({ slug }), 409);
+    assert.equal(ajeno.message, translate("es", "errors.eventSlugTaken"));
+    const otroEvento = await otro.call("/events", "POST", eventData(), 201);
+    await otro.call(`/events/${otroEvento.id}`, "PATCH", eventData({ slug }), 409);
+    // Formato: minúsculas, números y guiones entre palabras, de 3 a 60
+    for (const malo of ["Boda Ana", "ab", "-evento", "evento-", "evento--x", "a".repeat(61)]) {
+      await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: malo }), 400);
+    }
+    // Quitarla deja el evento sin dirección pública; archivarlo también la cierra
+    assert.equal((await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: "" }))).slug, "");
+    await guest.call(`/public/events/${slug}`, "GET", undefined, 404);
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }));
+    assert.equal((await guest.call(`/public/events/${slug}`)).title, eventData().title);
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, archived: true }));
+    await guest.call(`/public/events/${slug}`, "GET", undefined, 404);
+    await guest.call(`/public/events/no-existe-${unique}`, "GET", undefined, 404);
   });
 
   await suite("Acceso demo: solo para cuentas registradas, sin privilegios", async () => {

@@ -1,4 +1,4 @@
-import { validationOptions } from "@tuevento/contracts";
+import { accountLimits, validationOptions } from "@tuevento/contracts";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useState, useEffect } from "react";
 import {
@@ -60,6 +60,7 @@ import {
   CheckCircle2,
   X,
   Clock,
+  Link2,
 } from "lucide-react";
 import {
   eventSchema,
@@ -104,6 +105,7 @@ export function EventEditor() {
       title: "",
       description: "",
       date: "",
+      slug: "",
       location: "",
       theme: themes.some((t) => t.id === query.get("tema"))
         ? (query.get("tema") as Event["theme"])
@@ -227,6 +229,19 @@ export function EventEditor() {
                 "events.wereSoExcitedShare",
               )}
               maxLength={2500}
+            />
+          </Field>
+          <Field
+            label={tr("events.publicAddress")}
+            error={form.formState.errors.slug?.message}
+            hint={tr("events.publicAddressHint", {
+              url: `${window.location.host}/e/${values.slug || "tu-evento"}`,
+            })}
+          >
+            <input
+              {...form.register("slug")}
+              placeholder="boda-ana-y-luis"
+              maxLength={accountLimits.eventSlug}
             />
           </Field>
           <div className="form-section-heading">
@@ -399,6 +414,14 @@ export function EventDetail() {
             {tr("events.editEvent")}
           </Link>
         </div>
+        {event.slug && (
+          <p className="event-public-link">
+            <Link2 size={16} />
+            <a href={`/e/${event.slug}`} target="_blank" rel="noreferrer">
+              {`${window.location.host}/e/${event.slug}`}
+            </a>
+          </p>
+        )}
       </div>
       <Stats metrics={event.metrics} compact />
       <div className="section-heading">

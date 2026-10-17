@@ -41,6 +41,15 @@ export const pt: LegalTexts = {
         ],
       },
       {
+        title: "Cartão postal e endereço público do evento",
+        body: [
+          "O cartão postal de cada evento pode incluir até duas fotos que você envia. Antes de salvá-las, removemos os metadados, como o local onde foram tiradas, giramos conforme a orientação e reduzimos para no máximo 2048 pixels.",
+          "As fotos do cartão postal são mostradas a quem tiver o convite ou o endereço público do evento. Cada foto tem um identificador aleatório que não pode ser adivinhado. Você pode remover uma foto a qualquer momento, e ao apagar o evento as fotos também são apagadas.",
+          "Se você der um endereço público ao evento, quem o tiver verá o título, a descrição, a data, o local, o nome do anfitrião e o cartão postal. Seus convidados, os dados de contato e as respostas nunca são mostrados. Você pode remover ou trocar o endereço a qualquer momento, e ele deixa de aparecer se arquivar o evento.",
+          "Guardamos até 20 versões anteriores do cartão postal para que você possa voltar a elas. Elas são apagadas ao apagar o evento.",
+        ],
+      },
+      {
         title: "Sessões e armazenamento no seu dispositivo",
         body: [
           "Usamos um cookie de sessão que os scripts não podem ler (HttpOnly) e que dura 7 dias, e um cookie temporário de 5 minutos para verificar o acesso com o Google. Não usamos cookies de publicidade.",
@@ -67,6 +76,7 @@ export const pt: LegalTexts = {
       {
         title: "Onde as informações ficam guardadas e por quanto tempo",
         body: [
+          "As fotos dos cartões postais ficam no disco do servidor, em um volume próprio separado do banco de dados. São mantidas enquanto o evento existir.",
           "Os dados ficam guardados em um banco de dados PostgreSQL nos servidores do serviço.",
           "Seus eventos, convites e respostas são mantidos até que você os exclua. Excluir um evento ou um convite apaga também os convidados e as respostas dele.",
           "Os registros de visitas e acessos são apagados após 90 dias. Os espaços de demonstração são apagados após 7 dias. As sessões e os links de recuperação expirados são eliminados automaticamente.",

@@ -270,7 +270,9 @@
     "usePngJpgWebp": "Use uma imagem PNG, JPG ou WebP de até 2 MB.",
     "postcardPhotoLimit": "Esta postal já tem o número máximo de fotos.",
     "postcardPhotoNotFound": "Uma foto desta postal não existe neste evento.",
-    "postcardVersionNotFound": "Não encontramos essa versão da postal."
+    "postcardVersionNotFound": "Não encontramos essa versão da postal.",
+    "eventSlugTaken": "Outro evento já usa esse endereço. Escolha outro.",
+    "eventIsntAvailable": "Este evento não está disponível."
   },
   "events": {
     "actions": "Ações",
@@ -390,7 +392,9 @@
     "wereSoGladYoure": "Que alegria ter vocês aqui.",
     "whereMeeting": "Onde vamos nos encontrar?",
     "yesDelete": "Sim, excluir",
-    "youreInvitedEvent": "Você está convidado: {{event}}"
+    "youreInvitedEvent": "Você está convidado: {{event}}",
+    "publicAddress": "Endereço público (opcional)",
+    "publicAddressHint": "Se preencher, qualquer pessoa com este link verá o evento e o seu cartão postal: {{url}}. Deixe em branco para não publicar."
   },
   "landing": {
     "adultsChildrenOnePerson": "Adultos e crianças, pessoa por pessoa",
@@ -719,7 +723,9 @@
     "useLeast10Characters": "Use pelo menos 10 caracteres.",
     "useLettersSpaces": "Use apenas letras, espaços, apóstrofo ou hífen.",
     "useNumbersSpaces": "Use números, espaços ou +.",
-    "useHexColor": "Escolha uma cor da paleta."
+    "useHexColor": "Escolha uma cor da paleta.",
+    "maximum60Characters": "Máximo de 60 caracteres.",
+    "eventSlugFormat": "Use apenas letras minúsculas sem acentos, números e hífens entre palavras, de 3 a 60 caracteres."
   },
   "pricing": {
     "title": "Preços",
@@ -731,5 +737,11 @@
     "paymentPending": "A cobrança ainda não está conectada. Quando estiver, você poderá pagar pelo seu evento aqui.",
     "back": "Voltar aos preços",
     "buy": "Comprar"
+  },
+  "publicEvent": {
+    "opening": "Abrindo o evento…",
+    "unavailable": "Não encontramos este evento",
+    "hostedBy": "Organizado por",
+    "inviteHint": "Você recebeu um convite? Abra o link privado que recebeu para confirmar sua presença."
   }
 }

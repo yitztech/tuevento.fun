@@ -41,6 +41,15 @@ export const es: LegalTexts = {
         ],
       },
       {
+        title: "Postal y dirección pública del evento",
+        body: [
+          "La postal de cada evento puede incluir hasta dos fotos que subes tú. Antes de guardarlas quitamos sus metadatos, como el lugar donde se tomaron, las giramos según su orientación y las reducimos a 2048 píxeles como máximo.",
+          "Las fotos de la postal se muestran a quien tenga la invitación o la dirección pública del evento. Cada foto tiene un identificador aleatorio que no se puede adivinar. Puedes quitar una foto en cualquier momento, y al borrar el evento se borran también sus fotos.",
+          "Si das una dirección pública al evento, cualquiera que la tenga ve el título, la descripción, la fecha, el lugar, el nombre del anfitrión y la postal. Nunca se muestran tus invitados, sus datos de contacto ni sus respuestas. Puedes quitar o cambiar la dirección en cualquier momento, y deja de verse si archivas el evento.",
+          "Guardamos hasta 20 versiones anteriores de la postal para que puedas volver a ellas. Se borran al borrar el evento.",
+        ],
+      },
+      {
         title: "Sesiones y almacenamiento en tu dispositivo",
         body: [
           "Usamos una cookie de sesión que no pueden leer los scripts (HttpOnly) y dura 7 días, y una cookie temporal de 5 minutos para verificar el acceso con Google. No usamos cookies publicitarias.",
@@ -67,6 +76,7 @@ export const es: LegalTexts = {
       {
         title: "Dónde se guarda y durante cuánto tiempo",
         body: [
+          "Las fotos de las postales se guardan en el disco del servidor, en un volumen propio separado de la base de datos. Se conservan mientras exista el evento.",
           "Los datos se guardan en una base de datos PostgreSQL en los servidores del servicio.",
           "Tus eventos, invitaciones y respuestas se conservan hasta que los eliminas. Eliminar un evento o una invitación borra también sus invitados y respuestas.",
           "Los registros de visitas y accesos se borran a los 90 días. Los espacios de demostración se borran a los 7 días. Las sesiones y los enlaces de recuperación caducados se eliminan automáticamente.",

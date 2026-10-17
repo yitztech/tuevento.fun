@@ -3,7 +3,7 @@
 // cabeceras y límites. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password } from "./api.mjs";
+import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password, unique } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-sec";
@@ -61,6 +61,15 @@ try {
     // Nada cambió para el dueño
     assert.equal((await a.call(`/events/${evento.id}`)).title, evento.title);
     assert.equal((await a.call(`/events/${evento.id}/invitations`)).length, 1);
+  });
+
+  await suite("Dirección pública: solo la cuenta dueña la cambia, y un slug malicioso no encuentra nada", async () => {
+    const ruta = `/events/${evento.id}`;
+    await guest.raw(ruta, { method: "PATCH", body: eventData({ slug: `seg-${unique}` }) }).then((r) => assert.equal(r.status, 401));
+    await b.raw(ruta, { method: "PATCH", body: eventData({ slug: `seg-${unique}` }) }).then((r) => assert.equal(r.status, 404));
+    for (const malicioso of ["..%2Fetc", "x'%20OR%201=1--", "%3Cscript%3E", "a%00b"]) {
+      await guest.call(`/public/events/${malicioso}`, "GET", undefined, 404);
+    }
   });
 
   await suite("Postal: sin sesión o de otra cuenta responde 401 o 404, y las fotos sin id no existen", async () => {

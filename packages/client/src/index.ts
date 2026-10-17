@@ -5,6 +5,7 @@ import type {
   Invitation,
   InvitationInput,
   Notification,
+  PublicEvent,
   PublicInvitation,
   RegisterInput,
   ProfileInput,
@@ -135,6 +136,7 @@ export class EventApi {
   readNotifications = () => this.request("/notifications/read", "POST", {});
   publicInvitation = (token: string) =>
     this.request<PublicInvitation>(`/invitations/${token}`);
+  publicEvent = (slug: string) => this.request<PublicEvent>(`/public/events/${slug}`);
   rsvp = (token: string, members: { id: string; status: Status }[]) =>
     this.request<PublicInvitation>(`/invitations/${token}/rsvp`, "POST", {
       members,
