@@ -41,6 +41,15 @@ export const fr: LegalTexts = {
         ],
       },
       {
+        title: "Carte postale et adresse publique de l’événement",
+        body: [
+          "La carte postale de chaque événement peut comporter jusqu’à deux photos que tu envoies. Avant de les enregistrer, nous retirons leurs métadonnées, comme le lieu où elles ont été prises, nous les orientons et nous les réduisons à 2 048 pixels au maximum.",
+          "Les photos de la carte postale sont affichées à toute personne qui a l’invitation ou l’adresse publique de l’événement. Chaque photo a un identifiant aléatoire impossible à deviner. Tu peux retirer une photo à tout moment ; la suppression de l’événement entraîne celle de ses photos.",
+          "Si tu donnes une adresse publique à l’événement, toute personne qui la connaît voit le titre, la description, la date, le lieu, le nom de l’hôte et la carte postale. Tes invités, leurs coordonnées et leurs réponses ne sont jamais affichés. Tu peux retirer ou modifier l’adresse à tout moment ; elle n’est plus visible si tu archives l’événement.",
+          "Nous conservons jusqu’à 20 versions précédentes de la carte postale pour que tu puisses y revenir. Elles sont supprimées avec l’événement.",
+        ],
+      },
+      {
         title: "Sessions et stockage sur ton appareil",
         body: [
           "Nous utilisons un cookie de session que les scripts ne peuvent pas lire (HttpOnly) et qui dure 7 jours, ainsi qu’un cookie temporaire de 5 minutes pour vérifier la connexion avec Google. Nous n’utilisons pas de cookies publicitaires.",
@@ -67,6 +76,7 @@ export const fr: LegalTexts = {
       {
         title: "Où et combien de temps",
         body: [
+          "Les photos des cartes postales sont stockées sur le disque du serveur, dans un volume dédié séparé de la base de données. Elles sont conservées tant que l’événement existe.",
           "Les données sont stockées dans une base de données PostgreSQL sur les serveurs du service.",
           "Tes événements, invitations et réponses sont conservés jusqu’à ce que tu les supprimes. Supprimer un événement ou une invitation efface aussi ses invités et ses réponses.",
           "Les journaux de visites et de connexions sont effacés au bout de 90 jours. Les espaces de démonstration sont effacés au bout de 7 jours. Les sessions et les liens de récupération expirés sont supprimés automatiquement.",

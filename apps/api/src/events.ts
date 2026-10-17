@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { randomUUID, randomBytes } from "node:crypto";
 import { Subject, filter, map, merge, interval } from "rxjs";
@@ -10,10 +11,13 @@ import { PostcardsService } from "./postcards";
 import {
   countMetrics,
   type EventInput,
+  accountLimits,
+  eventSlugPattern,
   type InvitationInput,
   type Invitation,
   type Event,
   type Member,
+  type PublicEvent,
   type PublicInvitation,
   type Status,
   defaultLocale,
@@ -28,9 +32,15 @@ const eventView = (r: any): Event => ({
   location: r.location,
   theme: r.theme,
   archived: r.archived,
+  slug: r.slug ?? "",
   createdAt: r.created_at.toISOString(),
   metrics: countMetrics([]),
 });
+/** Dos eventos no pueden compartir dirección: el índice único lo impide y aquí se avisa claro. */
+const slugConflict = (e: any): never => {
+  if (e.code === "23505") throw new ConflictException("errors.eventSlugTaken");
+  throw e;
+};
 const memberView = (m: any) => ({
   id: m.id,
   name: m.name,
@@ -135,7 +145,7 @@ export class EventsService {
     const eventId = id || randomUUID();
     if (id)
       await this.db.query(
-        "UPDATE events SET title=$1,description=$2,date=$3,time_zone=$4,location=$5,theme=$6,archived=$7 WHERE id=$8 AND user_id=$9",
+        "UPDATE events SET title=$1,description=$2,date=$3,time_zone=$4,location=$5,theme=$6,archived=$7,slug=$8 WHERE id=$9 AND user_id=$10",
         [
           input.title,
           input.description,
@@ -144,13 +154,14 @@ export class EventsService {
           input.location,
           input.theme,
           input.archived,
+          input.slug || null,
           id,
           userId,
         ],
-      );
+      ).catch(slugConflict);
     else
       await this.db.query(
-        "INSERT INTO events(id,user_id,title,description,date,time_zone,location,theme,archived) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+        "INSERT INTO events(id,user_id,title,description,date,time_zone,location,theme,archived,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
         [
           eventId,
           userId,
@@ -161,8 +172,9 @@ export class EventsService {
           input.location,
           input.theme,
           input.archived,
+          input.slug || null,
         ],
-      );
+      ).catch(slugConflict);
     this.updates.emit(userId);
     return this.event(userId, eventId);
   }
@@ -297,6 +309,28 @@ export class EventsService {
       isDemo: r.is_demo,
     };
   }
+  /** Vista pública de un evento por su dirección: sin invitados, notas ni respuestas. */
+  async publicEvent(slug: string): Promise<PublicEvent> {
+    // Un slug con otro formato no existe: no llega a la base de datos (un byte nulo daría error 500)
+    if (slug.length > accountLimits.eventSlug || !eventSlugPattern.test(slug))
+      throw new NotFoundException("errors.eventIsntAvailable");
+    const [r] = await this.db.query(
+      "SELECT e.id,e.title,e.description,e.date,e.time_zone,e.location,e.theme,u.first_name,u.last_name,u.avatar FROM events e JOIN users u ON u.id=e.user_id WHERE e.slug=$1 AND e.archived=false",
+      [slug],
+    );
+    if (!r) throw new NotFoundException("errors.eventIsntAvailable");
+    return {
+      title: r.title,
+      description: r.description,
+      date: r.date.toISOString(),
+      timeZone: r.time_zone,
+      location: r.location,
+      theme: r.theme,
+      host: { firstName: r.first_name, lastName: r.last_name, avatar: r.avatar },
+      postcard: await this.postcards.publicPostcard(r.id, r.theme),
+    };
+  }
+
   async rsvp(token: string, members: { id: string; status: Status }[]) {
     let owner = "";
     await this.db.transaction(async (c) => {

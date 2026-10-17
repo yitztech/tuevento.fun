@@ -157,3 +157,18 @@ test("Postal: el diseño tiene tamaño acotado y se borra con su evento", async 
   await db.query("DELETE FROM events WHERE id=$1", [e.id]);
   assert.equal((await uno("SELECT count(*)::int AS n FROM postcards WHERE event_id=$1", [e.id])).n, 0);
 });
+
+test("Dirección pública del evento: formato, longitud y unicidad en todo el servicio", async () => {
+  const [a, b] = [await usuario(db), await usuario(db)];
+  const evento = (dueno) => uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const e1 = await evento(a);
+  const e2 = await evento(b);
+  assert.equal(await codigoError(() => db.query("UPDATE events SET slug='Boda Ana' WHERE id=$1", [e1.id])), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("UPDATE events SET slug='ab' WHERE id=$1", [e1.id])), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("UPDATE events SET slug=$2 WHERE id=$1", [e1.id, "a".repeat(accountLimits.eventSlug + 1)])), CHECK_VIOLATION);
+  await db.query("UPDATE events SET slug='boda-ana-2026' WHERE id=$1", [e1.id]);
+  assert.equal(await codigoError(() => db.query("UPDATE events SET slug='boda-ana-2026' WHERE id=$1", [e2.id])), UNIQUE_VIOLATION);
+  // Sin dirección (NULL) no compite con nadie: varios eventos pueden no tener una
+  await db.query("UPDATE events SET slug=NULL WHERE id=$1", [e2.id]);
+  await db.query("UPDATE events SET slug=NULL WHERE id=$1", [e1.id]);
+});

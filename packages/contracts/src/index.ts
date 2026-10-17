@@ -169,7 +169,10 @@ export const accountLimits = {
   phone: 20,
   password: 128,
   postcardText: 200,
+  eventSlug: 60,
 } as const;
+/** Dirección pública de un evento: minúsculas, números y guiones entre palabras. */
+export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const email = z
   .email("validation.enterValidEmailAddress")
   .max(accountLimits.email, "validation.maximum254Characters")
@@ -266,6 +269,17 @@ export const eventSchema = z.object({
   location: z.string().trim().min(3, "validation.enterEventLocation").max(300),
   theme: z.enum(themeIds),
   archived: z.boolean().default(false),
+  /** Dirección pública (/e/…); vacía si el evento no tiene. */
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(accountLimits.eventSlug, "validation.maximum60Characters")
+    .refine(
+      (v) => v === "" || (v.length >= 3 && eventSlugPattern.test(v)),
+      "validation.eventSlugFormat",
+    )
+    .default(""),
 });
 export const memberSchema = z.object({
   id: z.uuid().optional(),
@@ -346,6 +360,18 @@ export type Event = EventInput & {
   id: string;
   createdAt: string;
   metrics: Metrics;
+};
+/** Evento visto desde su dirección pública: sin invitados ni respuestas. */
+export type PublicEvent = {
+  title: string;
+  description: string;
+  date: string;
+  timeZone: string;
+  location: string;
+  theme: EventInput["theme"];
+  host: Pick<User, "firstName" | "lastName" | "avatar">;
+  /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
+  postcard: Pick<Postcard, "design" | "photos">;
 };
 export type Member = {
   id: string;

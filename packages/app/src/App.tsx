@@ -48,6 +48,7 @@ import {
 } from "./account";
 import { localizedPage, passwordResetPaths } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
+import { PublicEvent } from "./public-event";
 import { PostcardEditor } from "./postcard-editor";
 import { LegalPage, legalPageFor } from "./legal";
 import { PaymentPage, PricingPage } from "./pricing";
@@ -84,7 +85,11 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const legal = legalPageFor(location.pathname);
   const pricing = localizedPage(location.pathname) === "pricing";
-  const isPublic = location.pathname.startsWith("/i/") || legal !== null || pricing,
+  const isPublic =
+      location.pathname.startsWith("/i/") ||
+      location.pathname.startsWith("/e/") ||
+      legal !== null ||
+      pricing,
     isAuth = [
       "/registro",
       "/acceso",
@@ -201,6 +206,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       ) : isPublic ? (
         <Routes>
           <Route path="/i/:token" element={<PublicRsvp />} />
+          <Route path="/e/:slug" element={<PublicEvent />} />
         </Routes>
       ) : location.pathname === passwordResetPaths.request ? (
         <ForgotPasswordPage />

@@ -270,7 +270,9 @@
     "usePngJpgWebp": "Verwende ein PNG-, JPG- oder WebP-Bild mit bis zu 2 MB.",
     "postcardPhotoLimit": "Diese Postkarte hat schon die maximale Anzahl Fotos.",
     "postcardPhotoNotFound": "Ein Foto dieser Postkarte existiert in diesem Event nicht.",
-    "postcardVersionNotFound": "Diese Version der Postkarte wurde nicht gefunden."
+    "postcardVersionNotFound": "Diese Version der Postkarte wurde nicht gefunden.",
+    "eventSlugTaken": "Diese Adresse wird bereits von einem anderen Event genutzt. Wähle eine andere.",
+    "eventIsntAvailable": "Dieses Event ist nicht verfügbar."
   },
   "events": {
     "actions": "Aktionen",
@@ -390,7 +392,9 @@
     "wereSoGladYoure": "Wie schön, dass ihr hier seid.",
     "whereMeeting": "Wo treffen wir uns?",
     "yesDelete": "Ja, löschen",
-    "youreInvitedEvent": "Du bist eingeladen: {{event}}"
+    "youreInvitedEvent": "Du bist eingeladen: {{event}}",
+    "publicAddress": "Öffentliche Adresse (optional)",
+    "publicAddressHint": "Wenn du sie ausfüllst, sehen alle mit diesem Link das Event und seine Postkarte: {{url}}. Lass sie leer, um nichts zu veröffentlichen."
   },
   "landing": {
     "adultsChildrenOnePerson": "Erwachsene und Kinder, Person für Person",
@@ -719,7 +723,9 @@
     "useLeast10Characters": "Verwende mindestens 10 Zeichen.",
     "useLettersSpaces": "Verwende nur Buchstaben, Leerzeichen, Apostrophe oder Bindestriche.",
     "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +.",
-    "useHexColor": "Wähle eine Farbe aus der Palette."
+    "useHexColor": "Wähle eine Farbe aus der Palette.",
+    "maximum60Characters": "Höchstens 60 Zeichen.",
+    "eventSlugFormat": "Verwende nur Kleinbuchstaben, Ziffern und Bindestriche zwischen Wörtern, 3 bis 60 Zeichen."
   },
   "pricing": {
     "title": "Preise",
@@ -731,5 +737,11 @@
     "paymentPending": "Die Zahlung ist noch nicht angebunden. Sobald sie verfügbar ist, kannst du deine Veranstaltung hier bezahlen.",
     "back": "Zurück zu den Preisen",
     "buy": "Kaufen"
+  },
+  "publicEvent": {
+    "opening": "Event wird geöffnet…",
+    "unavailable": "Wir konnten dieses Event nicht finden",
+    "hostedBy": "Veranstaltet von",
+    "inviteHint": "Du hast eine Einladung? Öffne den privaten Link, den du bekommen hast, um deine Teilnahme zu bestätigen."
   }
 }

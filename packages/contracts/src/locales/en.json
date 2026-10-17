@@ -270,7 +270,9 @@
     "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB.",
     "postcardPhotoLimit": "This postcard already has the maximum number of photos.",
     "postcardPhotoNotFound": "A photo in this postcard doesn’t exist in this event.",
-    "postcardVersionNotFound": "We couldn’t find that postcard version."
+    "postcardVersionNotFound": "We couldn’t find that postcard version.",
+    "eventSlugTaken": "Another event already uses that address. Choose a different one.",
+    "eventIsntAvailable": "This event isn't available."
   },
   "events": {
     "actions": "Actions",
@@ -390,7 +392,9 @@
     "wereSoGladYoure": "We're so glad you're here.",
     "whereMeeting": "Where are we meeting?",
     "yesDelete": "Yes, delete",
-    "youreInvitedEvent": "You're invited: {{event}}"
+    "youreInvitedEvent": "You're invited: {{event}}",
+    "publicAddress": "Public address (optional)",
+    "publicAddressHint": "If you fill it in, anyone with this link can see the event and its postcard: {{url}}. Leave it empty to keep it unpublished."
   },
   "landing": {
     "adultsChildrenOnePerson": "Adults and children, one person at a time",
@@ -719,7 +723,9 @@
     "useLeast10Characters": "Use at least 10 characters.",
     "useLettersSpaces": "Use only letters, spaces, apostrophes or hyphens.",
     "useNumbersSpaces": "Use numbers, spaces or +.",
-    "useHexColor": "Choose a color from the palette."
+    "useHexColor": "Choose a color from the palette.",
+    "maximum60Characters": "Maximum 60 characters.",
+    "eventSlugFormat": "Use only lowercase letters, numbers and hyphens between words, 3 to 60 characters."
   },
   "pricing": {
     "title": "Pricing",
@@ -731,5 +737,11 @@
     "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
     "back": "Back to pricing",
     "buy": "Buy"
+  },
+  "publicEvent": {
+    "opening": "Opening the event…",
+    "unavailable": "We couldn't find this event",
+    "hostedBy": "Hosted by",
+    "inviteHint": "Have an invitation? Open the private link you were sent to confirm your attendance."
   }
 }
