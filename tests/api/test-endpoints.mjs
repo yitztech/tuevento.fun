@@ -37,7 +37,7 @@ try {
     await organizador.call("/auth/register", "POST", account(P, "postal"), 201);
     const evento = await organizador.call("/events", "POST", eventData(), 201);
     const ruta = `/events/${evento.id}/postcard`;
-    assert.equal((await organizador.call(ruta)).design.background.type, "color");
+    assert.equal((await organizador.call(ruta)).design.background.type, "template");
     const foto = await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 201);
     assert.match(foto.url, /^\/api\/postcards\/images\//);
     const imagen = await send(new URL(foto.url, base), { headers: { "x-tuevento-client": "1" } });
@@ -49,6 +49,11 @@ try {
       texts: [{ content: "Hola", font: "playfair", size: 64, color: "#112233", align: "center", x: 10, y: 20, width: 80 }],
     };
     assert.deepEqual((await organizador.call(ruta, "PUT", diseno)).design.texts, diseno.texts);
+    const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    assert.deepEqual((await guest.call(`/invitations/${invitacion.token}`)).postcard.design, diseno);
+    const sinEditar = await organizador.call("/events", "POST", eventData({ theme: "winter" }), 201);
+    const invitacionSinEditar = await organizador.call(`/events/${sinEditar.id}/invitations`, "POST", invitationData(), 201);
+    assert.deepEqual((await guest.call(`/invitations/${invitacionSinEditar.token}`)).postcard.design, { background: { type: "template", theme: "winter" }, photos: [], texts: [] });
     const [primera] = await organizador.call(`${ruta}/versions`);
     await organizador.call(ruta, "PUT", { ...diseno, texts: [] });
     assert.equal((await organizador.call(`${ruta}/versions`)).length, 2);

@@ -384,6 +384,8 @@ export type PublicInvitation = {
   >;
   host: Pick<User, "firstName" | "lastName" | "avatar">;
   members: Pick<Member, "id" | "name" | "kind" | "status">[];
+  /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
+  postcard: Pick<Postcard, "design" | "photos">;
   isDemo: boolean;
 };
 export const emptyMetrics = (): Metrics => ({

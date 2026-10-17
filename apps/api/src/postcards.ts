@@ -8,7 +8,6 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 import {
-  emptyPostcard,
   postcardLimits,
   type Postcard,
   type PostcardDesign,
@@ -19,6 +18,12 @@ import { Database } from "./database";
 /** Carpeta de las fotos subidas; en Docker es un volumen propio (ver compose). */
 const imageDir = () => process.env.POSTCARD_IMAGE_DIR || "/data/postcards";
 export const postcardImageUrl = (id: string) => `/api/postcards/images/${id}`;
+
+/** Sin postal guardada, la invitación usa la plantilla del tema del evento. */
+export function defaultDesign(theme: PostcardTheme): PostcardDesign {
+  return { background: { type: "template", theme }, photos: [], texts: [] };
+}
+type PostcardTheme = Extract<PostcardDesign["background"], { type: "template" }>["theme"];
 
 /** Fotos que un diseño usa: la de fondo (si lo es) y las capas de imagen. */
 function photoIds(design: PostcardDesign) {
@@ -33,10 +38,11 @@ export class PostcardsService {
 
   private async ownEvent(userId: string, eventId: string) {
     const [r] = await this.db.query(
-      "SELECT id FROM events WHERE id=$1 AND user_id=$2",
+      "SELECT id, theme FROM events WHERE id=$1 AND user_id=$2",
       [eventId, userId],
     );
     if (!r) throw new NotFoundException("errors.couldntFindEvent");
+    return r;
   }
 
   private async photos(eventId: string) {
@@ -48,13 +54,13 @@ export class PostcardsService {
   }
 
   async get(userId: string, eventId: string): Promise<Postcard> {
-    await this.ownEvent(userId, eventId);
+    const event = await this.ownEvent(userId, eventId);
     const [r] = await this.db.query(
       "SELECT design, updated_at FROM postcards WHERE event_id=$1",
       [eventId],
     );
     return {
-      design: r ? r.design : emptyPostcard,
+      design: r ? r.design : defaultDesign(event.theme),
       updatedAt: r ? r.updated_at.toISOString() : null,
       photos: await this.photos(eventId),
     };
@@ -186,6 +192,18 @@ export class PostcardsService {
       );
     }
     return this.get(userId, eventId);
+  }
+
+  /** Postal que ve el invitado: el diseño guardado (o el del tema) y sus fotos. */
+  async publicPostcard(eventId: string, theme: PostcardTheme) {
+    const [r] = await this.db.query(
+      "SELECT design FROM postcards WHERE event_id=$1",
+      [eventId],
+    );
+    return {
+      design: r ? r.design : defaultDesign(theme),
+      photos: await this.photos(eventId),
+    };
   }
 
   /** Foto pública por identificador aleatorio (UUID), como los tokens de invitación. */
