@@ -6,6 +6,7 @@ import {
 import { randomUUID, randomBytes } from "node:crypto";
 import { Subject, filter, map, merge, interval } from "rxjs";
 import { Database } from "./database";
+import { PostcardsService } from "./postcards";
 import {
   countMetrics,
   type EventInput,
@@ -58,6 +59,7 @@ export class EventsService {
   constructor(
     private db: Database,
     private updates: Updates,
+    private postcards: PostcardsService,
   ) {}
   async owned(userId: string, id: string) {
     const [r] = await this.db.query(
@@ -166,6 +168,7 @@ export class EventsService {
   }
   async removeEvent(userId: string, id: string) {
     await this.owned(userId, id);
+    await this.postcards.purge(id);
     await this.db.query("DELETE FROM events WHERE id=$1 AND user_id=$2", [
       id,
       userId,
@@ -262,7 +265,7 @@ export class EventsService {
   }
   async publicInvitation(token: string): Promise<PublicInvitation> {
     const [r] = await this.db.query(
-      "SELECT i.id,i.name,i.kind,e.title,e.description,e.date,e.time_zone,e.location,e.theme,u.first_name,u.last_name,u.avatar,u.is_demo FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
+      "SELECT i.id,i.name,i.kind,e.id AS event_id,e.title,e.description,e.date,e.time_zone,e.location,e.theme,u.first_name,u.last_name,u.avatar,u.is_demo FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
       [token],
     );
     if (!r)
@@ -290,6 +293,7 @@ export class EventsService {
         avatar: r.avatar,
       },
       members: members as PublicInvitation["members"],
+      postcard: await this.postcards.publicPostcard(r.event_id, r.theme),
       isDemo: r.is_demo,
     };
   }

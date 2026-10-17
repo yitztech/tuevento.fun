@@ -30,6 +30,7 @@ import {
   type User,
 } from "@tuevento/contracts";
 import { dateText } from "./context";
+import { themeImageSrcSet } from "./theme-images";
 export function Logo({
   compact = false,
   to = "/",
@@ -294,6 +295,8 @@ export function EventCard({ event }: { event: Event }) {
       <Link className="event-photo" to={`/eventos/${event.id}`}>
         <img
           src={`/images/${theme.image}`}
+          srcSet={themeImageSrcSet(theme)}
+          sizes="(max-width: 767px) 100vw, (max-width: 1200px) 50vw, 33vw"
           alt={tr(theme.name)}
           loading="lazy"
         />
@@ -350,7 +353,13 @@ export function ThemePicker({
           onClick={() => onChange(t.id)}
           aria-pressed={value === t.id}
         >
-          <img src={`/images/${t.image}`} alt="" />
+          <img
+            src={`/images/${t.image}`}
+            srcSet={themeImageSrcSet(t)}
+            sizes="160px"
+            loading="lazy"
+            alt=""
+          />
           <span>{tr(t.name)}</span>
           {value === t.id && (
             <i>
@@ -378,6 +387,9 @@ export function InvitationArt({
     >
       <img
         src={`/images/${theme.image}`}
+        srcSet={themeImageSrcSet(theme)}
+        sizes={large ? "(max-width: 767px) 100vw, 650px" : "(max-width: 767px) 100vw, (max-width: 1200px) 50vw, 500px"}
+        loading="lazy"
         alt={tr("common.themeDecoration", { theme: tr(theme.name) })}
         className="invitation-photo"
       />

@@ -48,6 +48,7 @@ import {
 } from "./account";
 import { localizedPage, passwordResetPaths } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
+import { PostcardEditor } from "./postcard-editor";
 import { LegalPage, legalPageFor } from "./legal";
 import { PaymentPage, PricingPage } from "./pricing";
 export type { Runtime } from "./context";
@@ -370,6 +371,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <Route path="/eventos/nuevo" element={<EventEditor />} />
                 <Route path="/eventos/:id" element={<EventDetail />} />
                 <Route path="/eventos/:id/editar" element={<EventEditor />} />
+                <Route path="/eventos/:id/postal" element={<PostcardEditor />} />
                 <Route path="/disenos" element={<TemplatesPage />} />
                 <Route path="/invitados" element={<AllGuests />} />
                 <Route path="/notificaciones" element={<NotificationsPage />} />

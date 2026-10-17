@@ -34,6 +34,7 @@ import {
   newsletterSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  postcardSchema,
 } from "@tuevento/contracts";
 import {
   AuthService,
@@ -45,6 +46,7 @@ import { Database } from "./database";
 import { DemoService } from "./demo";
 import { EventsService, Updates } from "./events";
 import { ListmonkService } from "./listmonk";
+import { PostcardsService } from "./postcards";
 import { requestLocale } from "./request-locale";
 function parse<T extends z.ZodType>(
   schema: T,
@@ -68,6 +70,7 @@ export class PublicController {
     private demo: DemoService,
     private events: EventsService,
     private listmonk: ListmonkService,
+    private postcards: PostcardsService,
   ) {}
   @Post("newsletter/subscribe") async subscribeNewsletter(
     @Body() body: unknown,
@@ -75,6 +78,16 @@ export class PublicController {
   ) {
     const data = parse(newsletterSchema, body, req);
     return this.listmonk.subscribe(data.email, data.name, requestLocale(req));
+  }
+  @Get("postcards/images/:id") async postcardImage(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    // Las cabeceras de imagen solo se fijan si la foto existe: un error se responde como JSON
+    const bytes = await this.postcards.image(id);
+    reply.header("Cache-Control", "public, max-age=31536000, immutable");
+    reply.type("image/jpeg");
+    return bytes;
   }
   @Get("health") async health() {
     await this.db.query("SELECT 1");
@@ -209,6 +222,7 @@ export class OrganizerController {
     private db: Database,
     private events: EventsService,
     private updates: Updates,
+    private postcards: PostcardsService,
   ) {}
   @Sse("stream") stream(@Req() req: AuthedRequest) {
     return this.updates.stream(req.user.id);
@@ -241,6 +255,56 @@ export class OrganizerController {
     @Param("id", ParseUUIDPipe) id: string,
   ) {
     return this.events.removeEvent(req.user.id, id);
+  }
+  @Get("events/:id/postcard") postcard(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.postcards.get(req.user.id, id);
+  }
+  @Put("events/:id/postcard") savePostcard(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+  ) {
+    return this.postcards.save(req.user.id, id, parse(postcardSchema, body, req));
+  }
+  @Get("events/:id/postcard/versions") postcardVersions(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.postcards.versions(req.user.id, id);
+  }
+  @Post("events/:id/postcard/versions/:versionId/restore") restorePostcard(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("versionId", ParseUUIDPipe) versionId: string,
+  ) {
+    return this.postcards.restore(req.user.id, id, versionId);
+  }
+  @Post("events/:id/postcard/images") uploadPostcardImage(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+  ) {
+    const data = parse(
+      z.object({
+        dataUrl: z
+          .string()
+          .max(2800000)
+          .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "errors.usePngJpgWebp"),
+      }),
+      body,
+      req,
+    );
+    return this.postcards.uploadImage(req.user.id, id, data.dataUrl);
+  }
+  @Delete("events/:id/postcard/images/:imageId") removePostcardImage(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("imageId", ParseUUIDPipe) imageId: string,
+  ) {
+    return this.postcards.removeImage(req.user.id, id, imageId);
   }
   @Get("events/:id/invitations") invitations(
     @Req() req: AuthedRequest,

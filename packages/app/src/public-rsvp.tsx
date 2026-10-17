@@ -18,7 +18,8 @@ import {
   type Status,
 } from "@tuevento/contracts";
 import { useApp, errorText, dateText } from "./context";
-import { Logo, InvitationArt, Avatar, ErrorBox } from "./components";
+import { Logo, Avatar, ErrorBox } from "./components";
+import { PostcardCanvas } from "./postcard-canvas";
 export function PublicRsvp() {
   const { token } = useParams(),
     { api } = useApp(),
@@ -94,11 +95,7 @@ export function PublicRsvp() {
       )}
       <main className="rsvp-layout">
         <section className="public-art">
-          <InvitationArt
-            event={event}
-            name={tr("rsvp.forName", { name: invitation.name })}
-            large
-          />
+          <PostcardCanvas design={invitation.postcard.design} photos={invitation.postcard.photos} />
           <div className="host-signature">
             <Avatar user={invitation.host} />
             <div>
@@ -122,6 +119,7 @@ export function PublicRsvp() {
               components={{ strong: <strong /> }}
             />
           </p>
+          <h2 className="rsvp-event-title">{event.title}</h2>
           <div className="rsvp-details">
             <div>
               <CalendarDays size={21} />
