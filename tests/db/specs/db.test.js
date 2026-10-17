@@ -1,6 +1,6 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
-import { accountLimits, supportedLocales } from "@tuevento/contracts";
+import { accountLimits, supportedLocales, themeIds } from "@tuevento/contracts";
 import {
   admin, baseTemporal, codigoError, usuario, migraciones,
   CHECK_VIOLATION, UNIQUE_VIOLATION, FK_VIOLATION, NOT_NULL_VIOLATION, PERMISO_DENEGADO,
@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "events", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "events", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "schema_migrations", "sessions", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -79,7 +79,7 @@ test("Idiomas soportados (es, en, pt, de, fr): la base de datos los acepta y rec
 test("Valores permitidos: tema, tipo y estado solo admiten los definidos", async () => {
   const dueno = await usuario(db);
   const evento = async (theme) => db.query("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E', now(),'UTC','L',$2)", [dueno, theme]);
-  for (const bueno of ["gold", "neon", "tropical", "minimal", "floral", "kids"]) assert.equal(await codigoError(() => evento(bueno)), null, bueno);
+  for (const bueno of themeIds) assert.equal(await codigoError(() => evento(bueno)), null, bueno);
   assert.equal(await codigoError(() => evento("inexistente")), CHECK_VIOLATION);
 
   const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
@@ -147,4 +147,13 @@ test("El rol api no tiene privilegios de administrador (en el servidor real)", a
   assert.equal(await codigoError(() => db.query("CREATE DATABASE intruso")), PERMISO_DENEGADO);
   assert.equal(await codigoError(() => db.query("SELECT rolpassword FROM pg_authid")), PERMISO_DENEGADO);
   assert.equal(await codigoError(() => db.query("COPY users TO PROGRAM 'id'")), PERMISO_DENEGADO);
+});
+
+test("Postal: el diseño tiene tamaño acotado y se borra con su evento", async () => {
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  await db.query("INSERT INTO postcards(event_id) VALUES($1)", [e.id]);
+  assert.equal(await codigoError(() => db.query("UPDATE postcards SET design=$2 WHERE event_id=$1", [e.id, JSON.stringify({ texto: "x".repeat(20000) })])), CHECK_VIOLATION);
+  await db.query("DELETE FROM events WHERE id=$1", [e.id]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM postcards WHERE event_id=$1", [e.id])).n, 0);
 });

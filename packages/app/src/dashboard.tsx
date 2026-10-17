@@ -332,12 +332,12 @@ export function TemplatesPage() {
         <div>
           <h1>{tr("dashboard.invitationsPersonality")}</h1>
           <p>
-            {tr("dashboard.sixWaysSayWant")}
+            {tr("dashboard.waysSayWant")}
           </p>
         </div>
         <span className="soft-label">
           <PaletteIcon />
-          {tr("dashboard.step6DesignsCelebrate")}
+          {tr("dashboard.designsCelebrate", { count: themes.length })}
         </span>
       </div>
       <div className="templates-grid">
@@ -352,18 +352,7 @@ export function TemplatesPage() {
             >
               <InvitationArt
                 event={{
-                  title:
-                    t.id === "floral"
-                      ? tr("dashboard.doForever")
-                      : t.id === "kids"
-                        ? tr("dashboard.makeWish")
-                        : t.id === "neon"
-                          ? tr("dashboard.tonightOurs")
-                          : t.id === "tropical"
-                            ? tr("dashboard.underSameSun")
-                            : t.id === "gold"
-                              ? tr("dashboard.nightRemember")
-                              : tr("dashboard.celebrateSimpleThings"),
+                  title: tr(t.previewTitle),
                   date: "2026-12-12T23:00:00Z",
                   timeZone: "America/Mexico_City",
                   location: tr("dashboard.specialPlace"),

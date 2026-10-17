@@ -153,12 +153,12 @@
     "celebrateSimpleThings": "Feiern wir die kleinen Dinge",
     "celebrationTableColorfulFlowers": "Festtafel mit bunten Blumen und Gläsern, bereit zum Anstoßen",
     "celebrationsGlance": "Deine Feiern auf einen Blick",
-    "chooseCreateEventAdd": "Wähle „Event erstellen“, gib Datum, Uhrzeit, Zeitzone und Ort an und wähle eines der sechs Designs. Du kannst es später bearbeiten.",
+    "chooseCreateEventAdd": "Wähle „Event erstellen“, gib Datum, Uhrzeit, Zeitzone und Ort an und wähle ein Design aus der Kollektion. Du kannst es später bearbeiten.",
     "createEvent": "Event erstellen",
     "createEventDesign": "Event mit diesem Design erstellen",
     "demoNamesEventsLocations": "Namen, Events und Orte der Demo sind Beispiele. Du kannst alle Abläufe ausprobieren, ohne andere Konten zu beeinflussen. Registriere dich, um mit einem leeren Bereich und deinen eigenen Daten zu starten.",
     "demoWorkspace": "Dein Demo-Bereich",
-    "designsText": "Entdecke unsere 6 Designs und finde\ndas, das zu dir passt.",
+    "designsText": "Entdecke die Kollektion und finde\ndas Design, das zu dir passt.",
     "designsTitle": "Jede Feier hat\nihre eigene Persönlichkeit.",
     "detailsMakeParty": "Die Details machen die Party.",
     "doForever": "Ein Ja für immer",
@@ -203,14 +203,12 @@
     "repliesAttendanceUpdatesFrom": "Antworten und Teilnahmeänderungen deiner Gäste.",
     "searchEvents": "Events suchen",
     "searchPeopleFamilies": "Personen oder Familien suchen",
-    "sixWaysSayWant": "Sechs Arten zu sagen „Ich will dich dabeihaben“. Finde deine.",
     "spacePlansPeopleWho": "Ein Ort für deine Pläne und die Menschen, die sie besonders machen.",
     "specialPlace": "Ein besonderer Ort",
     "step1ShapeEvent": "1. Gestalte dein Event",
     "step2BuildGuestList": "2. Erstelle deine Gästeliste",
     "step3ShareInvitation": "3. Teile die Einladung",
     "step4GetTheirReplies": "4. Erhalte die Antworten",
-    "step6DesignsCelebrate": "6 Designs zum Feiern",
     "tonightOurs": "Heute Nacht gehört uns",
     "tryAnotherSearchPlan": "Versuche eine andere Suche oder plane eine neue Feier.",
     "underSameSun": "Unter derselben Sonne",
@@ -224,7 +222,9 @@
     "viewAllInvitationsOpen": "Sieh dir alle deine Einladungen an und öffne ein Event, um sie zu verwalten.",
     "welcomeTitle": "Du stellst dir den Moment vor.\nWir helfen dir,\nalle zusammenzubringen.",
     "whenSomeoneRepliesYoull": "Wenn jemand antwortet, erfährst du es hier zuerst.",
-    "youreAllCaught": "Alles erledigt"
+    "youreAllCaught": "Alles erledigt",
+    "waysSayWant": "Viele Arten zu sagen „Ich will dich dabeihaben“. Finde deine.",
+    "designsCelebrate": "{{count}} Designs zum Feiern"
   },
   "downloads": {
     "androidNote": "Lade die APK von dieser Website herunter, bis die App bei Google Play erscheint.",
@@ -590,6 +590,56 @@
     "tropical": {
       "description": "In der Sonne, unter Freunden",
       "name": "Tropisch"
+    },
+    "winter": {
+      "name": "Winterzauber",
+      "description": "Die Wärme des Zusammenseins",
+      "title": "Zusammen durch den Winter"
+    },
+    "spring": {
+      "name": "Frühlingsgarten",
+      "description": "Neue Gründe zum Aufblühen",
+      "title": "Gemeinsame Momente blühen auf"
+    },
+    "autumn": {
+      "name": "Herbstfest",
+      "description": "Warme Farben, herzliche Begegnungen",
+      "title": "Ein unvergesslicher Herbst"
+    },
+    "silver": {
+      "name": "Elegantes Silber",
+      "description": "Eine Feier mit eigenem Glanz",
+      "title": "Eine Nacht zum Strahlen"
+    },
+    "copper": {
+      "name": "Kupfer und Kerzen",
+      "description": "Anstoßen bei Kerzenschein",
+      "title": "Der Zauber des Zusammenseins"
+    },
+    "disco": {
+      "name": "Discoparty",
+      "description": "Der Rhythmus bringt uns zusammen",
+      "title": "Bis zum letzten Tanz"
+    },
+    "starlight": {
+      "name": "Sternennacht",
+      "description": "Momente unter den Sternen",
+      "title": "Unter einem Sternenhimmel"
+    },
+    "sand": {
+      "name": "Minimalistischer Sand",
+      "description": "Die Schönheit des Einfachen",
+      "title": "Das Einfache verbindet uns"
+    },
+    "wildflower": {
+      "name": "Wildblumenhochzeit",
+      "description": "Eine Liebe, die frei wächst",
+      "title": "Ein Ja zwischen Blumen"
+    },
+    "pastel": {
+      "name": "Kinderfest in Pastell",
+      "description": "Kleine Momente, großes Lächeln",
+      "title": "Ein Tag voller Wunder"
     }
   },
   "validation": {
@@ -606,13 +656,15 @@
     "maximum100Characters": "Höchstens 100 Zeichen.",
     "maximum128Characters": "Höchstens 128 Zeichen.",
     "maximum20Characters": "Höchstens 20 Zeichen.",
+    "maximum200Characters": "Höchstens 200 Zeichen.",
     "maximum254Characters": "Höchstens 254 Zeichen.",
     "maximum50Characters": "Höchstens 50 Zeichen.",
     "thereDuplicateMembers": "Es gibt doppelte Mitglieder.",
     "useHttps": "Verwende HTTPS.",
     "useLeast10Characters": "Verwende mindestens 10 Zeichen.",
     "useLettersSpaces": "Verwende nur Buchstaben, Leerzeichen, Apostrophe oder Bindestriche.",
-    "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +."
+    "useNumbersSpaces": "Verwende Zahlen, Leerzeichen oder +.",
+    "useHexColor": "Wähle eine Farbe aus der Palette."
   },
   "pricing": {
     "title": "Preise",

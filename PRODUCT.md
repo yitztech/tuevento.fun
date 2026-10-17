@@ -24,7 +24,7 @@ Administración en computadora y tablet; RSVP y envío en móviles; visualizaci�
 
 ## Capabilities and Constraints
 
-Registro con avatar, sesiones y Google; múltiples eventos; seis temas; familias con adultos/niños y notas; compartir por URL, WhatsApp y email; RSVP por integrante con estados azul, amarillo y rosa rojizo; métricas y notificaciones actualizadas. Los enlaces son privados por posesión. No se han proporcionado credenciales Google ni dominio de publicación.
+Registro con avatar, sesiones y Google; múltiples eventos; dieciséis temas; familias con adultos/niños y notas; compartir por URL, WhatsApp y email; RSVP por integrante con estados azul, amarillo y rosa rojizo; métricas y notificaciones actualizadas. Los enlaces son privados por posesión. No se han proporcionado credenciales Google ni dominio de publicación.
 
 ## Brand Commitments
 

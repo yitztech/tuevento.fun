@@ -2,7 +2,7 @@
 // entradas. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { translate, supportedLocales } from "@tuevento/contracts";
+import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
 import { client, account, cleanup, englishHost, spanishHost, suiteRunner, eventData, invitationData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
@@ -15,6 +15,20 @@ try {
     assert.deepEqual(Object.keys(config).sort(), ["demoEnabled", "googleClientId"]);
     assert.equal(typeof config.demoEnabled, "boolean");
     assert.equal(typeof config.googleClientId, "string");
+  });
+
+  await suite("El catálogo completo se guarda, se edita y llega a la invitación pública", async () => {
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "temas"), 201);
+    const evento = await organizador.call("/events", "POST", eventData(), 201);
+    const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    for (const theme of themeIds) {
+      await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ theme }));
+      assert.equal((await organizador.call(`/events/${evento.id}`)).theme, theme);
+      const publica = await guest.call(`/invitations/${invitacion.token}`);
+      assert.equal(publica.event.theme, theme);
+    }
+    await organizador.call(`/events/${evento.id}`, "DELETE");
   });
 
   await suite("Acceso demo: solo para cuentas registradas, sin privilegios", async () => {

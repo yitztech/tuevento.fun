@@ -153,12 +153,12 @@
     "celebrateSimpleThings": "Celebremos lo simple",
     "celebrationTableColorfulFlowers": "Mesa festiva con flores coloridas y copas listas para celebrar",
     "celebrationsGlance": "Así van tus celebraciones",
-    "chooseCreateEventAdd": "Elige «Crear evento», completa fecha, hora, zona horaria y lugar, y selecciona uno de los seis diseños. Puedes editarlo después.",
+    "chooseCreateEventAdd": "Elige «Crear evento», completa fecha, hora, zona horaria y lugar, y selecciona un diseño de la colección. Puedes editarlo después.",
     "createEvent": "Crear evento",
     "createEventDesign": "Crear evento con este diseño",
     "demoNamesEventsLocations": "Los nombres, eventos y lugares de la demostración son ejemplos. Puedes probar todos los flujos sin afectar a otras cuentas. Regístrate para empezar con un espacio vacío y tus propios datos.",
     "demoWorkspace": "Tu espacio de demostración",
-    "designsText": "Descubre nuestros 6 diseños y encuentra\nese que se siente tan tú.",
+    "designsText": "Descubre la colección y encuentra\nese diseño que se siente tan tú.",
     "designsTitle": "Cada fiesta tiene\nsu propia personalidad.",
     "detailsMakeParty": "Los detalles hacen la fiesta.",
     "doForever": "Un sí para siempre",
@@ -203,14 +203,12 @@
     "repliesAttendanceUpdatesFrom": "Respuestas y cambios de asistencia de tus invitados.",
     "searchEvents": "Buscar un evento",
     "searchPeopleFamilies": "Buscar persona o familia",
-    "sixWaysSayWant": "Seis formas de decir «quiero que estés ahí». Elige la tuya.",
     "spacePlansPeopleWho": "Un espacio para tus planes y las personas que los hacen especiales.",
     "specialPlace": "Un lugar especial",
     "step1ShapeEvent": "1. Dale forma a tu evento",
     "step2BuildGuestList": "2. Prepara tu lista",
     "step3ShareInvitation": "3. Comparte su invitación",
     "step4GetTheirReplies": "4. Recibe sus respuestas",
-    "step6DesignsCelebrate": "6 diseños para celebrar",
     "tonightOurs": "Esta noche es nuestra",
     "tryAnotherSearchPlan": "Prueba otra búsqueda o prepara una nueva celebración.",
     "underSameSun": "Bajo el mismo sol",
@@ -224,7 +222,9 @@
     "viewAllInvitationsOpen": "Consulta todas tus invitaciones y abre un evento para administrarlas.",
     "welcomeTitle": "Tú imagina el momento.\nNosotros te ayudamos\na reunirlos.",
     "whenSomeoneRepliesYoull": "Cuando alguien responda, aquí te enterarás primero.",
-    "youreAllCaught": "Todo al día"
+    "youreAllCaught": "Todo al día",
+    "waysSayWant": "Muchas formas de decir «quiero que estés ahí». Elige la tuya.",
+    "designsCelebrate": "{{count}} diseños para celebrar"
   },
   "downloads": {
     "androidNote": "Descarga el APK desde este sitio mientras llega a Google Play.",
@@ -590,6 +590,56 @@
     "tropical": {
       "description": "Al sol, entre amigos",
       "name": "Tropical"
+    },
+    "winter": {
+      "name": "Invernal",
+      "description": "El calor de estar juntos",
+      "title": "Juntos, incluso en invierno"
+    },
+    "spring": {
+      "name": "Primaveral",
+      "description": "Nuevos motivos para florecer",
+      "title": "Que florezcan los encuentros"
+    },
+    "autumn": {
+      "name": "Otoñal",
+      "description": "Encuentros en tonos cálidos",
+      "title": "Un otoño para recordar"
+    },
+    "silver": {
+      "name": "Elegante Plata",
+      "description": "Una celebración con luz propia",
+      "title": "Una noche para brillar"
+    },
+    "copper": {
+      "name": "Cobre y Velas",
+      "description": "Brindis a la luz de las velas",
+      "title": "La magia de compartir"
+    },
+    "disco": {
+      "name": "Fiesta Disco",
+      "description": "El ritmo nos reúne",
+      "title": "Hasta el último baile"
+    },
+    "starlight": {
+      "name": "Noche Estrellada",
+      "description": "Momentos bajo las estrellas",
+      "title": "Bajo un cielo de estrellas"
+    },
+    "sand": {
+      "name": "Minimalista Arena",
+      "description": "La belleza de lo sencillo",
+      "title": "Lo sencillo nos une"
+    },
+    "wildflower": {
+      "name": "Flores Silvestres",
+      "description": "Un amor que crece libre",
+      "title": "Un sí entre flores"
+    },
+    "pastel": {
+      "name": "Infantil Pastel",
+      "description": "Pequeños momentos, grandes sonrisas",
+      "title": "Un día lleno de ilusión"
     }
   },
   "validation": {
@@ -606,13 +656,15 @@
     "maximum100Characters": "Máximo 100 caracteres.",
     "maximum128Characters": "Máximo 128 caracteres.",
     "maximum20Characters": "Máximo 20 caracteres.",
+    "maximum200Characters": "Máximo 200 caracteres.",
     "maximum254Characters": "Máximo 254 caracteres.",
     "maximum50Characters": "Máximo 50 caracteres.",
     "thereDuplicateMembers": "Hay integrantes repetidos.",
     "useHttps": "Usa HTTPS.",
     "useLeast10Characters": "Usa al menos 10 caracteres.",
     "useLettersSpaces": "Usa solo letras, espacios, apóstrofo o guion.",
-    "useNumbersSpaces": "Usa números, espacios o +."
+    "useNumbersSpaces": "Usa números, espacios o +.",
+    "useHexColor": "Elige un color de la paleta."
   },
   "pricing": {
     "title": "Precios",

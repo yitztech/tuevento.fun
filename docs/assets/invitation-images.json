@@ -1,0 +1,106 @@
+{
+  "created": "2026-10-16",
+  "purpose": "Diez fotografías hermanas para el catálogo de postales de TuEventoFun",
+  "assets": [
+    {
+      "id": "winter",
+      "family": "tropical",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-3d134fad-65aa-4bb9-b46d-a30abd3ae706.png",
+      "reference": "apps/web/public/images/tropical.jpg",
+      "image": "apps/web/public/images/winter.webp",
+      "smallImage": "apps/web/public/images/winter-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling seasonal design matching the natural editorial event photography of the attached style reference, with this new subject: A welcoming winter celebration terrace at a timber mountain lodge, snowy pine forest behind, cozy wool blankets on chairs and a warmly glowing lantern on a wooden table, soft snow, no people. Pale icy blue snow and warm amber accents. Wide environmental scene. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "spring",
+      "family": "tropical",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-49268a5d-99f5-4ad1-8ea7-73e0bab2dbe8.png",
+      "reference": "apps/web/public/images/tropical.jpg",
+      "image": "apps/web/public/images/spring.webp",
+      "smallImage": "apps/web/public/images/spring-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: An intimate spring garden celebration table underneath blossoming branches, fresh green garden, small pastel tulips and daffodils in simple glass vases, linen tablecloth, gentle morning sunlight, no people. Soft sage and delicate peach palette. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "autumn",
+      "family": "tropical",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-82e7e199-e29f-4075-b5c1-33d809dc8374.png",
+      "reference": "apps/web/public/images/tropical.jpg",
+      "image": "apps/web/public/images/autumn.webp",
+      "smallImage": "apps/web/public/images/autumn-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: An outdoor autumn celebration table in a garden with copper and amber falling leaves, russet linen, small seasonal arrangements and simple candles, warm late afternoon sunlight, no people. Ochre, terracotta and forest brown palette. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "silver",
+      "family": "gold",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-bd5b057c-64ef-4b1f-b2d5-087ef00fe2aa.png",
+      "reference": "apps/web/public/images/gold.jpg",
+      "image": "apps/web/public/images/silver.webp",
+      "smallImage": "apps/web/public/images/silver-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: Close editorial view along an elegant silver evening celebration table, crystal glasses, polished silver cutlery, ivory linen, white flowers and delicate candlelight reflections, shallow depth of field, no people. Silver grey and pearl with subtle cool blue highlights. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "copper",
+      "family": "gold",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-d028aeef-7b6b-4f12-b6a0-531730661638.png",
+      "reference": "apps/web/public/images/gold.jpg",
+      "image": "apps/web/public/images/copper.webp",
+      "smallImage": "apps/web/public/images/copper-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: Close editorial view along a candlelit intimate celebration dinner table, brushed copper candleholders and cutlery, terracotta linen napkins, small cream flowers, warm amber light, shallow depth of field, no people. Burnished copper and deep warm earth tones. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "disco",
+      "family": "neon",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-ddb7ffc1-95c6-418a-bd63-fce9dbda41ad.png",
+      "reference": "apps/web/public/images/neon.jpg",
+      "image": "apps/web/public/images/disco.webp",
+      "smallImage": "apps/web/public/images/disco-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: A joyful disco dancefloor at night, large mirrored disco ball near center reflecting pink, purple and warm silver light, celebratory confetti and a low band of anonymous dancing crowd silhouettes, authentic event photography, no visible faces. Rosy plum and silver lighting. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "starlight",
+      "family": "neon",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-06a0c6de-d44e-4659-8473-51b5b0970778.png",
+      "reference": "apps/web/public/images/neon.jpg",
+      "image": "apps/web/public/images/starlight.webp",
+      "smallImage": "apps/web/public/images/starlight-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: A magical outdoor evening celebration beneath a rich midnight blue starry sky, warm string lights over a garden dancefloor, small low silhouettes of guests, lanterns and soft luminous bokeh, natural realistic exposure, no identifiable faces. Midnight blue with warm gold pinpoints. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "sand",
+      "family": "minimal",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-1feab060-138b-480f-b308-dc508235f840.png",
+      "reference": "apps/web/public/images/minimal.jpg",
+      "image": "apps/web/public/images/sand.webp",
+      "smallImage": "apps/web/public/images/sand-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: An intimate simple celebration still life on a natural beige linen table, matte ivory ceramic plates, clear water glasses, single dried grass stem in a small ceramic vase, sunlit wall and soft shadows, restrained composition, no people. Sand, oat and cream neutral palette. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "wildflower",
+      "family": "floral",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-a3f84413-8e80-48a1-9f58-ec170c78a54e.png",
+      "reference": "apps/web/public/images/floral.jpg",
+      "image": "apps/web/public/images/wildflower.webp",
+      "smallImage": "apps/web/public/images/wildflower-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: An abundant hand-tied bridal bouquet of seasonal wildflowers, small white daisies, lavender, cornflowers, delicate peach blooms and fresh greenery tied with a simple linen ribbon, close natural editorial photograph in a meadow, soft background, no people. Muted lavender, sage and cream. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    },
+    {
+      "id": "pastel",
+      "family": "kids",
+      "tool": "built-in image_gen",
+      "source": "/Users/user/.codex/generated_images/01a147ab-803f-7fd3-8500-2f2a8c0203a7/exec-84306720-d957-4777-b810-577f12684ba8.png",
+      "reference": "apps/web/public/images/kids.jpg",
+      "image": "apps/web/public/images/pastel.webp",
+      "smallImage": "apps/web/public/images/pastel-640.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape photograph for a TuEventoFun invitation postcard header. Primary request: create a sibling design matching the natural editorial event photography of the attached style reference, with this new subject: A cheerful children's birthday decoration detail with soft peach, mint, lavender and butter yellow balloons with curling ribbons and small paper bunting, bright window light, real satin latex texture, shallow depth of field, no people. Gentle pastel colors, joyful but uncluttered. Composition: landscape 3:2, main theme recognizable across the central horizontal third so it crops well as a shallow wide postcard header. Real materials, believable lighting, tasteful event photography, natural color grading and subtle depth of field. Reference image is only for photographic style and polish; create a fresh scene. Output only the photograph, no postcard layout, no borders, no typography, no logos, no watermark."
+    }
+  ]
+}

@@ -9,6 +9,16 @@ export const themeIds = [
   "minimal",
   "floral",
   "kids",
+  "winter",
+  "spring",
+  "autumn",
+  "silver",
+  "copper",
+  "disco",
+  "starlight",
+  "sand",
+  "wildflower",
+  "pastel",
 ] as const;
 export const statusSchema = z.enum(["accepted", "declined", "pending"]);
 export type Status = z.infer<typeof statusSchema>;
@@ -19,6 +29,7 @@ export const themes = [
     description: "themes.gold.description",
     image: "gold.jpg",
     color: "#d9b967",
+    previewTitle: "dashboard.nightRemember",
   },
   {
     id: "neon",
@@ -26,6 +37,7 @@ export const themes = [
     description: "themes.neon.description",
     image: "neon.jpg",
     color: "#b3a0ec",
+    previewTitle: "dashboard.tonightOurs",
   },
   {
     id: "tropical",
@@ -33,6 +45,7 @@ export const themes = [
     description: "themes.tropical.description",
     image: "tropical.jpg",
     color: "#92a2c8",
+    previewTitle: "dashboard.underSameSun",
   },
   {
     id: "minimal",
@@ -40,6 +53,7 @@ export const themes = [
     description: "themes.minimal.description",
     image: "minimal.jpg",
     color: "#bfccdc",
+    previewTitle: "dashboard.celebrateSimpleThings",
   },
   {
     id: "floral",
@@ -47,6 +61,7 @@ export const themes = [
     description: "themes.floral.description",
     image: "floral.jpg",
     color: "#edb7c9",
+    previewTitle: "dashboard.doForever",
   },
   {
     id: "kids",
@@ -54,6 +69,97 @@ export const themes = [
     description: "themes.kids.description",
     image: "kids.jpg",
     color: "#f3d579",
+    previewTitle: "dashboard.makeWish",
+  },
+  {
+    id: "winter",
+    name: "themes.winter.name",
+    description: "themes.winter.description",
+    image: "winter.webp",
+    smallImage: "winter-640.webp",
+    color: "#c9dce8",
+    previewTitle: "themes.winter.title",
+  },
+  {
+    id: "spring",
+    name: "themes.spring.name",
+    description: "themes.spring.description",
+    image: "spring.webp",
+    smallImage: "spring-640.webp",
+    color: "#d9e5cf",
+    previewTitle: "themes.spring.title",
+  },
+  {
+    id: "autumn",
+    name: "themes.autumn.name",
+    description: "themes.autumn.description",
+    image: "autumn.webp",
+    smallImage: "autumn-640.webp",
+    color: "#edcbb0",
+    previewTitle: "themes.autumn.title",
+  },
+  {
+    id: "silver",
+    name: "themes.silver.name",
+    description: "themes.silver.description",
+    image: "silver.webp",
+    smallImage: "silver-640.webp",
+    color: "#dce1e8",
+    previewTitle: "themes.silver.title",
+  },
+  {
+    id: "copper",
+    name: "themes.copper.name",
+    description: "themes.copper.description",
+    image: "copper.webp",
+    smallImage: "copper-640.webp",
+    color: "#e7c3ae",
+    previewTitle: "themes.copper.title",
+  },
+  {
+    id: "disco",
+    name: "themes.disco.name",
+    description: "themes.disco.description",
+    image: "disco.webp",
+    smallImage: "disco-640.webp",
+    color: "#bba2cc",
+    previewTitle: "themes.disco.title",
+  },
+  {
+    id: "starlight",
+    name: "themes.starlight.name",
+    description: "themes.starlight.description",
+    image: "starlight.webp",
+    smallImage: "starlight-640.webp",
+    color: "#8b9ac0",
+    previewTitle: "themes.starlight.title",
+  },
+  {
+    id: "sand",
+    name: "themes.sand.name",
+    description: "themes.sand.description",
+    image: "sand.webp",
+    smallImage: "sand-640.webp",
+    color: "#e3d7c5",
+    previewTitle: "themes.sand.title",
+  },
+  {
+    id: "wildflower",
+    name: "themes.wildflower.name",
+    description: "themes.wildflower.description",
+    image: "wildflower.webp",
+    smallImage: "wildflower-640.webp",
+    color: "#dcd4e9",
+    previewTitle: "themes.wildflower.title",
+  },
+  {
+    id: "pastel",
+    name: "themes.pastel.name",
+    description: "themes.pastel.description",
+    image: "pastel.webp",
+    smallImage: "pastel-640.webp",
+    color: "#f1d3df",
+    previewTitle: "themes.pastel.title",
   },
 ] as const;
 /** Longitudes máximas de los datos de cuenta; el frontend las usa como `maxLength`. */
@@ -62,6 +168,7 @@ export const accountLimits = {
   email: 254,
   phone: 20,
   password: 128,
+  postcardText: 200,
 } as const;
 const email = z
   .email("validation.enterValidEmailAddress")
@@ -330,4 +437,54 @@ export type OwnerMetrics = {
   days: number; totals: { visitors: number; visits: number; registrations: number; logins: number; downloads: number };
   sources: { platform: ClientPlatform; visits: number; registrations: number; logins: number; downloads: number }[];
   daily: { day: string; visits: number; registrations: number; logins: number; downloads: number }[];
+};
+
+/** Postal de cada evento: lienzo vertical 3:4; posiciones y tamaños en porcentaje del lienzo. */
+export const postcardLimits = {
+  photos: 2,
+  texts: 3,
+  photoBytes: 2 * 1024 * 1024,
+  photoSide: 2048,
+  versions: 20,
+} as const;
+export const postcardFonts = ["manrope", "bricolage", "playfair", "pacifico"] as const;
+export const postcardAligns = ["left", "center", "right"] as const;
+const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i, "validation.useHexColor");
+const postcardBackground = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("template"), theme: z.enum(themeIds) }),
+  z.object({ type: z.literal("color"), color: hexColor }),
+  z.object({ type: z.literal("photo"), photo: z.uuid() }),
+]);
+const postcardPhoto = z.object({
+  photo: z.uuid(),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  width: z.number().min(1).max(100),
+  height: z.number().min(1).max(100),
+});
+const postcardText = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1)
+    .max(accountLimits.postcardText, "validation.maximum200Characters"),
+  font: z.enum(postcardFonts),
+  /** Tamaño de letra en píxeles sobre un lienzo de 1000 px de ancho. */
+  size: z.number().min(12).max(160),
+  color: hexColor,
+  align: z.enum(postcardAligns),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  width: z.number().min(5).max(100),
+});
+export const postcardSchema = z.object({
+  background: postcardBackground,
+  photos: z.array(postcardPhoto).max(postcardLimits.photos),
+  texts: z.array(postcardText).max(postcardLimits.texts),
+});
+export type PostcardDesign = z.infer<typeof postcardSchema>;
+export const emptyPostcard: PostcardDesign = {
+  background: { type: "color", color: "#ffffff" },
+  photos: [],
+  texts: [],
 };
