@@ -451,6 +451,7 @@ export const postcardLimits = {
 } as const;
 export const postcardFonts = ["manrope", "bricolage", "playfair", "pacifico"] as const;
 export const postcardAligns = ["left", "center", "right"] as const;
+export type PostcardFont = (typeof postcardFonts)[number];
 const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i, "validation.useHexColor");
 const postcardBackground = z.discriminatedUnion("type", [
   z.object({ type: z.literal("template"), theme: z.enum(themeIds) }),

@@ -10,6 +10,9 @@ import type {
   ProfileInput,
   Status,
   Locale,
+  Postcard,
+  PostcardDesign,
+  PostcardVersion,
 } from "@tuevento/contracts";
 export class ApiError extends Error {
   constructor(
@@ -116,6 +119,18 @@ export class EventApi {
     );
   deleteInvitation = (eventId: string, id: string) =>
     this.request(`/events/${eventId}/invitations/${id}`, "DELETE");
+  postcard = (eventId: string) =>
+    this.request<Postcard>(`/events/${eventId}/postcard`);
+  savePostcard = (eventId: string, design: PostcardDesign) =>
+    this.request<Postcard>(`/events/${eventId}/postcard`, "PUT", design);
+  postcardVersions = (eventId: string) =>
+    this.request<PostcardVersion[]>(`/events/${eventId}/postcard/versions`);
+  restorePostcard = (eventId: string, versionId: string) =>
+    this.request<Postcard>(`/events/${eventId}/postcard/versions/${versionId}/restore`, "POST", {});
+  uploadPostcardPhoto = (eventId: string, dataUrl: string) =>
+    this.request<{ id: string; url: string }>(`/events/${eventId}/postcard/images`, "POST", { dataUrl });
+  removePostcardPhoto = (eventId: string, imageId: string) =>
+    this.request<Postcard>(`/events/${eventId}/postcard/images/${imageId}`, "DELETE");
   notifications = () => this.request<Notification[]>("/notifications");
   readNotifications = () => this.request("/notifications/read", "POST", {});
   publicInvitation = (token: string) =>

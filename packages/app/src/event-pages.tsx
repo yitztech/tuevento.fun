@@ -48,6 +48,7 @@ import {
   Trash2,
   Pencil,
   Monitor,
+  Palette,
   Copy,
   Mail,
   MessageCircle,
@@ -388,6 +389,10 @@ export function EventDetail() {
           <Link className="button secondary" to={`/eventos/${id}/pantalla`}>
             <Monitor size={17} />
             {tr("events.displayMode")}
+          </Link>
+          <Link className="button secondary" to={`/eventos/${id}/postal`}>
+            <Palette size={17} />
+            {tr("postcard.open")}
           </Link>
           <Link className="button secondary" to={`/eventos/${id}/editar`}>
             <Pencil size={17} />
