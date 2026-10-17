@@ -458,6 +458,7 @@
   },
   "language": {
     "changeLanguage": "Mudar idioma",
+    "viewThisSite": "Ver este site em português",
     "suggest": "Quer ver esta página em português?",
     "suggestAccept": "Ver em português",
     "suggestDismiss": "Não, obrigado"
