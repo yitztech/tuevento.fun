@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Patch,
   Put,
@@ -9,6 +10,7 @@ import {
   Param,
   Req,
   Res,
+  Query,
   UseGuards,
   ParseUUIDPipe,
   BadRequestException,
@@ -35,6 +37,9 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   postcardSchema,
+  registrationSchema,
+  eventSlugPattern,
+  accountLimits,
 } from "@tuevento/contracts";
 import {
   AuthService,
@@ -197,8 +202,63 @@ export class PublicController {
   ) {
     return this.events.publicInvitation(this.token(token, req));
   }
-  @Get("public/events/:slug") publicEvent(@Param("slug") slug: string) {
-    return this.events.publicEvent(slug);
+  @Get("public/events/:slug") publicEvent(
+    @Req() req: FastifyRequest,
+    @Param("slug") slug: string,
+  ) {
+    return this.events.publicEvent(slug, req.cookies?.[EVENT_ACCESS_COOKIE]);
+  }
+  /** Contraseña de la página pública: al acertarla se entrega una cookie de acceso de 1 día. */
+  @Post("public/events/:slug/unlock")
+  @HttpCode(200)
+  async unlockEvent(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("slug") slug: string,
+    @Body() body: unknown,
+  ) {
+    const { password } = parse(
+      z.object({ password: z.string().min(1).max(accountLimits.password) }),
+      body,
+      req,
+    );
+    const token = await this.events.unlockEvent(slug, password);
+    if (token)
+      reply.setCookie(EVENT_ACCESS_COOKIE, token, {
+        path: `/api/public/events/${slug}`,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.COOKIE_SECURE === "true",
+        maxAge: 86400,
+      });
+    return { ok: true };
+  }
+  @Get("public/events/:slug/calendar.ics") async eventCalendar(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("slug") slug: string,
+  ) {
+    const ics = await this.events.calendarForEvent(slug, req.cookies?.[EVENT_ACCESS_COOKIE]);
+    return calendarResponse(reply, ics);
+  }
+  @Get("invitations/:token/calendar.ics") async invitationCalendar(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("token") token: string,
+  ) {
+    const ics = await this.events.calendarForInvitation(this.token(token, req));
+    return calendarResponse(reply, ics);
+  }
+  /** Invitado de una invitación genérica: entrega sus datos y personas, y recibe su propia invitación. */
+  @Post("invitations/:token/register") registerGuest(
+    @Req() req: FastifyRequest,
+    @Param("token") token: string,
+    @Body() body: unknown,
+  ) {
+    return this.events.register(
+      this.token(token, req),
+      parse(registrationSchema, body, req),
+    );
   }
   @Post("invitations/:token/rsvp") rsvp(
     @Req() req: FastifyRequest,
@@ -232,6 +292,21 @@ export class OrganizerController {
   }
   @Get("events") list(@Req() req: AuthedRequest) {
     return this.events.list(req.user.id);
+  }
+  @Get("events/slug-available") slugAvailable(
+    @Req() req: AuthedRequest,
+    @Query() query: unknown,
+  ) {
+    const { slug, eventId } = parse(
+      z.object({
+        slug: z.string().trim().toLowerCase().max(accountLimits.eventSlug),
+        eventId: z.uuid().optional(),
+      }),
+      query,
+      req,
+    );
+    if (!eventSlugPattern.test(slug)) return { available: false };
+    return this.events.slugAvailable(req.user.id, slug, eventId);
   }
   @Get("events/:id") event(
     @Req() req: AuthedRequest,
@@ -450,4 +525,13 @@ export class OrganizerController {
     );
     return userView(r);
   }
+}
+
+const EVENT_ACCESS_COOKIE = "event_access";
+/** Archivo de calendario descargable (.ics). */
+function calendarResponse(reply: FastifyReply, ics: string) {
+  reply.header("Content-Type", "text/calendar; charset=utf-8");
+  reply.header("Content-Disposition", 'attachment; filename="evento.ics"');
+  reply.header("Cache-Control", "no-store");
+  return ics;
 }

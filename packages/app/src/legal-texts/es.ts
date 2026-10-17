@@ -38,6 +38,7 @@ export const es: LegalTexts = {
           "En cada evento puedes añadir invitaciones con nombre, correo, teléfono y notas privadas, además del nombre de cada integrante, si es adulto o niño y sus notas. Las notas y los datos de contacto solo los ves tú; la página de invitación muestra a los invitados únicamente sus nombres y los datos del evento.",
           "Los invitados responden sin crear una cuenta. Guardamos la respuesta de cada integrante (confirmado, no asistirá o en espera) y te avisamos.",
           "Eres responsable de contar con el permiso de tus invitados para añadir sus datos.",
+          "Si compartes un enlace genérico, quien se registra escribe sus propios datos y los de las personas que vienen con él. Esos datos los ves tú, igual que los de las demás invitaciones.",
         ],
       },
       {
@@ -47,6 +48,7 @@ export const es: LegalTexts = {
           "Las fotos de la postal se muestran a quien tenga la invitación o la dirección pública del evento. Cada foto tiene un identificador aleatorio que no se puede adivinar. Puedes quitar una foto en cualquier momento, y al borrar el evento se borran también sus fotos.",
           "Si das una dirección pública al evento, cualquiera que la tenga ve el título, la descripción, la fecha, el lugar, el nombre del anfitrión y la postal. Nunca se muestran tus invitados, sus datos de contacto ni sus respuestas. Puedes quitar o cambiar la dirección en cualquier momento, y deja de verse si archivas el evento.",
           "Guardamos hasta 20 versiones anteriores de la postal para que puedas volver a ellas. Se borran al borrar el evento.",
+          "Puedes proteger la página pública con una contraseña. Guardamos solo una huella de la contraseña y del acceso que concede, que caduca a las 24 horas. El calendario que se descarga (.ics) solo contiene los datos del evento.",
         ],
       },
       {
@@ -64,6 +66,7 @@ export const es: LegalTexts = {
         body: [
           "Si pides restablecer tu contraseña, te enviamos un enlace que funciona una sola vez y caduca en 60 minutos; solo guardamos una huella (hash) de ese enlace. Cuando la contraseña cambia, cerramos todas las sesiones abiertas y te enviamos un aviso de seguridad.",
           "Estos correos se envían en el idioma del dominio que usaste, desde ese dominio (no-reply@tuevento.fun o no-reply@yourevent.fun), a través de un proveedor de envío de correo que solo recibe lo necesario para entregarlos.",
+          "Te avisamos por correo cuando alguien responde o se registra en tu evento, y cuando cambias la fecha, el lugar o cancelas el evento. A los invitados que dejaron su correo les enviamos la confirmación de su respuesta y esos avisos del evento. Usamos ese correo solo para esto.",
         ],
       },
       {

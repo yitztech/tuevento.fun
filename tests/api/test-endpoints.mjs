@@ -79,7 +79,7 @@ try {
     assert.equal(publicado.slug, slug);
     const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData({ email: `url-${unique}@example.invalid` }), 201);
     const publico = await guest.call(`/public/events/${slug}`);
-    assert.deepEqual(Object.keys(publico).sort(), ["date", "description", "host", "location", "postcard", "theme", "timeZone", "title"]);
+    assert.deepEqual(Object.keys(publico).sort(), ["cancelled", "date", "description", "host", "location", "locked", "postcard", "theme", "timeZone", "title"]);
     assert.deepEqual(Object.keys(publico.host).sort(), ["avatar", "firstName", "lastName"]);
     assert.equal(JSON.stringify(publico).includes(invitacion.token), false);
     assert.equal(JSON.stringify(publico).includes(`url-${unique}@example.invalid`), false);
@@ -100,6 +100,91 @@ try {
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, archived: true }));
     await guest.call(`/public/events/${slug}`, "GET", undefined, 404);
     await guest.call(`/public/events/no-existe-${unique}`, "GET", undefined, 404);
+  });
+
+  await suite("Calendario, contraseña de la página pública e invitación genérica", async () => {
+    const organizador = client();
+    const visitante = client();
+    await organizador.call("/auth/register", "POST", account(P, "avisos"), 201);
+    const slug = `avisos-${unique}`;
+    const evento = await organizador.call("/events", "POST", eventData({ slug }), 201);
+    const personal = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    // Disponibilidad de la dirección: libre, ocupada, la propia y con formato inválido
+    assert.equal((await organizador.call(`/events/slug-available?slug=libre-${unique}`)).available, true);
+    assert.equal((await organizador.call(`/events/slug-available?slug=${slug}`)).available, false);
+    assert.equal((await organizador.call(`/events/slug-available?slug=${slug}&eventId=${evento.id}`)).available, true);
+    assert.equal((await organizador.call("/events/slug-available?slug=No%20valido")).available, false);
+    // Calendario: .ics de la invitación, con el estado al día
+    const ics = await visitante.raw(`/invitations/${personal.token}/calendar.ics`);
+    assert.equal(ics.status, 200);
+    assert.match(ics.headers["content-type"], /^text\/calendar/);
+    assert.match(ics.text, /BEGIN:VCALENDAR/);
+    assert.match(ics.text, /STATUS:CONFIRMED/);
+    assert.equal((await visitante.raw(`/invitations/${"x".repeat(32)}/calendar.ics`)).status, 404);
+    // Cancelar: el .ics lo marca, la invitación lo muestra y ya no se puede responder
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, cancelled: true }));
+    assert.match((await visitante.raw(`/invitations/${personal.token}/calendar.ics`)).text, /STATUS:CANCELLED/);
+    assert.equal((await visitante.call(`/invitations/${personal.token}`)).event.cancelled, true);
+    await visitante.call(`/invitations/${personal.token}/rsvp`, "POST", { members: [{ id: personal.members[0].id, status: "accepted" }] }, 400);
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, cancelled: false }));
+    // Contraseña de la página pública: bloquea, se desbloquea con la clave y se conserva al editar
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, publicPassword: "clave-de-prueba" }));
+    assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, true);
+    assert.deepEqual(await visitante.call(`/public/events/${slug}`), { locked: true });
+    assert.equal((await visitante.raw(`/public/events/${slug}/calendar.ics`)).status, 404);
+    await visitante.call(`/public/events/${slug}/unlock`, "POST", { password: "mal" }, 401);
+    const acceso = await visitante.raw(`/public/events/${slug}/unlock`, { method: "POST", body: { password: "clave-de-prueba" } });
+    assert.equal(acceso.status, 200);
+    assert.ok(acceso.setCookie.some((c) => c.startsWith("event_access=") && /HttpOnly/.test(c)));
+    assert.equal((await visitante.call(`/public/events/${slug}`)).locked, false);
+    assert.equal((await visitante.raw(`/public/events/${slug}/calendar.ics`)).status, 200);
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }));
+    assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, true);
+    // Tras diez fallos, la contraseña se bloquea un rato aunque sea la correcta
+    const intentos = client();
+    for (let i = 0; i < 10; i++) await intentos.call(`/public/events/${slug}/unlock`, "POST", { password: "mal" }, 401);
+    await intentos.call(`/public/events/${slug}/unlock`, "POST", { password: "clave-de-prueba" }, 429);
+    // Quitar la contraseña deja la página abierta
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, publicPassword: "" }));
+    assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, false);
+    assert.equal((await visitante.call(`/public/events/${slug}`)).locked, false);
+    // Invitación genérica: sin personas, y cada invitado se registra con sus propios datos
+    const abierta = await organizador.call(`/events/${evento.id}/invitations`, "POST", { name: "Para todos", kind: "open", email: "", phone: "", notes: "", members: [] }, 201);
+    assert.equal(abierta.kind, "open");
+    assert.equal(abierta.parentId, null);
+    const vista = await visitante.call(`/invitations/${abierta.token}`);
+    assert.equal(vista.kind, "open");
+    assert.deepEqual(vista.members, []);
+    assert.equal(vista.registrationsFull, false);
+    await organizador.call(`/events/${evento.id}/invitations`, "POST", { name: "Para todos", kind: "open", email: "", phone: "", notes: "", members: [{ name: "Alguien", kind: "adult", notes: "" }] }, 400);
+    const registro = await visitante.call(`/invitations/${abierta.token}/register`, "POST", {
+      name: "Familia Ruiz",
+      email: `ruiz-${unique}@example.invalid`,
+      phone: "",
+      notes: "",
+      kind: "family",
+      members: [
+        { name: "Paula Ruiz", kind: "adult", notes: "", status: "accepted" },
+        { name: "Hugo Ruiz", kind: "child", notes: "", status: "pending" },
+      ],
+    }, 201);
+    const propia = await visitante.call(`/invitations/${registro.token}`);
+    assert.equal(propia.kind, "family");
+    assert.deepEqual(propia.members.map((m) => m.status), ["accepted", "pending"]);
+    const lista = await organizador.call(`/events/${evento.id}/invitations`);
+    assert.equal(lista.find((i) => i.token === registro.token).parentId, abierta.id);
+    // Un registro sin personas, o con tipo "open", no se acepta
+    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Sin personas", kind: "individual", email: "", phone: "", notes: "", members: [] }, 400);
+    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Tipo abierto", kind: "open", email: "", phone: "", notes: "", members: [{ name: "A", kind: "adult", notes: "", status: "pending" }] }, 400);
+    // Solo las genéricas aceptan registros: una personal responde 404
+    await visitante.call(`/invitations/${personal.token}/register`, "POST", { name: "Intruso", kind: "individual", email: "", phone: "", notes: "", members: [{ name: "Intruso", kind: "adult", notes: "", status: "pending" }] }, 404);
+    // Cancelado: no admite registros
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, cancelled: true }));
+    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Tarde", kind: "individual", email: "", phone: "", notes: "", members: [{ name: "Tarde", kind: "adult", notes: "", status: "pending" }] }, 400);
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, cancelled: false }));
+    // Borrar el enlace genérico no borra sus registros: quedan como invitaciones normales
+    await organizador.call(`/events/${evento.id}/invitations/${abierta.id}`, "DELETE");
+    assert.ok((await organizador.call(`/events/${evento.id}/invitations`)).some((i) => i.token === registro.token && i.parentId === null));
   });
 
   await suite("Acceso demo: solo para cuentas registradas, sin privilegios", async () => {

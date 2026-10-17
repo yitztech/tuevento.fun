@@ -4905,3 +4905,42 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .event-public-link a {
   overflow-wrap: anywhere;
 }
+
+/* Calendario, avisos, contraseña de la página pública y registro genérico */
+.calendar-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+.event-cancelled-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #fbe9e5;
+  color: #882d17;
+  font-weight: 600;
+}
+.password-gate {
+  display: grid;
+  gap: 0.9rem;
+  width: min(360px, 100%);
+  margin-top: 1rem;
+}
+.check-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0.75rem 0;
+}
+.check-row span {
+  display: grid;
+  gap: 0.2rem;
+}
+.check-row small {
+  opacity: 0.8;
+}
+.open-registration {
+  display: grid;
+  gap: 0.9rem;
+}

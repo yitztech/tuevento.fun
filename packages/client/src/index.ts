@@ -5,7 +5,9 @@ import type {
   Invitation,
   InvitationInput,
   Notification,
+  LockedPublicEvent,
   PublicEvent,
+  RegistrationInput,
   PublicInvitation,
   RegisterInput,
   ProfileInput,
@@ -136,7 +138,16 @@ export class EventApi {
   readNotifications = () => this.request("/notifications/read", "POST", {});
   publicInvitation = (token: string) =>
     this.request<PublicInvitation>(`/invitations/${token}`);
-  publicEvent = (slug: string) => this.request<PublicEvent>(`/public/events/${slug}`);
+  publicEvent = (slug: string) =>
+    this.request<PublicEvent | LockedPublicEvent>(`/public/events/${slug}`);
+  unlockEvent = (slug: string, password: string) =>
+    this.request<{ ok: boolean }>(`/public/events/${slug}/unlock`, "POST", { password });
+  slugAvailable = (slug: string, eventId?: string) => {
+    const query = new URLSearchParams({ slug, ...(eventId ? { eventId } : {}) });
+    return this.request<{ available: boolean }>(`/events/slug-available?${query}`);
+  };
+  registerInvitation = (token: string, data: RegistrationInput) =>
+    this.request<{ token: string }>(`/invitations/${token}/register`, "POST", data);
   rsvp = (token: string, members: { id: string; status: Status }[]) =>
     this.request<PublicInvitation>(`/invitations/${token}/rsvp`, "POST", {
       members,

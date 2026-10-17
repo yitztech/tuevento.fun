@@ -65,6 +65,7 @@ export class DemoService {
           date: date.toISOString(),
           timeZone: "America/Mexico_City",
           archived: false,
+          cancelled: false,
           slug: "",
         });
         for (const [i, name] of names.entries()) {

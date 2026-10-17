@@ -72,6 +72,34 @@ try {
     }
   });
 
+  await suite("Avisos, contraseña y registro genérico: sin sesión no hay acceso y una contraseña no abre otra página", async () => {
+    assert.equal((await guest.raw(`/events/slug-available?slug=abc-${unique}`)).status, 401);
+    // Una página con contraseña no revela nada del evento hasta acertarla
+    const cerrada = `seg-clave-${unique}`;
+    await a.call("/events", "POST", eventData({ slug: cerrada, publicPassword: "clave-segura-1" }), 201);
+    assert.deepEqual(Object.keys(await guest.call(`/public/events/${cerrada}`)), ["locked"]);
+    assert.equal((await guest.raw(`/public/events/${cerrada}/unlock`, { method: "POST", body: { password: "nope" } })).status, 401);
+    // Un acceso concedido por otra página no abre esta, y un token inventado tampoco
+    const otra = `seg-otra-${unique}`;
+    await a.call("/events", "POST", eventData({ slug: otra, publicPassword: "otra-clave-1" }), 201);
+    const visitante = client();
+    await visitante.call(`/public/events/${otra}/unlock`, "POST", { password: "otra-clave-1" });
+    assert.deepEqual(await visitante.call(`/public/events/${cerrada}`), { locked: true });
+    assert.equal((await guest.raw(`/public/events/${cerrada}`, { headers: { Cookie: `event_access=${"a".repeat(43)}` } })).data.locked, true);
+    // Solo el dueño cambia la contraseña de su página
+    assert.equal((await b.raw(`/events/${evento.id}`, { method: "PATCH", body: eventData({ slug: `seg-b-${unique}`, publicPassword: "robada-1" }) })).status, 404);
+    // Un enlace personal no acepta registros; y la invitación genérica no muestra a otros invitados
+    const personal = await a.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    const generica = await a.call(`/events/${evento.id}/invitations`, "POST", { name: "Abierta", kind: "open", email: "", phone: "", notes: "", members: [] }, 201);
+    await guest.raw(`/invitations/${personal.token}/register`, { method: "POST", body: { name: "Ana", kind: "individual", email: "", phone: "", notes: "", members: [{ name: "Ana", kind: "adult", notes: "", status: "pending" }] } })
+      .then((r) => assert.equal(r.status, 404));
+    assert.equal((await guest.call(`/invitations/${generica.token}`)).members.length, 0);
+    // Sin sesión no se puede ver el listado del organizador ni su calendario privado
+    assert.equal((await guest.raw(`/events/${evento.id}/invitations`)).status, 401);
+    // Y la dirección libre solo para la cuenta que entra
+    assert.equal((await b.raw(`/events/slug-available?slug=seg-b-${unique}`)).status, 200);
+  });
+
   await suite("Postal: sin sesión o de otra cuenta responde 401 o 404, y las fotos sin id no existen", async () => {
     const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
     const ruta = `/events/${evento.id}/postcard`;
