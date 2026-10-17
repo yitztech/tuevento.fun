@@ -38,6 +38,7 @@ export const pt: LegalTexts = {
           "Em cada evento você pode adicionar convites com nome, e-mail, telefone e notas privadas, além do nome de cada integrante, se é adulto ou criança e suas notas. As notas e os dados de contato só você vê; a página do convite mostra aos convidados apenas seus nomes e os dados do evento.",
           "Os convidados respondem sem criar uma conta. Guardamos a resposta de cada integrante (confirmado, não vai ou pendente) e avisamos você.",
           "Você é responsável por ter a permissão dos seus convidados para adicionar os dados deles.",
+          "Se você compartilhar um link genérico, quem se cadastra preenche os próprios dados e os das pessoas que vêm com ela. Você vê esses dados, como os das demais respostas.",
         ],
       },
       {
@@ -47,6 +48,7 @@ export const pt: LegalTexts = {
           "As fotos do cartão postal são mostradas a quem tiver o convite ou o endereço público do evento. Cada foto tem um identificador aleatório que não pode ser adivinhado. Você pode remover uma foto a qualquer momento, e ao apagar o evento as fotos também são apagadas.",
           "Se você der um endereço público ao evento, quem o tiver verá o título, a descrição, a data, o local, o nome do anfitrião e o cartão postal. Seus convidados, os dados de contato e as respostas nunca são mostrados. Você pode remover ou trocar o endereço a qualquer momento, e ele deixa de aparecer se arquivar o evento.",
           "Guardamos até 20 versões anteriores do cartão postal para que você possa voltar a elas. Elas são apagadas ao apagar o evento.",
+          "Você pode proteger a página pública com uma senha. Guardamos apenas uma marca (hash) da senha e do acesso que ela concede, que expira em 24 horas. O calendário baixado (.ics) contém apenas os dados do evento.",
         ],
       },
       {
@@ -64,6 +66,7 @@ export const pt: LegalTexts = {
         body: [
           "Se você pedir para redefinir sua senha, enviamos um link que funciona uma única vez e expira em 60 minutos; guardamos apenas uma impressão (hash) desse link. Quando a senha muda, encerramos todas as sessões abertas e enviamos um aviso de segurança.",
           "Esses e-mails são enviados no idioma do domínio que você usou, a partir desse domínio, por meio de um provedor de envio de e-mails que recebe apenas o necessário para entregá-los.",
+          "Avisamos por e-mail quando alguém responde ou se cadastra no seu evento, e quando você muda a data, o local ou cancela o evento. Aos convidados que deixaram o e-mail enviamos a confirmação da resposta e esses avisos. Usamos esse e-mail apenas para isso.",
         ],
       },
       {

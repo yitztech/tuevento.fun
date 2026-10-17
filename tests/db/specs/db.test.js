@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "events", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "schema_migrations", "sessions", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -171,4 +171,20 @@ test("Dirección pública del evento: formato, longitud y unicidad en todo el se
   // Sin dirección (NULL) no compite con nadie: varios eventos pueden no tener una
   await db.query("UPDATE events SET slug=NULL WHERE id=$1", [e2.id]);
   await db.query("UPDATE events SET slug=NULL WHERE id=$1", [e1.id]);
+});
+
+test("Invitación genérica y avisos: tipos válidos, registros enlazados al enlace y acceso protegido", async () => {
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  assert.equal((await uno("SELECT cancelled FROM events WHERE id=$1", [e.id])).cancelled, false);
+  const abierta = await uno("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'Abierta','open',gen_random_uuid()::text) RETURNING id", [e.id]);
+  const hijo = await uno("INSERT INTO invitations(id,event_id,name,kind,token,parent_id) VALUES(gen_random_uuid(),$1,'Hijo','individual',gen_random_uuid()::text,$2) RETURNING id", [e.id, abierta.id]);
+  assert.equal(await codigoError(() => db.query("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'X','otro',gen_random_uuid()::text)", [e.id])), CHECK_VIOLATION);
+  // Al borrar el enlace, sus registros siguen existiendo como invitaciones normales
+  await db.query("DELETE FROM invitations WHERE id=$1", [abierta.id]);
+  assert.equal((await uno("SELECT parent_id FROM invitations WHERE id=$1", [hijo.id])).parent_id, null);
+  // Acceso a la página protegida: con caducidad, y se borra con su evento
+  await db.query("INSERT INTO event_access(token_hash,event_id,expires_at) VALUES($1,$2,now()+interval '1 day')", ["hash-de-prueba", e.id]);
+  await db.query("DELETE FROM events WHERE id=$1", [e.id]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM event_access WHERE event_id=$1", [e.id])).n, 0);
 });

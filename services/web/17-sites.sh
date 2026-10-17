@@ -202,6 +202,7 @@ mkdir -p /etc/nginx/seo
 disallow='/app
 /app-link/
 /i/
+/e/
 /eventos
 /invitados
 /notificaciones
