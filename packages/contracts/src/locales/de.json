@@ -527,16 +527,16 @@
     "noVersions": "Noch keine früheren Versionen.",
     "latest": "aktuell",
     "restore": "Wiederherstellen",
-    "colorNames": {
-      "white": "Weiß",
-      "ink": "Tinte",
-      "blue": "Blau",
-      "gold": "Gold",
-      "rose": "Rosa",
-      "sage": "Salbei",
-      "cream": "Creme",
-      "night": "Nacht"
-    }
+    "colorSwatch": "Farbe {{color}}",
+    "customColor": "Andere Farbe",
+    "moveHint": "Ziehe einen Text oder ein Foto, um es auf der Postkarte zu verschieben.",
+    "shadow": "Schatten",
+    "shadowOn": "Mit Schatten",
+    "shadowOff": "Ohne Schatten",
+    "shadowColor": "Schattenfarbe",
+    "shadowBlur": "Weichzeichnung",
+    "shadowOffsetX": "Versatz horizontal",
+    "shadowOffsetY": "Versatz vertikal"
   },
   "legal": {
     "acceptOnRegister": "Mit der Erstellung deines Kontos akzeptierst du die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy>.",

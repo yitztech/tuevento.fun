@@ -5,6 +5,7 @@ import {
   accountLimits,
   postcardFonts,
   postcardLimits,
+  postcardShadowLimits,
   themes,
   type Event,
   type Postcard,
@@ -21,15 +22,11 @@ import {
   type PostcardPhoto,
 } from "./postcard-canvas";
 
+/** Paleta de la postal: neutros, cálidos, fríos y acentos. Cualquier otro color se elige con el selector. */
 const palette = [
-  { color: "#ffffff", label: "postcard.colorNames.white" },
-  { color: "#1f2a37", label: "postcard.colorNames.ink" },
-  { color: "#1d4e6b", label: "postcard.colorNames.blue" },
-  { color: "#c9a24b", label: "postcard.colorNames.gold" },
-  { color: "#e8a1a6", label: "postcard.colorNames.rose" },
-  { color: "#a8c3a0", label: "postcard.colorNames.sage" },
-  { color: "#f4e9d8", label: "postcard.colorNames.cream" },
-  { color: "#2b2d42", label: "postcard.colorNames.night" },
+  "#ffffff", "#f8f5f0", "#f4e9d8", "#e6e0d4", "#bfbfbf", "#6b6b6b", "#1f2a37", "#000000",
+  "#c9a24b", "#d9b967", "#b07a3b", "#e8a1a6", "#d46a6a", "#b03a48", "#a8c3a0", "#3d7a5a",
+  "#1d4e6b", "#2b2d42", "#3a5f8a", "#7fb3d5", "#8e7cc3", "#ffd166", "#ff7f50", "#06d6a0",
 ] as const;
 
 const alignLabels = {
@@ -57,6 +54,34 @@ function readAsDataUrl(file: File) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+/** Muestras de la paleta más el selector libre de color (hexadecimal). */
+function ColorChoices({ value, onPick }: { value: string; onPick: (color: string) => void }) {
+  return (
+    <div className="postcard-swatches">
+      {palette.map((color) => (
+        <button
+          key={color}
+          type="button"
+          className="postcard-swatch"
+          style={{ background: color }}
+          aria-label={tr("postcard.colorSwatch", { color })}
+          aria-pressed={value === color}
+          onClick={() => onPick(color)}
+        />
+      ))}
+      <label className="postcard-custom-color">
+        <input
+          type="color"
+          value={value}
+          aria-label={tr("postcard.customColor")}
+          onChange={(e) => onPick(e.target.value)}
+        />
+        <span>{tr("postcard.customColor")}</span>
+      </label>
+    </div>
+  );
 }
 
 export function PostcardEditor() {
@@ -205,6 +230,7 @@ export function PostcardEditor() {
               onSelect={setSelected}
               onChange={setDesign}
             />
+            <p className="postcard-hint">{tr("postcard.moveHint")}</p>
             {selected && <p className="postcard-hint">{tr("postcard.layerHint")}</p>}
             <div className="postcard-save">
               <span>{dirty ? tr("postcard.unsaved") : tr("postcard.savedState")}</span>
@@ -235,19 +261,10 @@ export function PostcardEditor() {
                 ))}
               </div>
               <h3>{tr("postcard.colors")}</h3>
-              <div className="postcard-swatches">
-                {palette.map((item) => (
-                  <button
-                    key={item.color}
-                    type="button"
-                    className="postcard-swatch"
-                    style={{ background: item.color }}
-                    aria-label={tr(item.label)}
-                    aria-pressed={design.background.type === "color" && design.background.color === item.color}
-                    onClick={() => setDesign({ ...design, background: { type: "color", color: item.color } })}
-                  />
-                ))}
-              </div>
+              <ColorChoices
+                value={design.background.type === "color" ? design.background.color : "#ffffff"}
+                onPick={(color) => setDesign({ ...design, background: { type: "color", color } })}
+              />
               <h3>{tr("postcard.myPhotos")}</h3>
               <div className="postcard-photo-list">
                 {photos.map((photo) => (
@@ -339,20 +356,64 @@ export function PostcardEditor() {
                   </Field>
                   <div className="postcard-field-row">
                     <span>{tr("postcard.color")}</span>
-                    <div className="postcard-swatches">
-                      {palette.map((item) => (
-                        <button
-                          key={item.color}
-                          type="button"
-                          className="postcard-swatch"
-                          style={{ background: item.color }}
-                          aria-label={tr(item.label)}
-                          aria-pressed={selectedText.color === item.color}
-                          onClick={() => updateText({ color: item.color })}
-                        />
-                      ))}
-                    </div>
+                    <ColorChoices value={selectedText.color} onPick={(color) => updateText({ color })} />
                   </div>
+                  <div className="postcard-field-row">
+                    <span>{tr("postcard.shadow")}</span>
+                    <button
+                      className="button secondary"
+                      type="button"
+                      aria-pressed={selectedText.shadow !== undefined}
+                      onClick={() =>
+                        updateText({
+                          shadow: selectedText.shadow ? undefined : { color: "#000000", blur: 2, x: 0.5, y: 0.5 },
+                        })
+                      }
+                    >
+                      {selectedText.shadow ? tr("postcard.shadowOn") : tr("postcard.shadowOff")}
+                    </button>
+                  </div>
+                  {selectedText.shadow && (
+                    <>
+                      <div className="postcard-field-row">
+                        <span>{tr("postcard.shadowColor")}</span>
+                        <ColorChoices
+                          value={selectedText.shadow.color}
+                          onPick={(color) => updateText({ shadow: { ...selectedText.shadow!, color } })}
+                        />
+                      </div>
+                      <Field label={tr("postcard.shadowBlur")}>
+                        <input
+                          type="range"
+                          min={0}
+                          max={postcardShadowLimits.blur}
+                          step={0.5}
+                          value={selectedText.shadow.blur}
+                          onChange={(e) => updateText({ shadow: { ...selectedText.shadow!, blur: Number(e.target.value) } })}
+                        />
+                      </Field>
+                      <Field label={tr("postcard.shadowOffsetX")}>
+                        <input
+                          type="range"
+                          min={-postcardShadowLimits.offset}
+                          max={postcardShadowLimits.offset}
+                          step={0.5}
+                          value={selectedText.shadow.x}
+                          onChange={(e) => updateText({ shadow: { ...selectedText.shadow!, x: Number(e.target.value) } })}
+                        />
+                      </Field>
+                      <Field label={tr("postcard.shadowOffsetY")}>
+                        <input
+                          type="range"
+                          min={-postcardShadowLimits.offset}
+                          max={postcardShadowLimits.offset}
+                          step={0.5}
+                          value={selectedText.shadow.y}
+                          onChange={(e) => updateText({ shadow: { ...selectedText.shadow!, y: Number(e.target.value) } })}
+                        />
+                      </Field>
+                    </>
+                  )}
                   <div className="postcard-field-row">
                     <span>{tr("postcard.align")}</span>
                     <div className="postcard-align">

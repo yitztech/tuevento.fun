@@ -527,16 +527,16 @@
     "noVersions": "No earlier versions yet.",
     "latest": "current",
     "restore": "Restore",
-    "colorNames": {
-      "white": "White",
-      "ink": "Ink",
-      "blue": "Blue",
-      "gold": "Gold",
-      "rose": "Rose",
-      "sage": "Sage",
-      "cream": "Cream",
-      "night": "Night"
-    }
+    "colorSwatch": "Color {{color}}",
+    "customColor": "Other color",
+    "moveHint": "Drag a text or a photo to move it around the postcard.",
+    "shadow": "Shadow",
+    "shadowOn": "With shadow",
+    "shadowOff": "No shadow",
+    "shadowColor": "Shadow color",
+    "shadowBlur": "Blur",
+    "shadowOffsetX": "Horizontal offset",
+    "shadowOffsetY": "Vertical offset"
   },
   "legal": {
     "acceptOnRegister": "By creating your account you accept the <terms>Terms of use</terms> and the <privacy>Privacy policy</privacy>.",

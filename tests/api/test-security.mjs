@@ -100,6 +100,24 @@ try {
     assert.equal((await b.raw(`/events/slug-available?slug=seg-b-${unique}`)).status, 200);
   });
 
+  await suite("Postal: el color y la sombra del texto solo admiten valores numéricos o hexadecimales, nunca CSS", async () => {
+    const ruta = `/events/${evento.id}/postcard`;
+    const base = { background: { type: "color", color: "#ffffff" }, photos: [], texts: [] };
+    const texto = { content: "Hola", font: "manrope", size: 64, color: "#112233", align: "center", x: 10, y: 10, width: 80 };
+    const maliciosos = [
+      { ...texto, color: "red;background:url(javascript:alert(1))" },
+      { ...texto, shadow: { color: "#000000", blur: "2", x: 0, y: 0 } },
+      { ...texto, shadow: { color: "expression(alert(1))", blur: 2, x: 0, y: 0 } },
+      { ...texto, shadow: { color: "#000000", blur: 1e9, x: 0, y: 0 } },
+    ];
+    for (const entrada of maliciosos) {
+      await a.call(ruta, "PUT", { ...base, texts: [entrada] }, 400);
+    }
+    // Un campo desconocido no da error: se descarta y no llega a guardarse
+    const guardada = await a.call(ruta, "PUT", { ...base, texts: [{ ...texto, shadow: { color: "#000000", blur: 2, x: 0, y: 0, extra: "x" } }] });
+    assert.equal("extra" in guardada.design.texts[0].shadow, false);
+  });
+
   await suite("Postal: sin sesión o de otra cuenta responde 401 o 404, y las fotos sin id no existen", async () => {
     const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
     const ruta = `/events/${evento.id}/postcard`;

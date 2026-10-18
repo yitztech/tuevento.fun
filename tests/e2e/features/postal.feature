@@ -5,7 +5,7 @@ Característica: Postal editable por evento
   Escenario: Diseñar la postal y verla en la invitación
     Dado que tengo un evento con una invitación
     Y abro el editor de la postal del evento
-    Cuando elijo el fondo de color "Azul"
+    Cuando elijo el fondo de color "#1d4e6b"
     Y añado el texto "Feliz cumple"
     Y guardo la postal
     Entonces veo el aviso "Postal guardada."
