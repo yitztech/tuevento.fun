@@ -270,7 +270,12 @@
     "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB.",
     "postcardPhotoLimit": "This postcard already has the maximum number of photos.",
     "postcardPhotoNotFound": "A photo in this postcard doesn’t exist in this event.",
-    "postcardVersionNotFound": "We couldn’t find that postcard version."
+    "postcardVersionNotFound": "We couldn’t find that postcard version.",
+    "eventSlugTaken": "Another event already uses that address. Choose a different one.",
+    "eventIsntAvailable": "This event isn't available.",
+    "eventCancelled": "This event is cancelled.",
+    "openInvitationFull": "This link has reached its maximum number of registrations.",
+    "eventPasswordIncorrect": "The password is not correct."
   },
   "events": {
     "actions": "Actions",
@@ -390,7 +395,21 @@
     "wereSoGladYoure": "We're so glad you're here.",
     "whereMeeting": "Where are we meeting?",
     "yesDelete": "Yes, delete",
-    "youreInvitedEvent": "You're invited: {{event}}"
+    "youreInvitedEvent": "You're invited: {{event}}",
+    "publicAddress": "Public address (optional)",
+    "publicAddressHint": "If you fill it in, anyone with this link can see the event and its postcard: {{url}}. Leave it empty to keep it unpublished.",
+    "cancelEvent": "Cancel the event",
+    "cancelEventHint": "Guests will be told and can no longer reply.",
+    "cancelledBadge": "Cancelled",
+    "openLinkNoPeople": "This invitation has no people: each guest enters their own details from the link.",
+    "openLinkType": "Open link",
+    "openLinkTypeHint": "One link for anyone; each guest enters their details.",
+    "publicAddressTaken": "Another event already uses that address.",
+    "publicPassword": "Password to view the public page (optional)",
+    "publicPasswordHint": "Anyone who wants to see the page must enter it. Leave empty for none.",
+    "publicPasswordKept": "A password is saved. Leave empty to keep it.",
+    "removePublicPassword": "Remove the public page password",
+    "viaOpenLink": "via open link"
   },
   "landing": {
     "adultsChildrenOnePerson": "Adults and children, one person at a time",
@@ -543,6 +562,30 @@
       "ignore": "If you didn't ask for this, you can ignore this email: your password won't change.",
       "intro": "We received a request to reset the password for your account. Use the button below to choose a new one.",
       "subject": "Reset your TuEventoFun password"
+    },
+    "eventCancelled": {
+      "intro": "We're sorry to tell you {{event}} has been cancelled.",
+      "subject": "Cancelled: {{event}}"
+    },
+    "eventChanged": {
+      "dateChanged": "the date and time are now {{date}}",
+      "intro": "The host has changed {{event}}: {{changes}}. Please check your invitation.",
+      "placeChanged": "the venue is now {{location}}",
+      "subject": "Changes to {{event}}"
+    },
+    "footer": "You receive this email because you have an invitation on TuEventoFun.",
+    "guestReply": {
+      "change": "You can change your reply at any time from your invitation link.",
+      "intro": "We've saved your reply to {{event}}:",
+      "member": "{{name}}: {{status}}",
+      "subject": "We've saved your reply to {{event}}"
+    },
+    "openEvent": "View the event",
+    "openInvitation": "Open my invitation",
+    "ownerReply": {
+      "counts": "Confirmed: {{accepted}}. Not attending: {{declined}}. Waiting: {{pending}}.",
+      "intro": "{{guest}} replied to {{event}}.",
+      "subject": "{{guest}} replied to {{event}}"
     }
   },
   "mobileConnect": {
@@ -614,7 +657,8 @@
     "viewLocation": "View location",
     "withLove": "With love,",
     "wouldntSameWithout": "It wouldn't be the same without you.",
-    "yesIllThere": "Yes, I'll be there!"
+    "yesIllThere": "Yes, I'll be there!",
+    "eventCancelled": "This event has been cancelled; replies are closed."
   },
   "status": {
     "accepted": "Attending",
@@ -719,7 +763,10 @@
     "useLeast10Characters": "Use at least 10 characters.",
     "useLettersSpaces": "Use only letters, spaces, apostrophes or hyphens.",
     "useNumbersSpaces": "Use numbers, spaces or +.",
-    "useHexColor": "Choose a color from the palette."
+    "useHexColor": "Choose a color from the palette.",
+    "maximum60Characters": "Maximum 60 characters.",
+    "eventSlugFormat": "Use only lowercase letters, numbers and hyphens between words, 3 to 60 characters.",
+    "openInvitationNoMembers": "An open invitation has no people: each guest adds their own."
   },
   "pricing": {
     "title": "Pricing",
@@ -731,5 +778,38 @@
     "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
     "back": "Back to pricing",
     "buy": "Buy"
+  },
+  "publicEvent": {
+    "opening": "Opening the event…",
+    "unavailable": "We couldn't find this event",
+    "hostedBy": "Hosted by",
+    "inviteHint": "Have an invitation? Open the private link you were sent to confirm your attendance.",
+    "cancelled": "This event has been cancelled.",
+    "lockedText": "The host has protected this page. Enter the password to see the details.",
+    "lockedTitle": "Protected event",
+    "passwordLabel": "Password",
+    "unlock": "View the event"
+  },
+  "calendar": {
+    "downloadIcs": "Download calendar (.ics)",
+    "googleCalendar": "Add to Google Calendar"
+  },
+  "registration": {
+    "addPerson": "Add another person",
+    "email": "Email (optional)",
+    "full": "This link can't take any more registrations.",
+    "intro": "Enter your details and those of the people coming with you. You can change your reply later.",
+    "name": "Your name",
+    "people": "People",
+    "personKind": "Type",
+    "personName": "Name",
+    "personNumber": "Person {{number}}",
+    "personStatus": "Reply",
+    "phone": "Phone (optional)",
+    "removePerson": "Remove",
+    "saved": "Your reply is saved.",
+    "sending": "Sending…",
+    "submit": "Send my reply",
+    "title": "Register for the event"
   }
 }

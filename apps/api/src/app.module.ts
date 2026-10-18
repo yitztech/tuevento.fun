@@ -7,6 +7,7 @@ import { DemoService } from "./demo";
 import { PublicController, OrganizerController } from "./controllers";
 import { ListmonkService } from "./listmonk";
 import { MailService } from "./mail";
+import { NoticeService } from "./notices";
 import { PostcardsService } from "./postcards";
 @Module({
   controllers: [PlatformController, PublicController, OrganizerController],
@@ -19,6 +20,7 @@ import { PostcardsService } from "./postcards";
     DemoService,
     ListmonkService,
     MailService,
+    NoticeService,
     PostcardsService,
   ],
 })

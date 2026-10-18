@@ -169,7 +169,10 @@ export const accountLimits = {
   phone: 20,
   password: 128,
   postcardText: 200,
+  eventSlug: 60,
 } as const;
+/** Dirección pública de un evento: minúsculas, números y guiones entre palabras. */
+export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const email = z
   .email("validation.enterValidEmailAddress")
   .max(accountLimits.email, "validation.maximum254Characters")
@@ -266,6 +269,24 @@ export const eventSchema = z.object({
   location: z.string().trim().min(3, "validation.enterEventLocation").max(300),
   theme: z.enum(themeIds),
   archived: z.boolean().default(false),
+  /** Evento cancelado: sigue visible con aviso, y se avisa a los invitados. */
+  cancelled: z.boolean().default(false),
+  /** Contraseña para ver la página pública: undefined la conserva, "" la quita. */
+  publicPassword: z
+    .string()
+    .max(accountLimits.password, "validation.maximum128Characters")
+    .optional(),
+  /** Dirección pública (/e/…); vacía si el evento no tiene. */
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(accountLimits.eventSlug, "validation.maximum60Characters")
+    .refine(
+      (v) => v === "" || (v.length >= 3 && eventSlugPattern.test(v)),
+      "validation.eventSlugFormat",
+    )
+    .default(""),
 });
 export const memberSchema = z.object({
   id: z.uuid().optional(),
@@ -273,39 +294,45 @@ export const memberSchema = z.object({
   kind: z.enum(["adult", "child"]),
   notes: z.string().trim().max(500).default(""),
 });
-export const invitationSchema = z
-  .object({
-    name: z.string().trim().max(120).default(""),
-    email: optionalEmail,
-    phone: optionalPhone,
-    notes: z.string().trim().max(1000).default(""),
+/** Límites de la invitación genérica: registros por enlace y personas por registro. */
+export const openInvitationLimits = { registrations: 200, members: 20 } as const;
+const invitationFields = z.object({
+  name: z.string().trim().max(120).default(""),
+  email: optionalEmail,
+  phone: optionalPhone,
+  notes: z.string().trim().max(1000).default(""),
+  kind: z.enum(["individual", "family", "open"]),
+  members: z.array(memberSchema).max(50),
+});
+type InvitationFields = z.infer<typeof invitationFields>;
+/** Reglas comunes: hace falta un nombre o contacto, y un individual lleva exactamente una persona. */
+function checkInvitation(v: InvitationFields, ctx: z.RefinementCtx) {
+  if (!v.name && !v.email && !v.phone)
+    ctx.addIssue({ code: "custom", path: ["name"], message: "validation.enterNamePhoneNumber" });
+  if (v.kind === "individual" && v.members.length !== 1)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.individualInvitationMustHave" });
+  const ids = v.members.map((m) => m.id).filter(Boolean);
+  if (new Set(ids).size !== ids.length)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.thereDuplicateMembers" });
+}
+/** Invitación del organizador: personalizada (con personas) o genérica (sin personas; las pone cada invitado). */
+export const invitationSchema = invitationFields.superRefine((v, ctx) => {
+  checkInvitation(v, ctx);
+  if (v.kind !== "open" && v.members.length === 0)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.addLeastOnePerson" });
+  if (v.kind === "open" && v.members.length > 0)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.openInvitationNoMembers" });
+});
+/** Lo que entrega el invitado en una invitación genérica: sus propias personas y estados. */
+export const registrationSchema = invitationFields
+  .extend({
     kind: z.enum(["individual", "family"]),
     members: z
-      .array(memberSchema)
+      .array(memberSchema.extend({ status: statusSchema.default("pending") }))
       .min(1, "validation.addLeastOnePerson")
-      .max(50),
+      .max(openInvitationLimits.members),
   })
-  .superRefine((v, ctx) => {
-    if (!v.name && !v.email && !v.phone)
-      ctx.addIssue({
-        code: "custom",
-        path: ["name"],
-        message: "validation.enterNamePhoneNumber",
-      });
-    if (v.kind === "individual" && v.members.length !== 1)
-      ctx.addIssue({
-        code: "custom",
-        path: ["members"],
-        message: "validation.individualInvitationMustHave",
-      });
-    const ids = v.members.map((m) => m.id).filter(Boolean);
-    if (new Set(ids).size !== ids.length)
-      ctx.addIssue({
-        code: "custom",
-        path: ["members"],
-        message: "validation.thereDuplicateMembers",
-      });
-  });
+  .superRefine(checkInvitation);
 export const rsvpSchema = z
   .object({
     members: z
@@ -319,6 +346,7 @@ export const rsvpSchema = z
   );
 export type EventInput = z.infer<typeof eventSchema>;
 export type InvitationInput = z.infer<typeof invitationSchema>;
+export type RegistrationInput = z.infer<typeof registrationSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type User = {
@@ -342,10 +370,28 @@ export type Metrics = {
   declined: number;
   pending: number;
 };
-export type Event = EventInput & {
+export type Event = Omit<EventInput, "publicPassword"> & {
   id: string;
   createdAt: string;
   metrics: Metrics;
+  /** Si la página pública pide contraseña (la contraseña nunca se devuelve). */
+  hasPublicPassword: boolean;
+};
+/** Evento visto desde su dirección pública: sin invitados ni respuestas. */
+/** Página pública bloqueada por contraseña: no revela nada del evento. */
+export type LockedPublicEvent = { locked: true };
+export type PublicEvent = {
+  locked: false;
+  title: string;
+  cancelled: boolean;
+  description: string;
+  date: string;
+  timeZone: string;
+  location: string;
+  theme: EventInput["theme"];
+  host: Pick<User, "firstName" | "lastName" | "avatar">;
+  /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
+  postcard: Pick<Postcard, "design" | "photos">;
 };
 export type Member = {
   id: string;
@@ -361,8 +407,10 @@ export type Invitation = {
   email: string;
   phone: string;
   notes: string;
-  kind: "individual" | "family";
+  kind: "individual" | "family" | "open";
   token: string;
+  /** Invitación genérica de la que nace este registro, si lo hay. */
+  parentId: string | null;
   members: Member[];
   createdAt: string;
 };
@@ -377,11 +425,13 @@ export type Notification = {
 };
 export type PublicInvitation = {
   name: string;
-  kind: "individual" | "family";
+  kind: "individual" | "family" | "open";
   event: Pick<
     Event,
-    "title" | "description" | "date" | "timeZone" | "location" | "theme"
+    "title" | "description" | "date" | "timeZone" | "location" | "theme" | "cancelled"
   >;
+  /** Solo en genéricas: ya hay tantos registros como permite el enlace. */
+  registrationsFull: boolean;
   host: Pick<User, "firstName" | "lastName" | "avatar">;
   members: Pick<Member, "id" | "name" | "kind" | "status">[];
   /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
@@ -417,6 +467,7 @@ export const statusLabels = {
 } as const satisfies Record<Status, MessageKey>;
 
 export * from "./i18n";
+export * from "./calendar";
 export * from "./pricing";
 
 export const clientPlatformSchema = z.enum(["web", "android", "ios"]);

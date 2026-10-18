@@ -270,7 +270,12 @@
     "usePngJpgWebp": "Utilise une image PNG, JPG ou WebP de 2 Mo maximum.",
     "postcardPhotoLimit": "Cette carte postale a déjà le nombre maximal de photos.",
     "postcardPhotoNotFound": "Une photo de cette carte n’existe pas dans cet événement.",
-    "postcardVersionNotFound": "Nous n’avons pas trouvé cette version de la carte."
+    "postcardVersionNotFound": "Nous n’avons pas trouvé cette version de la carte.",
+    "eventSlugTaken": "Cette adresse est déjà utilisée par un autre événement. Choisis-en une autre.",
+    "eventIsntAvailable": "Cet événement n’est pas disponible.",
+    "eventCancelled": "Cet événement est annulé.",
+    "openInvitationFull": "Ce lien a atteint le nombre maximal d’inscriptions.",
+    "eventPasswordIncorrect": "Le mot de passe n’est pas correct."
   },
   "events": {
     "actions": "Actions",
@@ -390,7 +395,21 @@
     "wereSoGladYoure": "Quel bonheur de vous avoir ici.",
     "whereMeeting": "Où se retrouve-t-on ?",
     "yesDelete": "Oui, supprimer",
-    "youreInvitedEvent": "Tu es invité : {{event}}"
+    "youreInvitedEvent": "Tu es invité : {{event}}",
+    "publicAddress": "Adresse publique (facultative)",
+    "publicAddressHint": "Si vous la renseignez, toute personne disposant de ce lien verra l’événement et sa carte postale : {{url}}. Laissez-la vide pour ne rien publier.",
+    "cancelEvent": "Annuler l’événement",
+    "cancelEventHint": "Les invités seront prévenus et ne pourront plus répondre.",
+    "cancelledBadge": "Annulé",
+    "openLinkNoPeople": "Cette invitation ne contient personne : chaque invité saisit ses propres données depuis le lien.",
+    "openLinkType": "Lien ouvert",
+    "openLinkTypeHint": "Un lien pour qui tu veux ; chaque invité saisit ses données.",
+    "publicAddressTaken": "Cette adresse est déjà utilisée par un autre événement.",
+    "publicPassword": "Mot de passe pour voir la page publique (facultatif)",
+    "publicPasswordHint": "Qui veut voir la page devra le saisir. Laisse vide pour n’en utiliser aucun.",
+    "publicPasswordKept": "Un mot de passe est enregistré. Laisse vide pour le conserver.",
+    "removePublicPassword": "Retirer le mot de passe de la page publique",
+    "viaOpenLink": "via le lien ouvert"
   },
   "landing": {
     "adultsChildrenOnePerson": "Adultes et enfants, personne par personne",
@@ -543,6 +562,30 @@
       "ignore": "Si tu n’es pas à l’origine de cette demande, ignore cet e-mail : ton mot de passe ne changera pas.",
       "intro": "Nous avons reçu une demande de réinitialisation du mot de passe de ton compte. Utilise le bouton ci-dessous pour en choisir un nouveau.",
       "subject": "Réinitialise ton mot de passe TuEventoFun"
+    },
+    "eventCancelled": {
+      "intro": "Nous sommes désolés de t’annoncer que {{event}} a été annulé.",
+      "subject": "Annulé : {{event}}"
+    },
+    "eventChanged": {
+      "dateChanged": "la date et l’heure sont maintenant {{date}}",
+      "intro": "L’organisateur a modifié {{event}} : {{changes}}. Vérifie ton invitation.",
+      "placeChanged": "le lieu est maintenant {{location}}",
+      "subject": "Modifications de {{event}}"
+    },
+    "footer": "Tu reçois cet e-mail parce que tu as une invitation sur TuEventoFun.",
+    "guestReply": {
+      "change": "Tu peux modifier ta réponse à tout moment depuis le lien de ton invitation.",
+      "intro": "Nous avons enregistré ta réponse à {{event}} :",
+      "member": "{{name}} : {{status}}",
+      "subject": "Nous avons enregistré ta réponse à {{event}}"
+    },
+    "openEvent": "Voir l’événement",
+    "openInvitation": "Ouvrir mon invitation",
+    "ownerReply": {
+      "counts": "Confirmés : {{accepted}}. Absents : {{declined}}. En attente : {{pending}}.",
+      "intro": "{{guest}} a répondu à {{event}}.",
+      "subject": "{{guest}} a répondu à {{event}}"
     }
   },
   "mobileConnect": {
@@ -614,7 +657,8 @@
     "viewLocation": "Voir le lieu",
     "withLove": "Avec toute notre affection,",
     "wouldntSameWithout": "Sans toi, ce ne serait pas pareil.",
-    "yesIllThere": "Oui, je serai là !"
+    "yesIllThere": "Oui, je serai là !",
+    "eventCancelled": "Cet événement a été annulé ; les réponses sont fermées."
   },
   "status": {
     "accepted": "Présents",
@@ -719,7 +763,10 @@
     "useLeast10Characters": "Utilise au moins 10 caractères.",
     "useLettersSpaces": "Utilise uniquement des lettres, des espaces, des apostrophes ou des tirets.",
     "useNumbersSpaces": "Utilise des chiffres, des espaces ou +.",
-    "useHexColor": "Choisis une couleur dans la palette."
+    "useHexColor": "Choisis une couleur dans la palette.",
+    "maximum60Characters": "60 caractères maximum.",
+    "eventSlugFormat": "Utilisez uniquement des lettres minuscules sans accents, des chiffres et des tirets entre les mots, de 3 à 60 caractères.",
+    "openInvitationNoMembers": "Une invitation ouverte ne contient personne : chaque invité ajoute les siens."
   },
   "pricing": {
     "title": "Tarifs",
@@ -731,5 +778,38 @@
     "paymentPending": "Le paiement n’est pas encore disponible. Une fois en place, tu pourras payer ton événement ici.",
     "back": "Retour aux tarifs",
     "buy": "Acheter"
+  },
+  "publicEvent": {
+    "opening": "Ouverture de l’événement…",
+    "unavailable": "Nous n’avons pas trouvé cet événement",
+    "hostedBy": "Organisé par",
+    "inviteHint": "Tu as une invitation ? Ouvre le lien privé qu’on t’a envoyé pour confirmer ta présence.",
+    "cancelled": "Cet événement a été annulé.",
+    "lockedText": "L’organisateur a protégé cette page. Saisis le mot de passe pour voir les détails.",
+    "lockedTitle": "Événement protégé",
+    "passwordLabel": "Mot de passe",
+    "unlock": "Voir l’événement"
+  },
+  "calendar": {
+    "downloadIcs": "Télécharger le calendrier (.ics)",
+    "googleCalendar": "Ajouter à Google Agenda"
+  },
+  "registration": {
+    "addPerson": "Ajouter une autre personne",
+    "email": "E-mail (facultatif)",
+    "full": "Ce lien n’accepte plus d’inscriptions.",
+    "intro": "Saisis tes coordonnées et celles des personnes qui viennent avec toi. Tu pourras modifier ta réponse ensuite.",
+    "name": "Ton nom",
+    "people": "Personnes",
+    "personKind": "Type",
+    "personName": "Nom",
+    "personNumber": "Personne {{number}}",
+    "personStatus": "Réponse",
+    "phone": "Téléphone (facultatif)",
+    "removePerson": "Retirer",
+    "saved": "Ta réponse est enregistrée.",
+    "sending": "Envoi…",
+    "submit": "Envoyer ma réponse",
+    "title": "Inscris-toi à l’événement"
   }
 }

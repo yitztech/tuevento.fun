@@ -49,8 +49,12 @@ fs.mkdirSync(artifacts, { recursive: true });
       return;
     await page.evaluate(async () => {
       await document.fonts.ready;
+      // Con loading="lazy", las imágenes fuera de pantalla no se cargan y decode() no termina
       await Promise.all(
-        Array.from(document.images).map((i) => i.decode().catch(() => {})),
+        Array.from(document.images).map((i) => {
+          i.loading = "eager";
+          return i.decode().catch(() => {});
+        }),
       );
     });
     overflow.push({
