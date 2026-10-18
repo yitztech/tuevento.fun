@@ -32,6 +32,7 @@ import {
   type User,
 } from "@tuevento/contracts";
 import { requestLocale } from "./request-locale";
+import { hashPassword } from "./password";
 import { MailService } from "./mail";
 import { passwordChangedMail, passwordResetMail } from "./mail-templates";
 import { siteUrl } from "./locale-env";
@@ -84,10 +85,8 @@ export class AuthService {
     private db: Database,
     private mail: MailService,
   ) {}
-  async passwordHash(password: string) {
-    const salt = randomBytes(16).toString("hex");
-    const key = (await scrypt(password, salt, 64)) as Buffer;
-    return `${salt}:${key.toString("hex")}`;
+  passwordHash(password: string) {
+    return hashPassword(password);
   }
   async register(data: RegisterInput, locale: Locale) {
     const passwordHash = await this.passwordHash(data.password);

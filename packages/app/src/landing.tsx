@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { themes, type MessageKey, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
+import { themeImageSrcSet } from "./theme-images";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { LegalLinks, legalPath } from "./legal";
 import { pricingPath } from "./pricing";
@@ -284,6 +285,8 @@ export function LandingPage() {
                   >
                     <img
                       src={`/images/${item.image}`}
+                      srcSet={themeImageSrcSet(item)}
+                      sizes="64px"
                       alt=""
                       loading="lazy"
                       width="64"

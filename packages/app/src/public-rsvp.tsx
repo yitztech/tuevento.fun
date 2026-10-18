@@ -18,7 +18,11 @@ import {
   type Status,
 } from "@tuevento/contracts";
 import { useApp, errorText, dateText } from "./context";
-import { Logo, InvitationArt, Avatar, ErrorBox } from "./components";
+import { Logo, Avatar, ErrorBox } from "./components";
+import { PostcardCanvas } from "./postcard-canvas";
+import { CalendarLinks } from "./calendar-links";
+import { OpenRegistration } from "./open-registration";
+import { googleCalendarUrl, mapsSearchUrl } from "@tuevento/contracts";
 export function PublicRsvp() {
   const { token } = useParams(),
     { api } = useApp(),
@@ -94,11 +98,7 @@ export function PublicRsvp() {
       )}
       <main className="rsvp-layout">
         <section className="public-art">
-          <InvitationArt
-            event={event}
-            name={tr("rsvp.forName", { name: invitation.name })}
-            large
-          />
+          <PostcardCanvas design={invitation.postcard.design} photos={invitation.postcard.photos} />
           <div className="host-signature">
             <Avatar user={invitation.host} />
             <div>
@@ -122,6 +122,7 @@ export function PublicRsvp() {
               components={{ strong: <strong /> }}
             />
           </p>
+          <h2 className="rsvp-event-title">{event.title}</h2>
           <div className="rsvp-details">
             <div>
               <CalendarDays size={21} />
@@ -151,7 +152,7 @@ export function PublicRsvp() {
                 <a
                   target="_blank"
                   rel="noreferrer"
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  href={mapsSearchUrl(event.location)}
                 >
                   {tr("rsvp.viewLocation")}
                   <ExternalLink size={13} />
@@ -162,6 +163,28 @@ export function PublicRsvp() {
           {event.description && (
             <p className="host-message">{event.description}</p>
           )}
+          <CalendarLinks
+            icsHref={`/api/invitations/${token}/calendar.ics`}
+            googleHref={googleCalendarUrl({
+              title: event.title,
+              description: event.description,
+              start: new Date(event.date),
+              location: event.location,
+            })}
+          />
+          {event.cancelled ? (
+            <p className="event-cancelled-notice" role="status">
+              {tr("rsvp.eventCancelled")}
+            </p>
+          ) : invitation.kind === "open" ? (
+            invitation.registrationsFull ? (
+              <p className="event-cancelled-notice" role="status">
+                {tr("registration.full")}
+              </p>
+            ) : (
+              <OpenRegistration token={token!} />
+            )
+          ) : (
           <div className="rsvp-form">
             <h2>{tr("rsvp.joinUs")}</h2>
             <p>
@@ -264,6 +287,7 @@ export function PublicRsvp() {
               {tr("rsvp.noAccountNeededJust")}
             </small>
           </div>
+          )}
         </section>
       </main>
       <section className="public-cta">

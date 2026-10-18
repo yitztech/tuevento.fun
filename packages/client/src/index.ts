@@ -5,11 +5,17 @@ import type {
   Invitation,
   InvitationInput,
   Notification,
+  LockedPublicEvent,
+  PublicEvent,
+  RegistrationInput,
   PublicInvitation,
   RegisterInput,
   ProfileInput,
   Status,
   Locale,
+  Postcard,
+  PostcardDesign,
+  PostcardVersion,
 } from "@tuevento/contracts";
 export class ApiError extends Error {
   constructor(
@@ -116,10 +122,32 @@ export class EventApi {
     );
   deleteInvitation = (eventId: string, id: string) =>
     this.request(`/events/${eventId}/invitations/${id}`, "DELETE");
+  postcard = (eventId: string) =>
+    this.request<Postcard>(`/events/${eventId}/postcard`);
+  savePostcard = (eventId: string, design: PostcardDesign) =>
+    this.request<Postcard>(`/events/${eventId}/postcard`, "PUT", design);
+  postcardVersions = (eventId: string) =>
+    this.request<PostcardVersion[]>(`/events/${eventId}/postcard/versions`);
+  restorePostcard = (eventId: string, versionId: string) =>
+    this.request<Postcard>(`/events/${eventId}/postcard/versions/${versionId}/restore`, "POST", {});
+  uploadPostcardPhoto = (eventId: string, dataUrl: string) =>
+    this.request<{ id: string; url: string }>(`/events/${eventId}/postcard/images`, "POST", { dataUrl });
+  removePostcardPhoto = (eventId: string, imageId: string) =>
+    this.request<Postcard>(`/events/${eventId}/postcard/images/${imageId}`, "DELETE");
   notifications = () => this.request<Notification[]>("/notifications");
   readNotifications = () => this.request("/notifications/read", "POST", {});
   publicInvitation = (token: string) =>
     this.request<PublicInvitation>(`/invitations/${token}`);
+  publicEvent = (slug: string) =>
+    this.request<PublicEvent | LockedPublicEvent>(`/public/events/${slug}`);
+  unlockEvent = (slug: string, password: string) =>
+    this.request<{ ok: boolean }>(`/public/events/${slug}/unlock`, "POST", { password });
+  slugAvailable = (slug: string, eventId?: string) => {
+    const query = new URLSearchParams({ slug, ...(eventId ? { eventId } : {}) });
+    return this.request<{ available: boolean }>(`/events/slug-available?${query}`);
+  };
+  registerInvitation = (token: string, data: RegistrationInput) =>
+    this.request<{ token: string }>(`/invitations/${token}/register`, "POST", data);
   rsvp = (token: string, members: { id: string; status: Status }[]) =>
     this.request<PublicInvitation>(`/invitations/${token}/rsvp`, "POST", {
       members,

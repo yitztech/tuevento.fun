@@ -9,6 +9,16 @@ export const themeIds = [
   "minimal",
   "floral",
   "kids",
+  "winter",
+  "spring",
+  "autumn",
+  "silver",
+  "copper",
+  "disco",
+  "starlight",
+  "sand",
+  "wildflower",
+  "pastel",
 ] as const;
 export const statusSchema = z.enum(["accepted", "declined", "pending"]);
 export type Status = z.infer<typeof statusSchema>;
@@ -19,6 +29,7 @@ export const themes = [
     description: "themes.gold.description",
     image: "gold.jpg",
     color: "#d9b967",
+    previewTitle: "dashboard.nightRemember",
   },
   {
     id: "neon",
@@ -26,6 +37,7 @@ export const themes = [
     description: "themes.neon.description",
     image: "neon.jpg",
     color: "#b3a0ec",
+    previewTitle: "dashboard.tonightOurs",
   },
   {
     id: "tropical",
@@ -33,6 +45,7 @@ export const themes = [
     description: "themes.tropical.description",
     image: "tropical.jpg",
     color: "#92a2c8",
+    previewTitle: "dashboard.underSameSun",
   },
   {
     id: "minimal",
@@ -40,6 +53,7 @@ export const themes = [
     description: "themes.minimal.description",
     image: "minimal.jpg",
     color: "#bfccdc",
+    previewTitle: "dashboard.celebrateSimpleThings",
   },
   {
     id: "floral",
@@ -47,6 +61,7 @@ export const themes = [
     description: "themes.floral.description",
     image: "floral.jpg",
     color: "#edb7c9",
+    previewTitle: "dashboard.doForever",
   },
   {
     id: "kids",
@@ -54,6 +69,97 @@ export const themes = [
     description: "themes.kids.description",
     image: "kids.jpg",
     color: "#f3d579",
+    previewTitle: "dashboard.makeWish",
+  },
+  {
+    id: "winter",
+    name: "themes.winter.name",
+    description: "themes.winter.description",
+    image: "winter.webp",
+    smallImage: "winter-640.webp",
+    color: "#c9dce8",
+    previewTitle: "themes.winter.title",
+  },
+  {
+    id: "spring",
+    name: "themes.spring.name",
+    description: "themes.spring.description",
+    image: "spring.webp",
+    smallImage: "spring-640.webp",
+    color: "#d9e5cf",
+    previewTitle: "themes.spring.title",
+  },
+  {
+    id: "autumn",
+    name: "themes.autumn.name",
+    description: "themes.autumn.description",
+    image: "autumn.webp",
+    smallImage: "autumn-640.webp",
+    color: "#edcbb0",
+    previewTitle: "themes.autumn.title",
+  },
+  {
+    id: "silver",
+    name: "themes.silver.name",
+    description: "themes.silver.description",
+    image: "silver.webp",
+    smallImage: "silver-640.webp",
+    color: "#dce1e8",
+    previewTitle: "themes.silver.title",
+  },
+  {
+    id: "copper",
+    name: "themes.copper.name",
+    description: "themes.copper.description",
+    image: "copper.webp",
+    smallImage: "copper-640.webp",
+    color: "#e7c3ae",
+    previewTitle: "themes.copper.title",
+  },
+  {
+    id: "disco",
+    name: "themes.disco.name",
+    description: "themes.disco.description",
+    image: "disco.webp",
+    smallImage: "disco-640.webp",
+    color: "#bba2cc",
+    previewTitle: "themes.disco.title",
+  },
+  {
+    id: "starlight",
+    name: "themes.starlight.name",
+    description: "themes.starlight.description",
+    image: "starlight.webp",
+    smallImage: "starlight-640.webp",
+    color: "#8b9ac0",
+    previewTitle: "themes.starlight.title",
+  },
+  {
+    id: "sand",
+    name: "themes.sand.name",
+    description: "themes.sand.description",
+    image: "sand.webp",
+    smallImage: "sand-640.webp",
+    color: "#e3d7c5",
+    previewTitle: "themes.sand.title",
+  },
+  {
+    id: "wildflower",
+    name: "themes.wildflower.name",
+    description: "themes.wildflower.description",
+    image: "wildflower.webp",
+    smallImage: "wildflower-640.webp",
+    color: "#dcd4e9",
+    previewTitle: "themes.wildflower.title",
+  },
+  {
+    id: "pastel",
+    name: "themes.pastel.name",
+    description: "themes.pastel.description",
+    image: "pastel.webp",
+    smallImage: "pastel-640.webp",
+    color: "#f1d3df",
+    previewTitle: "themes.pastel.title",
   },
 ] as const;
 /** Longitudes máximas de los datos de cuenta; el frontend las usa como `maxLength`. */
@@ -62,7 +168,11 @@ export const accountLimits = {
   email: 254,
   phone: 20,
   password: 128,
+  postcardText: 200,
+  eventSlug: 60,
 } as const;
+/** Dirección pública de un evento: minúsculas, números y guiones entre palabras. */
+export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const email = z
   .email("validation.enterValidEmailAddress")
   .max(accountLimits.email, "validation.maximum254Characters")
@@ -159,6 +269,24 @@ export const eventSchema = z.object({
   location: z.string().trim().min(3, "validation.enterEventLocation").max(300),
   theme: z.enum(themeIds),
   archived: z.boolean().default(false),
+  /** Evento cancelado: sigue visible con aviso, y se avisa a los invitados. */
+  cancelled: z.boolean().default(false),
+  /** Contraseña para ver la página pública: undefined la conserva, "" la quita. */
+  publicPassword: z
+    .string()
+    .max(accountLimits.password, "validation.maximum128Characters")
+    .optional(),
+  /** Dirección pública (/e/…); vacía si el evento no tiene. */
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(accountLimits.eventSlug, "validation.maximum60Characters")
+    .refine(
+      (v) => v === "" || (v.length >= 3 && eventSlugPattern.test(v)),
+      "validation.eventSlugFormat",
+    )
+    .default(""),
 });
 export const memberSchema = z.object({
   id: z.uuid().optional(),
@@ -166,39 +294,45 @@ export const memberSchema = z.object({
   kind: z.enum(["adult", "child"]),
   notes: z.string().trim().max(500).default(""),
 });
-export const invitationSchema = z
-  .object({
-    name: z.string().trim().max(120).default(""),
-    email: optionalEmail,
-    phone: optionalPhone,
-    notes: z.string().trim().max(1000).default(""),
+/** Límites de la invitación genérica: registros por enlace y personas por registro. */
+export const openInvitationLimits = { registrations: 200, members: 20 } as const;
+const invitationFields = z.object({
+  name: z.string().trim().max(120).default(""),
+  email: optionalEmail,
+  phone: optionalPhone,
+  notes: z.string().trim().max(1000).default(""),
+  kind: z.enum(["individual", "family", "open"]),
+  members: z.array(memberSchema).max(50),
+});
+type InvitationFields = z.infer<typeof invitationFields>;
+/** Reglas comunes: hace falta un nombre o contacto, y un individual lleva exactamente una persona. */
+function checkInvitation(v: InvitationFields, ctx: z.RefinementCtx) {
+  if (!v.name && !v.email && !v.phone)
+    ctx.addIssue({ code: "custom", path: ["name"], message: "validation.enterNamePhoneNumber" });
+  if (v.kind === "individual" && v.members.length !== 1)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.individualInvitationMustHave" });
+  const ids = v.members.map((m) => m.id).filter(Boolean);
+  if (new Set(ids).size !== ids.length)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.thereDuplicateMembers" });
+}
+/** Invitación del organizador: personalizada (con personas) o genérica (sin personas; las pone cada invitado). */
+export const invitationSchema = invitationFields.superRefine((v, ctx) => {
+  checkInvitation(v, ctx);
+  if (v.kind !== "open" && v.members.length === 0)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.addLeastOnePerson" });
+  if (v.kind === "open" && v.members.length > 0)
+    ctx.addIssue({ code: "custom", path: ["members"], message: "validation.openInvitationNoMembers" });
+});
+/** Lo que entrega el invitado en una invitación genérica: sus propias personas y estados. */
+export const registrationSchema = invitationFields
+  .extend({
     kind: z.enum(["individual", "family"]),
     members: z
-      .array(memberSchema)
+      .array(memberSchema.extend({ status: statusSchema.default("pending") }))
       .min(1, "validation.addLeastOnePerson")
-      .max(50),
+      .max(openInvitationLimits.members),
   })
-  .superRefine((v, ctx) => {
-    if (!v.name && !v.email && !v.phone)
-      ctx.addIssue({
-        code: "custom",
-        path: ["name"],
-        message: "validation.enterNamePhoneNumber",
-      });
-    if (v.kind === "individual" && v.members.length !== 1)
-      ctx.addIssue({
-        code: "custom",
-        path: ["members"],
-        message: "validation.individualInvitationMustHave",
-      });
-    const ids = v.members.map((m) => m.id).filter(Boolean);
-    if (new Set(ids).size !== ids.length)
-      ctx.addIssue({
-        code: "custom",
-        path: ["members"],
-        message: "validation.thereDuplicateMembers",
-      });
-  });
+  .superRefine(checkInvitation);
 export const rsvpSchema = z
   .object({
     members: z
@@ -212,6 +346,7 @@ export const rsvpSchema = z
   );
 export type EventInput = z.infer<typeof eventSchema>;
 export type InvitationInput = z.infer<typeof invitationSchema>;
+export type RegistrationInput = z.infer<typeof registrationSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type User = {
@@ -235,10 +370,28 @@ export type Metrics = {
   declined: number;
   pending: number;
 };
-export type Event = EventInput & {
+export type Event = Omit<EventInput, "publicPassword"> & {
   id: string;
   createdAt: string;
   metrics: Metrics;
+  /** Si la página pública pide contraseña (la contraseña nunca se devuelve). */
+  hasPublicPassword: boolean;
+};
+/** Evento visto desde su dirección pública: sin invitados ni respuestas. */
+/** Página pública bloqueada por contraseña: no revela nada del evento. */
+export type LockedPublicEvent = { locked: true };
+export type PublicEvent = {
+  locked: false;
+  title: string;
+  cancelled: boolean;
+  description: string;
+  date: string;
+  timeZone: string;
+  location: string;
+  theme: EventInput["theme"];
+  host: Pick<User, "firstName" | "lastName" | "avatar">;
+  /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
+  postcard: Pick<Postcard, "design" | "photos">;
 };
 export type Member = {
   id: string;
@@ -254,8 +407,10 @@ export type Invitation = {
   email: string;
   phone: string;
   notes: string;
-  kind: "individual" | "family";
+  kind: "individual" | "family" | "open";
   token: string;
+  /** Invitación genérica de la que nace este registro, si lo hay. */
+  parentId: string | null;
   members: Member[];
   createdAt: string;
 };
@@ -270,13 +425,17 @@ export type Notification = {
 };
 export type PublicInvitation = {
   name: string;
-  kind: "individual" | "family";
+  kind: "individual" | "family" | "open";
   event: Pick<
     Event,
-    "title" | "description" | "date" | "timeZone" | "location" | "theme"
+    "title" | "description" | "date" | "timeZone" | "location" | "theme" | "cancelled"
   >;
+  /** Solo en genéricas: ya hay tantos registros como permite el enlace. */
+  registrationsFull: boolean;
   host: Pick<User, "firstName" | "lastName" | "avatar">;
   members: Pick<Member, "id" | "name" | "kind" | "status">[];
+  /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
+  postcard: Pick<Postcard, "design" | "photos">;
   isDemo: boolean;
 };
 export const emptyMetrics = (): Metrics => ({
@@ -308,6 +467,7 @@ export const statusLabels = {
 } as const satisfies Record<Status, MessageKey>;
 
 export * from "./i18n";
+export * from "./calendar";
 export * from "./pricing";
 
 export const clientPlatformSchema = z.enum(["web", "android", "ios"]);
@@ -331,3 +491,61 @@ export type OwnerMetrics = {
   sources: { platform: ClientPlatform; visits: number; registrations: number; logins: number; downloads: number }[];
   daily: { day: string; visits: number; registrations: number; logins: number; downloads: number }[];
 };
+
+/** Postal de cada evento: lienzo vertical 3:4; posiciones y tamaños en porcentaje del lienzo. */
+export const postcardLimits = {
+  photos: 2,
+  texts: 3,
+  photoBytes: 2 * 1024 * 1024,
+  photoSide: 2048,
+  versions: 20,
+} as const;
+export const postcardFonts = ["manrope", "bricolage", "playfair", "pacifico"] as const;
+export const postcardAligns = ["left", "center", "right"] as const;
+export type PostcardFont = (typeof postcardFonts)[number];
+const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i, "validation.useHexColor");
+const postcardBackground = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("template"), theme: z.enum(themeIds) }),
+  z.object({ type: z.literal("color"), color: hexColor }),
+  z.object({ type: z.literal("photo"), photo: z.uuid() }),
+]);
+const postcardPhoto = z.object({
+  photo: z.uuid(),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  width: z.number().min(1).max(100),
+  height: z.number().min(1).max(100),
+});
+const postcardText = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1)
+    .max(accountLimits.postcardText, "validation.maximum200Characters"),
+  font: z.enum(postcardFonts),
+  /** Tamaño de letra en píxeles sobre un lienzo de 1000 px de ancho. */
+  size: z.number().min(12).max(160),
+  color: hexColor,
+  align: z.enum(postcardAligns),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  width: z.number().min(5).max(100),
+});
+export const postcardSchema = z.object({
+  background: postcardBackground,
+  photos: z.array(postcardPhoto).max(postcardLimits.photos),
+  texts: z.array(postcardText).max(postcardLimits.texts),
+});
+export type PostcardDesign = z.infer<typeof postcardSchema>;
+export const emptyPostcard: PostcardDesign = {
+  background: { type: "color", color: "#ffffff" },
+  photos: [],
+  texts: [],
+};
+/** Postal de un evento tal como la lee el editor: diseño, fecha y fotos subidas. */
+export type Postcard = {
+  design: PostcardDesign;
+  updatedAt: string | null;
+  photos: { id: string; url: string }[];
+};
+export type PostcardVersion = { id: string; createdAt: string };

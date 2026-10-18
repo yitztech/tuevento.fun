@@ -71,6 +71,9 @@ services:
     # Corre como usuario node en el puerto 3087: no necesita capacidades
     read_only: true
     tmpfs: [/tmp]
+    # Fotos de las postales: el único sitio escribible además de /tmp
+    volumes:
+      - postcard_images:/data/postcards
     mem_limit: 256m
     cpus: 0.5
     environment:
@@ -141,6 +144,7 @@ services:
 
 volumes:
   postgres_data:
+  postcard_images:
 
 networks:
   frontend:

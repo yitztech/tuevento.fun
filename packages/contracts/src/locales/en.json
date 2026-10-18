@@ -153,12 +153,12 @@
     "celebrateSimpleThings": "Celebrate the simple things",
     "celebrationTableColorfulFlowers": "A celebration table with colorful flowers and glasses ready for a toast",
     "celebrationsGlance": "Your celebrations at a glance",
-    "chooseCreateEventAdd": "Choose “Create event,” add the date, time, time zone and location, then pick one of the six designs. You can edit it later.",
+    "chooseCreateEventAdd": "Choose “Create event,” add the date, time, time zone and location, then pick a design from the collection. You can edit it later.",
     "createEvent": "Create event",
     "createEventDesign": "Create event with this design",
     "demoNamesEventsLocations": "Demo names, events and locations are examples. You can try every workflow without affecting other accounts. Sign up to start with an empty workspace and your own data.",
     "demoWorkspace": "Your demo workspace",
-    "designsText": "Explore our 6 designs and find\nthe one that feels like you.",
+    "designsText": "Explore the collection and find\nthe design that feels like you.",
     "designsTitle": "Every celebration has\na personality of its own.",
     "detailsMakeParty": "The details make the party.",
     "doForever": "An I do, forever",
@@ -203,14 +203,12 @@
     "repliesAttendanceUpdatesFrom": "Replies and attendance updates from your guests.",
     "searchEvents": "Search events",
     "searchPeopleFamilies": "Search people or families",
-    "sixWaysSayWant": "Six ways to say “I want you there.” Find yours.",
     "spacePlansPeopleWho": "A space for your plans and the people who make them special.",
     "specialPlace": "A special place",
     "step1ShapeEvent": "1. Shape your event",
     "step2BuildGuestList": "2. Build your guest list",
     "step3ShareInvitation": "3. Share the invitation",
     "step4GetTheirReplies": "4. Get their replies",
-    "step6DesignsCelebrate": "6 designs to celebrate",
     "tonightOurs": "Tonight is ours",
     "tryAnotherSearchPlan": "Try another search or plan a new celebration.",
     "underSameSun": "Under the same sun",
@@ -224,7 +222,9 @@
     "viewAllInvitationsOpen": "View all your invitations and open an event to manage them.",
     "welcomeTitle": "You imagine the moment.\nWe'll help you bring\neveryone together.",
     "whenSomeoneRepliesYoull": "When someone replies, you'll hear about it here first.",
-    "youreAllCaught": "You're all caught up"
+    "youreAllCaught": "You're all caught up",
+    "waysSayWant": "So many ways to say “I want you there.” Find yours.",
+    "designsCelebrate": "{{count}} designs to celebrate"
   },
   "downloads": {
     "androidNote": "Download the APK from this site while we prepare for Google Play.",
@@ -267,7 +267,15 @@
     "sessionHasExpiredPlease": "Your session has expired. Please sign in again.",
     "signInToContinue": "Sign in to continue.",
     "tooManyAttemptsPlease": "Too many attempts. Please wait a moment and try again.",
-    "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB."
+    "usePngJpgWebp": "Use a PNG, JPG or WebP image up to 2 MB.",
+    "postcardPhotoLimit": "This postcard already has the maximum number of photos.",
+    "postcardPhotoNotFound": "A photo in this postcard doesn’t exist in this event.",
+    "postcardVersionNotFound": "We couldn’t find that postcard version.",
+    "eventSlugTaken": "Another event already uses that address. Choose a different one.",
+    "eventIsntAvailable": "This event isn't available.",
+    "eventCancelled": "This event is cancelled.",
+    "openInvitationFull": "This link has reached its maximum number of registrations.",
+    "eventPasswordIncorrect": "The password is not correct."
   },
   "events": {
     "actions": "Actions",
@@ -387,7 +395,21 @@
     "wereSoGladYoure": "We're so glad you're here.",
     "whereMeeting": "Where are we meeting?",
     "yesDelete": "Yes, delete",
-    "youreInvitedEvent": "You're invited: {{event}}"
+    "youreInvitedEvent": "You're invited: {{event}}",
+    "publicAddress": "Public address (optional)",
+    "publicAddressHint": "If you fill it in, anyone with this link can see the event and its postcard: {{url}}. Leave it empty to keep it unpublished.",
+    "cancelEvent": "Cancel the event",
+    "cancelEventHint": "Guests will be told and can no longer reply.",
+    "cancelledBadge": "Cancelled",
+    "openLinkNoPeople": "This invitation has no people: each guest enters their own details from the link.",
+    "openLinkType": "Open link",
+    "openLinkTypeHint": "One link for anyone; each guest enters their details.",
+    "publicAddressTaken": "Another event already uses that address.",
+    "publicPassword": "Password to view the public page (optional)",
+    "publicPasswordHint": "Anyone who wants to see the page must enter it. Leave empty for none.",
+    "publicPasswordKept": "A password is saved. Leave empty to keep it.",
+    "removePublicPassword": "Remove the public page password",
+    "viaOpenLink": "via open link"
   },
   "landing": {
     "adultsChildrenOnePerson": "Adults and children, one person at a time",
@@ -463,6 +485,59 @@
     "suggestAccept": "View in English",
     "suggestDismiss": "No, thanks"
   },
+  "postcard": {
+    "title": "Design the postcard",
+    "back": "Back to the event",
+    "open": "Design postcard",
+    "previewLabel": "Postcard preview",
+    "templateAlt": "Template {{theme}}",
+    "photoLayer": "Photo {{number}}",
+    "textLayer": "Text {{number}}",
+    "layerHint": "Drag the layer or move it with the keyboard arrows. Hold Shift for bigger steps.",
+    "unsaved": "You have unsaved changes.",
+    "savedState": "All changes are saved.",
+    "save": "Save postcard",
+    "saved": "Postcard saved.",
+    "restored": "Version restored.",
+    "background": "Background",
+    "templates": "Templates",
+    "colors": "Colors",
+    "myPhotos": "My photos",
+    "useAsBackground": "Use as background",
+    "removePhoto": "Remove photo",
+    "uploadPhoto": "Upload photo",
+    "photosHint": "You can use up to {{max}} photos in the postcard. JPG, PNG or WebP, 2 MB max.",
+    "selectedPhoto": "Photo {{number}}",
+    "photoSize": "Size",
+    "removeFromPostcard": "Remove from postcard",
+    "texts": "Texts",
+    "addText": "Add text",
+    "textContent": "Text",
+    "font": "Typeface",
+    "textSize": "Font size",
+    "color": "Color",
+    "align": "Alignment",
+    "alignLeft": "Left",
+    "alignCenter": "Center",
+    "alignRight": "Right",
+    "removeText": "Remove text",
+    "defaultText": "Your message here",
+    "versions": "Versions",
+    "versionsHint": "The last {{max}} versions are kept.",
+    "noVersions": "No earlier versions yet.",
+    "latest": "current",
+    "restore": "Restore",
+    "colorNames": {
+      "white": "White",
+      "ink": "Ink",
+      "blue": "Blue",
+      "gold": "Gold",
+      "rose": "Rose",
+      "sage": "Sage",
+      "cream": "Cream",
+      "night": "Night"
+    }
+  },
   "legal": {
     "acceptOnRegister": "By creating your account you accept the <terms>Terms of use</terms> and the <privacy>Privacy policy</privacy>.",
     "lastUpdated": "Last updated: {{date}}",
@@ -487,6 +562,30 @@
       "ignore": "If you didn't ask for this, you can ignore this email: your password won't change.",
       "intro": "We received a request to reset the password for your account. Use the button below to choose a new one.",
       "subject": "Reset your TuEventoFun password"
+    },
+    "eventCancelled": {
+      "intro": "We're sorry to tell you {{event}} has been cancelled.",
+      "subject": "Cancelled: {{event}}"
+    },
+    "eventChanged": {
+      "dateChanged": "the date and time are now {{date}}",
+      "intro": "The host has changed {{event}}: {{changes}}. Please check your invitation.",
+      "placeChanged": "the venue is now {{location}}",
+      "subject": "Changes to {{event}}"
+    },
+    "footer": "You receive this email because you have an invitation on TuEventoFun.",
+    "guestReply": {
+      "change": "You can change your reply at any time from your invitation link.",
+      "intro": "We've saved your reply to {{event}}:",
+      "member": "{{name}}: {{status}}",
+      "subject": "We've saved your reply to {{event}}"
+    },
+    "openEvent": "View the event",
+    "openInvitation": "Open my invitation",
+    "ownerReply": {
+      "counts": "Confirmed: {{accepted}}. Not attending: {{declined}}. Waiting: {{pending}}.",
+      "intro": "{{guest}} replied to {{event}}.",
+      "subject": "{{guest}} replied to {{event}}"
     }
   },
   "mobileConnect": {
@@ -543,7 +642,6 @@
     "createSpecialInvitationNext": "Create a special invitation for your next celebration.",
     "demoInvitationNamesDetails": "Demo invitation · Names and details are examples.",
     "everyoneAttending": "Everyone is attending",
-    "forName": "For {{name}}",
     "goodReasonTogether": "A good reason to be together.",
     "greeting": "Hello, <strong>{{name}}</strong>. We'd love to share this moment with you.",
     "hostSeeNowChange": "Your host can see it now. You can change it whenever you need to.",
@@ -559,7 +657,8 @@
     "viewLocation": "View location",
     "withLove": "With love,",
     "wouldntSameWithout": "It wouldn't be the same without you.",
-    "yesIllThere": "Yes, I'll be there!"
+    "yesIllThere": "Yes, I'll be there!",
+    "eventCancelled": "This event has been cancelled; replies are closed."
   },
   "status": {
     "accepted": "Attending",
@@ -590,6 +689,56 @@
     "tropical": {
       "description": "In the sun, among friends",
       "name": "Tropical"
+    },
+    "winter": {
+      "name": "Winter Gathering",
+      "description": "The warmth of being together",
+      "title": "Together through the winter"
+    },
+    "spring": {
+      "name": "Spring Garden",
+      "description": "Fresh reasons to bloom",
+      "title": "Let our moments bloom"
+    },
+    "autumn": {
+      "name": "Autumn Gathering",
+      "description": "Warm tones, warm company",
+      "title": "An autumn to remember"
+    },
+    "silver": {
+      "name": "Elegant Silver",
+      "description": "A celebration that shines",
+      "title": "A night to shine"
+    },
+    "copper": {
+      "name": "Copper & Candlelight",
+      "description": "Toast by candlelight",
+      "title": "The magic of being together"
+    },
+    "disco": {
+      "name": "Disco Party",
+      "description": "Brought together by the beat",
+      "title": "Until the last dance"
+    },
+    "starlight": {
+      "name": "Starry Night",
+      "description": "Moments beneath the stars",
+      "title": "Under a sky full of stars"
+    },
+    "sand": {
+      "name": "Minimal Sand",
+      "description": "The beauty of simple things",
+      "title": "Simple moments bring us together"
+    },
+    "wildflower": {
+      "name": "Wildflower Wedding",
+      "description": "A love that grows freely",
+      "title": "An I do among the flowers"
+    },
+    "pastel": {
+      "name": "Pastel Birthday",
+      "description": "Little moments, big smiles",
+      "title": "A day full of wonder"
     }
   },
   "validation": {
@@ -606,13 +755,18 @@
     "maximum100Characters": "Maximum 100 characters.",
     "maximum128Characters": "Maximum 128 characters.",
     "maximum20Characters": "Maximum 20 characters.",
+    "maximum200Characters": "Maximum 200 characters.",
     "maximum254Characters": "Maximum 254 characters.",
     "maximum50Characters": "Maximum 50 characters.",
     "thereDuplicateMembers": "There are duplicate members.",
     "useHttps": "Use HTTPS.",
     "useLeast10Characters": "Use at least 10 characters.",
     "useLettersSpaces": "Use only letters, spaces, apostrophes or hyphens.",
-    "useNumbersSpaces": "Use numbers, spaces or +."
+    "useNumbersSpaces": "Use numbers, spaces or +.",
+    "useHexColor": "Choose a color from the palette.",
+    "maximum60Characters": "Maximum 60 characters.",
+    "eventSlugFormat": "Use only lowercase letters, numbers and hyphens between words, 3 to 60 characters.",
+    "openInvitationNoMembers": "An open invitation has no people: each guest adds their own."
   },
   "pricing": {
     "title": "Pricing",
@@ -624,5 +778,38 @@
     "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
     "back": "Back to pricing",
     "buy": "Buy"
+  },
+  "publicEvent": {
+    "opening": "Opening the event…",
+    "unavailable": "We couldn't find this event",
+    "hostedBy": "Hosted by",
+    "inviteHint": "Have an invitation? Open the private link you were sent to confirm your attendance.",
+    "cancelled": "This event has been cancelled.",
+    "lockedText": "The host has protected this page. Enter the password to see the details.",
+    "lockedTitle": "Protected event",
+    "passwordLabel": "Password",
+    "unlock": "View the event"
+  },
+  "calendar": {
+    "downloadIcs": "Download calendar (.ics)",
+    "googleCalendar": "Add to Google Calendar"
+  },
+  "registration": {
+    "addPerson": "Add another person",
+    "email": "Email (optional)",
+    "full": "This link can't take any more registrations.",
+    "intro": "Enter your details and those of the people coming with you. You can change your reply later.",
+    "name": "Your name",
+    "people": "People",
+    "personKind": "Type",
+    "personName": "Name",
+    "personNumber": "Person {{number}}",
+    "personStatus": "Reply",
+    "phone": "Phone (optional)",
+    "removePerson": "Remove",
+    "saved": "Your reply is saved.",
+    "sending": "Sending…",
+    "submit": "Send my reply",
+    "title": "Register for the event"
   }
 }

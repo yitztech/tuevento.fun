@@ -1332,6 +1332,8 @@ small {
 }
 .template-caption .icon-button {
   background: #f1f2f5;
+  min-width: 44px;
+  min-height: 44px;
 }
 .invitation-art {
   --theme-bg: #f3dce5;
@@ -1399,12 +1401,12 @@ small {
   --theme-bg: #eee0b6;
   --theme-fg: #57481f;
 }
-.theme-gold .invitation-words {
-  border: 1px solid #b19b58;
+:is(.theme-gold, .theme-silver, .theme-copper) .invitation-words {
+  border: 1px solid var(--theme-border, #b19b58);
   margin: 11px;
   padding: 18px 16px 25px;
 }
-.theme-gold .invitation-words h2 {
+:is(.theme-gold, .theme-silver, .theme-copper) .invitation-words h2 {
   font-family: Georgia, serif;
   font-weight: 400;
 }
@@ -1412,42 +1414,42 @@ small {
   --theme-bg: #271940;
   --theme-fg: #eee7ff;
 }
-.theme-neon .invitation-symbol,
-.theme-neon .invitation-rule {
-  color: #d8d17a;
+:is(.theme-neon, .theme-disco, .theme-starlight) .invitation-symbol,
+:is(.theme-neon, .theme-disco, .theme-starlight) .invitation-rule {
+  color: var(--theme-accent, #d8d17a);
 }
-.theme-neon .invitation-words h2 {
+:is(.theme-neon, .theme-disco, .theme-starlight) .invitation-words h2 {
   font-weight: 750;
-  color: #f0cde1;
+  color: var(--theme-heading, #f0cde1);
 }
-.theme-neon .invitation-photo {
+:is(.theme-neon, .theme-disco, .theme-starlight) .invitation-photo {
   height: 130px;
 }
 .theme-tropical {
   --theme-bg: #d8ddea;
   --theme-fg: #28385c;
 }
-.theme-tropical .invitation-words h2 {
+:is(.theme-tropical, .theme-winter, .theme-spring, .theme-autumn) .invitation-words h2 {
   font-weight: 700;
 }
 .theme-minimal {
   --theme-bg: #e4ebf0;
   --theme-fg: #3d5360;
 }
-.theme-minimal .invitation-symbol {
+:is(.theme-minimal, .theme-sand) .invitation-symbol {
   display: none;
 }
-.theme-minimal .invitation-words {
+:is(.theme-minimal, .theme-sand) .invitation-words {
   padding-top: 33px;
 }
-.theme-minimal .invitation-words h2 {
+:is(.theme-minimal, .theme-sand) .invitation-words h2 {
   font-weight: 400;
 }
 .theme-floral {
   --theme-bg: #f4e0e8;
   --theme-fg: #713e55;
 }
-.theme-floral .invitation-words h2 {
+:is(.theme-floral, .theme-wildflower) .invitation-words h2 {
   font-family: Georgia, serif;
   font-weight: 400;
   font-size: 34px;
@@ -1458,11 +1460,57 @@ small {
   --theme-bg: #f8df88;
   --theme-fg: #614d25;
 }
-.theme-kids .invitation-words h2 {
+:is(.theme-kids, .theme-pastel) .invitation-words h2 {
   font-weight: 750;
 }
-.theme-kids .invitation-symbol {
+:is(.theme-kids, .theme-pastel) .invitation-symbol {
   color: #a3465b;
+}
+.theme-winter {
+  --theme-bg: #dce9f1;
+  --theme-fg: #2c465a;
+}
+.theme-spring {
+  --theme-bg: #e4eddb;
+  --theme-fg: #3d553b;
+}
+.theme-autumn {
+  --theme-bg: #f0d8c5;
+  --theme-fg: #693e2b;
+}
+.theme-silver {
+  --theme-bg: #e5e8ed;
+  --theme-fg: #424e64;
+  --theme-border: #8a95a8;
+}
+.theme-copper {
+  --theme-bg: #edcdbb;
+  --theme-fg: #663d2e;
+  --theme-border: #a77660;
+}
+.theme-disco {
+  --theme-bg: #39243f;
+  --theme-fg: #f8ebf6;
+  --theme-accent: #e7c5ee;
+  --theme-heading: #f3d5e8;
+}
+.theme-starlight {
+  --theme-bg: #202d49;
+  --theme-fg: #edf0f8;
+  --theme-accent: #ebd69e;
+  --theme-heading: #f5e7bc;
+}
+.theme-sand {
+  --theme-bg: #eee6d9;
+  --theme-fg: #5b5041;
+}
+.theme-wildflower {
+  --theme-bg: #e8e0ef;
+  --theme-fg: #594368;
+}
+.theme-pastel {
+  --theme-bg: #f4dfe8;
+  --theme-fg: #694455;
 }
 .templates-grid .invitation-art {
   min-height: 400px;
@@ -1923,6 +1971,10 @@ small {
 .modal-inner > header > h2 {
   font-size: 25px;
   padding-top: 3px;
+}
+.modal-inner > header > .icon-button {
+  min-width: 44px;
+  min-height: 44px;
 }
 .modal-inner > p {
   font-size: 13px;
@@ -2890,7 +2942,7 @@ small {
   .invitation-words h2 {
     font-size: 27px;
   }
-  .theme-floral .invitation-words h2 {
+  :is(.theme-floral, .theme-wildflower) .invitation-words h2 {
     font-size: 30px;
   }
   .editor-layout {
@@ -4588,4 +4640,307 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .legal-page a:not(.language-switcher):not(.logo).pricing-cta,
 .legal-page a:not(.language-switcher):not(.logo).pricing-cta:hover {
   color: #fff;
+}
+
+/* Postal de evento: lienzo 3:4 con capas en porcentaje (la misma en editor, invitación y móvil) */
+@font-face {
+  font-family: "Playfair Display Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 900;
+  src: url("@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Pacifico";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/pacifico/files/pacifico-latin-400-normal.woff2") format("woff2");
+}
+.postcard-canvas {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 3 / 4;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgb(23 39 76 / 14%);
+  container-type: inline-size;
+  user-select: none;
+}
+.postcard-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.postcard-layer {
+  position: absolute;
+  box-sizing: border-box;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.postcard-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.postcard-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  font-weight: 700;
+}
+.postcard-canvas.is-editable .postcard-layer {
+  cursor: grab;
+  touch-action: none;
+}
+.postcard-layer.is-selected,
+.postcard-layer:focus-visible {
+  outline-color: var(--blue);
+}
+.postcard-editor h1 {
+  margin: 14px 0 22px;
+}
+.postcard-layout {
+  display: grid;
+  gap: 28px;
+}
+.postcard-stage {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.postcard-controls {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.postcard-hint,
+.postcard-save {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.postcard-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.postcard-panel legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+.postcard-panel h3 {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.postcard-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.postcard-swatch {
+  width: 44px;
+  height: 44px;
+  border: 2px solid #dcdee4;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.postcard-swatch[aria-pressed="true"],
+.postcard-template[aria-pressed="true"],
+.postcard-photo-item button[aria-pressed="true"] {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.postcard-templates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+.postcard-template {
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 44px;
+  background: none;
+}
+.postcard-template img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.postcard-photo-list {
+  display: grid;
+  gap: 10px;
+}
+.postcard-photo-item {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.postcard-photo-item img {
+  width: 56px;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.postcard-photo-item button {
+  justify-self: start;
+  min-height: 44px;
+}
+.postcard-upload {
+  position: relative;
+  justify-self: start;
+  cursor: pointer;
+}
+.postcard-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.postcard-upload:focus-within {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.postcard-text-editor,
+.postcard-field-row {
+  display: grid;
+  gap: 10px;
+}
+.postcard-field-row > span {
+  font-size: 12px;
+  font-weight: 650;
+  color: #444851;
+}
+.postcard-align {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.postcard-versions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.postcard-versions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+.postcard-versions button {
+  min-height: 44px;
+}
+.postcard-editor .button {
+  min-height: 44px;
+}
+@media (min-width: 960px) {
+  .postcard-layout {
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .postcard-stage {
+    position: sticky;
+    top: 24px;
+  }
+}
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Página pública de evento (/e/:slug) */
+.rsvp-event-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0 0 0.75rem;
+}
+.rsvp-detail {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.35rem 0;
+}
+.rsvp-description {
+  white-space: pre-line;
+  margin: 1rem 0;
+}
+.public-event-note {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 1.25rem;
+}
+.event-public-link {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+}
+.event-public-link a {
+  overflow-wrap: anywhere;
+}
+
+/* Calendario, avisos, contraseña de la página pública y registro genérico */
+.calendar-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+.event-cancelled-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #fbe9e5;
+  color: #882d17;
+  font-weight: 600;
+}
+.password-gate {
+  display: grid;
+  gap: 0.9rem;
+  width: min(360px, 100%);
+  margin-top: 1rem;
+}
+.check-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0.75rem 0;
+}
+.check-row span {
+  display: grid;
+  gap: 0.2rem;
+}
+.check-row small {
+  opacity: 0.8;
+}
+.open-registration {
+  display: grid;
+  gap: 0.9rem;
 }

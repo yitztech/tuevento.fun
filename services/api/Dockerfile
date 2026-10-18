@@ -58,6 +58,9 @@ COPY --from=build --chown=node:node /app/packages/contracts/dist ./packages/cont
 COPY --from=build --chown=node:node /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build --chown=node:node /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=node:node /app/apps/api/migrations ./apps/api/migrations
+# Fotos de las postales: carpeta propia del usuario node (el volumen hereda sus permisos)
+ENV POSTCARD_IMAGE_DIR=/data/postcards
+RUN mkdir -p /data/postcards && chown node:node /data/postcards
 USER node
 EXPOSE 3087
 CMD ["node", "apps/api/dist/main.js"]

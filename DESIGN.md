@@ -196,6 +196,25 @@ El sistema estandariza anchos de contenedor y tarjetas compartidos con `micitaen
 
 La tarjeta de evento integra fotografía, fecha superpuesta, tema, título, lugar y barra de asistencia. Utiliza borde fino, esquinas con `--radius`, fondo `--ground` y sombra `--shadow-soft`. El hover intensifica el borde a `--line-strong` y eleva sutilmente la tarjeta, escalando la foto a 1.025 en 500 ms. Las invitaciones conservan fotografía y composición temática.
 
+#### Colección de postales: 16 diseños
+
+Los seis diseños originales se amplían con diez variantes hermanas. Cada familia conserva la composición fotográfica, el tratamiento tipográfico y la jerarquía de la postal de origen. Los colores siguientes pertenecen exclusivamente a las invitaciones.
+
+| Variante | Familia | Fondo | Texto |
+| --- | --- | --- | --- |
+| Invernal | Tropical | `#dce9f1` | `#2c465a` |
+| Primaveral | Tropical | `#e4eddb` | `#3d553b` |
+| Otoñal | Tropical | `#f0d8c5` | `#693e2b` |
+| Elegante Plata | Elegante Dorado | `#e5e8ed` | `#424e64` |
+| Cobre y Velas | Elegante Dorado | `#edcdbb` | `#663d2e` |
+| Fiesta Disco | Fiesta Neón | `#39243f` | `#f8ebf6` |
+| Noche Estrellada | Fiesta Neón | `#202d49` | `#edf0f8` |
+| Minimalista Arena | Minimalista | `#eee6d9` | `#5b5041` |
+| Flores Silvestres | Bodas Florales | `#e8e0ef` | `#594368` |
+| Infantil Pastel | Infantil | `#f4dfe8` | `#694455` |
+
+Las nuevas fotografías se generaron con la herramienta integrada de imágenes; sus prompts, referencias y archivos se registran en `docs/assets/invitation-images.json`. Se sirven en WebP a 640 y 1280 píxeles mediante `srcset`, con carga diferida. El texto permanece en HTML y traducido a los cinco idiomas. Las acciones de selección y cierre de vista previa tienen un área mínima de 44 × 44 píxeles.
+
 ### RSVP
 
 Cada integrante tiene tres respuestas de igual jerarquía; la selección cambia fondo, borde y texto y conserva una etiqueta explícita. En móvil las opciones apilan icono y texto para mantener las tres respuestas visibles.

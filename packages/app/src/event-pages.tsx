@@ -1,4 +1,4 @@
-import { validationOptions } from "@tuevento/contracts";
+import { accountLimits, slugify, validationOptions } from "@tuevento/contracts";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useState, useEffect } from "react";
 import {
@@ -48,6 +48,7 @@ import {
   Trash2,
   Pencil,
   Monitor,
+  Palette,
   Copy,
   Mail,
   MessageCircle,
@@ -59,6 +60,7 @@ import {
   CheckCircle2,
   X,
   Clock,
+  Link2,
 } from "lucide-react";
 import {
   eventSchema,
@@ -94,6 +96,11 @@ export function EventEditor() {
     navigate = useNavigate();
   const [error, setError] = useState(""),
     [loading, setLoading] = useState(!!id);
+  // La dirección se sugiere desde el título hasta que el organizador la escriba a mano
+  const [slugTouched, setSlugTouched] = useState(!!id),
+    [slugFree, setSlugFree] = useState<boolean | null>(null),
+    [hasPassword, setHasPassword] = useState(false),
+    [removePassword, setRemovePassword] = useState(false);
   const form = useForm<EventInput>({
     resolver: zodResolver(
       formSchema,
@@ -103,6 +110,8 @@ export function EventEditor() {
       title: "",
       description: "",
       date: "",
+      slug: "",
+      cancelled: false,
       location: "",
       theme: themes.some((t) => t.id === query.get("tema"))
         ? (query.get("tema") as Event["theme"])
@@ -115,16 +124,40 @@ export function EventEditor() {
     if (!id) return;
     api
       .event(id)
-      .then((e) =>
+      .then((e) => {
+        setHasPassword(e.hasPublicPassword);
         form.reset({
           ...e,
           date: formatInTimeZone(e.date, e.timeZone, "yyyy-MM-dd'T'HH:mm"),
-        }),
-      )
+        });
+      })
       .catch((e) => setError(errorText(e)))
       .finally(() => setLoading(false));
   }, [id]);
   const values = form.watch();
+  // Sugerencia: el título limpio y, si está ocupado, con -2, -3… (hasta -9)
+  useEffect(() => {
+    const base = slugify(values.title);
+    if (slugTouched || !base) return;
+    const timer = setTimeout(async () => {
+      for (let n = 1; n <= 9; n++) {
+        const candidate =
+          n === 1 ? base : `${base.slice(0, 60 - String(n).length - 1).replace(/-+$/, "")}-${n}`;
+        const { available } = await api.slugAvailable(candidate, id).catch(() => ({ available: false }));
+        if (available) return form.setValue("slug", candidate);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [values.title, slugTouched]);
+  // Aviso mientras se escribe a mano
+  useEffect(() => {
+    if (!values.slug) return setSlugFree(null);
+    const timer = setTimeout(
+      () => api.slugAvailable(values.slug, id).then((r) => setSlugFree(r.available)).catch(() => setSlugFree(null)),
+      400,
+    );
+    return () => clearTimeout(timer);
+  }, [values.slug, id]);
   const preview = {
     ...values,
     date: values.date
@@ -137,6 +170,8 @@ export function EventEditor() {
       const payload = eventSchema.parse({
         ...data,
         date: fromZonedTime(data.date, data.timeZone).toISOString(),
+        // Vacía y sin quitar: se conserva la contraseña que ya tenía
+        publicPassword: removePassword ? "" : data.publicPassword || undefined,
       });
       const event = await api.saveEvent(payload, id);
       await reload();
@@ -228,6 +263,41 @@ export function EventEditor() {
               maxLength={2500}
             />
           </Field>
+          <Field
+            label={tr("events.publicAddress")}
+            error={form.formState.errors.slug?.message}
+            hint={
+              slugFree === false
+                ? tr("events.publicAddressTaken")
+                : tr("events.publicAddressHint", {
+                    url: `${window.location.host}/e/${values.slug || "tu-evento"}`,
+                  })
+            }
+          >
+            <input
+              {...form.register("slug", { onChange: () => setSlugTouched(true) })}
+              placeholder="boda-ana-y-luis"
+              maxLength={accountLimits.eventSlug}
+            />
+          </Field>
+          <Field
+            label={tr("events.publicPassword")}
+            error={form.formState.errors.publicPassword?.message}
+            hint={hasPassword && !removePassword ? tr("events.publicPasswordKept") : tr("events.publicPasswordHint")}
+          >
+            <input
+              type="password"
+              autoComplete="new-password"
+              maxLength={accountLimits.password}
+              {...form.register("publicPassword")}
+            />
+          </Field>
+          {hasPassword && (
+            <label className="check-row">
+              <input type="checkbox" checked={removePassword} onChange={(e) => setRemovePassword(e.target.checked)} />
+              <span>{tr("events.removePublicPassword")}</span>
+            </label>
+          )}
           <div className="form-section-heading">
             <h2>{tr("events.chooseInvitationStyle")}</h2>
             <p>{tr("events.changeWheneverLike")}</p>
@@ -238,6 +308,15 @@ export function EventEditor() {
               form.setValue("theme", value, { shouldDirty: true })
             }
           />
+          {id && (
+            <label className="check-row">
+              <input type="checkbox" {...form.register("cancelled")} />
+              <span>
+                <strong>{tr("events.cancelEvent")}</strong>
+                <small>{tr("events.cancelEventHint")}</small>
+              </span>
+            </label>
+          )}
           {error && <ErrorBox message={error} />}
           <div className="form-actions">
             <Link
@@ -365,7 +444,9 @@ export function EventDetail() {
           <span className="soft-label">
             {event.archived
               ? tr("events.archivedBadge")
-              : tr(themes.find((t) => t.id === event.theme)!.name)}
+              : event.cancelled
+                ? tr("events.cancelledBadge")
+                : tr(themes.find((t) => t.id === event.theme)!.name)}
           </span>
           <h1>{event.title}</h1>
           <div className="event-meta">
@@ -389,11 +470,23 @@ export function EventDetail() {
             <Monitor size={17} />
             {tr("events.displayMode")}
           </Link>
+          <Link className="button secondary" to={`/eventos/${id}/postal`}>
+            <Palette size={17} />
+            {tr("postcard.open")}
+          </Link>
           <Link className="button secondary" to={`/eventos/${id}/editar`}>
             <Pencil size={17} />
             {tr("events.editEvent")}
           </Link>
         </div>
+        {event.slug && (
+          <p className="event-public-link">
+            <Link2 size={16} />
+            <a href={`/e/${event.slug}`} target="_blank" rel="noreferrer">
+              {`${window.location.host}/e/${event.slug}`}
+            </a>
+          </p>
+        )}
       </div>
       <Stats metrics={event.metrics} compact />
       <div className="section-heading">
@@ -466,7 +559,12 @@ export function EventDetail() {
                 </div>
               </div>
               <span className="type-tag">
-                {i.kind === "family" ? tr("common.family") : tr("common.individual")} ·{" "}
+                {i.kind === "open"
+                  ? tr("events.openLinkType")
+                  : i.kind === "family"
+                    ? tr("common.family")
+                    : tr("common.individual")}
+                {i.parentId ? ` · ${tr("events.viaOpenLink")}` : ""} ·{" "}
                 {i.members.length}
               </span>
               <div className="member-statuses">
@@ -702,7 +800,10 @@ function InvitationEditor({
             type="button"
             className={kind === "individual" ? "selected" : ""}
             disabled={fields.length > 1}
-            onClick={() => form.setValue("kind", "individual")}
+            onClick={() => {
+              form.setValue("kind", "individual");
+              if (!fields.length) append({ name: "", kind: "adult", notes: "" });
+            }}
           >
             <UserRound size={20} />
             <strong>{tr("common.individual")}</strong>
@@ -711,11 +812,27 @@ function InvitationEditor({
           <button
             type="button"
             className={kind === "family" ? "selected" : ""}
-            onClick={() => form.setValue("kind", "family")}
+            onClick={() => {
+              form.setValue("kind", "family");
+              if (!fields.length) append({ name: "", kind: "adult", notes: "" });
+            }}
           >
             <Users size={20} />
             <strong>{tr("events.familyGroup")}</strong>
             <span>{tr("events.multipleMembers")}</span>
+          </button>
+          <button
+            type="button"
+            className={kind === "open" ? "selected" : ""}
+            disabled={!!invitation}
+            onClick={() => {
+              form.setValue("kind", "open");
+              form.setValue("members", []);
+            }}
+          >
+            <Link2 size={20} />
+            <strong>{tr("events.openLinkType")}</strong>
+            <span>{tr("events.openLinkTypeHint")}</span>
           </button>
         </div>
         <Field
@@ -756,6 +873,9 @@ function InvitationEditor({
             )}
           />
         </div>
+        {kind === "open" && <p className="field-hint">{tr("events.openLinkNoPeople")}</p>}
+        {kind !== "open" && (
+        <>
         <div className="form-section-heading">
           <h3>
             {kind === "family"
@@ -826,6 +946,8 @@ function InvitationEditor({
             <Plus size={17} />
             {tr("events.addMember")}
           </button>
+        )}
+        </>
         )}
         <Field
           label={tr("events.invitationNotesOptional")}

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Patch,
   Put,
@@ -9,6 +10,7 @@ import {
   Param,
   Req,
   Res,
+  Query,
   UseGuards,
   ParseUUIDPipe,
   BadRequestException,
@@ -34,6 +36,10 @@ import {
   newsletterSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  postcardSchema,
+  registrationSchema,
+  eventSlugPattern,
+  accountLimits,
 } from "@tuevento/contracts";
 import {
   AuthService,
@@ -45,6 +51,7 @@ import { Database } from "./database";
 import { DemoService } from "./demo";
 import { EventsService, Updates } from "./events";
 import { ListmonkService } from "./listmonk";
+import { PostcardsService } from "./postcards";
 import { requestLocale } from "./request-locale";
 function parse<T extends z.ZodType>(
   schema: T,
@@ -68,6 +75,7 @@ export class PublicController {
     private demo: DemoService,
     private events: EventsService,
     private listmonk: ListmonkService,
+    private postcards: PostcardsService,
   ) {}
   @Post("newsletter/subscribe") async subscribeNewsletter(
     @Body() body: unknown,
@@ -75,6 +83,16 @@ export class PublicController {
   ) {
     const data = parse(newsletterSchema, body, req);
     return this.listmonk.subscribe(data.email, data.name, requestLocale(req));
+  }
+  @Get("postcards/images/:id") async postcardImage(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    // Las cabeceras de imagen solo se fijan si la foto existe: un error se responde como JSON
+    const bytes = await this.postcards.image(id);
+    reply.header("Cache-Control", "public, max-age=31536000, immutable");
+    reply.type("image/jpeg");
+    return bytes;
   }
   @Get("health") async health() {
     await this.db.query("SELECT 1");
@@ -184,6 +202,64 @@ export class PublicController {
   ) {
     return this.events.publicInvitation(this.token(token, req));
   }
+  @Get("public/events/:slug") publicEvent(
+    @Req() req: FastifyRequest,
+    @Param("slug") slug: string,
+  ) {
+    return this.events.publicEvent(slug, req.cookies?.[EVENT_ACCESS_COOKIE]);
+  }
+  /** Contraseña de la página pública: al acertarla se entrega una cookie de acceso de 1 día. */
+  @Post("public/events/:slug/unlock")
+  @HttpCode(200)
+  async unlockEvent(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("slug") slug: string,
+    @Body() body: unknown,
+  ) {
+    const { password } = parse(
+      z.object({ password: z.string().min(1).max(accountLimits.password) }),
+      body,
+      req,
+    );
+    const token = await this.events.unlockEvent(slug, password);
+    if (token)
+      reply.setCookie(EVENT_ACCESS_COOKIE, token, {
+        path: `/api/public/events/${slug}`,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.COOKIE_SECURE === "true",
+        maxAge: 86400,
+      });
+    return { ok: true };
+  }
+  @Get("public/events/:slug/calendar.ics") async eventCalendar(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("slug") slug: string,
+  ) {
+    const ics = await this.events.calendarForEvent(slug, req.cookies?.[EVENT_ACCESS_COOKIE]);
+    return calendarResponse(reply, ics);
+  }
+  @Get("invitations/:token/calendar.ics") async invitationCalendar(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("token") token: string,
+  ) {
+    const ics = await this.events.calendarForInvitation(this.token(token, req));
+    return calendarResponse(reply, ics);
+  }
+  /** Invitado de una invitación genérica: entrega sus datos y personas, y recibe su propia invitación. */
+  @Post("invitations/:token/register") registerGuest(
+    @Req() req: FastifyRequest,
+    @Param("token") token: string,
+    @Body() body: unknown,
+  ) {
+    return this.events.register(
+      this.token(token, req),
+      parse(registrationSchema, body, req),
+    );
+  }
   @Post("invitations/:token/rsvp") rsvp(
     @Req() req: FastifyRequest,
     @Param("token") token: string,
@@ -209,12 +285,28 @@ export class OrganizerController {
     private db: Database,
     private events: EventsService,
     private updates: Updates,
+    private postcards: PostcardsService,
   ) {}
   @Sse("stream") stream(@Req() req: AuthedRequest) {
     return this.updates.stream(req.user.id);
   }
   @Get("events") list(@Req() req: AuthedRequest) {
     return this.events.list(req.user.id);
+  }
+  @Get("events/slug-available") slugAvailable(
+    @Req() req: AuthedRequest,
+    @Query() query: unknown,
+  ) {
+    const { slug, eventId } = parse(
+      z.object({
+        slug: z.string().trim().toLowerCase().max(accountLimits.eventSlug),
+        eventId: z.uuid().optional(),
+      }),
+      query,
+      req,
+    );
+    if (!eventSlugPattern.test(slug)) return { available: false };
+    return this.events.slugAvailable(req.user.id, slug, eventId);
   }
   @Get("events/:id") event(
     @Req() req: AuthedRequest,
@@ -241,6 +333,56 @@ export class OrganizerController {
     @Param("id", ParseUUIDPipe) id: string,
   ) {
     return this.events.removeEvent(req.user.id, id);
+  }
+  @Get("events/:id/postcard") postcard(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.postcards.get(req.user.id, id);
+  }
+  @Put("events/:id/postcard") savePostcard(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+  ) {
+    return this.postcards.save(req.user.id, id, parse(postcardSchema, body, req));
+  }
+  @Get("events/:id/postcard/versions") postcardVersions(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.postcards.versions(req.user.id, id);
+  }
+  @Post("events/:id/postcard/versions/:versionId/restore") restorePostcard(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("versionId", ParseUUIDPipe) versionId: string,
+  ) {
+    return this.postcards.restore(req.user.id, id, versionId);
+  }
+  @Post("events/:id/postcard/images") uploadPostcardImage(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+  ) {
+    const data = parse(
+      z.object({
+        dataUrl: z
+          .string()
+          .max(2800000)
+          .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "errors.usePngJpgWebp"),
+      }),
+      body,
+      req,
+    );
+    return this.postcards.uploadImage(req.user.id, id, data.dataUrl);
+  }
+  @Delete("events/:id/postcard/images/:imageId") removePostcardImage(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("imageId", ParseUUIDPipe) imageId: string,
+  ) {
+    return this.postcards.removeImage(req.user.id, id, imageId);
   }
   @Get("events/:id/invitations") invitations(
     @Req() req: AuthedRequest,
@@ -383,4 +525,13 @@ export class OrganizerController {
     );
     return userView(r);
   }
+}
+
+const EVENT_ACCESS_COOKIE = "event_access";
+/** Archivo de calendario descargable (.ics). */
+function calendarResponse(reply: FastifyReply, ics: string) {
+  reply.header("Content-Type", "text/calendar; charset=utf-8");
+  reply.header("Content-Disposition", 'attachment; filename="evento.ics"');
+  reply.header("Cache-Control", "no-store");
+  return ics;
 }

@@ -38,6 +38,17 @@ export const fr: LegalTexts = {
           "Dans chaque événement, tu peux ajouter des invitations avec un nom, un e-mail, un téléphone et des notes privées, ainsi que le nom de chaque membre, s’il est adulte ou enfant et ses notes. Toi seul vois les notes et les coordonnées ; la page d’invitation ne montre aux invités que leurs noms et les informations de l’événement.",
           "Les invités répondent sans créer de compte. Nous enregistrons la réponse de chaque membre (présent, absent ou en attente) et nous te prévenons.",
           "Il t’appartient d’obtenir l’accord de tes invités avant d’ajouter leurs données.",
+          "Si tu partages un lien ouvert, la personne qui s’inscrit saisit ses propres coordonnées et celles des personnes qui viennent avec elle. Tu vois ces données, comme celles de tes autres invitations.",
+        ],
+      },
+      {
+        title: "Carte postale et adresse publique de l’événement",
+        body: [
+          "La carte postale de chaque événement peut comporter jusqu’à deux photos que tu envoies. Avant de les enregistrer, nous retirons leurs métadonnées, comme le lieu où elles ont été prises, nous les orientons et nous les réduisons à 2 048 pixels au maximum.",
+          "Les photos de la carte postale sont affichées à toute personne qui a l’invitation ou l’adresse publique de l’événement. Chaque photo a un identifiant aléatoire impossible à deviner. Tu peux retirer une photo à tout moment ; la suppression de l’événement entraîne celle de ses photos.",
+          "Si tu donnes une adresse publique à l’événement, toute personne qui la connaît voit le titre, la description, la date, le lieu, le nom de l’hôte et la carte postale. Tes invités, leurs coordonnées et leurs réponses ne sont jamais affichés. Tu peux retirer ou modifier l’adresse à tout moment ; elle n’est plus visible si tu archives l’événement.",
+          "Nous conservons jusqu’à 20 versions précédentes de la carte postale pour que tu puisses y revenir. Elles sont supprimées avec l’événement.",
+          "Tu peux protéger la page publique par un mot de passe. Nous ne gardons qu’une empreinte du mot de passe et de l’accès qu’il accorde, qui expire au bout de 24 heures. Le fichier de calendrier téléchargé (.ics) ne contient que les données de l’événement.",
         ],
       },
       {
@@ -55,6 +66,7 @@ export const fr: LegalTexts = {
         body: [
           "Si tu demandes à réinitialiser ton mot de passe, nous t’envoyons un lien qui ne fonctionne qu’une fois et expire au bout de 60 minutes ; nous ne conservons qu’une empreinte (hash) de ce lien. Quand le mot de passe change, nous fermons toutes les sessions ouvertes et t’envoyons un avis de sécurité.",
           "Ces e-mails sont envoyés dans la langue de ton compte, depuis le domaine de cette langue, par l’intermédiaire d’un prestataire d’envoi d’e-mails qui ne reçoit que ce qui est nécessaire pour les remettre.",
+          "Nous t’écrivons quand quelqu’un répond ou s’inscrit à ton événement, et quand tu modifies la date ou le lieu ou que tu annules l’événement. Aux invités qui ont laissé leur e-mail, nous envoyons la confirmation de leur réponse et ces avis. Nous n’utilisons cette adresse que pour cela.",
         ],
       },
       {
@@ -67,6 +79,7 @@ export const fr: LegalTexts = {
       {
         title: "Où et combien de temps",
         body: [
+          "Les photos des cartes postales sont stockées sur le disque du serveur, dans un volume dédié séparé de la base de données. Elles sont conservées tant que l’événement existe.",
           "Les données sont stockées dans une base de données PostgreSQL sur les serveurs du service.",
           "Tes événements, invitations et réponses sont conservés jusqu’à ce que tu les supprimes. Supprimer un événement ou une invitation efface aussi ses invités et ses réponses.",
           "Les journaux de visites et de connexions sont effacés au bout de 90 jours. Les espaces de démonstration sont effacés au bout de 7 jours. Les sessions et les liens de récupération expirés sont supprimés automatiquement.",
