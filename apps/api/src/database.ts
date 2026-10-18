@@ -10,6 +10,16 @@ export class Database implements OnModuleInit, OnModuleDestroy {
     max: 12,
   });
   private sweepTimer?: NodeJS.Timeout;
+
+  constructor() {
+    // Un cliente inactivo que pierde la conexión (p. ej. al reiniciarse PostgreSQL) emite
+    // 'error' en el pool. Sin este oyente, Node lo trata como excepción no capturada y tumba
+    // la API. El pool descarta ese cliente y abre otro en la siguiente consulta.
+    this.pool.on("error", (error) => {
+      console.error("PostgreSQL: conexión inactiva perdida", error);
+    });
+  }
+
   async onModuleInit() {
     const directory = join(__dirname, "../migrations");
     const migrations = (await readdir(directory))
