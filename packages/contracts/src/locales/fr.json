@@ -527,16 +527,16 @@
     "noVersions": "Pas encore de version précédente.",
     "latest": "actuelle",
     "restore": "Restaurer",
-    "colorNames": {
-      "white": "Blanc",
-      "ink": "Encre",
-      "blue": "Bleu",
-      "gold": "Or",
-      "rose": "Rose",
-      "sage": "Sauge",
-      "cream": "Crème",
-      "night": "Nuit"
-    }
+    "colorSwatch": "Couleur {{color}}",
+    "customColor": "Autre couleur",
+    "moveHint": "Fais glisser un texte ou une photo pour le déplacer sur la carte postale.",
+    "shadow": "Ombre",
+    "shadowOn": "Avec ombre",
+    "shadowOff": "Sans ombre",
+    "shadowColor": "Couleur de l'ombre",
+    "shadowBlur": "Flou",
+    "shadowOffsetX": "Décalage horizontal",
+    "shadowOffsetY": "Décalage vertical"
   },
   "legal": {
     "acceptOnRegister": "En créant ton compte, tu acceptes les <terms>Conditions d’utilisation</terms> et la <privacy>Politique de confidentialité</privacy>.",

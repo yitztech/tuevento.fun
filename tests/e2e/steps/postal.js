@@ -52,7 +52,7 @@ When("abro el editor de la postal a {int} por {int}", async ({ page, ctx }, anch
 });
 
 When("elijo el fondo de color {string}", async ({ page }, color) => {
-  await page.getByRole("button", { name: color, exact: true }).click();
+  await page.getByRole("button", { name: `Color ${color}`, exact: true }).first().click();
 });
 
 When("añado el texto {string}", async ({ page }, texto) => {

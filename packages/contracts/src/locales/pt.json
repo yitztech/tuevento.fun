@@ -527,16 +527,16 @@
     "noVersions": "Ainda não há versões anteriores.",
     "latest": "atual",
     "restore": "Restaurar",
-    "colorNames": {
-      "white": "Branco",
-      "ink": "Tinta",
-      "blue": "Azul",
-      "gold": "Dourado",
-      "rose": "Rosa",
-      "sage": "Sálvia",
-      "cream": "Creme",
-      "night": "Noite"
-    }
+    "colorSwatch": "Cor {{color}}",
+    "customColor": "Outra cor",
+    "moveHint": "Arraste um texto ou uma foto para movê-lo pelo cartão.",
+    "shadow": "Sombra",
+    "shadowOn": "Com sombra",
+    "shadowOff": "Sem sombra",
+    "shadowColor": "Cor da sombra",
+    "shadowBlur": "Desfoque",
+    "shadowOffsetX": "Deslocamento horizontal",
+    "shadowOffsetY": "Deslocamento vertical"
   },
   "legal": {
     "acceptOnRegister": "Ao criar sua conta, você aceita os <terms>Termos de uso</terms> e a <privacy>Política de privacidade</privacy>.",

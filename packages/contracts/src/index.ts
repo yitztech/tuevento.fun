@@ -516,6 +516,14 @@ const postcardPhoto = z.object({
   width: z.number().min(1).max(100),
   height: z.number().min(1).max(100),
 });
+/** Sombra detrás de un texto. Todas las medidas van en cqw (porcentaje del ancho de la postal). */
+export const postcardShadowLimits = { blur: 10, offset: 5 } as const;
+const postcardShadow = z.object({
+  color: hexColor,
+  blur: z.number().min(0).max(postcardShadowLimits.blur),
+  x: z.number().min(-postcardShadowLimits.offset).max(postcardShadowLimits.offset),
+  y: z.number().min(-postcardShadowLimits.offset).max(postcardShadowLimits.offset),
+});
 const postcardText = z.object({
   content: z
     .string()
@@ -530,6 +538,8 @@ const postcardText = z.object({
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   width: z.number().min(5).max(100),
+  /** Ausente en los diseños anteriores: el texto no tiene sombra. */
+  shadow: postcardShadow.optional(),
 });
 export const postcardSchema = z.object({
   background: postcardBackground,

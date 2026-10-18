@@ -210,6 +210,9 @@ export function PostcardCanvas({
               fontSize: `${text.size / 10}cqw`,
               color: text.color,
               textAlign: text.align,
+              textShadow: text.shadow
+                ? `${text.shadow.x}cqw ${text.shadow.y}cqw ${text.shadow.blur}cqw ${text.shadow.color}`
+                : undefined,
             }}
             tabIndex={editable ? 0 : -1}
             role={editable ? "button" : undefined}

@@ -67,6 +67,28 @@ try {
     assert.equal(borrada.status, 404);
   });
 
+  await suite("Postal: el texto guarda posición, color libre y sombra; un diseño anterior sin sombra sigue válido", async () => {
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "texto-postal"), 201);
+    const evento = await organizador.call("/events", "POST", eventData(), 201);
+    const ruta = `/events/${evento.id}/postcard`;
+    const sombra = { color: "#000000", blur: 2, x: 0.5, y: -1 };
+    const texto = { content: "Mover aquí", font: "manrope", size: 64, color: "#a1b2c3", align: "left", x: 33.5, y: 61, width: 40, shadow: sombra };
+    const diseno = { background: { type: "color", color: "#6b6b6b" }, photos: [], texts: [texto] };
+    assert.deepEqual((await organizador.call(ruta, "PUT", diseno)).design.texts, [texto]);
+    const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    assert.deepEqual((await guest.call(`/invitations/${invitacion.token}`)).postcard.design.texts, [texto]);
+    // Un diseño guardado antes de las sombras (sin el campo) se sigue aceptando y se lee igual
+    const anterior = { ...diseno, texts: [{ ...texto, shadow: undefined }] };
+    assert.equal((await organizador.call(ruta, "PUT", anterior)).design.texts[0].shadow, undefined);
+    // Límites: sombra fuera de rango o color que no es hexadecimal se rechazan
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, blur: 11 } }] }, 400);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, x: -6 } }] }, 400);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, color: "rojo" } }] }, 400);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, color: "azul" }] }, 400);
+    await organizador.call(`/events/${evento.id}`, "DELETE");
+  });
+
   await suite("Dirección pública del evento: se elige, es única, se lee sin sesión y no muestra invitados", async () => {
     const organizador = client();
     const otro = client();
