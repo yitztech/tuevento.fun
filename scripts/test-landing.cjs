@@ -41,8 +41,12 @@ fs.mkdirSync(artifacts, { recursive: true });
     if (process.env.QA_SKIP_LANDING_CAPTURES) return;
     await page.evaluate(async () => {
       await document.fonts.ready;
+      // Con loading="lazy", las imágenes fuera de pantalla no se cargan y decode() no termina
       await Promise.all(
-        [...document.images].map((i) => i.decode().catch(() => {})),
+        [...document.images].map((i) => {
+          i.loading = "eager";
+          return i.decode().catch(() => {});
+        }),
       );
     });
     await page.evaluate(() => window.scrollTo(0, 0));
