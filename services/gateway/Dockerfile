@@ -4,7 +4,7 @@
 # es la misma imagen en desarrollo y en producción. Se construye desde la raíz:
 #   docker build -f services/gateway/Dockerfile .
 FROM nginx:1.30.5-alpine
-ENV NGINX_ENVSUBST_FILTER='^TRUSTED_PROXY_CIDR$'
+ENV NGINX_ENVSUBST_FILTER='^(TRUSTED_PROXY_CIDR|ADMIN_HOST)$'
 COPY services/gateway/snippets/ /etc/nginx/snippets/
 COPY services/gateway/default.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80

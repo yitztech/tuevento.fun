@@ -12,7 +12,7 @@
     "dev": "npm run dev -w @tuevento/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "node scripts/test-all.mjs",
-    "test:unit": "node scripts/check-versions.mjs && node scripts/check-test-only.mjs && tsx --test packages/contracts/src/*.test.ts",
+    "test:unit": "node scripts/check-versions.mjs && node scripts/check-test-only.mjs && tsx --test packages/contracts/src/*.test.ts && npm run test -w @tuevento/admin",
     "test:api": "node tests/api/test-api.mjs",
     "test:endpoints": "node tests/api/test-endpoints.mjs",
     "test:security": "node tests/api/test-security.mjs",

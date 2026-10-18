@@ -1,0 +1,169 @@
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createAuth } from "./auth.mjs";
+import { createDatabase } from "./db.mjs";
+import * as stats from "./stats.mjs";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const publicDir = join(here, "../public");
+const LANGS = ["es", "en", "pt", "de", "fr"];
+const PAGE_SIZE = 25;
+const COOKIE = "admin_session";
+const MAX_BODY = 2048;
+
+const required = (name) => {
+  const value = process.env[name];
+  if (!value) throw new Error(`Falta la variable ${name}`);
+  return value;
+};
+
+// Los archivos estáticos se leen una vez al arrancar. Solo se sirven los de esta lista.
+async function loadAssets() {
+  const files = {
+    "/": ["index.html", "text/html; charset=utf-8"],
+    "/app.js": ["app.js", "text/javascript; charset=utf-8"],
+    "/styles.css": ["styles.css", "text/css; charset=utf-8"],
+  };
+  for (const lang of LANGS) files[`/i18n/${lang}.json`] = [`i18n/${lang}.json`, "application/json; charset=utf-8"];
+  const assets = new Map();
+  for (const [route, [file, type]] of Object.entries(files)) {
+    assets.set(route, { body: await readFile(join(publicDir, file)), type });
+  }
+  const angular = await readFile(join(here, "../../../node_modules/angular/angular.min.js"));
+  assets.set("/vendor/angular.js", { body: angular, type: "text/javascript; charset=utf-8" });
+  return assets;
+}
+
+const SECURITY = {
+  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "no-referrer",
+  "X-Robots-Tag": "noindex, nofollow",
+};
+
+function send(res, status, headers, body) {
+  res.writeHead(status, { ...SECURITY, ...headers });
+  res.end(body);
+}
+
+const json = (res, status, data, headers = {}) =>
+  send(res, status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers }, JSON.stringify(data));
+
+const intParam = (value, min, max, fallback) => {
+  const n = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+
+// Cuerpo JSON obligatorio (la cookie SameSite=Strict y este tipo de contenido cierran el CSRF).
+function readJson(req) {
+  return new Promise((resolve, reject) => {
+    if (!String(req.headers["content-type"] || "").startsWith("application/json")) return reject({ status: 415 });
+    let size = 0;
+    const chunks = [];
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY) reject({ status: 413 });
+      else chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"));
+      } catch {
+        reject({ status: 400 });
+      }
+    });
+    req.on("error", () => reject({ status: 400 }));
+  });
+}
+
+const cookieValue = (req) => {
+  const found = String(req.headers.cookie || "")
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith(`${COOKIE}=`));
+  return found ? decodeURIComponent(found.slice(COOKIE.length + 1)) : "";
+};
+
+const sessionCookie = (token, maxAge) =>
+  `${COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${process.env.COOKIE_SECURE === "false" ? "" : "; Secure"}`;
+
+export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
+  const assets = await loadAssets();
+  const auth = createAuth({
+    username: required("ADMIN_USER"),
+    passwordHash: required("ADMIN_PASSWORD_HASH"),
+    maxFailures: Number(process.env.ADMIN_MAX_FAILURES || 10),
+  });
+  const db = createDatabase({ connectionString: required("DATABASE_URL"), password: process.env.PGPASSWORD });
+
+  const requireSession = (req, res) => {
+    if (auth.valid(cookieValue(req))) return true;
+    json(res, 401, { error: "unauthorized" });
+    return false;
+  };
+
+  const api = {
+    "POST /api/login": async (req, res) => {
+      const body = await readJson(req);
+      const ip = req.headers["x-real-ip"] || req.socket.remoteAddress || "unknown";
+      const result = await auth.login(ip, String(body.username ?? ""), String(body.password ?? ""));
+      if (result.error === "blocked") return json(res, 429, { error: "blocked" });
+      if (result.error) return json(res, 401, { error: "invalid" });
+      return json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(result.token, auth.SESSION_MS / 1000) });
+    },
+    "POST /api/logout": (req, res) => {
+      auth.logout(cookieValue(req));
+      return json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie("", 0) });
+    },
+    "GET /api/session": (req, res) => {
+      if (requireSession(req, res)) json(res, 200, { ok: true });
+    },
+    "GET /api/stats": async (req, res, url) => {
+      if (!requireSession(req, res)) return;
+      const days = intParam(url.searchParams.get("days"), 1, 90, 30);
+      const [overview, activity] = await Promise.all([stats.overview(db), stats.activity(db, days)]);
+      return json(res, 200, { overview, activity });
+    },
+    "GET /api/users": async (req, res, url) => {
+      if (!requireSession(req, res)) return;
+      const page = intParam(url.searchParams.get("page"), 1, 10_000, 1);
+      const rows = await stats.users(db, { offset: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE });
+      return json(res, 200, { page, pageSize: PAGE_SIZE, rows });
+    },
+    "GET /api/events": async (req, res, url) => {
+      if (!requireSession(req, res)) return;
+      const page = intParam(url.searchParams.get("page"), 1, 10_000, 1);
+      const rows = await stats.events(db, { offset: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE });
+      return json(res, 200, { page, pageSize: PAGE_SIZE, rows });
+    },
+  };
+
+  const server = createServer(async (req, res) => {
+    const url = new URL(req.url, "http://admin.local");
+    try {
+      if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, { "Content-Type": "text/plain" }, "ok");
+      if (req.method === "GET" && assets.has(url.pathname)) {
+        const { body, type } = assets.get(url.pathname);
+        return send(res, 200, { "Content-Type": type, "Cache-Control": "no-cache" }, body);
+      }
+      const handler = api[`${req.method} ${url.pathname}`];
+      if (handler) return await handler(req, res, url);
+      if (url.pathname.startsWith("/api/")) return json(res, 404, { error: "notFound" });
+      return send(res, 404, { "Content-Type": "text/plain" }, "not found");
+    } catch (error) {
+      if (error?.status) return json(res, error.status, { error: "request" });
+      console.error(error);
+      return json(res, 500, { error: "server" });
+    }
+  });
+  await new Promise((resolve) => server.listen(port, "0.0.0.0", resolve));
+  return { server, db, close: () => new Promise((resolve) => server.close(resolve)) };
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await start();
+  console.log(`Admin escuchando en ${process.env.PORT || 3088}`);
+}
