@@ -42,7 +42,7 @@ const comunes = {
 
 // Web: el `page` de Playwright.
 const conWeb = {
-  ui: async ({ page }, use) => use(uiPlaywright(page, { abrir: (ruta) => abrirRuta(page, ruta), teclado })),
+  ui: async ({ page }, use) => use(uiPlaywright(page, { abrir: (ruta) => abrirRuta(page, ruta), teclado, android })),
 };
 
 // Android: el WebView de la app instalada en el emulador (E2E_TARGET=android, ver
