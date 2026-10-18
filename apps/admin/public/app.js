@@ -2,28 +2,22 @@
 (function () {
   "use strict";
 
-  var LANGS = ["es", "en", "pt", "de", "fr"];
-  var DATE_LOCALES = { es: "es-ES", en: "en-GB", pt: "pt-BR", de: "de-DE", fr: "fr-FR" };
-  var LANG_KEY = "admin.lang";
   var REFRESH_MS = 60 * 1000;
+  var PLATFORMS = { web: "Web", android: "Android", ios: "iOS" };
+  var THEMES = {
+    gold: "Dorado", neon: "Neón", tropical: "Tropical", minimal: "Minimalista", floral: "Floral", kids: "Infantil",
+    winter: "Invierno", spring: "Primavera", autumn: "Otoño", silver: "Plata", copper: "Cobre", disco: "Disco",
+    starlight: "Luz de estrellas", sand: "Arena", wildflower: "Flores silvestres", pastel: "Pastel"
+  };
+  var MESSAGES = {
+    invalid: "Usuario o contraseña incorrectos.",
+    blocked: "Demasiados intentos. Espera unos minutos.",
+    error: "No se pudieron cargar los datos."
+  };
 
-  function initialLang() {
-    try {
-      var saved = window.localStorage.getItem(LANG_KEY);
-      if (LANGS.indexOf(saved) !== -1) return saved;
-    } catch (e) {
-      // Sin almacenamiento (modo privado): se usa el idioma del navegador.
-    }
-    var browser = (navigator.language || "es").slice(0, 2);
-    return LANGS.indexOf(browser) !== -1 ? browser : "es";
-  }
-
-  angular.module("admin", []).controller("AdminController", ["$http", "$interval", "$scope", "$document", function ($http, $interval, $scope, $document) {
+  angular.module("admin", []).controller("AdminController", ["$http", "$interval", "$scope", function ($http, $interval, $scope) {
     var vm = this;
-    var dict = {};
-    var fallback = {};
 
-    vm.lang = initialLang();
     vm.session = "checking"; // checking | out | in
     vm.tab = "summary";
     vm.days = 30;
@@ -37,35 +31,15 @@
     vm.events = null;
 
     // ── Textos ──────────────────────────────────────────────────────────────
-    function loadDictionary(lang) {
-      return $http.get("/i18n/" + lang + ".json", { cache: true }).then(function (res) {
-        dict = res.data;
-        $document[0].documentElement.lang = lang;
-        $document[0].title = dict["app.title"];
-      });
-    }
-
-    vm.t = function (key, vars) {
-      var text = dict[key] || fallback[key] || key;
-      return text.replace(/\{\{(\w+)\}\}/g, function (_, name) {
-        return vars && vars[name] !== undefined ? vars[name] : "";
-      });
+    vm.platformName = function (platform) {
+      return PLATFORMS[platform] || platform;
     };
-
-    vm.setLang = function () {
-      try {
-        window.localStorage.setItem(LANG_KEY, vm.lang);
-      } catch (e) {
-        // Sin almacenamiento: el idioma solo dura esta visita.
-      }
-      loadDictionary(vm.lang).then(function () {
-        $scope.$applyAsync();
-      });
+    vm.themeName = function (theme) {
+      return THEMES[theme] || theme;
     };
-
     vm.date = function (value) {
       if (!value) return "";
-      return new Date(value).toLocaleDateString(DATE_LOCALES[vm.lang], { day: "2-digit", month: "short", year: "numeric" });
+      return new Date(value).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
     };
 
     // ── Gráficas: barras proporcionales, sin librerías ──────────────────────
@@ -81,10 +55,10 @@
     };
 
     // ── Red ─────────────────────────────────────────────────────────────────
-    function request(method, url, body) {
+    function request(url) {
       vm.busy = true;
       vm.error = "";
-      return $http({ method: method, url: url, data: body, headers: { "Content-Type": "application/json" } })
+      return $http.get(url)
         .then(function (res) {
           vm.busy = false;
           return res.data;
@@ -95,7 +69,7 @@
             vm.session = "out";
             return Promise.reject(res);
           }
-          vm.error = "error.generic";
+          vm.error = MESSAGES.error;
           return Promise.reject(res);
         });
     }
@@ -113,7 +87,7 @@
         .catch(function (res) {
           vm.busy = false;
           vm.credentials.password = "";
-          vm.loginError = res.status === 429 ? "login.blocked" : "login.invalid";
+          vm.loginError = res.status === 429 ? MESSAGES.blocked : MESSAGES.invalid;
         });
     };
 
@@ -125,7 +99,7 @@
     };
 
     vm.loadStats = function () {
-      return request("GET", "/api/stats?days=" + vm.days).then(function (data) {
+      return request("/api/stats?days=" + vm.days).then(function (data) {
         vm.stats = data;
       }).catch(angular.noop);
     };
@@ -145,9 +119,9 @@
       if (vm.session !== "in") return;
       if (vm.tab === "summary") return vm.loadStats();
       if (vm.tab === "users") {
-        return request("GET", "/api/users?page=" + vm.page).then(function (data) { vm.users = data; }).catch(angular.noop);
+        return request("/api/users?page=" + vm.page).then(function (data) { vm.users = data; }).catch(angular.noop);
       }
-      return request("GET", "/api/events?page=" + vm.page).then(function (data) { vm.events = data; }).catch(angular.noop);
+      return request("/api/events?page=" + vm.page).then(function (data) { vm.events = data; }).catch(angular.noop);
     };
 
     // Actualiza el resumen cada minuto para ver a los conectados avanzar.
@@ -157,16 +131,11 @@
     $scope.$on("$destroy", function () { $interval.cancel(timer); });
 
     // ── Arranque ────────────────────────────────────────────────────────────
-    loadDictionary("es").then(function () {
-      fallback = dict;
-      return vm.lang === "es" ? null : loadDictionary(vm.lang);
-    }).then(function () {
-      return $http.get("/api/session");
-    }).then(function () {
+    $http.get("/api/session").then(function () {
       vm.session = "in";
       vm.show("summary");
     }).catch(function (res) {
-      if (res && res.status !== 401) vm.error = "error.generic";
+      if (res && res.status !== 401) vm.error = MESSAGES.error;
       vm.session = "out";
     });
   }]);

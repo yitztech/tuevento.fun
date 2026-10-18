@@ -9,118 +9,111 @@
 </head>
 <body ng-controller="AdminController as vm" ng-cloak>
   <header class="top">
-    <strong class="brand">{{vm.t('app.title')}}</strong>
+    <strong class="brand">Panel de TuEventoFun</strong>
     <div class="top-actions" ng-if="vm.session === 'in'">
-      <select class="field-small" ng-model="vm.lang" ng-change="vm.setLang()" aria-label="{{vm.t('nav.language')}}">
-        <option value="es">Español</option>
-        <option value="en">English</option>
-        <option value="pt">Português</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-      </select>
-      <button type="button" class="ghost" ng-click="vm.logout()">{{vm.t('nav.logout')}}</button>
+      <button type="button" class="ghost" ng-click="vm.logout()">Salir</button>
     </div>
   </header>
 
   <main>
     <!-- Entrada -->
     <section class="login" ng-if="vm.session === 'out'">
-      <h1>{{vm.t('login.title')}}</h1>
+      <h1>Entrar al panel</h1>
       <form ng-submit="vm.login()" novalidate>
         <label>
-          <span>{{vm.t('login.user')}}</span>
+          <span>Usuario</span>
           <input type="text" autocomplete="username" autocapitalize="none" spellcheck="false" ng-model="vm.credentials.username" required>
         </label>
         <label>
-          <span>{{vm.t('login.password')}}</span>
+          <span>Contraseña</span>
           <input type="password" autocomplete="current-password" ng-model="vm.credentials.password" required>
         </label>
-        <p class="error" role="alert" ng-if="vm.loginError">{{vm.t(vm.loginError)}}</p>
-        <button type="submit" class="primary" ng-disabled="vm.busy">{{vm.t('login.submit')}}</button>
+        <p class="error" role="alert" ng-if="vm.loginError">{{vm.loginError}}</p>
+        <button type="submit" class="primary" ng-disabled="vm.busy">Entrar</button>
       </form>
     </section>
 
     <div ng-if="vm.session === 'in'">
       <nav class="tabs" role="tablist">
-        <button type="button" role="tab" ng-class="{active: vm.tab === 'summary'}" ng-click="vm.show('summary')">{{vm.t('nav.summary')}}</button>
-        <button type="button" role="tab" ng-class="{active: vm.tab === 'users'}" ng-click="vm.show('users')">{{vm.t('nav.users')}}</button>
-        <button type="button" role="tab" ng-class="{active: vm.tab === 'events'}" ng-click="vm.show('events')">{{vm.t('nav.events')}}</button>
+        <button type="button" role="tab" ng-class="{active: vm.tab === 'summary'}" ng-click="vm.show('summary')">Resumen</button>
+        <button type="button" role="tab" ng-class="{active: vm.tab === 'users'}" ng-click="vm.show('users')">Usuarios</button>
+        <button type="button" role="tab" ng-class="{active: vm.tab === 'events'}" ng-click="vm.show('events')">Eventos</button>
       </nav>
 
       <p class="error" role="alert" ng-if="vm.error">
-        {{vm.t(vm.error)}}
-        <button type="button" class="ghost" ng-click="vm.reload()">{{vm.t('action.retry')}}</button>
+        {{vm.error}}
+        <button type="button" class="ghost" ng-click="vm.reload()">Reintentar</button>
       </p>
-      <p class="muted" role="status" ng-if="vm.busy">{{vm.t('state.loading')}}</p>
+      <p class="muted" role="status" ng-if="vm.busy">Cargando…</p>
 
       <!-- Resumen -->
       <section ng-if="vm.tab === 'summary' && vm.stats">
         <div class="toolbar">
           <label class="period">
-            <span>{{vm.t('period.label')}}</span>
+            <span>Periodo</span>
             <select class="field-small" ng-model="vm.days" ng-change="vm.loadStats()">
-              <option ng-repeat="d in [7, 30, 90]" ng-value="d">{{vm.t('period.option', {days: d})}}</option>
+              <option ng-repeat="d in [7, 30, 90]" ng-value="d">{{d}} días</option>
             </select>
           </label>
         </div>
 
         <div class="cards">
           <article class="card highlight">
-            <h2>{{vm.t('online.title')}}</h2>
+            <h2>Conectados ahora</h2>
             <p class="big">{{vm.totalOnline()}}</p>
-            <p class="muted">{{vm.t('online.help')}}</p>
+            <p class="muted">Visitantes con actividad en los últimos 5 minutos.</p>
             <ul class="inline" ng-if="vm.stats.overview.online.length">
-              <li ng-repeat="p in vm.stats.overview.online">{{vm.t('platform.' + p.platform)}}: <strong>{{p.visitors}}</strong></li>
+              <li ng-repeat="p in vm.stats.overview.online">{{vm.platformName(p.platform)}}: <strong>{{p.visitors}}</strong></li>
             </ul>
-            <p class="muted" ng-if="!vm.stats.overview.online.length">{{vm.t('online.none')}}</p>
+            <p class="muted" ng-if="!vm.stats.overview.online.length">Nadie en este momento.</p>
           </article>
           <article class="card">
-            <h2>{{vm.t('users.total')}}</h2>
+            <h2>Usuarios registrados</h2>
             <p class="big">{{vm.stats.overview.users.total}}</p>
             <ul class="inline">
-              <li>{{vm.t('users.new1')}}: <strong>{{vm.stats.overview.users.last1}}</strong></li>
-              <li>{{vm.t('users.new7')}}: <strong>{{vm.stats.overview.users.last7}}</strong></li>
-              <li>{{vm.t('users.new30')}}: <strong>{{vm.stats.overview.users.last30}}</strong></li>
+              <li>Nuevos (24 h): <strong>{{vm.stats.overview.users.last1}}</strong></li>
+              <li>Nuevos (7 días): <strong>{{vm.stats.overview.users.last7}}</strong></li>
+              <li>Nuevos (30 días): <strong>{{vm.stats.overview.users.last30}}</strong></li>
             </ul>
           </article>
           <article class="card">
-            <h2>{{vm.t('sessions.open')}}</h2>
+            <h2>Sesiones abiertas</h2>
             <p class="big">{{vm.stats.overview.sessions.open}}</p>
           </article>
           <article class="card">
-            <h2>{{vm.t('events.total')}}</h2>
+            <h2>Eventos creados</h2>
             <p class="big">{{vm.stats.overview.events.total}}</p>
             <ul class="inline">
-              <li>{{vm.t('events.new7')}}: <strong>{{vm.stats.overview.events.last7}}</strong></li>
-              <li>{{vm.t('events.archived')}}: <strong>{{vm.stats.overview.events.archived}}</strong></li>
+              <li>Eventos nuevos (7 días): <strong>{{vm.stats.overview.events.last7}}</strong></li>
+              <li>Archivados: <strong>{{vm.stats.overview.events.archived}}</strong></li>
             </ul>
           </article>
           <article class="card">
-            <h2>{{vm.t('invitations.total')}}</h2>
+            <h2>Invitaciones enviadas</h2>
             <p class="big">{{vm.stats.overview.invitations.total}}</p>
             <ul class="inline">
-              <li>{{vm.t('guests.accepted')}}: <strong>{{vm.stats.overview.guests.accepted}}</strong></li>
-              <li>{{vm.t('guests.declined')}}: <strong>{{vm.stats.overview.guests.declined}}</strong></li>
-              <li>{{vm.t('guests.pending')}}: <strong>{{vm.stats.overview.guests.pending}}</strong></li>
+              <li>Confirmados: <strong>{{vm.stats.overview.guests.accepted}}</strong></li>
+              <li>No asisten: <strong>{{vm.stats.overview.guests.declined}}</strong></li>
+              <li>Pendientes: <strong>{{vm.stats.overview.guests.pending}}</strong></li>
             </ul>
           </article>
           <article class="card">
-            <h2>{{vm.t('platforms.title')}}</h2>
+            <h2>Plataformas</h2>
             <table>
               <tbody>
                 <tr ng-repeat="p in vm.stats.overview.users.byPlatform">
-                  <th scope="row">{{vm.t('platform.' + p.platform)}}</th>
+                  <th scope="row">{{vm.platformName(p.platform)}}</th>
                   <td>{{p.users}}</td>
                 </tr>
               </tbody>
             </table>
           </article>
           <article class="card">
-            <h2>{{vm.t('themes.title')}}</h2>
+            <h2>Temas de los eventos</h2>
             <table>
               <tbody>
                 <tr ng-repeat="t in vm.stats.overview.events.themes">
-                  <th scope="row">{{vm.t('theme.' + t.theme)}}</th>
+                  <th scope="row">{{vm.themeName(t.theme)}}</th>
                   <td>{{t.events}}</td>
                 </tr>
               </tbody>
@@ -130,8 +123,8 @@
 
         <div class="cards wide">
           <article class="card">
-            <h2>{{vm.t('daily.title')}}</h2>
-            <div class="bars" role="img" aria-label="{{vm.t('daily.title')}}">
+            <h2>Actividad diaria</h2>
+            <div class="bars" role="img" aria-label="Actividad diaria">
               <div class="bar" ng-repeat="d in vm.stats.activity.daily" title="{{d.day}}: {{d.visits}}">
                 <span class="bar-fill" ng-style="{height: vm.share(d.visits, vm.maxOf(vm.stats.activity.daily, 'visits')) + '%'}"></span>
                 <small>{{d.day | limitTo: 5 : 5}}</small>
@@ -139,16 +132,16 @@
             </div>
             <table class="totals">
               <tbody>
-                <tr><th scope="row">{{vm.t('metric.visitors')}}</th><td>{{vm.stats.activity.totals.visitors}}</td></tr>
-                <tr><th scope="row">{{vm.t('metric.visits')}}</th><td>{{vm.stats.activity.totals.visits}}</td></tr>
-                <tr><th scope="row">{{vm.t('metric.registrations')}}</th><td>{{vm.stats.activity.totals.registrations}}</td></tr>
-                <tr><th scope="row">{{vm.t('metric.logins')}}</th><td>{{vm.stats.activity.totals.logins}}</td></tr>
-                <tr><th scope="row">{{vm.t('metric.downloads')}}</th><td>{{vm.stats.activity.totals.downloads}}</td></tr>
+                <tr><th scope="row">Visitantes</th><td>{{vm.stats.activity.totals.visitors}}</td></tr>
+                <tr><th scope="row">Visitas</th><td>{{vm.stats.activity.totals.visits}}</td></tr>
+                <tr><th scope="row">Registros</th><td>{{vm.stats.activity.totals.registrations}}</td></tr>
+                <tr><th scope="row">Inicios de sesión</th><td>{{vm.stats.activity.totals.logins}}</td></tr>
+                <tr><th scope="row">Descargas</th><td>{{vm.stats.activity.totals.downloads}}</td></tr>
               </tbody>
             </table>
           </article>
           <article class="card">
-            <h2>{{vm.t('routes.title')}}</h2>
+            <h2>Páginas más visitadas</h2>
             <table>
               <tbody>
                 <tr ng-repeat="r in vm.stats.activity.routes">
@@ -157,7 +150,6 @@
                 </tr>
               </tbody>
             </table>
-            <p class="muted">{{vm.t('geo.note')}}</p>
           </article>
         </div>
       </section>
@@ -167,30 +159,30 @@
         <table class="data">
           <thead>
             <tr>
-              <th>{{vm.t('table.name')}}</th>
-              <th>{{vm.t('table.email')}}</th>
-              <th>{{vm.t('table.platform')}}</th>
-              <th>{{vm.t('table.registered')}}</th>
-              <th>{{vm.t('table.events')}}</th>
-              <th>{{vm.t('table.lastActivity')}}</th>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Plataforma</th>
+              <th>Alta</th>
+              <th>Eventos</th>
+              <th>Última actividad</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="u in vm.users.rows">
-              <td data-label="{{vm.t('table.name')}}">{{u.firstName}} {{u.lastName}}</td>
-              <td data-label="{{vm.t('table.email')}}">{{u.email}}</td>
-              <td data-label="{{vm.t('table.platform')}}">{{vm.t('platform.' + u.platform)}}</td>
-              <td data-label="{{vm.t('table.registered')}}">{{vm.date(u.createdAt)}}</td>
-              <td data-label="{{vm.t('table.events')}}">{{u.events}}</td>
-              <td data-label="{{vm.t('table.lastActivity')}}">{{vm.date(u.lastActivity)}}</td>
+              <td data-label="Nombre">{{u.firstName}} {{u.lastName}}</td>
+              <td data-label="Correo">{{u.email}}</td>
+              <td data-label="Plataforma">{{vm.platformName(u.platform)}}</td>
+              <td data-label="Alta">{{vm.date(u.createdAt)}}</td>
+              <td data-label="Eventos">{{u.events}}</td>
+              <td data-label="Última actividad">{{vm.date(u.lastActivity)}}</td>
             </tr>
-            <tr ng-if="!vm.users.rows.length"><td colspan="6" class="muted">{{vm.t('table.empty')}}</td></tr>
+            <tr ng-if="!vm.users.rows.length"><td colspan="6" class="muted">Sin datos todavía.</td></tr>
           </tbody>
         </table>
         <nav class="pager">
-          <button type="button" class="ghost" ng-disabled="vm.page <= 1" ng-click="vm.go(vm.page - 1)">{{vm.t('page.previous')}}</button>
-          <span>{{vm.t('page.number', {page: vm.page})}}</span>
-          <button type="button" class="ghost" ng-disabled="vm.users.rows.length < vm.users.pageSize" ng-click="vm.go(vm.page + 1)">{{vm.t('page.next')}}</button>
+          <button type="button" class="ghost" ng-disabled="vm.page <= 1" ng-click="vm.go(vm.page - 1)">Anterior</button>
+          <span>Página {{vm.page}}</span>
+          <button type="button" class="ghost" ng-disabled="vm.users.rows.length < vm.users.pageSize" ng-click="vm.go(vm.page + 1)">Siguiente</button>
         </nav>
       </section>
 
@@ -199,30 +191,30 @@
         <table class="data">
           <thead>
             <tr>
-              <th>{{vm.t('table.event')}}</th>
-              <th>{{vm.t('table.owner')}}</th>
-              <th>{{vm.t('table.date')}}</th>
-              <th>{{vm.t('table.theme')}}</th>
-              <th>{{vm.t('table.invitations')}}</th>
-              <th>{{vm.t('table.accepted')}}</th>
+              <th>Evento</th>
+              <th>Organizador</th>
+              <th>Fecha</th>
+              <th>Tema</th>
+              <th>Invitaciones</th>
+              <th>Confirmados</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="e in vm.events.rows">
-              <td data-label="{{vm.t('table.event')}}">{{e.title}}</td>
-              <td data-label="{{vm.t('table.owner')}}">{{e.owner}}</td>
-              <td data-label="{{vm.t('table.date')}}">{{vm.date(e.date)}}</td>
-              <td data-label="{{vm.t('table.theme')}}">{{vm.t('theme.' + e.theme)}}</td>
-              <td data-label="{{vm.t('table.invitations')}}">{{e.invitations}}</td>
-              <td data-label="{{vm.t('table.accepted')}}">{{e.accepted}}</td>
+              <td data-label="Evento">{{e.title}}</td>
+              <td data-label="Organizador">{{e.owner}}</td>
+              <td data-label="Fecha">{{vm.date(e.date)}}</td>
+              <td data-label="Tema">{{vm.themeName(e.theme)}}</td>
+              <td data-label="Invitaciones">{{e.invitations}}</td>
+              <td data-label="Confirmados">{{e.accepted}}</td>
             </tr>
-            <tr ng-if="!vm.events.rows.length"><td colspan="6" class="muted">{{vm.t('table.empty')}}</td></tr>
+            <tr ng-if="!vm.events.rows.length"><td colspan="6" class="muted">Sin datos todavía.</td></tr>
           </tbody>
         </table>
         <nav class="pager">
-          <button type="button" class="ghost" ng-disabled="vm.page <= 1" ng-click="vm.go(vm.page - 1)">{{vm.t('page.previous')}}</button>
-          <span>{{vm.t('page.number', {page: vm.page})}}</span>
-          <button type="button" class="ghost" ng-disabled="vm.events.rows.length < vm.events.pageSize" ng-click="vm.go(vm.page + 1)">{{vm.t('page.next')}}</button>
+          <button type="button" class="ghost" ng-disabled="vm.page <= 1" ng-click="vm.go(vm.page - 1)">Anterior</button>
+          <span>Página {{vm.page}}</span>
+          <button type="button" class="ghost" ng-disabled="vm.events.rows.length < vm.events.pageSize" ng-click="vm.go(vm.page + 1)">Siguiente</button>
         </nav>
       </section>
     </div>

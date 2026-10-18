@@ -8,7 +8,6 @@ import * as stats from "./stats.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(here, "../public");
-const LANGS = ["es", "en", "pt", "de", "fr"];
 const PAGE_SIZE = 25;
 const COOKIE = "admin_session";
 const MAX_BODY = 2048;
@@ -26,7 +25,6 @@ async function loadAssets() {
     "/app.js": ["app.js", "text/javascript; charset=utf-8"],
     "/styles.css": ["styles.css", "text/css; charset=utf-8"],
   };
-  for (const lang of LANGS) files[`/i18n/${lang}.json`] = [`i18n/${lang}.json`, "application/json; charset=utf-8"];
   const assets = new Map();
   for (const [route, [file, type]] of Object.entries(files)) {
     assets.set(route, { body: await readFile(join(publicDir, file)), type });

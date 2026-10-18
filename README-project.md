@@ -207,7 +207,7 @@ Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no
 
 ## Panel de administración
 
-`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y AngularJS 1.8.3 (última versión de la rama 1.x, sin soporte desde 2022) servidos por el mismo contenedor, responsivo para el móvil. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Solo lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos). El país de cada visita no se guarda, así que no hay mapa.
+`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y AngularJS 1.8.3 (última versión de la rama 1.x, sin soporte desde 2022) servidos por el mismo contenedor, responsivo para el móvil. Solo en español: el panel no está traducido a propósito. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Solo lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos). El país de cada visita no se guarda, así que no hay mapa.
 
 Puesta en marcha en producción:
 
@@ -219,7 +219,7 @@ docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventof
 ```
    Antes de hacerlo, el servicio `admin` no arranca (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
 
-En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones, bloqueo y textos en cinco idiomas).
+En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
 
 ## Apps Android/iOS, administración y releases
 
