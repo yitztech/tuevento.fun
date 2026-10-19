@@ -55,6 +55,13 @@ services:
       MAIL_FROM_EN: no-reply@en.tueventofun.orb.local
 
   # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
+  admin:
+    build:
+      context: .
+      dockerfile: services/admin/Dockerfile
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:-8188}:3088"
+
   mailpit:
     image: axllent/mailpit:v1.31.5
     environment:
