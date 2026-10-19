@@ -14,17 +14,27 @@ const PASSWORD = "clave-de-prueba-admin";
 const rol = `admin_ro_test_${randomBytes(3).toString("hex")}`;
 
 let base, lector;
-before(async () => {
-  base = await baseTemporal();
-  // Psql no corre aquí: se sustituyen sus variables (:'admin_pw', :"db") y el nombre del rol
+const conectar = (password) =>
+  new pg.Pool({ host: process.env.TEST_DB_HOST || "127.0.0.1", port: Number(process.env.TEST_DB_PORT || process.env.DB_PORT || 5487), user: rol, password, database: base.nombre, max: 1 });
+
+// Psql no corre aquí: se sustituyen sus variables (:'admin_pw', :"db") y el nombre del rol
+async function aplicar(password) {
   const sql = readFileSync(sqlArchivo, "utf8")
-    .replaceAll(":'admin_pw'", `'${PASSWORD}'`)
+    .replaceAll(":'admin_pw'", `'${password}'`)
     .replaceAll(':"db"', `"${base.nombre}"`)
     .replaceAll("admin_ro", rol);
   const dueno = admin(base.nombre);
-  await dueno.query(sql);
-  await dueno.end();
-  lector = new pg.Pool({ host: process.env.TEST_DB_HOST || "127.0.0.1", port: Number(process.env.TEST_DB_PORT || process.env.DB_PORT || 5487), user: rol, password: PASSWORD, database: base.nombre, max: 1 });
+  try {
+    await dueno.query(sql);
+  } finally {
+    await dueno.end();
+  }
+}
+
+before(async () => {
+  base = await baseTemporal();
+  await aplicar(PASSWORD);
+  lector = conectar(PASSWORD);
 });
 after(async () => {
   await lector?.end();
@@ -62,4 +72,26 @@ test("el panel no escribe nada", async () => {
   await denegado("DELETE FROM events");
   await denegado("INSERT INTO activity(id, kind, platform) VALUES (gen_random_uuid(), 'visit', 'web')");
   await denegado("CREATE TABLE robado (x int)");
+});
+
+test("repetir el script con el rol ya creado y con permisos no falla: cambia la contraseña y deja los mismos permisos", async () => {
+  const otra = "otra-clave-de-prueba-admin";
+  const dueno = admin(base.nombre);
+  // Un permiso que no está en la lista: al repetir el script debe desaparecer
+  await dueno.query(`GRANT SELECT (phone) ON users TO ${rol}`);
+  await dueno.end();
+
+  await aplicar(otra);
+  const nuevo = conectar(otra);
+  try {
+    await nuevo.query("SELECT id, email FROM users");
+    await assert.rejects(nuevo.query("SELECT phone FROM users"), (e) => e.code === PERMISO_DENEGADO);
+  } finally {
+    await nuevo.end();
+  }
+  const viejo = conectar(PASSWORD);
+  await assert.rejects(viejo.query("SELECT 1"), (e) => e.code === "28P01");
+  await viejo.end();
+
+  await aplicar(PASSWORD);
 });

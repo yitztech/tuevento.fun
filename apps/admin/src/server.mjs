@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createAuth } from "./auth.mjs";
 import { createDatabase } from "./db.mjs";
+import { isPasswordHash } from "./password.mjs";
 import * as stats from "./stats.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -11,6 +12,7 @@ const publicDir = join(here, "../public");
 const PAGE_SIZE = 25;
 const COOKIE = "admin_session";
 const MAX_BODY = 2048;
+const HEALTH_TIMEOUT_MS = 900;
 
 const required = (name) => {
   const value = process.env[name];
@@ -90,9 +92,14 @@ const sessionCookie = (token, maxAge) =>
 
 export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
   const assets = await loadAssets();
+  const passwordHash = required("ADMIN_PASSWORD_HASH");
+  // Un hash recortado (p. ej. por un `$` interpretado como variable) dejaría el panel sin entrada posible
+  if (!isPasswordHash(passwordHash)) {
+    throw new Error("ADMIN_PASSWORD_HASH no es un hash válido: genéralo con `npm run hash-password -w @tuevento/admin` y pégalo entero");
+  }
   const auth = createAuth({
     username: required("ADMIN_USER"),
-    passwordHash: required("ADMIN_PASSWORD_HASH"),
+    passwordHash,
     maxFailures: Number(process.env.ADMIN_MAX_FAILURES || 10),
   });
   const db = createDatabase({ connectionString: required("DATABASE_URL"), password: process.env.PGPASSWORD });
@@ -103,7 +110,20 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
     return false;
   };
 
+  // Sano si el rol `admin_ro` entra y lee lo que muestra el panel (rol creado y permisos de la migración 014)
+  const healthy = () => {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("timeout")), HEALTH_TIMEOUT_MS);
+    });
+    return Promise.race([db.query("SELECT 1 FROM events LIMIT 1"), timeout])
+      .then(() => true, () => false)
+      .finally(() => clearTimeout(timer));
+  };
+
   const api = {
+    "GET /api/health": async (req, res) =>
+      (await healthy()) ? json(res, 200, { status: "ok" }) : json(res, 503, { status: "error" }),
     "POST /api/login": async (req, res) => {
       const body = await readJson(req);
       const ip = req.headers["x-real-ip"] || req.socket.remoteAddress || "unknown";
@@ -142,6 +162,7 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, "http://admin.local");
     try {
+      // Solo dice que el proceso vive (contrato de la plataforma); la base la comprueba /api/health
       if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, { "Content-Type": "text/plain" }, "ok");
       if (req.method === "GET" && assets.has(url.pathname)) {
         const { body, type } = assets.get(url.pathname);

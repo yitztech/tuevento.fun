@@ -16,6 +16,10 @@ Característica: Panel de administración
     Cuando pido las estadísticas del panel sin haber entrado
     Entonces el panel responde 401
 
+  Escenario: La salud del panel comprueba que puede leer la base de datos
+    Cuando pido la salud del panel
+    Entonces el panel responde 200 con el estado "ok"
+
   Escenario: El panel se usa en un móvil sin desbordamiento horizontal
     Dado que el panel se abre en un móvil de 390 por 844
     Cuando abro el panel de administración

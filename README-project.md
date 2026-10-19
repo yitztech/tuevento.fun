@@ -211,13 +211,14 @@ Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no
 
 Puesta en marcha en producción:
 
-1. Generar el hash de la contraseña sin dejarla en el historial de la shell: `printf '%s' 'contraseña' | npm run hash-password -w @tuevento/admin`.
-2. Definir en Coolify `ADMIN_USER`, `ADMIN_PASSWORD_HASH` y `ADMIN_DB_PASSWORD`, y añadir `ADMIN_HOST` al servicio `gateway` como dominio. Sin estas variables el despliegue se detiene.
-3. Crear el rol de solo lectura en un volumen existente, como el dueño de la base (es seguro repetirlo):
+1. Generar el hash de la contraseña sin dejarla en el historial de la shell: `printf '%s' 'contraseña' | npm run hash-password -w @tuevento/admin`. Sale con el formato `scrypt:N:r:p:sal:hash`, sin `$`, para que Docker Compose y Coolify no lo interpreten como variable y lo recorten. Un hash del formato anterior (con `$`) se acepta, pero en Coolify habría que escribir cada `$` como `$$`: mejor generar uno nuevo.
+2. Definir en Coolify `ADMIN_USER`, `ADMIN_PASSWORD_HASH` (el valor entero, sin comillas) y `ADMIN_DB_PASSWORD`, y añadir `ADMIN_HOST` al servicio `gateway` como dominio. Sin estas variables el despliegue se detiene, y con un hash recortado o mal pegado `admin` no arranca y lo dice en su log.
+3. Crear el rol de solo lectura en un volumen existente, como el dueño de la base. Se puede repetir (también para cambiar la contraseña): crea el rol si falta, nunca lo borra y deja sus permisos en la lista del script:
 ```bash
 docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventofun -v admin_pw="$ADMIN_DB_PASSWORD" -v db=tueventofun < services/postgres/sql/admin-role.sql
 ```
-   Antes de hacerlo, el servicio `admin` no arranca (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
+   Antes de hacerlo, el servicio `admin` no puede leer la base (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
+4. Comprobar `https://admin.tuevento.fun/api/health`: 200 `{"status":"ok"}` si el rol entra y tiene sus permisos; 503 `{"status":"error"}` si no (rol sin crear, contraseña distinta o migración 014 sin aplicar). Es la ruta que puede vigilar Uptime Kuma. `/healthz`, la del `healthcheck` de Docker, solo dice que el proceso vive, como pide el contrato de la plataforma.
 
 En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
 

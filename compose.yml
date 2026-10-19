@@ -113,7 +113,7 @@ services:
       DATABASE_URL: postgres://admin_ro@postgres:5432/tueventofun
       PGPASSWORD: ${ADMIN_DB_PASSWORD:-dev-admin}
       ADMIN_USER: ${ADMIN_USER:-admin-dev}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-scrypt$$16384$$8$$1$$vKfbBhhXYX+qW1vUnexl2w==$$B15jwpqpCexk35DEqPj7PXKzWIh8Ih8R8K5Hlyu2bpUIxgHSJcBb3cZ7BwhxZEhAcNxuo7qR3v/iNFzkNcUwuQ==}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-scrypt:16384:8:1:vKfbBhhXYX+qW1vUnexl2w==:B15jwpqpCexk35DEqPj7PXKzWIh8Ih8R8K5Hlyu2bpUIxgHSJcBb3cZ7BwhxZEhAcNxuo7qR3v/iNFzkNcUwuQ==}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       # Las pruebas entran una y otra vez desde la misma IP: sin este límite se bloquearían solas
       ADMIN_MAX_FAILURES: ${ADMIN_MAX_FAILURES:-1000}

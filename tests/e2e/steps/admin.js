@@ -27,6 +27,17 @@ When("pido las estadísticas del panel sin haber entrado", async ({ page, ctx })
   ctx.estado = (await page.request.get(`${adminURL}/api/stats`)).status();
 });
 
+When("pido la salud del panel", async ({ page, ctx }) => {
+  const respuesta = await page.request.get(`${adminURL}/api/health`);
+  ctx.estado = respuesta.status();
+  ctx.cuerpo = await respuesta.json();
+});
+
+Then("el panel responde {int} con el estado {string}", async ({ ctx }, estado, valor) => {
+  expect(ctx.estado).toBe(estado);
+  expect(ctx.cuerpo).toEqual({ status: valor });
+});
+
 Then("veo el error {string} del panel", async ({ page }, texto) => {
   await expect(page.getByRole("alert").filter({ hasText: texto })).toBeVisible();
 });
