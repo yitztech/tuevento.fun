@@ -11,6 +11,7 @@ server_tokens off;
 resolver 127.0.0.11 valid=10s ipv6=off;
 upstream api_upstream { zone api_upstream 64k; server api:3087 resolve; keepalive 16; }
 upstream web_upstream { zone web_upstream 64k; server web:8080 resolve; keepalive 16; }
+upstream admin_upstream { zone admin_upstream 64k; server admin:3088 resolve; keepalive 4; }
 
 # ── IP real del cliente ─────────────────────────────────────────────
 # Solo se confía en X-Forwarded-For si llega de la red donde está Traefik
@@ -32,8 +33,21 @@ map $http_upgrade $connection_upgrade { default upgrade; '' ''; }
 # Host (idioma), así que si algún día se cachea, la clave debe incluir $host.
 # proxy_cache_path /var/cache/nginx/web levels=1:2 keys_zone=web_cache:2m max_size=200m inactive=7d use_temp_path=off;
 
+# Panel de administración: solo su subdominio llega a `admin`; el resto de hosts sigue igual.
 server {
     listen 80;
+    server_name ${ADMIN_HOST};
+    client_max_body_size 4k;
+
+    location / {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://admin_upstream;
+    }
+}
+
+# Servidor por defecto: cualquier Host que no sea el del panel (nginx usaría el primero del archivo)
+server {
+    listen 80 default_server;
     server_name _;
     client_max_body_size 3m;
 

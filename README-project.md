@@ -138,6 +138,9 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | web | Analítica (vacío = sin analítica) |
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
+| `ADMIN_DB_PASSWORD` | admin, postgres | Contraseña del rol de solo lectura `admin_ro` del panel |
+| `ADMIN_USER`, `ADMIN_PASSWORD_HASH` | admin | Usuario del panel y hash scrypt de su contraseña (ver [Panel de administración](#panel-de-administración)) |
+| `ADMIN_HOST` | gateway | Subdominio del panel (por defecto `admin.tuevento.fun`) |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
 | `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | api | Servidor SMTP común a los dos idiomas |
@@ -201,6 +204,22 @@ curl localhost:5187/healthz           # ok
 Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no es accesible desde el teléfono de un invitado.
 
 [Arquitectura y límites](docs/ARCHITECTURE.md) · [Procedencia de imágenes](docs/ASSETS.md) · [Diseño](DESIGN.md)
+
+## Panel de administración
+
+`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y AngularJS 1.8.3 (última versión de la rama 1.x, sin soporte desde 2022) servidos por el mismo contenedor, responsivo para el móvil. Solo en español: el panel no está traducido a propósito. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Solo lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos). El país de cada visita no se guarda, así que no hay mapa.
+
+Puesta en marcha en producción:
+
+1. Generar el hash de la contraseña sin dejarla en el historial de la shell: `printf '%s' 'contraseña' | npm run hash-password -w @tuevento/admin`.
+2. Definir en Coolify `ADMIN_USER`, `ADMIN_PASSWORD_HASH` y `ADMIN_DB_PASSWORD`, y añadir `ADMIN_HOST` al servicio `gateway` como dominio. Sin estas variables el despliegue se detiene.
+3. Crear el rol de solo lectura en un volumen existente, como el dueño de la base (es seguro repetirlo):
+```bash
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventofun -v admin_pw="$ADMIN_DB_PASSWORD" -v db=tueventofun < services/postgres/sql/admin-role.sql
+```
+   Antes de hacerlo, el servicio `admin` no arranca (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
+
+En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
 
 ## Apps Android/iOS, administración y releases
 

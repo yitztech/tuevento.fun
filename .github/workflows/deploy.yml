@@ -1,6 +1,6 @@
 # Publica las imágenes en GHCR y despliega en Coolify cuando cambia main.
 #
-#   probar → publicar (gateway, web, api y postgres) → desplegar (webhook de Coolify) → comprobar
+#   probar → publicar (gateway, web, api, admin y postgres) → desplegar (webhook de Coolify) → comprobar
 #
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variables SITE_URL y
 # SITE_URL_EN) lo rellena la plataforma. Mientras no exista, se publican las imágenes
@@ -62,6 +62,9 @@ jobs:
               ANDROID_CERT_SHA256=${{ vars.ANDROID_CERT_SHA256 }}
               APPLE_TEAM_ID=${{ vars.APPLE_TEAM_ID }}
               MOBILE_APP_ID=${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
+          # Panel de administración (subdominio admin): Node + AngularJS, sin build args
+          - name: admin
+            build_args: ""
           - name: postgres
             build_args: ""
     steps:
@@ -72,7 +75,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway, -web, -api y -postgres
+      # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway, -web, -api, -admin y -postgres
       - id: image
         env:
           REPOSITORY: ${{ github.repository }}
