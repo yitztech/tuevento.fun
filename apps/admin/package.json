@@ -5,11 +5,25 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.mjs",
+    "build": "ng build",
+    "typecheck": "ngc -p tsconfig.app.json --noEmit",
     "test": "node --test src/*.test.mjs",
     "hash-password": "node scripts/hash-password.mjs"
   },
   "dependencies": {
-    "angular": "1.8.3",
     "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.3",
+    "@angular/cli": "22.2.3",
+    "@angular/common": "22.2.3",
+    "@angular/compiler": "22.2.3",
+    "@angular/compiler-cli": "22.2.3",
+    "@angular/core": "22.2.3",
+    "@angular/forms": "22.2.3",
+    "@angular/platform-browser": "22.2.3",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "typescript": "~6.0.3"
   }
 }

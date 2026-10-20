@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
+import { dirname, extname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createAuth } from "./auth.mjs";
 import { createDatabase } from "./db.mjs";
@@ -9,7 +9,7 @@ import * as stats from "./stats.mjs";
 import { umamiFromEnv } from "./umami.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const publicDir = join(here, "../public");
+const browserDir = join(here, "../dist/browser");
 const PAGE_SIZE = 25;
 const COOKIE = "admin_session";
 const MAX_BODY = 2048;
@@ -21,19 +21,23 @@ const required = (name) => {
   return value;
 };
 
-// Los archivos estáticos se leen una vez al arrancar. Solo se sirven los de esta lista.
+const TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+};
+
+// Los archivos estáticos (la compilación de Angular, `npm run build -w @tuevento/admin`) se leen una
+// vez al arrancar. Solo se sirven los de esa carpeta con un tipo conocido; index.html, en `/`.
 async function loadAssets() {
-  const files = {
-    "/": ["index.html", "text/html; charset=utf-8"],
-    "/app.js": ["app.js", "text/javascript; charset=utf-8"],
-    "/styles.css": ["styles.css", "text/css; charset=utf-8"],
-  };
   const assets = new Map();
-  for (const [route, [file, type]] of Object.entries(files)) {
-    assets.set(route, { body: await readFile(join(publicDir, file)), type });
+  for (const file of await readdir(browserDir, { recursive: true })) {
+    const type = TYPES[extname(file)];
+    if (!type) continue;
+    const route = file === "index.html" ? "/" : `/${file.split(sep).join("/")}`;
+    assets.set(route, { body: await readFile(join(browserDir, file)), type });
   }
-  const angular = await readFile(join(here, "../../../node_modules/angular/angular.min.js"));
-  assets.set("/vendor/angular.js", { body: angular, type: "text/javascript; charset=utf-8" });
+  if (!assets.has("/")) throw new Error(`Falta ${join(browserDir, "index.html")}: compila el panel con \`npm run build -w @tuevento/admin\``);
   return assets;
 }
 

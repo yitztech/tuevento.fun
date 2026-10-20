@@ -70,7 +70,7 @@ Resultados: `qa-artifacts/landing-results.json`. Capturas: `landing-desktop.png`
 - Android: `assembleDebug` completado con JDK 21/SDK 36. Artefacto local de prueba, no distribución firmada.
 - iOS: `xcodebuild ... -sdk iphonesimulator ... CODE_SIGNING_ALLOWED=NO build` completado. No prueba de dispositivo físico ni firma de distribución.
 - Workflows validados con `actionlint`; todavía no ejecutados en GitHub.
-- `npm audit`: el `uuid` transitivo obsoleto del parser Xcode se sustituye por ^14.0.3 y `shell-quote` (de Appium) por ^1.12.0, ambos con `overrides`. `npm run check:audit` falla con cualquier vulnerabilidad alta o crítica salvo las excepciones con fecha de `scripts/check-audit.mjs` (hoy, AngularJS del panel de administración).
+- `npm audit`: el `uuid` transitivo obsoleto del parser Xcode se sustituye por ^14.0.3 y `shell-quote` (de Appium) por ^1.12.0, ambos con `overrides`. `npm run check:audit` falla con cualquier vulnerabilidad alta o crítica salvo las excepciones con fecha de `scripts/check-audit.mjs` (hoy no hay ninguna).
 - Pendientes externos confirmados: dominio HTTPS, repositorio, cuenta dueña, firma Android/Apple, credenciales Google, huella SHA-256 del certificado Android, Team ID y capacidad Associated Domains en el perfil de distribución iOS. No hay descargas públicas ni aprobación de tiendas.
 
 ## Adaptación a la plataforma yitztech — 2026-10-14

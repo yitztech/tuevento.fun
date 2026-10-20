@@ -14,6 +14,12 @@ const dirs = [
 ].filter((d) => existsSync(join(d, "package.json")));
 
 const kinds = ["dependencies", "devDependencies", "peerDependencies"];
+// Paquetes atados a otro que exige una versión distinta en un workspace: se comprueba que ese
+// workspace use exactamente el rango anotado y quedan fuera de la comparación con el resto.
+const atados = {
+  // @angular/compiler-cli 22 pide typescript >=6.0 <6.1; el resto del repositorio usa TypeScript 7
+  typescript: { "@tuevento/admin": "~6.0.3" },
+};
 const ranges = new Map();
 const errors = [];
 const workspaceNames = new Set(dirs.map((d) => read(join(d, "package.json")).name));
@@ -22,6 +28,11 @@ for (const dir of dirs) {
   const pkg = read(join(dir, "package.json"));
   for (const kind of kinds) {
     for (const [name, range] of Object.entries(pkg[kind] ?? {})) {
+      const atado = atados[name]?.[pkg.name];
+      if (atado) {
+        if (range !== atado) errors.push(`${pkg.name} debe usar ${name} ${atado} (atado, ver check-versions.mjs), no ${range}`);
+        continue;
+      }
       const seen = ranges.get(name) ?? new Map();
       seen.set(range, [...(seen.get(range) ?? []), `${pkg.name}`]);
       ranges.set(name, seen);

@@ -57,7 +57,7 @@ jobs:
               ANDROID_CERT_SHA256=${{ vars.ANDROID_CERT_SHA256 }}
               APPLE_TEAM_ID=${{ vars.APPLE_TEAM_ID }}
               MOBILE_APP_ID=${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
-          # Panel de administración (subdominio admin): Node + AngularJS, sin build args
+          # Panel de administración (subdominio admin): Node + Angular, sin build args
           - name: admin
             build_args: ""
           - name: postgres

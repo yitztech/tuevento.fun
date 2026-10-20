@@ -124,7 +124,7 @@ services:
     networks: [frontend, backend]
 
   # Panel de administración (subdominio ADMIN_HOST, solo el administrador). Node sin framework +
-  # AngularJS. Lee la base con el rol `admin_ro` (solo SELECT sobre lo que muestra el panel).
+  # interfaz en Angular. Lee la base con el rol `admin_ro` (solo SELECT sobre lo que muestra el panel).
   admin:
     <<: *hardening
     image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-admin:${IMAGE_TAG:-main}

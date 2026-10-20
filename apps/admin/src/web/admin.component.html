@@ -1,0 +1,287 @@
+<header class="top">
+  <strong class="brand">Panel de TuEventoFun</strong>
+  @if (session() === 'in') {
+    <div class="top-actions">
+      <button type="button" class="ghost" (click)="logout()">Salir</button>
+    </div>
+  }
+</header>
+
+<main>
+  <!-- Entrada -->
+  @if (session() === 'out') {
+    <section class="login">
+      <h1>Entrar al panel</h1>
+      <form (ngSubmit)="login()">
+        <label>
+          <span>Usuario</span>
+          <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [(ngModel)]="credentials.username" required>
+        </label>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <span class="password-field">
+            <input [type]="showPassword() ? 'text' : 'password'" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" [(ngModel)]="credentials.password" id="password" required>
+            <button type="button" class="reveal" aria-controls="password" [attr.aria-pressed]="showPassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" [title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" (click)="togglePassword()">
+              @if (!showPassword()) {
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9.9 5.2A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.4 3.4M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>
+              }
+            </button>
+          </span>
+        </div>
+        @if (loginError()) {
+          <p class="error" role="alert">{{ loginError() }}</p>
+        }
+        <button type="submit" class="primary" [disabled]="busy()">Entrar</button>
+      </form>
+    </section>
+  }
+
+  @if (session() === 'in') {
+    <div>
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" [class.active]="tab() === 'summary'" (click)="show('summary')">Resumen</button>
+        <button type="button" role="tab" [class.active]="tab() === 'users'" (click)="show('users')">Usuarios</button>
+        <button type="button" role="tab" [class.active]="tab() === 'events'" (click)="show('events')">Eventos</button>
+      </nav>
+
+      @if (error()) {
+        <p class="error" role="alert">
+          {{ error() }}
+          <button type="button" class="ghost" (click)="reload()">Reintentar</button>
+        </p>
+      }
+      @if (busy()) {
+        <p class="muted" role="status">Cargando…</p>
+      }
+
+      <!-- Resumen -->
+      @if (tab() === 'summary' && stats(); as stats) {
+        <section>
+          <div class="toolbar">
+            <label class="period">
+              <span>Periodo</span>
+              <select class="field-small" [ngModel]="days()" (ngModelChange)="setDays($event)">
+                @for (d of periods; track d) {
+                  <option [ngValue]="d">{{ d }} días</option>
+                }
+              </select>
+            </label>
+          </div>
+
+          <div class="cards">
+            <article class="card highlight">
+              <h2>Conectados ahora</h2>
+              <p class="big">{{ totalOnline() }}</p>
+              <p class="muted">Visitantes con actividad en los últimos 5 minutos.</p>
+              @if (stats.overview.online.length) {
+                <ul class="inline">
+                  @for (p of stats.overview.online; track p.platform) {
+                    <li>{{ platformName(p.platform) }}: <strong>{{ p.visitors }}</strong></li>
+                  }
+                </ul>
+              } @else {
+                <p class="muted">Nadie en este momento.</p>
+              }
+            </article>
+            <article class="card">
+              <h2>Usuarios registrados</h2>
+              <p class="big">{{ stats.overview.users.total }}</p>
+              <ul class="inline">
+                <li>Nuevos (24 h): <strong>{{ stats.overview.users.last1 }}</strong></li>
+                <li>Nuevos (7 días): <strong>{{ stats.overview.users.last7 }}</strong></li>
+                <li>Nuevos (30 días): <strong>{{ stats.overview.users.last30 }}</strong></li>
+              </ul>
+            </article>
+            <article class="card">
+              <h2>Sesiones abiertas</h2>
+              <p class="big">{{ stats.overview.sessions.open }}</p>
+            </article>
+            <article class="card">
+              <h2>Eventos creados</h2>
+              <p class="big">{{ stats.overview.events.total }}</p>
+              <ul class="inline">
+                <li>Eventos nuevos (7 días): <strong>{{ stats.overview.events.last7 }}</strong></li>
+                <li>Archivados: <strong>{{ stats.overview.events.archived }}</strong></li>
+              </ul>
+            </article>
+            <article class="card">
+              <h2>Invitaciones enviadas</h2>
+              <p class="big">{{ stats.overview.invitations.total }}</p>
+              <ul class="inline">
+                <li>Confirmados: <strong>{{ stats.overview.guests.accepted }}</strong></li>
+                <li>No asisten: <strong>{{ stats.overview.guests.declined }}</strong></li>
+                <li>Pendientes: <strong>{{ stats.overview.guests.pending }}</strong></li>
+              </ul>
+            </article>
+            <article class="card">
+              <h2>Plataformas</h2>
+              <table>
+                <tbody>
+                  @for (p of stats.overview.users.byPlatform; track p.platform) {
+                    <tr>
+                      <th scope="row">{{ platformName(p.platform) }}</th>
+                      <td>{{ p.users }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </article>
+            <article class="card">
+              <h2>Temas de los eventos</h2>
+              <table>
+                <tbody>
+                  @for (t of stats.overview.events.themes; track t.theme) {
+                    <tr>
+                      <th scope="row">{{ themeName(t.theme) }}</th>
+                      <td>{{ t.events }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </article>
+          </div>
+
+          <div class="cards wide">
+            <article class="card">
+              <h2>Actividad diaria</h2>
+              <div class="bars" role="img" aria-label="Actividad diaria">
+                @let max = maxOf(stats.activity.daily, 'visits');
+                @for (d of stats.activity.daily; track d.day) {
+                  <div class="bar" [title]="d.day + ': ' + d.visits">
+                    <span class="bar-fill" [style.height.%]="share(d.visits, max)"></span>
+                    <small>{{ d.day.slice(5, 10) }}</small>
+                  </div>
+                }
+              </div>
+              <table class="totals">
+                <tbody>
+                  <tr><th scope="row">Visitantes</th><td>{{ stats.activity.totals.visitors }}</td></tr>
+                  <tr><th scope="row">Visitas</th><td>{{ stats.activity.totals.visits }}</td></tr>
+                  <tr><th scope="row">Registros</th><td>{{ stats.activity.totals.registrations }}</td></tr>
+                  <tr><th scope="row">Inicios de sesión</th><td>{{ stats.activity.totals.logins }}</td></tr>
+                  <tr><th scope="row">Descargas</th><td>{{ stats.activity.totals.downloads }}</td></tr>
+                </tbody>
+              </table>
+            </article>
+            <article class="card" aria-labelledby="countries-title">
+              <h2 id="countries-title">Visitantes por país</h2>
+              @if (countriesError()) {
+                <p class="error" role="alert">{{ countriesError() }}</p>
+              }
+              @if (countries(); as countries) {
+                @if (!countries.available) {
+                  <p class="muted">Umami no está configurado en este entorno.</p>
+                } @else {
+                  @if (countries.rows.length) {
+                    <table>
+                      <tbody>
+                        @for (c of countries.rows.slice(0, 15); track $index) {
+                          <tr>
+                            <th scope="row">{{ countryName(c.country) }}</th>
+                            <td>{{ c.visitors }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  } @else {
+                    <p class="muted">Sin visitas en este periodo.</p>
+                  }
+                  <p class="muted">Fuente: Umami (datos desde el 19 de octubre de 2026).</p>
+                }
+              }
+            </article>
+            <article class="card">
+              <h2>Páginas más visitadas</h2>
+              <table>
+                <tbody>
+                  @for (r of stats.activity.routes; track r.route) {
+                    <tr>
+                      <th scope="row" class="route">{{ r.route }}</th>
+                      <td>{{ r.visits }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </article>
+          </div>
+        </section>
+      }
+
+      <!-- Usuarios -->
+      @if (tab() === 'users' && users(); as users) {
+        <section>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Plataforma</th>
+                <th>Alta</th>
+                <th>Eventos</th>
+                <th>Última actividad</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of users.rows; track u.id) {
+                <tr>
+                  <td data-label="Nombre">{{ u.firstName }} {{ u.lastName }}</td>
+                  <td data-label="Correo">{{ u.email }}</td>
+                  <td data-label="Plataforma">{{ platformName(u.platform) }}</td>
+                  <td data-label="Alta">{{ date(u.createdAt) }}</td>
+                  <td data-label="Eventos">{{ u.events }}</td>
+                  <td data-label="Última actividad">{{ date(u.lastActivity) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="muted">Sin datos todavía.</td></tr>
+              }
+            </tbody>
+          </table>
+          <nav class="pager">
+            <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
+            <span>Página {{ page() }}</span>
+            <button type="button" class="ghost" [disabled]="users.rows.length < users.pageSize" (click)="go(page() + 1)">Siguiente</button>
+          </nav>
+        </section>
+      }
+
+      <!-- Eventos -->
+      @if (tab() === 'events' && events(); as events) {
+        <section>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Evento</th>
+                <th>Organizador</th>
+                <th>Fecha</th>
+                <th>Tema</th>
+                <th>Invitaciones</th>
+                <th>Confirmados</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of events.rows; track e.id) {
+                <tr>
+                  <td data-label="Evento">{{ e.title }}</td>
+                  <td data-label="Organizador">{{ e.owner }}</td>
+                  <td data-label="Fecha">{{ date(e.date) }}</td>
+                  <td data-label="Tema">{{ themeName(e.theme) }}</td>
+                  <td data-label="Invitaciones">{{ e.invitations }}</td>
+                  <td data-label="Confirmados">{{ e.accepted }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="muted">Sin datos todavía.</td></tr>
+              }
+            </tbody>
+          </table>
+          <nav class="pager">
+            <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
+            <span>Página {{ page() }}</span>
+            <button type="button" class="ghost" [disabled]="events.rows.length < events.pageSize" (click)="go(page() + 1)">Siguiente</button>
+          </nav>
+        </section>
+      }
+    </div>
+  }
+</main>
