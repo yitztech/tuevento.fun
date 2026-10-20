@@ -28,12 +28,25 @@ IP real: Traefik (subred `TRUSTED_PROXY_CIDR`) añade la IP del cliente a `X-For
 
 - Usuarios, sesiones, eventos, invitaciones, integrantes y notificaciones residen en PostgreSQL. Los volúmenes sobreviven a reinicios.
 - Los organizadores solo acceden a eventos de su propiedad. Las comprobaciones se hacen en el servidor.
-- Contraseñas derivadas mediante scrypt y sal aleatoria. Sesiones opacas de 256 bits con hash en base de datos; cookie HttpOnly y SameSite=Lax, revocada al cerrar sesión. `COOKIE_SECURE=true` se debe activar con HTTPS.
+- Contraseñas con Argon2id (`node:crypto`, m=19 MiB, t=2, p=1). Los hashes scrypt anteriores se siguen aceptando y se recalculan con Argon2id al iniciar sesión. Sesiones opacas de 256 bits con hash en base de datos; cookie `__Host-session` (HttpOnly, SameSite=Lax, `Path=/`, sin `Domain`; sin el prefijo y sin `Secure` mientras `COOKIE_SECURE` no sea `true`, en local), revocada al cerrar sesión.
+- Límites propios por IP y por cuenta en acceso, registro, recuperación de contraseña y formularios públicos (`apps/api/src/rate-limit.ts`), con 429 y `Retry-After`; además del global de Fastify. Cuerpos de 1 MB como máximo y 3 MB solo en las subidas de imágenes.
 - CORS permite únicamente los orígenes configurados. Las escrituras requieren un encabezado no simple y un origen permitido cuando está presente, reduciendo CSRF. Fastify limita solicitudes. No se almacenan tokens de sesión en localStorage.
 - Invitaciones privadas por posesión de tokens aleatorios de 192 bits. Su portal solo recibe datos necesarios, sin correo, teléfono ni notas del anfitrión. No se requiere cuenta de invitado.
 - RSVP y edición de integrantes usan transacciones y bloqueo de la invitación. Se validan todos los IDs; no se pueden mover integrantes ajenos. Las respuestas idénticas no duplican notificaciones.
 - Los avatares se validan y decodifican con Sharp, se redimensionan y se vuelven a codificar como JPEG. Se limitan a 2 MB y 25 millones de píxeles de entrada.
 - Las fechas se guardan en UTC con zona IANA del evento. La web convierte desde la zona elegida, no desde una zona implícita del navegador.
+
+## Errores de la API
+
+Todo error sale en Problem Details (RFC 9457, `apps/api/src/problem.ts`): `type`, `title`, `status`,
+`code` estable en inglés, `detail` en el idioma del dominio, `requestId` (el de la cabecera `X-Request-ID`
+y el de la línea de log) y `errors[]` por campo con `field`, `code` (`too_long`, `invalid_characters`,
+`unknown_field`…) y `message`. Los datos no válidos responden 422; los parámetros de ruta y consulta, 400.
+
+Compatibilidad con las apps publicadas: la respuesta mantiene también los campos anteriores
+(`statusCode`, `message` y `fields`), y a las apps nativas (`X-Client-Platform: android|ios`) se les
+responde con `Content-Type: application/json`. Estos campos y la excepción del tipo de contenido se
+retiran en la próxima versión mayor de las apps, cuando ya no queden versiones que los lean.
 
 ## Actualización en vivo
 

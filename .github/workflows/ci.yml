@@ -1,43 +1,90 @@
-name: Quality checks
+# Checks de cada PR con los nombres comunes de la plataforma (PRU-18, DEP-08):
+#
+#   Verificar      instalación, lint, tipos, unitarias, build, npm audit y Trivy sobre las 5 imágenes
+#   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador
+#   Base de datos  tests/db contra PostgreSQL 18 (la imagen del proyecto) y Squawk en migraciones nuevas
+#   Seguridad      test:security, CodeQL y ZAP baseline
+#
+# deploy.yml lo llama (workflow_call) y solo publica las imágenes si los cuatro pasan (DEP-12).
+# Las pruebas de las apps móviles siguen solo en local (CLAUDE.md).
+name: CI
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_call:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+env:
+  TRIVY_IMAGE: aquasec/trivy:0.76.0
 jobs:
-  test:
+  verificar:
+    name: Verificar
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run build && npm run typecheck && npm run test:unit
-      # Chromium pesa ~150 MB: se reutiliza mientras no cambie la versión de Playwright
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm run test:unit
+      # Altas y críticas, salvo las excepciones con fecha de scripts/check-audit.mjs
+      - run: npm run check:audit
+      - uses: docker/setup-buildx-action@v4
+      - name: Construir imágenes
+        run: |
+          set -a; . ./.env.ci; set +a
+          docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
+            --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
+      - name: Trivy sobre las 5 imágenes
+        run: |
+          set -a; . ./.env.ci; set +a
+          for servicio in gateway web api admin postgres; do
+            echo "::group::$servicio"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
+              --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+              "${IMAGE_PREFIX}-${servicio}:${IMAGE_TAG}"
+            echo "::endgroup::"
+          done
+
+  escenarios:
+    name: Escenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Chromium y WebKit pesan: se reutilizan mientras no cambie la versión de Playwright
       - id: playwright-cache
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-chromium-webkit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
       - if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npx playwright install-deps chromium webkit
       - uses: docker/setup-buildx-action@v4
-      # Las capas de las imágenes se guardan en la caché de GitHub Actions entre ejecuciones
+      # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
       - name: Construir imágenes
         run: |
           set -a; . ./.env.ci; set +a
           docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
             --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
-      # La API sirve a varios clientes (web, Android, iOS): sus pruebas siempre corren en CI.
-      # Las de base de datos (tests/db) y las móviles son solo locales, ver docs/TESTS.md.
-      - run: npm run test:api && npm run test:endpoints && npm run test:security
+      - run: npm run test:api && npm run test:endpoints
       - run: npm run e2e
       - run: npm run e2e:summary
         if: always()
@@ -49,5 +96,90 @@ jobs:
           path: |
             qa-artifacts/
             tests/e2e/results/
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
+        if: always()
+
+  base-de-datos:
+    name: Base de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @tuevento/contracts
+      # PostgreSQL 18 con los roles y la configuración de producción (services/postgres)
+      - name: Arrancar PostgreSQL
+        run: |
+          docker build -f services/postgres/Dockerfile -t tuevento-postgres .
+          docker run -d --name postgres -p 127.0.0.1:5487:5432 \
+            -e POSTGRES_DB=tueventofun -e POSTGRES_USER=tuevento -e POSTGRES_PASSWORD=ci-postgres \
+            -e API_DB_PASSWORD=ci-api -e ADMIN_DB_PASSWORD=ci-admin tuevento-postgres
+          for _ in $(seq 1 30); do
+            docker exec postgres pg_isready -U tuevento -d tueventofun -h 127.0.0.1 && exit 0
+            sleep 2
+          done
+          docker logs postgres
+          exit 1
+      - run: npm run test:db
+        env:
+          TEST_DB_PORT: "5487"
+          TEST_DB_ADMIN_PASSWORD: ci-postgres
+          TEST_DB_API_PASSWORD: ci-api
+      # Solo las migraciones nuevas: las ya aplicadas no se tocan (.squawk.toml)
+      - name: Squawk sobre las migraciones nuevas
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -n "$BASE_REF" ]; then base="origin/$BASE_REF"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then base="$BEFORE"
+          else base="HEAD~1"; fi
+          nuevas=$(git diff --name-only --diff-filter=A "$base"...HEAD -- 'apps/api/migrations/*.sql')
+          if [ -z "$nuevas" ]; then echo "Sin migraciones nuevas."; exit 0; fi
+          echo "$nuevas"
+          echo "$nuevas" | xargs npx --yes squawk-cli@2.70.0
+
+  seguridad:
+    name: Seguridad
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: javascript-typescript, actions
+          build-mode: none
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: docker/setup-buildx-action@v4
+      - name: Construir imágenes
+        run: |
+          set -a; . ./.env.ci; set +a
+          docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
+            --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
+      - run: npm run test:security
+      # Falla con las reglas en FAIL; los avisos quedan en el informe (artefacto zap_scan)
+      - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: http://localhost:5187
+          cmd_options: -I
+          allow_issue_writing: false
+          fail_action: true
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
         if: always()

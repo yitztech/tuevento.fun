@@ -1,0 +1,47 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "apps/**/*.{ts,tsx,js,mjs,cjs}",
+      "packages/**/*.{ts,tsx,js,mjs,cjs}",
+      "scripts/**/*.{js,mjs,cjs}",
+      "tests/**/*.{js,mjs,cjs,ts}",
+      "!**/dist",
+      "!**/.features-gen",
+      "!apps/web/android",
+      "!apps/web/ios",
+      "!apps/admin/public/vendor"
+    ]
+  },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "javascript": { "parser": { "unsafeParameterDecoratorsEnabled": true } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "useButtonType": "warn",
+        "useAriaPropsSupportedByRole": "warn",
+        "useSemanticElements": "warn",
+        "noNoninteractiveTabindex": "warn",
+        "noStaticElementInteractions": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useValidAnchor": "warn"
+      },
+      "correctness": { "useExhaustiveDependencies": "warn" },
+      "suspicious": { "noArrayIndexKey": "warn" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/api/**"],
+      "linter": { "rules": { "style": { "useImportType": "off" } } }
+    },
+    {
+      "includes": ["tests/**"],
+      "linter": { "rules": { "correctness": { "noEmptyPattern": "off" } } }
+    }
+  ]
+}
