@@ -50,7 +50,35 @@ export default defineConfig({
     ? [{ name: "android", grep: /@movil/, grepInvert: /@solo-web/ }]
     : ios
       ? [{ name: "ios", grep: /@movil/, grepInvert: /@solo-web|@sin-ios/ }]
-      : [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+      : [
+          { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+          // Web en el móvil (§38): Android con Chromium e iPhone con WebKit, emulados, en cada PR.
+          // El panel de administración es de escritorio y se prueba solo en Chromium.
+          { name: "android-chrome", use: { ...devices["Pixel 7"] }, grepInvert: /@admin/ },
+          // WebKit no tiene --host-resolver-rules: en local, el propio gateway hace de proxy HTTP y
+          // atiende el dominio inglés por la URL absoluta de cada petición.
+          {
+            name: "iphone-safari",
+            use: { ...devices["iPhone 15"], ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: new URL(baseURL).hostname } } : {}) },
+            grepInvert: /@admin/,
+          },
+          // Firefox, en la ejecución semanal (E2E_FIREFOX=1)
+          ...(process.env.E2E_FIREFOX
+            ? [
+                {
+                  name: "firefox",
+                  use: {
+                    ...devices["Desktop Firefox"],
+                    // En local, el dominio inglés se resuelve a 127.0.0.1 como en Chromium
+                    launchOptions: {
+                      slowMo,
+                      firefoxUserPrefs: local ? { "network.dns.localDomains": englishHost } : {},
+                    },
+                  },
+                },
+              ]
+            : []),
+        ],
   // iOS: Appium es el servidor que habla con el simulador; Playwright lo arranca y lo para.
   webServer: ios
     ? {

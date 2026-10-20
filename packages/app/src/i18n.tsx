@@ -283,7 +283,12 @@ export function LanguageSwitcher() {
   };
   return (
     <details className="language-menu">
-      <summary className="language-switcher" title={tr("language.changeLanguage")} aria-label={label(locale)}>
+      {/* El nombre accesible empieza por el código visible (WCAG 2.5.3, «label in name») */}
+      <summary
+        className="language-switcher"
+        title={tr("language.changeLanguage")}
+        aria-label={`${locale.toUpperCase()} · ${label(locale)}`}
+      >
         <LocaleFlag locale={locale} />
         <span className="language-code">{locale.toUpperCase()}</span>
         <ChevronDown className="language-chevron" size={14} aria-hidden="true" />

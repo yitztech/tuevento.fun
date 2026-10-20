@@ -6,7 +6,7 @@ import {
 } from "@tuevento/contracts";
 import type { MailMessage } from "./mail";
 
-const escape = (value: string) =>
+const escapeHtml = (value: string) =>
   value.replace(
     /[&<>"']/g,
     (c) =>
@@ -31,18 +31,18 @@ function layout(options: {
     options.site,
   ].join("\n\n");
   const button = options.action
-    ? `<p style="margin:28px 0"><a href="${escape(options.action.url)}" style="background:#882d17;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escape(options.action.label)}</a></p>
-<p style="font-size:13px;color:#6e5f5a;word-break:break-all">${escape(options.action.url)}</p>`
+    ? `<p style="margin:28px 0"><a href="${escapeHtml(options.action.url)}" style="background:#882d17;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escapeHtml(options.action.label)}</a></p>
+<p style="font-size:13px;color:#6e5f5a;word-break:break-all">${escapeHtml(options.action.url)}</p>`
     : "";
   const html = `<!doctype html>
 <html><body style="margin:0;background:#fdf8f5;font-family:Helvetica,Arial,sans-serif;color:#261c18">
 <div style="max-width:520px;margin:0 auto;padding:32px 24px">
 <p style="font-size:20px;font-weight:700;color:#882d17;margin:0 0 24px">TuEventoFun</p>
 <div style="background:#ffffff;border:1px solid #efe6e1;border-radius:16px;padding:28px 24px;line-height:1.55">
-${options.paragraphs.map((p) => `<p style="margin:0 0 14px">${escape(p)}</p>`).join("\n")}
+${options.paragraphs.map((p) => `<p style="margin:0 0 14px">${escapeHtml(p)}</p>`).join("\n")}
 ${button}
 </div>
-<p style="font-size:12px;color:#6e5f5a;margin:20px 4px">${escape(options.footer)} · <a href="${escape(options.site)}" style="color:#6e5f5a">${escape(host)}</a></p>
+<p style="font-size:12px;color:#6e5f5a;margin:20px 4px">${escapeHtml(options.footer)} · <a href="${escapeHtml(options.site)}" style="color:#6e5f5a">${escapeHtml(host)}</a></p>
 </div></body></html>`;
   return { to: options.to, subject: options.subject, text, html };
 }

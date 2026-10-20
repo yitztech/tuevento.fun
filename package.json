@@ -1,6 +1,9 @@
 {
   "name": "tueventofun",
   "private": true,
+  "engines": {
+    "node": ">=24.22.0 <25"
+  },
   "version": "1.0.0",
   "workspaces": [
     "apps/*",
@@ -10,6 +13,7 @@
   "scripts": {
     "build": "npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api && npm run build -w @tuevento/web",
     "dev": "npm run dev -w @tuevento/web",
+    "lint": "biome lint",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "node scripts/test-all.mjs",
     "test:unit": "node scripts/check-versions.mjs && node scripts/check-test-only.mjs && tsx --test packages/contracts/src/*.test.ts && npm run test -w @tuevento/admin",
@@ -22,10 +26,12 @@
     "test:password": "node scripts/test-password-reset.cjs",
     "test:platform": "node tests/api/test-platform.mjs",
     "check:versions": "node scripts/check-versions.mjs",
+    "check:audit": "node scripts/check-audit.mjs",
     "e2e": "npm run test -w @tuevento/e2e --",
     "e2e:headed": "npm run test:headed -w @tuevento/e2e --",
     "e2e:ui": "npm run test:ui -w @tuevento/e2e --",
     "e2e:summary": "npm run summary -w @tuevento/e2e",
+    "e2e:report": "npm run report -w @tuevento/e2e",
     "e2e:ver": "E2E_SLOWMO=${E2E_SLOWMO:-500} E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test:headed -w @tuevento/e2e -- --workers=1",
     "e2e:android": "E2E_TARGET=android npm run test -w @tuevento/e2e --",
     "e2e:android:ver": "E2E_TARGET=android E2E_SLOWMO=${E2E_SLOWMO:-500} E2E_TECLADO=${E2E_TECLADO:-90} E2E_PAUSA=${E2E_PAUSA:-2000} npm run test -w @tuevento/e2e --",
@@ -35,6 +41,7 @@
     "e2e:movil:ios-primero": "bash scripts/mobile-test.sh ios android"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "tsx": "^4.23.15",
@@ -44,6 +51,7 @@
   "overrides": {
     "xcode": {
       "uuid": "^14.0.3"
-    }
+    },
+    "shell-quote": "^1.12.0"
   }
 }

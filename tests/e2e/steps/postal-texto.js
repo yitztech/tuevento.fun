@@ -11,8 +11,10 @@ const capaInvitacion = (page, texto) => page.locator(".postcard-canvas .postcard
 const porcentaje = (valor) => Number.parseFloat(valor);
 
 When("arrastro el texto {string} un {int} % a la derecha y un {int} % hacia abajo", async ({ page }, texto, derecha, abajo) => {
-  const lienzo = await page.locator(".postcard-canvas").boundingBox();
   const capa = capaEditor(page, texto);
+  // En el móvil la postal puede quedar fuera de la pantalla: el ratón solo llega a lo visible
+  await page.locator(".postcard-canvas").scrollIntoViewIfNeeded();
+  const lienzo = await page.locator(".postcard-canvas").boundingBox();
   const caja = await capa.boundingBox();
   const inicioX = caja.x + caja.width / 2;
   const inicioY = caja.y + caja.height / 2;

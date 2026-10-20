@@ -1,7 +1,8 @@
 # language: es
-@precios
+@precios @REQ-05
 Característica: Precios del servicio
 
+  @solo-lectura @smoke
   Escenario: Los precios se ven sin registrarse
     Dado que abro la página de precios
     Entonces veo el aviso "Hasta 50 invitados"
@@ -16,11 +17,13 @@ Característica: Precios del servicio
     Entonces estoy en la página de pago
     Y veo el aviso "El cobro todavía no está conectado."
 
+  @solo-lectura
   Escenario: Cada tramo muestra su precio con signo de dólar y dos decimales
     Dado que abro la página de precios
     Entonces veo el aviso "$5.00"
     Y veo el aviso "$30.00"
 
+  @solo-lectura
   Escenario: El botón de compra lleva a crear la cuenta
     Dado que abro la página de precios
     Cuando pulso el enlace "Comprar" de la portada

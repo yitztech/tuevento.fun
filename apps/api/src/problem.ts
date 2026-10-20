@@ -98,6 +98,9 @@ function problemContentType(req: FastifyRequest) {
 
 function legacyFields(errors: ProblemFieldError[]) {
   const fields: Record<string, string[]> = {};
-  for (const e of errors) (fields[e.field.split(".")[0] || "_"] ??= []).push(e.message);
+  for (const e of errors) {
+    const field = e.field.split(".")[0] || "_";
+    fields[field] = [...(fields[field] ?? []), e.message];
+  }
   return fields;
 }

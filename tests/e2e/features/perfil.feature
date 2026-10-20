@@ -1,5 +1,5 @@
 # language: es
-@perfil
+@perfil @REQ-02
 Característica: Perfil de la cuenta
 
   Antecedentes:
@@ -15,7 +15,7 @@ Característica: Perfil de la cuenta
     Y guardo los cambios del perfil
     Entonces veo el aviso "Tu perfil está actualizado."
 
-  @validacion
+  @validacion @FE-11
   Escenario: El perfil descarta números en el nombre
     Cuando escribo "Lu2cía" en el campo "Nombre"
     Entonces el campo "Nombre" contiene "Lucía"
@@ -35,7 +35,8 @@ Característica: Perfil de la cuenta
     Entonces el selector "País" muestra el prefijo "+52"
     Y el campo "Teléfono" contiene "5512345678"
 
-  @validacion @api
+  @validacion @api @BE-26
   Escenario: La API del perfil rechaza números en el nombre
     Cuando envío a la API del perfil el nombre "Lu2cía"
-    Entonces la API responde 400 con el mensaje "Usa solo letras, espacios, apóstrofo o guion."
+    Entonces la API responde 422 con el mensaje "Usa solo letras, espacios, apóstrofo o guion."
+    Y el error del campo "nombre" tiene el código "invalid_characters"

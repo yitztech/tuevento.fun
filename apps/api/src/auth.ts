@@ -9,7 +9,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { randomBytes, randomUUID, createHash } from "node:crypto";
-import { OAuth2Client } from "google-auth-library";
+import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { clientPlatform } from "./client-platform";
 import { Database } from "./database";
@@ -299,7 +299,7 @@ export class AuthService {
       throw new BadRequestException(
         "errors.googleRequestHasExpired",
       );
-    let payload;
+    let payload: TokenPayload | undefined;
     try {
       const ticket = await new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,

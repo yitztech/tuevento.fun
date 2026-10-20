@@ -12,7 +12,8 @@ function texto(campo, n) {
     const unico = randomBytes(6).toString("hex");
     return `${unico}${"a".repeat(n - "@example.com".length - unico.length)}@example.com`;
   }
-  if (campo === "phone") return "1".repeat(n);
+  // Teléfono escrito con espacios: válido en forma, demasiado largo
+  if (campo === "phone") return "1 ".repeat(n).slice(0, n);
   return "a".repeat(n);
 }
 
@@ -47,4 +48,24 @@ Then("la API responde {int}", async ({ ctx }, estado) => {
 Then("la API responde {int} con el mensaje {string}", async ({ ctx }, estado, mensaje) => {
   expect(ctx.respuesta.status()).toBe(estado);
   expect((await ctx.respuesta.json()).message).toBe(mensaje);
+});
+
+When("añado el campo {string} con el valor verdadero", async ({ ctx }, campo) => {
+  ctx.datos[campo] = true;
+});
+
+/** Errores en Problem Details (AGENTS.md §22): `errors[]` con el campo, el código y el mensaje. */
+const erroresDe = async (ctx, campo) =>
+  ((await ctx.respuesta.json()).errors ?? []).filter((e) => e.field === (campoApi[campo] ?? campo));
+
+Then("el error del campo {string} tiene el código {string}", async ({ ctx }, campo, codigo) => {
+  expect((await erroresDe(ctx, campo)).map((e) => e.code)).toContain(codigo);
+});
+
+Then("el campo {string} tiene un solo error con el mensaje {string}", async ({ ctx }, campo, mensaje) => {
+  expect((await erroresDe(ctx, campo)).map((e) => e.message)).toEqual([mensaje]);
+});
+
+Then("la cuenta guarda el teléfono {string}", async ({ ctx }, telefono) => {
+  expect((await ctx.respuesta.json()).phone).toBe(telefono);
 });
