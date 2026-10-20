@@ -42,6 +42,8 @@ services:
       RESET_MAX_PER_IP: "1000"
       # Las suites de pruebas salen todas de la misma IP: límites por IP altos (los de cuenta no cambian)
       PUBLIC_RATE_LIMIT_PER_IP: "100000"
+      # El global de Fastify también: la web en escritorio, Android e iPhone corre en paralelo
+      RATE_LIMIT_MAX: "100000"
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
