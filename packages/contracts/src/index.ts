@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { defaultLocale, locales, type Locale, type MessageKey } from "./i18n";
 z.config(z.locales[locales[defaultLocale].zod]());
 
@@ -177,53 +178,71 @@ const email = z
   .email("validation.enterValidEmailAddress")
   .max(accountLimits.email, "validation.maximum254Characters")
   .transform((v) => v.toLowerCase().trim());
+/** País de los teléfonos escritos sin prefijo internacional (el del idioma principal). */
+export const defaultPhoneCountry = "ES";
+/** Teléfono (§6.2): solo sus caracteres, válido según libphonenumber y guardado en E.164. */
 const phone = z
   .string()
   .trim()
   .min(7, "validation.enterValidPhoneNumber")
   .max(accountLimits.phone, "validation.maximum20Characters")
-  .regex(/^\+?[\d\s()-]+$/, "validation.useNumbersSpaces")
-  .refine((v) => {
-    const digits = v.replace(/\D/g, "").length;
-    return digits >= 7 && digits <= 15;
-  }, "validation.enterValidPhoneNumber");
+  .regex(/^\+?[0-9 ().-]+$/, "validation.useNumbersSpaces")
+  .transform((v, ctx) => {
+    const parsed = parsePhoneNumberFromString(v, defaultPhoneCountry);
+    if (parsed?.isValid()) return parsed.number as string;
+    ctx.addIssue({ code: "custom", message: "validation.enterValidPhoneNumber" });
+    return z.NEVER;
+  });
 const optionalEmail = z
   .union([email, z.literal("")])
   .optional()
   .default("");
+/** Teléfono opcional: vacío o un teléfono válido. Sin `z.union`, que taparía el motivo del error. */
 const optionalPhone = z
-  .union([phone, z.literal("")])
-  .optional()
-  .default("");
-const name = z
   .string()
-  .trim()
+  .optional()
+  .default("")
+  .transform((v, ctx) => {
+    if (v.trim() === "") return "";
+    const result = phone.safeParse(v);
+    if (result.success) return result.data;
+    for (const issue of result.error.issues) ctx.addIssue({ ...issue, path: issue.path } as z.core.$ZodRawIssue);
+    return z.NEVER;
+  });
+/** Espacios del principio y del final fuera, y los repetidos juntos (§6.2). */
+const text = () =>
+  z
+    .string()
+    .trim()
+    .overwrite((v) => v.replace(/\s+/g, " "));
+const name = text()
   .min(2, "validation.enterLeast2Characters")
   .max(100, "validation.maximum100Characters");
-/** Nombres y apellidos de personas: letras de cualquier idioma, espacios, apóstrofo, punto y guion. */
-const personName = name
+/** Nombres y apellidos de personas (§6.2): letras de cualquier idioma, espacios, apóstrofo, punto y guion. */
+const personName = text()
+  .min(2, "validation.enterLeast2Characters")
   .max(accountLimits.personName, "validation.maximum50Characters")
   .regex(
-  /^\p{L}[\p{L}\p{M}\s'’.-]*$/u,
-  "validation.useLettersSpaces",
-);
+    /^[\p{L}\p{M}](?:[\p{L}\p{M} '’.-]*[\p{L}\p{M}.])?$/u,
+    "validation.useLettersSpaces",
+  );
 /** Contraseña: la misma regla al crear cuenta, al entrar y al restablecerla. */
 const password = z
   .string()
   .min(10, "validation.useLeast10Characters")
   .max(accountLimits.password, "validation.maximum128Characters");
-export const registerSchema = z.object({
+export const registerSchema = z.strictObject({
   firstName: personName,
   lastName: personName,
   email,
   phone,
   password,
 });
-export const loginSchema = z.object({
+export const loginSchema = z.strictObject({
   email,
   password,
 });
-export const profileSchema = z.object({
+export const profileSchema = z.strictObject({
   firstName: personName,
   lastName: personName,
   phone: optionalPhone,
@@ -235,20 +254,20 @@ export const passwordResetPaths = {
 } as const;
 /** Minutos de validez del enlace para restablecer la contraseña. */
 export const PASSWORD_RESET_MINUTES = 60;
-export const forgotPasswordSchema = z.object({ email });
-export const resetPasswordSchema = z.object({
+export const forgotPasswordSchema = z.strictObject({ email });
+export const resetPasswordSchema = z.strictObject({
   token: z
     .string()
     .regex(/^[A-Za-z0-9_-]{43}$/, "common.passwordResetLinkInvalid"),
   password,
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
-export const newsletterSchema = z.object({
+export const newsletterSchema = z.strictObject({
   email,
   name: z.string().trim().max(100).optional(),
 });
 export type NewsletterInput = z.infer<typeof newsletterSchema>;
-export const eventSchema = z.object({
+export const eventSchema = z.strictObject({
   title: name,
   description: z.string().trim().max(2500).default(""),
   date: z.iso.datetime({
@@ -288,7 +307,7 @@ export const eventSchema = z.object({
     )
     .default(""),
 });
-export const memberSchema = z.object({
+export const memberSchema = z.strictObject({
   id: z.uuid().optional(),
   name,
   kind: z.enum(["adult", "child"]),
@@ -296,7 +315,7 @@ export const memberSchema = z.object({
 });
 /** Límites de la invitación genérica: registros por enlace y personas por registro. */
 export const openInvitationLimits = { registrations: 200, members: 20 } as const;
-const invitationFields = z.object({
+const invitationFields = z.strictObject({
   name: z.string().trim().max(120).default(""),
   email: optionalEmail,
   phone: optionalPhone,
@@ -336,7 +355,7 @@ export const registrationSchema = invitationFields
 export const rsvpSchema = z
   .object({
     members: z
-      .array(z.object({ id: z.uuid(), status: statusSchema }))
+      .array(z.strictObject({ id: z.uuid(), status: statusSchema }))
       .min(1)
       .max(50),
   })
@@ -438,6 +457,29 @@ export type PublicInvitation = {
   postcard: Pick<Postcard, "design" | "photos">;
   isDemo: boolean;
 };
+/**
+ * Lo que se puede volver a enviar de un evento o una invitación que devolvió la API: la API
+ * rechaza los campos de solo lectura (id, métricas, estado de cada persona…).
+ */
+export const eventInput = (e: Event): EventInput => ({
+  title: e.title,
+  description: e.description,
+  date: e.date,
+  timeZone: e.timeZone,
+  location: e.location,
+  theme: e.theme,
+  archived: e.archived,
+  cancelled: e.cancelled,
+  slug: e.slug,
+});
+export const invitationInput = (i: Invitation): InvitationInput => ({
+  name: i.name,
+  email: i.email,
+  phone: i.phone,
+  notes: i.notes,
+  kind: i.kind,
+  members: i.members.map((m) => ({ id: m.id, name: m.name, kind: m.kind, notes: m.notes })),
+});
 export const emptyMetrics = (): Metrics => ({
   invitations: 0,
   people: 0,
@@ -469,11 +511,12 @@ export const statusLabels = {
 export * from "./i18n";
 export * from "./calendar";
 export * from "./pricing";
+export * from "./problems";
 
 export const clientPlatformSchema = z.enum(["web", "android", "ios"]);
 export type ClientPlatform = z.infer<typeof clientPlatformSchema>;
-export const visitSchema = z.object({ visitorId: z.uuid(), route: z.enum(["landing", "downloads", "app"]), visitId: z.uuid() });
-export const releaseSchema = z.object({
+export const visitSchema = z.strictObject({ visitorId: z.uuid(), route: z.enum(["landing", "downloads", "app"]), visitId: z.uuid() });
+export const releaseSchema = z.strictObject({
   platform: z.enum(["android", "ios"]), version: z.string().regex(/^\d+\.\d+\.\d+$/),
   build: z.number().int().positive(), channel: z.enum(["direct", "testflight", "store"]),
   url: z.url().refine(v => new URL(v).protocol === "https:", "validation.useHttps"),
@@ -505,11 +548,11 @@ export const postcardAligns = ["left", "center", "right"] as const;
 export type PostcardFont = (typeof postcardFonts)[number];
 const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i, "validation.useHexColor");
 const postcardBackground = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("template"), theme: z.enum(themeIds) }),
-  z.object({ type: z.literal("color"), color: hexColor }),
-  z.object({ type: z.literal("photo"), photo: z.uuid() }),
+  z.strictObject({ type: z.literal("template"), theme: z.enum(themeIds) }),
+  z.strictObject({ type: z.literal("color"), color: hexColor }),
+  z.strictObject({ type: z.literal("photo"), photo: z.uuid() }),
 ]);
-const postcardPhoto = z.object({
+const postcardPhoto = z.strictObject({
   photo: z.uuid(),
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
@@ -518,13 +561,13 @@ const postcardPhoto = z.object({
 });
 /** Sombra detrás de un texto. Todas las medidas van en cqw (porcentaje del ancho de la postal). */
 export const postcardShadowLimits = { blur: 10, offset: 5 } as const;
-const postcardShadow = z.object({
+const postcardShadow = z.strictObject({
   color: hexColor,
   blur: z.number().min(0).max(postcardShadowLimits.blur),
   x: z.number().min(-postcardShadowLimits.offset).max(postcardShadowLimits.offset),
   y: z.number().min(-postcardShadowLimits.offset).max(postcardShadowLimits.offset),
 });
-const postcardText = z.object({
+const postcardText = z.strictObject({
   content: z
     .string()
     .trim()
@@ -541,7 +584,7 @@ const postcardText = z.object({
   /** Ausente en los diseños anteriores: el texto no tiene sombra. */
   shadow: postcardShadow.optional(),
 });
-export const postcardSchema = z.object({
+export const postcardSchema = z.strictObject({
   background: postcardBackground,
   photos: z.array(postcardPhoto).max(postcardLimits.photos),
   texts: z.array(postcardText).max(postcardLimits.texts),

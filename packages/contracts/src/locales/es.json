@@ -766,7 +766,8 @@
     "useHexColor": "Elige un color de la paleta.",
     "maximum60Characters": "Máximo 60 caracteres.",
     "eventSlugFormat": "Usa solo letras minúsculas sin acentos, números y guiones entre palabras, de 3 a 60 caracteres.",
-    "openInvitationNoMembers": "Una invitación genérica no lleva personas: cada invitado las añade."
+    "openInvitationNoMembers": "Una invitación genérica no lleva personas: cada invitado las añade.",
+    "unknownField": "Este campo no se admite."
   },
   "pricing": {
     "title": "Precios",
@@ -811,5 +812,17 @@
     "sending": "Enviando…",
     "submit": "Enviar mi respuesta",
     "title": "Regístrate en el evento"
+  },
+  "problems": {
+    "badRequest": "Solicitud no válida",
+    "unauthorized": "Inicia sesión",
+    "forbidden": "Acceso denegado",
+    "notFound": "No encontrado",
+    "conflict": "Conflicto con los datos actuales",
+    "payloadTooLarge": "Contenido demasiado grande",
+    "validationFailed": "Datos no válidos",
+    "rateLimited": "Demasiadas solicitudes",
+    "internalError": "Error interno",
+    "serviceUnavailable": "Servicio no disponible"
   }
 }

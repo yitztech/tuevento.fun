@@ -96,7 +96,7 @@ try {
     "Sesión obligatoria para eventos y validación de registro",
     async () => {
       await guest.call("/events", "GET", undefined, 401);
-      await guest.call("/auth/register", "POST", { email: "bad" }, 400);
+      await guest.call("/auth/register", "POST", { email: "bad" }, 422);
     },
   );
   await suite("Registro aislado y cookie de sesión HttpOnly", async () => {
@@ -138,7 +138,7 @@ try {
         location: "Jardín de pruebas",
         theme: "floral",
       };
-      await a.call("/events", "POST", { ...data, date: "no-date" }, 400);
+      await a.call("/events", "POST", { ...data, date: "no-date" }, 422);
       event = await a.call("/events", "POST", data, 201);
       assert.equal(event.metrics.people, 0);
       await b.call(`/events/${event.id}`, "GET", undefined, 404);
@@ -210,7 +210,7 @@ try {
             { id: invitation.members[0].id, status: "pending" },
           ],
         },
-        400,
+        422,
       );
     },
   );
@@ -268,7 +268,7 @@ try {
         "/auth/login",
         "POST",
         { email: "bad", password: "" },
-        400,
+        422,
         en,
       );
       assert.equal(invalid.message, "Enter a valid email address.");
@@ -276,18 +276,18 @@ try {
         "/auth/login",
         "POST",
         { email: "bad", password: "" },
-        400,
+        422,
         { Host: `www.${englishHost}` },
       );
       assert.equal(www.message, "Enter a valid email address.");
-      const missing = await guest.call("/auth/register", "POST", {}, 400, en);
+      const missing = await guest.call("/auth/register", "POST", {}, 422, en);
       assert.match(missing.message, /Invalid input/);
       // Accept-Language en un Host desconocido no cambia el idioma: sigue es
       const ignored = await guest.call(
         "/auth/login",
         "POST",
         { email: "bad", password: "" },
-        400,
+        422,
         { "Accept-Language": "en-US,en;q=0.9" },
       );
       assert.equal(ignored.message, "Escribe un correo válido.");
@@ -295,7 +295,7 @@ try {
         "/auth/login",
         "POST",
         { email: "bad", password: "" },
-        400,
+        422,
         { Host: "sub." + englishHost, "Accept-Language": "en" },
       );
       assert.equal(unknown.message, "Escribe un correo válido.");
@@ -376,10 +376,13 @@ try {
   await suite(
     "Editar y eliminar integrantes conserva estados y recalcula métricas",
     async () => {
+      // Solo los campos de entrada: la API rechaza los de solo lectura (id, token, status…)
+      const { name, email, phone, notes, kind } = invitation;
+      const { id, kind: memberKind, notes: memberNotes } = invitation.members[0];
       const payload = {
-        ...invitation,
+        name, email, phone, notes, kind,
         members: [
-          { ...invitation.members[0], name: "Ana Actualizada" },
+          { id, kind: memberKind, notes: memberNotes, name: "Ana Actualizada" },
           { name: "Nuevo Niño", kind: "child", notes: "Menú infantil" },
         ],
       };
@@ -406,7 +409,7 @@ try {
         {
           name: "Otra persona",
           kind: "individual",
-          members: [{ ...other.members[0] }],
+          members: [{ id: other.members[0].id, name: other.members[0].name, kind: other.members[0].kind, notes: other.members[0].notes }],
         },
         400,
       );
@@ -419,7 +422,7 @@ try {
         "/profile/avatar",
         "PUT",
         { dataUrl: "data:image/jpeg;base64,aG9sYQ==" },
-        400,
+        422,
       );
       const u = await a.call("/profile", "PATCH", {
         firstName: "Organizador",
@@ -502,7 +505,7 @@ try {
         "/auth/password/reset",
         "POST",
         { token, password: "corta" },
-        400,
+        422,
         en,
       );
       const changed = await renewed.call(

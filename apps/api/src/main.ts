@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { randomUUID } from "node:crypto";
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,
@@ -7,24 +8,49 @@ import {
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { AppModule } from "./app.module";
 import { LocaleExceptionFilter } from "./locale.filter";
-import { translate } from "@tuevento/contracts";
+import { JsonLogger, loggerOptions } from "./logger";
+import { sendProblem } from "./problem";
 import { requestLocale } from "./request-locale";
 import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
+
+/** Cuerpo JSON de 1 MB como máximo (§23); las subidas de imágenes declaran el suyo. */
+const BODY_LIMIT = 1024 * 1024;
+const UPLOAD_BODY_LIMIT = 3 * 1024 * 1024;
+const uploadRoutes = new Set(["/api/profile/avatar", "/api/events/:id/postcard/images"]);
+/** `X-Request-ID` del cliente o del gateway si es razonable; si no, uno nuevo. */
+const requestIdPattern = /^[A-Za-z0-9._-]{8,128}$/;
+
 async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   await startTrustedProxyRefresh();
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
+  const adapter = new FastifyAdapter({
+    bodyLimit: UPLOAD_BODY_LIMIT,
     // Solo se confía en el gateway de la red interna del compose, que fija
     // X-Forwarded-For con la IP real del cliente (ver trusted-proxy.ts).
-    new FastifyAdapter({
-      bodyLimit: 3 * 1024 * 1024,
-      trustProxy: (address: string) => isTrustedProxy(address),
-    }),
-  );
+    trustProxy: (address: string) => isTrustedProxy(address),
+    logger: loggerOptions,
+    // Cada petición se registra una vez, al responder (hook onResponse)
+    disableRequestLogging: true,
+    requestIdHeader: false,
+    genReqId: (req: { headers: Record<string, string | string[] | undefined> }) => {
+      const header = req.headers["x-request-id"];
+      return typeof header === "string" && requestIdPattern.test(header) ? header : randomUUID();
+    },
+  });
+  const fastify = adapter.getInstance();
+  // Nest registra las rutas al arrancar: este hook fija el límite de cuerpo de cada una
+  fastify.addHook("onRoute", (route) => {
+    route.bodyLimit = uploadRoutes.has(route.url) ? UPLOAD_BODY_LIMIT : BODY_LIMIT;
+  });
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
+    logger: new JsonLogger(fastify.log),
+  });
   app.setGlobalPrefix("api");
+  // También pasan por aquí los errores de Fastify (cuerpo demasiado grande, JSON mal formado,
+  // límite global de peticiones) y las rutas inexistentes: Nest los envía a los filtros globales
   app.useGlobalFilters(new LocaleExceptionFilter());
   await app.register(cookie);
   await app.register(helmet, { contentSecurityPolicy: false });
@@ -42,29 +68,41 @@ async function bootstrap() {
   app.enableCors({
     origin: origins,
     credentials: true,
-    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "X-Client-Platform", "X-App-Version", "X-App-Locale", "Authorization"],
+    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "X-Client-Platform", "X-App-Version", "X-App-Locale", "X-Request-ID", "Authorization"],
+    exposedHeaders: ["X-Request-ID", "Retry-After"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
-  app
-    .getHttpAdapter()
-    .getInstance()
-    .addHook("onRequest", async (req: any, reply: any) => {
-      if (req.url.startsWith("/api")) {
-        reply.header("Cache-Control", "no-store");
-        reply.header("Content-Language", requestLocale(req));
-      }
-      if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-        if (
-          req.headers["x-tuevento-client"] !== "1" ||
-          (req.headers.origin && !origins.includes(req.headers.origin))
-        )
-          return reply
-            .code(403)
-            .send({
-              message: translate(requestLocale(req), "errors.requestOriginNotAllowed"),
-            });
-      }
+  fastify.addHook("onRequest", async (req: FastifyRequest, reply: FastifyReply) => {
+    reply.header("X-Request-ID", req.id);
+    if (req.url.startsWith("/api")) {
+      reply.header("Cache-Control", "no-store");
+      reply.header("Content-Language", requestLocale(req));
+    }
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+      if (
+        req.headers["x-tuevento-client"] !== "1" ||
+        (req.headers.origin && !origins.includes(req.headers.origin))
+      )
+        return sendProblem(req, reply, {
+          status: 403,
+          code: "origin_not_allowed",
+          detail: "errors.requestOriginNotAllowed",
+        });
+    }
+  });
+  // Una línea por petición (§30). La ruta va como patrón (/api/invitations/:token): así los
+  // tokens de los enlaces no llegan al log.
+  fastify.addHook("onResponse", async (req: FastifyRequest, reply: FastifyReply) => {
+    if (req.url === "/api/health") return;
+    req.log.info({
+      msg: "request",
+      requestId: req.id,
+      method: req.method,
+      path: req.routeOptions.url ?? "(sin ruta)",
+      status: reply.statusCode,
+      durationMs: Math.round(reply.elapsedTime),
     });
+  });
   app.enableShutdownHooks();
   await app.listen(Number(process.env.PORT || 3087), "0.0.0.0");
 }

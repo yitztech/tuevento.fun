@@ -43,8 +43,8 @@ export class ListmonkService implements OnModuleInit {
          ON CONFLICT (email) DO UPDATE SET name = COALESCE(EXCLUDED.name, newsletter_subscribers.name), locale = EXCLUDED.locale`,
         [cleanEmail, cleanName, locale],
       );
-    } catch (err: any) {
-      this.logger.error(`Error guardando suscriptor en BD local: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(`Error guardando suscriptor en BD local: ${(err as Error).message}`);
     }
 
     const target = this.target(locale);
@@ -64,8 +64,8 @@ export class ListmonkService implements OnModuleInit {
           const body = await res.text().catch(() => "");
           this.logger.warn(`Listmonk (${locale}) respondió ${res.status}: ${body.slice(0, 300)}`);
         }
-      } catch (err: any) {
-        this.logger.error(`Fallo de conexión con Listmonk (${locale}): ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.error(`Fallo de conexión con Listmonk (${locale}): ${(err as Error).message}`);
       }
     }
 

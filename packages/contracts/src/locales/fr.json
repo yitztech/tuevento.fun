@@ -766,7 +766,8 @@
     "useHexColor": "Choisis une couleur dans la palette.",
     "maximum60Characters": "60 caractères maximum.",
     "eventSlugFormat": "Utilisez uniquement des lettres minuscules sans accents, des chiffres et des tirets entre les mots, de 3 à 60 caractères.",
-    "openInvitationNoMembers": "Une invitation ouverte ne contient personne : chaque invité ajoute les siens."
+    "openInvitationNoMembers": "Une invitation ouverte ne contient personne : chaque invité ajoute les siens.",
+    "unknownField": "Ce champ n’est pas accepté."
   },
   "pricing": {
     "title": "Tarifs",
@@ -811,5 +812,17 @@
     "sending": "Envoi…",
     "submit": "Envoyer ma réponse",
     "title": "Inscris-toi à l’événement"
+  },
+  "problems": {
+    "badRequest": "Requête non valide",
+    "unauthorized": "Connexion requise",
+    "forbidden": "Accès refusé",
+    "notFound": "Introuvable",
+    "conflict": "Conflit avec les données actuelles",
+    "payloadTooLarge": "Contenu trop volumineux",
+    "validationFailed": "Données non valides",
+    "rateLimited": "Trop de requêtes",
+    "internalError": "Erreur interne",
+    "serviceUnavailable": "Service indisponible"
   }
 }

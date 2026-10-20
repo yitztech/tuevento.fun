@@ -766,7 +766,8 @@
     "useHexColor": "Escolha uma cor da paleta.",
     "maximum60Characters": "Máximo de 60 caracteres.",
     "eventSlugFormat": "Use apenas letras minúsculas sem acentos, números e hífens entre palavras, de 3 a 60 caracteres.",
-    "openInvitationNoMembers": "Um convite genérico não tem pessoas: cada convidado adiciona as suas."
+    "openInvitationNoMembers": "Um convite genérico não tem pessoas: cada convidado adiciona as suas.",
+    "unknownField": "Este campo não é aceito."
   },
   "pricing": {
     "title": "Preços",
@@ -811,5 +812,17 @@
     "sending": "Enviando…",
     "submit": "Enviar minha resposta",
     "title": "Cadastre-se no evento"
+  },
+  "problems": {
+    "badRequest": "Solicitação inválida",
+    "unauthorized": "Entre na sua conta",
+    "forbidden": "Acesso negado",
+    "notFound": "Não encontrado",
+    "conflict": "Conflito com os dados atuais",
+    "payloadTooLarge": "Conteúdo grande demais",
+    "validationFailed": "Dados inválidos",
+    "rateLimited": "Solicitações demais",
+    "internalError": "Erro interno",
+    "serviceUnavailable": "Serviço indisponível"
   }
 }

@@ -766,7 +766,8 @@
     "useHexColor": "Wähle eine Farbe aus der Palette.",
     "maximum60Characters": "Höchstens 60 Zeichen.",
     "eventSlugFormat": "Verwende nur Kleinbuchstaben, Ziffern und Bindestriche zwischen Wörtern, 3 bis 60 Zeichen.",
-    "openInvitationNoMembers": "Eine offene Einladung hat keine Personen: Jeder Gast fügt seine eigenen hinzu."
+    "openInvitationNoMembers": "Eine offene Einladung hat keine Personen: Jeder Gast fügt seine eigenen hinzu.",
+    "unknownField": "Dieses Feld ist nicht erlaubt."
   },
   "pricing": {
     "title": "Preise",
@@ -811,5 +812,17 @@
     "sending": "Wird gesendet…",
     "submit": "Meine Antwort senden",
     "title": "Für das Event anmelden"
+  },
+  "problems": {
+    "badRequest": "Ungültige Anfrage",
+    "unauthorized": "Anmeldung erforderlich",
+    "forbidden": "Zugriff verweigert",
+    "notFound": "Nicht gefunden",
+    "conflict": "Konflikt mit den aktuellen Daten",
+    "payloadTooLarge": "Inhalt zu groß",
+    "validationFailed": "Ungültige Daten",
+    "rateLimited": "Zu viele Anfragen",
+    "internalError": "Interner Fehler",
+    "serviceUnavailable": "Dienst nicht verfügbar"
   }
 }
