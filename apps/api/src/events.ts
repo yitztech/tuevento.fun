@@ -10,7 +10,9 @@ import {
 } from "@nestjs/common";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { Subject, filter, map, merge, interval } from "rxjs";
+import type { PoolClient } from "pg";
 import { Database } from "./database";
+import { isUniqueViolation } from "./auth";
 import { PostcardsService } from "./postcards";
 import { NoticeService } from "./notices";
 import { hashPassword, verifyPassword } from "./password";
@@ -45,7 +47,23 @@ const countStatuses = (members: { status: Status }[]): Counts => {
   const declined = members.filter((m) => m.status === "declined").length;
   return { accepted, declined, pending: members.length - accepted - declined };
 };
-const eventView = (r: any): Event => ({
+/** Fila de `events` tal como la devuelve PostgreSQL. */
+type EventRow = {
+  id: string;
+  title: string;
+  description: string;
+  date: Date;
+  time_zone: string;
+  location: string;
+  theme: Event["theme"];
+  archived: boolean;
+  cancelled: boolean;
+  public_password_hash: string | null;
+  slug: string | null;
+  created_at: Date;
+};
+type MemberRow = Pick<Member, "id" | "name" | "kind" | "notes" | "status">;
+const eventView = (r: EventRow): Event => ({
   id: r.id,
   title: r.title,
   description: r.description,
@@ -61,11 +79,11 @@ const eventView = (r: any): Event => ({
   metrics: countMetrics([]),
 });
 /** Dos eventos no pueden compartir dirección: el índice único lo impide y aquí se avisa claro. */
-const slugConflict = (e: any): never => {
-  if (e.code === "23505") throw new ConflictException("errors.eventSlugTaken");
+const slugConflict = (e: unknown): never => {
+  if (isUniqueViolation(e)) throw new ConflictException("errors.eventSlugTaken");
   throw e;
 };
-const memberView = (m: any) => ({
+const memberView = (m: MemberRow) => ({
   id: m.id,
   name: m.name,
   kind: m.kind,
@@ -243,7 +261,7 @@ export class EventsService {
   }
   /** Aviso dentro de la aplicación al organizador (campana y tiempo real). */
   private async notifyOwner(
-    c: { query: (sql: string, params?: unknown[]) => Promise<any> },
+    c: Pick<PoolClient, "query">,
     userId: string,
     eventId: string,
     guestName: string,
@@ -533,7 +551,8 @@ export class EventsService {
     if (!r.public_password_hash) return null;
     if (r.public_password_locked_until && new Date(r.public_password_locked_until) > new Date())
       throw new HttpException("errors.tooManyAttemptsPlease", HttpStatus.TOO_MANY_REQUESTS);
-    if (!(await verifyPassword(password, r.public_password_hash))) {
+    const { valid, rehash } = await verifyPassword(password, r.public_password_hash);
+    if (!valid) {
       await this.db.query(
         "UPDATE events SET public_password_failures=public_password_failures+1, public_password_locked_until=CASE WHEN public_password_failures+1>=$2 THEN now()+make_interval(mins => $3) ELSE public_password_locked_until END WHERE id=$1",
         [r.id, EVENT_PASSWORD_MAX_FAILURES, EVENT_PASSWORD_LOCK_MINUTES],
@@ -544,6 +563,12 @@ export class EventsService {
       "UPDATE events SET public_password_failures=0, public_password_locked_until=NULL WHERE id=$1",
       [r.id],
     );
+    // Los hashes scrypt anteriores pasan a Argon2id al acertar la contraseña
+    if (rehash)
+      await this.db.query("UPDATE events SET public_password_hash=$1 WHERE id=$2", [
+        await hashPassword(password),
+        r.id,
+      ]);
     await this.db.query("DELETE FROM event_access WHERE expires_at<now()");
     const token = randomBytes(32).toString("base64url");
     await this.db.query(
@@ -566,7 +591,7 @@ export class EventsService {
     if (!r) throw new NotFoundException("errors.invitationIsntAvailablePlease");
     return this.calendar(r, r.slug ? `${siteUrl(defaultLocale)}/e/${r.slug}` : undefined);
   }
-  private calendar(r: any, url?: string) {
+  private calendar(r: EventRow, url?: string) {
     return calendarFile({
       uid: r.id,
       title: r.title,

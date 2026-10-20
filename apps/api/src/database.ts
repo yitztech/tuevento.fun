@@ -62,6 +62,7 @@ export class Database implements OnModuleInit, OnModuleDestroy {
       "DELETE FROM users WHERE is_demo = true AND created_at < now() - interval '7 days'",
     );
   }
+  // Por defecto, filas sin tipar: cada consulta que las usa con un tipo concreto lo indica
   async query<T extends QueryResultRow = any>(
     sql: string,
     params: unknown[] = [],

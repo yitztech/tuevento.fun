@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Imagen de `api`. Se construye desde la raíz del repositorio:
 #   docker build -f services/api/Dockerfile --build-arg RELEASE_SHA=<sha> .
-FROM node:24.21.0-alpine3.24 AS base
+FROM node:24.22.0-alpine3.24 AS base
 WORKDIR /app
 
 # Desarrollo local (compose.yml): tsx watch con recarga en caliente; Compose Watch sincroniza src.
@@ -41,7 +41,7 @@ COPY packages/client/package.json packages/client/
 COPY packages/app/package.json packages/app/
 RUN npm ci --omit=dev --workspace @tuevento/api --no-audit --no-fund
 
-FROM node:24.21.0-alpine3.24 AS production
+FROM node:24.22.0-alpine3.24 AS production
 # Valores públicos de los App Links (/.well-known/*). No son secretos ni variables de la
 # plataforma: el workflow de despliegue los pasa como build-args desde las vars del repo.
 ARG ANDROID_CERT_SHA256=
@@ -51,6 +51,9 @@ ENV NODE_ENV=production \
     ANDROID_CERT_SHA256=${ANDROID_CERT_SHA256} \
     APPLE_TEAM_ID=${APPLE_TEAM_ID} \
     MOBILE_APP_ID=${MOBILE_APP_ID}
+# Sin npm, npx ni corepack en ejecución: no se usan y traen sus propias dependencias (Trivy)
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+ && apk upgrade --no-cache
 WORKDIR /app
 COPY --from=api-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/packages/contracts/package.json ./packages/contracts/package.json

@@ -13,8 +13,8 @@ import {
   Query,
   UseGuards,
   ParseUUIDPipe,
-  BadRequestException,
   ForbiddenException,
+  UnprocessableEntityException,
   Sse,
 } from "@nestjs/common";
 import { z } from "zod";
@@ -25,7 +25,6 @@ import {
   translate,
   translateMessage,
   notificationMessage,
-  validationOptions,
   type Locale,
   registerSchema,
   loginSchema,
@@ -43,6 +42,7 @@ import {
 } from "@tuevento/contracts";
 import {
   AuthService,
+  GOOGLE_NONCE_COOKIE,
   SessionGuard,
   userView,
   type AuthedRequest,
@@ -53,20 +53,8 @@ import { EventsService, Updates } from "./events";
 import { ListmonkService } from "./listmonk";
 import { PostcardsService } from "./postcards";
 import { requestLocale } from "./request-locale";
-function parse<T extends z.ZodType>(
-  schema: T,
-  body: unknown,
-  req?: FastifyRequest,
-): z.output<T> {
-  const locale = requestLocale(req);
-  const result = schema.safeParse(body, validationOptions(locale));
-  if (!result.success)
-    throw new BadRequestException({
-      message: result.error.issues[0]?.message || "errors.checkDetails",
-      fields: z.flattenError(result.error).fieldErrors,
-    });
-  return result.data;
-}
+import { parse } from "./problem";
+import { ipKey, limits } from "./rate-limit";
 @Controller()
 export class PublicController {
   constructor(
@@ -82,6 +70,8 @@ export class PublicController {
     @Req() req: FastifyRequest,
   ) {
     const data = parse(newsletterSchema, body, req);
+    limits.newsletterIp.hit(ipKey("newsletter", req));
+    limits.newsletterEmail.hit(`newsletter:email:${data.email}`);
     return this.listmonk.subscribe(data.email, data.name, requestLocale(req));
   }
   @Get("postcards/images/:id") async postcardImage(
@@ -94,9 +84,15 @@ export class PublicController {
     reply.type("image/jpeg");
     return bytes;
   }
-  @Get("health") async health() {
-    await this.db.query("SELECT 1");
-    return { status: "ok", database: "connected" };
+  /** Salud para Uptime Kuma (§20): solo el estado, 503 si la base de datos no responde. */
+  @Get("health") async health(@Res({ passthrough: true }) reply: FastifyReply) {
+    try {
+      await this.db.query("SELECT 1");
+      return { status: "ok" };
+    } catch {
+      reply.status(503);
+      return { status: "error" };
+    }
   }
   @Get("config") config() {
     return {
@@ -109,8 +105,10 @@ export class PublicController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
+    const data = parse(registerSchema, body, req);
+    limits.register.hit(ipKey("register", req));
     return this.auth.session(
-      await this.auth.register(parse(registerSchema, body, req), requestLocale(req)),
+      await this.auth.register(data, requestLocale(req)),
       req,
       reply,
       "registration",
@@ -123,7 +121,7 @@ export class PublicController {
   ) {
     const data = parse(loginSchema, body, req);
     return this.auth.session(
-      await this.auth.login(data.email, data.password),
+      await this.auth.login(data.email, data.password, req),
       req,
       reply,
     );
@@ -162,7 +160,7 @@ export class PublicController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const nonce = randomBytes(24).toString("base64url");
-    reply.setCookie("google_nonce", nonce, {
+    reply.setCookie(GOOGLE_NONCE_COOKIE, nonce, {
       ...this.auth.cookieOptions(),
       maxAge: 300,
     });
@@ -174,7 +172,7 @@ export class PublicController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const data = parse(
-      z.object({
+      z.strictObject({
         credential: z.string().max(12000),
         nonce: z.string().min(20).max(100),
       }),
@@ -218,10 +216,11 @@ export class PublicController {
     @Body() body: unknown,
   ) {
     const { password } = parse(
-      z.object({ password: z.string().min(1).max(accountLimits.password) }),
+      z.strictObject({ password: z.string().min(1).max(accountLimits.password) }),
       body,
       req,
     );
+    limits.unlockIp.hit(ipKey("unlock", req));
     const token = await this.events.unlockEvent(slug, password);
     if (token)
       reply.setCookie(EVENT_ACCESS_COOKIE, token, {
@@ -255,26 +254,27 @@ export class PublicController {
     @Param("token") token: string,
     @Body() body: unknown,
   ) {
-    return this.events.register(
-      this.token(token, req),
-      parse(registrationSchema, body, req),
-    );
+    const invitation = this.token(token, req);
+    const data = parse(registrationSchema, body, req);
+    limits.publicForm.hit(ipKey("public-form", req));
+    return this.events.register(invitation, data);
   }
   @Post("invitations/:token/rsvp") rsvp(
     @Req() req: FastifyRequest,
     @Param("token") token: string,
     @Body() body: unknown,
   ) {
-    return this.events.rsvp(
-      this.token(token, req),
-      parse(rsvpSchema, body, req).members,
-    );
+    const invitation = this.token(token, req);
+    const { members } = parse(rsvpSchema, body, req);
+    limits.publicForm.hit(ipKey("public-form", req));
+    return this.events.rsvp(invitation, members);
   }
   private token(token: string, req: FastifyRequest) {
     return parse(
       z.string().regex(/^[\w-]{32}$/, "errors.invitationLinkInvalid"),
       token,
       req,
+      400,
     );
   }
 }
@@ -298,12 +298,13 @@ export class OrganizerController {
     @Query() query: unknown,
   ) {
     const { slug, eventId } = parse(
-      z.object({
+      z.strictObject({
         slug: z.string().trim().toLowerCase().max(accountLimits.eventSlug),
         eventId: z.uuid().optional(),
       }),
       query,
       req,
+      400,
     );
     if (!eventSlugPattern.test(slug)) return { available: false };
     return this.events.slugAvailable(req.user.id, slug, eventId);
@@ -324,7 +325,7 @@ export class OrganizerController {
   ) {
     return this.events.saveEvent(
       req.user.id,
-      parse(eventSchema, body, req),
+      parse(eventSchema, withoutEventOutput(body), req),
       id,
     );
   }
@@ -366,7 +367,7 @@ export class OrganizerController {
     @Body() body: unknown,
   ) {
     const data = parse(
-      z.object({
+      z.strictObject({
         dataUrl: z
           .string()
           .max(2800000)
@@ -487,7 +488,7 @@ export class OrganizerController {
     @Body() body: unknown,
   ) {
     const data = parse(
-      z.object({
+      z.strictObject({
         dataUrl: z
           .string()
           .max(2800000)
@@ -501,7 +502,7 @@ export class OrganizerController {
     );
     const bytes = Buffer.from(data.dataUrl.split(",")[1], "base64");
     if (bytes.length > 2 * 1024 * 1024)
-      throw new BadRequestException("errors.imageMustSmallerThan");
+      throw new UnprocessableEntityException("errors.imageMustSmallerThan");
     let avatar: string;
     try {
       const image = sharp(bytes, { limitInputPixels: 25000000 });
@@ -515,7 +516,7 @@ export class OrganizerController {
         .toBuffer();
       avatar = `data:image/jpeg;base64,${result.toString("base64")}`;
     } catch {
-      throw new BadRequestException(
+      throw new UnprocessableEntityException(
         "errors.couldntReadImageTry",
       );
     }
@@ -534,4 +535,16 @@ function calendarResponse(reply: FastifyReply, ics: string) {
   reply.header("Content-Disposition", 'attachment; filename="evento.ics"');
   reply.header("Cache-Control", "no-store");
   return ics;
+}
+
+/**
+ * Las versiones publicadas de la app archivan un evento reenviando el evento completo, con los
+ * campos de solo lectura que devuelve la API. Se quitan esos (y solo esos) antes de validar; el
+ * resto de campos desconocidos se rechaza.
+ */
+function withoutEventOutput(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const { id: _id, createdAt: _createdAt, metrics: _metrics, hasPublicPassword: _hasPublicPassword, ...input } =
+    body as Record<string, unknown>;
+  return input;
 }

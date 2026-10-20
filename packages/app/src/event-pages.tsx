@@ -1,4 +1,4 @@
-import { accountLimits, slugify, validationOptions } from "@tuevento/contracts";
+import { accountLimits, eventInput, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useState, useEffect } from "react";
 import {
@@ -127,7 +127,7 @@ export function EventEditor() {
       .then((e) => {
         setHasPassword(e.hasPublicPassword);
         form.reset({
-          ...e,
+          ...eventInput(e),
           date: formatInTimeZone(e.date, e.timeZone, "yyyy-MM-dd'T'HH:mm"),
         });
       })
@@ -407,7 +407,7 @@ export function EventDetail() {
     if (!event) return;
     setBusy(true);
     try {
-      await api.saveEvent({ ...event, archived: !event.archived }, event.id);
+      await api.saveEvent({ ...eventInput(event), archived: !event.archived }, event.id);
       await reload();
       toast(
         event.archived
@@ -755,7 +755,7 @@ function InvitationEditor({
       invitationSchema,
       validationOptions(getLocale()),
     ) as Resolver<InvitationInput>,
-    defaultValues: invitation || {
+    defaultValues: (invitation && invitationInput(invitation)) || {
       name: "",
       phone: "",
       email: "",

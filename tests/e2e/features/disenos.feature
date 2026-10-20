@@ -1,5 +1,5 @@
 # language: es
-@disenos @solo-web
+@disenos @solo-web @REQ-04
 Característica: Postales hermanas en móviles y tabletas
 
   Esquema del escenario: El catálogo y el editor permiten usar las diez variantes nuevas

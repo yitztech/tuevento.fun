@@ -1,5 +1,5 @@
 # language: es
-@registro @movil
+@registro @movil @REQ-01
 Característica: Crear una cuenta
   Para empezar a organizar eventos
   Como persona nueva
@@ -14,22 +14,24 @@ Característica: Crear una cuenta
     Y envío el formulario de registro
     Entonces entro a mi espacio
 
+  @solo-lectura
   Escenario: El registro no pide nombre de usuario
     Entonces no existe el campo "Nombre de usuario"
     Y veo el campo "Correo electrónico"
 
+  @solo-lectura
   Escenario: Las etiquetas indican que pueden ser varios nombres y apellidos
     Entonces veo el campo "Nombre(s)"
     Y veo el campo "Apellido(s)"
 
-  @i18n @solo-web
+  @i18n @solo-web @solo-lectura
   Escenario: Las etiquetas se muestran en inglés en el dominio inglés
     Dado que abro la página de registro en inglés
     Entonces veo el campo "First name(s)"
     Y veo el campo "Last name(s)"
     Y no existe el campo "Username"
 
-  @validacion
+  @validacion @solo-lectura @FE-11
   Esquema del escenario: Nombre y apellidos descartan lo que no son letras
     Cuando escribo "<escrito>" en el campo "<campo>"
     Entonces el campo "<campo>" contiene "<queda>"
@@ -40,7 +42,7 @@ Característica: Crear una cuenta
       | Apellido(s) | O'Connor9-Núñez | O'Connor-Núñez |
       | Nombre(s)   | 12345           |             |
 
-  @validacion
+  @validacion @solo-lectura @FE-11
   Esquema del escenario: El teléfono descarta las letras
     Cuando escribo "<escrito>" en el campo "Teléfono"
     Entonces el campo "Teléfono" contiene "<queda>"
@@ -50,7 +52,7 @@ Característica: Crear una cuenta
       | +52 abc 555-12(3)x4  | 555-12(3)4       |
       | llamame              |                  |
 
-  @limites
+  @limites @solo-lectura
   Esquema del escenario: Cada campo tiene su longitud máxima
     Entonces el campo "<campo>" admite como máximo <maximo> caracteres
 
@@ -64,7 +66,7 @@ Característica: Crear una cuenta
 
   # En iOS, Appium asigna el valor por programa y se salta el maxlength que sí respeta el
   # teclado; la longitud queda cubierta por el escenario de los atributos maxlength.
-  @limites @sin-ios
+  @limites @sin-ios @solo-lectura
   Escenario: Un nombre muy largo se corta en el máximo permitido
     Cuando pego un texto de 60 letras en el campo "Nombre(s)"
     Entonces el campo "Nombre(s)" contiene "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

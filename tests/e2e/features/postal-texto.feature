@@ -1,5 +1,5 @@
 # language: es
-@postal @solo-web
+@postal @solo-web @REQ-04
 Característica: Texto de la postal: posición, color y sombra
 
   Escenario: Mover un texto arrastrándolo dentro de la postal

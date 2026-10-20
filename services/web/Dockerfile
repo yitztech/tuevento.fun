@@ -3,7 +3,7 @@
 # original: aquí se decide el idioma y se insertan canonical, hreflang, robots, sitemap,
 # cabeceras de seguridad y analítica. Se construye desde la raíz del repositorio:
 #   docker build -f services/web/Dockerfile --build-arg RELEASE_SHA=<sha> .
-FROM node:24.21.0-alpine3.24 AS base
+FROM node:24.22.0-alpine3.24 AS base
 WORKDIR /app
 
 # Desarrollo local (compose.yml): Vite con recarga en caliente detrás de un Nginx que
@@ -44,7 +44,9 @@ RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client &&
  && node services/web/locales-manifest.cjs packages/contracts/dist > /app/locales.txt
 
 # Producción: Nginx 1.30.5 Alpine sirviendo la SPA estática en el puerto 8080
-FROM nginx:1.30.5-alpine AS production
+FROM nginx:1.30.6-alpine AS production
+# Paquetes de Alpine con los arreglos publicados después de la imagen base (Trivy)
+RUN apk upgrade --no-cache
 ARG RELEASE_SHA=dev
 ENV RELEASE_SHA=${RELEASE_SHA} \
     NGINX_ENVSUBST_FILTER='^RELEASE_SHA$'

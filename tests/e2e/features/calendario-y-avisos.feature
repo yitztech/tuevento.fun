@@ -1,5 +1,5 @@
 # language: es
-@calendario @solo-web
+@calendario @solo-web @REQ-03
 Característica: Calendario, cancelación y enlace genérico del evento
 
   Escenario: La invitación ofrece añadir el evento al calendario

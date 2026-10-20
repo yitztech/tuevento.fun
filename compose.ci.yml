@@ -40,6 +40,10 @@ services:
       COOKIE_SECURE: "false"
       DEMO_ENABLED: "true"
       RESET_MAX_PER_IP: "1000"
+      # Las suites de pruebas salen todas de la misma IP: límites por IP altos (los de cuenta no cambian)
+      PUBLIC_RATE_LIMIT_PER_IP: "100000"
+      # El global de Fastify también: la web en escritorio, Android e iPhone corre en paralelo
+      RATE_LIMIT_MAX: "100000"
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
       SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
       SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
@@ -70,6 +74,8 @@ services:
   # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
   mailpit:
     image: axllent/mailpit:v1.31.5
+    labels:
+      tuevento.solo-pruebas: "true"
     environment:
       # Acepta cualquier usuario SMTP: así se ejercita la autenticación sin TLS
       MP_SMTP_AUTH_ACCEPT_ANY: "1"

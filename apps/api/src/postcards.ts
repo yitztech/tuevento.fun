@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  ConflictException,
+  UnprocessableEntityException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -130,10 +132,10 @@ export class PostcardsService {
       [eventId],
     );
     if (n >= postcardLimits.photos)
-      throw new BadRequestException("errors.postcardPhotoLimit");
+      throw new ConflictException("errors.postcardPhotoLimit");
     const bytes = Buffer.from(dataUrl.split(",")[1], "base64");
     if (bytes.length > postcardLimits.photoBytes)
-      throw new BadRequestException("errors.imageMustSmallerThan");
+      throw new UnprocessableEntityException("errors.imageMustSmallerThan");
     let output: Buffer;
     try {
       const image = sharp(bytes, { limitInputPixels: 25000000 });
@@ -149,7 +151,7 @@ export class PostcardsService {
         .jpeg({ quality: 85 })
         .toBuffer();
     } catch {
-      throw new BadRequestException("errors.couldntReadImageTry");
+      throw new UnprocessableEntityException("errors.couldntReadImageTry");
     }
     const id = randomUUID();
     await mkdir(imageDir(), { recursive: true });

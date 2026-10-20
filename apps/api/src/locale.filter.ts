@@ -6,8 +6,9 @@ import {
   Logger,
 } from "@nestjs/common";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { translateMessage } from "@tuevento/contracts";
-import { requestLocale } from "./request-locale";
+import { ProblemException, sendProblem, type ProblemInput } from "./problem";
+
+/** Todo error sale en Problem Details y en el idioma de la petición (AGENTS.md §22). */
 @Catch()
 export class LocaleExceptionFilter implements ExceptionFilter {
   private logger = new Logger(LocaleExceptionFilter.name);
@@ -15,50 +16,29 @@ export class LocaleExceptionFilter implements ExceptionFilter {
     const context = host.switchToHttp(),
       request = context.getRequest<FastifyRequest>(),
       reply = context.getResponse<FastifyReply>();
-    const locale = requestLocale(request);
-    const statusCode = (exception as { statusCode?: unknown })?.statusCode;
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : typeof statusCode === "number"
-          ? statusCode
-          : 500;
-    if (status === 500)
-      this.logger.error(
-        exception instanceof Error ? exception.message : "Unexpected error",
-      );
-    const response =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : status === 429
-          ? {
-              message:
-                "errors.tooManyAttemptsPlease",
-            }
-          : status !== 500 && exception instanceof Error
-            ? { message: exception.message }
-            : { message: "errors.internalErrorPleaseTry" };
-    const translate = (value: unknown): unknown =>
-      typeof value === "string"
-        ? translateMessage(value, locale)
-        : Array.isArray(value)
-          ? value.map(translate)
-          : value && typeof value === "object"
-            ? Object.fromEntries(
-                Object.entries(value).map(([key, item]) => [
-                  key,
-                  translate(item),
-                ]),
-              )
-            : value;
-    reply
-      .header("Content-Language", locale)
-      .status(status)
-      .send({
-        statusCode: status,
-        ...(typeof response === "string"
-          ? { message: translate(response) }
-          : (translate(response) as object)),
-      });
+    return sendProblem(request, reply, toProblem(exception, this.logger, request));
   }
+}
+
+/** Convierte cualquier excepción en un problema; los 500 se registran sin salir en la respuesta. */
+export function toProblem(exception: unknown, logger: Logger, request: FastifyRequest): ProblemInput {
+  if (exception instanceof ProblemException) return exception.problem;
+  if (exception instanceof HttpException) {
+    const response = exception.getResponse();
+    const message = typeof response === "string" ? response : (response as { message?: unknown }).message;
+    // Los mensajes por defecto de Nest («Not Found»…) no son claves: queda el título del estado
+    return {
+      status: exception.getStatus(),
+      detail: typeof message === "string" && /^[a-z]+\.[A-Za-z0-9.]+$/.test(message) ? message : undefined,
+    };
+  }
+  // Errores de Fastify (cuerpo demasiado grande, JSON mal formado…) traen su estado
+  const statusCode = (exception as { statusCode?: unknown })?.statusCode;
+  if (typeof statusCode === "number" && statusCode >= 400 && statusCode < 500)
+    return { status: statusCode, detail: statusCode === 429 ? "errors.tooManyAttemptsPlease" : undefined };
+  logger.error(
+    `${exception instanceof Error ? exception.message : "Unexpected error"} (requestId ${request.id})`,
+    exception instanceof Error ? exception.stack : undefined,
+  );
+  return { status: 500, detail: "errors.internalErrorPleaseTry" };
 }

@@ -1,5 +1,5 @@
 # language: es
-@generica @solo-web
+@generica @solo-web @REQ-03
 Característica: Invitación genérica
 
   Escenario: Un invitado se registra con sus propios datos desde un enlace genérico

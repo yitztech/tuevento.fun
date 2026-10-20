@@ -111,11 +111,12 @@ try {
       { ...texto, shadow: { color: "#000000", blur: 1e9, x: 0, y: 0 } },
     ];
     for (const entrada of maliciosos) {
-      await a.call(ruta, "PUT", { ...base, texts: [entrada] }, 400);
+      await a.call(ruta, "PUT", { ...base, texts: [entrada] }, 422);
     }
-    // Un campo desconocido no da error: se descarta y no llega a guardarse
-    const guardada = await a.call(ruta, "PUT", { ...base, texts: [{ ...texto, shadow: { color: "#000000", blur: 2, x: 0, y: 0, extra: "x" } }] });
-    assert.equal("extra" in guardada.design.texts[0].shadow, false);
+    // Un campo desconocido se rechaza (BE-11), también anidado, y nada se guarda
+    const extra = await a.raw(ruta, { method: "PUT", body: { ...base, texts: [{ ...texto, shadow: { color: "#000000", blur: 2, x: 0, y: 0, extra: "x" } }] } });
+    assert.equal(extra.status, 422);
+    assert.ok(extra.data.errors.some((e) => e.field === "texts.0.shadow.extra" && e.code === "unknown_field"), extra.text);
   });
 
   await suite("Postal: sin sesión o de otra cuenta responde 401 o 404, y las fotos sin id no existen", async () => {
@@ -146,13 +147,18 @@ try {
   await suite("Privilegios: no se puede escalar por el cuerpo de la petición", async () => {
     const c = client();
     const extra = { isOwner: true, is_owner: true, isDemo: true, id: UUID, locale: "xx", emailVerified: true };
-    const nuevo = await c.call("/auth/register", "POST", account(P, "priv", extra), 201);
+    // Los campos que no son de la entrada se rechazan (422) y no crean nada
+    const rechazado = await c.raw("/auth/register", { method: "POST", body: account(P, "priv", extra) });
+    assert.equal(rechazado.status, 422);
+    for (const campo of Object.keys(extra))
+      assert.ok(rechazado.data.errors.some((e) => e.field === campo && e.code === "unknown_field"), `${campo}: ${rechazado.text}`);
+    const nuevo = await c.call("/auth/register", "POST", account(P, "priv"), 201);
     assert.equal(nuevo.isOwner, false);
     assert.equal(nuevo.isDemo, false);
-    assert.notEqual(nuevo.id, UUID);
     await c.call("/owner/metrics", "GET", undefined, 403);
-    // El perfil ignora los campos que no son suyos
-    const perfil = await c.call("/profile", "PATCH", { firstName: "Ana", lastName: "Prueba", phone: "+527770000000", email: "otro@example.invalid", isOwner: true }, 200);
+    // El perfil tampoco acepta campos que no son suyos
+    await c.call("/profile", "PATCH", { firstName: "Ana", lastName: "Prueba", phone: "+527770000000", email: "otro@example.invalid", isOwner: true }, 422);
+    const perfil = await c.call("/auth/me");
     assert.equal(perfil.email, nuevo.email);
     assert.equal(perfil.isOwner, false);
     await c.call("/owner/metrics", "GET", undefined, 403);
@@ -162,11 +168,14 @@ try {
     const c = client();
     const r = await c.raw("/auth/register", { method: "POST", body: account(P, "ses") });
     assert.equal(r.status, 201);
-    const cookie = r.setCookie.find((x) => x.startsWith("session="));
+    // Con HTTPS se llama __Host-session (Secure, Path=/ y sin Domain); sin HTTPS, session
+    const cookie = r.setCookie.find((x) => /^(__Host-)?session=/.test(x));
     assert.ok(cookie, "falta la cookie de sesión");
     assert.match(cookie, /HttpOnly/i);
     assert.match(cookie, /SameSite=Lax/i);
-    assert.match(cookie, /Path=\/api/i);
+    assert.match(cookie, /Path=\/(;|$)/i);
+    assert.doesNotMatch(cookie, /Domain=/i);
+    if (cookie.startsWith("__Host-")) assert.match(cookie, /Secure/i);
     assert.ok(cookie.split(";")[0].split("=")[1].length >= 32, "token demasiado corto");
     // Cookie falsificada o ajena
     for (const falsa of ["session=" + "a".repeat(43), "session=", "session=' OR '1'='1", "session=" + "a".repeat(5000)]) {
@@ -189,7 +198,9 @@ try {
     const c = client();
     for (let i = 0; i < 5; i++) assert.equal((await c.raw("/auth/login", { method: "POST", body: { email: victima.email, password: `mala-${i}-clave` } })).status, 401);
     // Bloqueada: ni siquiera la contraseña correcta entra
-    assert.equal((await c.raw("/auth/login", { method: "POST", body: { email: victima.email, password } })).status, 429);
+    const bloqueada = await c.raw("/auth/login", { method: "POST", body: { email: victima.email, password } });
+    assert.equal(bloqueada.status, 429);
+    assert.ok(Number(bloqueada.headers["retry-after"]) > 0, "falta Retry-After");
     // El bloqueo es de esa cuenta: otra puede entrar
     await client().call("/auth/login", "POST", { email: account(P, "a").email, password }, 201);
   });
@@ -199,7 +210,9 @@ try {
     const noExiste = await client().raw("/auth/login", { method: "POST", body: { email: `nadie-${Date.now()}@example.invalid`, password: "incorrecta-123" } });
     assert.equal(existe.status, 401);
     assert.equal(noExiste.status, 401);
-    assert.deepEqual(existe.data, noExiste.data);
+    // Igual salvo el requestId, que es de cada petición
+    const sinId = ({ requestId, ...resto }) => resto;
+    assert.deepEqual(sinId(existe.data), sinId(noExiste.data));
     const f1 = await client().raw("/auth/password/forgot", { method: "POST", body: { email: account(P, "a").email } });
     const f2 = await client().raw("/auth/password/forgot", { method: "POST", body: { email: `nadie-${Date.now()}@example.invalid` } });
     assert.equal(f1.status, f2.status);
@@ -240,11 +253,11 @@ try {
     // En login y registro el contenido malicioso se rechaza o falla la autenticación, sin 500
     for (const payload of [sqli, "' OR '1'='1", "admin'--", html]) {
       const login = await client().raw("/auth/login", { method: "POST", body: { email: payload, password: payload } });
-      assert.ok([400, 401].includes(login.status), `login con ${payload} → ${login.status}`);
+      assert.ok([401, 422].includes(login.status), `login con ${payload} → ${login.status}`);
       // "admin'--" solo usa letras, apóstrofo y guion: es un nombre válido y se guarda como texto
       if (payload === "admin'--") continue;
       const registro = await client().raw("/auth/register", { method: "POST", body: { ...account(P, "inj"), firstName: payload } });
-      assert.equal(registro.status, 400, `registro con nombre ${payload}`);
+      assert.equal(registro.status, 422, `registro con nombre ${payload}`);
     }
     // La tabla de usuarios sigue ahí
     await a.call("/auth/me");
@@ -267,11 +280,53 @@ try {
     assert.equal(enorme.status, 413);
     for (const dataUrl of ["data:text/html;base64,PHNjcmlwdD4=", "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=", "javascript:alert(1)", "no-es-url"]) {
       const r = await a.raw("/profile/avatar", { method: "PUT", body: { dataUrl } });
-      assert.equal(r.status, 400, `avatar ${dataUrl.slice(0, 30)} → ${r.status}`);
+      assert.equal(r.status, 422, `avatar ${dataUrl.slice(0, 30)} → ${r.status}`);
     }
-    // Campos de texto desmesurados
-    assert.equal((await a.raw("/events", { method: "POST", body: eventData({ description: "x".repeat(2501) }) })).status, 400);
-    assert.equal((await a.raw(`/events/${evento.id}/invitations`, { method: "POST", body: invitationData({ notes: "x".repeat(5000) }) })).status, 400);
+    // Campos de texto desmesurados: 422 con too_long, sin recortar
+    const descripcion = await a.raw("/events", { method: "POST", body: eventData({ description: "x".repeat(2501) }) });
+    assert.equal(descripcion.status, 422);
+    assert.ok(descripcion.data.errors.some((e) => e.field === "description" && e.code === "too_long"), descripcion.text);
+    assert.equal((await a.raw(`/events/${evento.id}/invitations`, { method: "POST", body: invitationData({ notes: "x".repeat(5000) }) })).status, 422);
+    // Cuerpo JSON de 1 MB como máximo fuera de las subidas: un login de 2 MB no llega a validarse
+    const login = await client().raw("/auth/login", { method: "POST", body: JSON.stringify({ email: "a@b.co", password: "x".repeat(2 * 1024 * 1024) }), json: false, headers: { "Content-Type": "application/json" } });
+    assert.equal(login.status, 413);
+    assert.match(login.headers["content-type"], /^application\/problem\+json/);
+    // Las subidas sí admiten más de 1 MB: llega a validarse la imagen
+    const subida = await a.raw("/profile/avatar", { method: "PUT", body: { dataUrl: "data:image/png;base64," + "A".repeat(1.5 * 1024 * 1024) } });
+    assert.equal(subida.status, 422);
+  });
+
+  await suite("Entradas: las escrituras rechazan los campos desconocidos", async () => {
+    const r = await a.raw("/profile", { method: "PATCH", body: { firstName: "Ana", lastName: "Prueba", phone: "", isOwner: true } });
+    assert.equal(r.status, 422);
+    assert.ok(r.data.errors.some((e) => e.field === "isOwner" && e.code === "unknown_field"), r.text);
+    assert.equal((await a.call("/auth/me")).isOwner, false);
+  });
+
+  await suite("Límites por cuenta y formulario: 429 con Retry-After", async () => {
+    const correo = `${P}-news@example.invalid`;
+    for (let i = 0; i < 3; i++)
+      assert.equal((await client().raw("/newsletter/subscribe", { method: "POST", body: { email: correo } })).status, 201);
+    const cuarta = await client().raw("/newsletter/subscribe", { method: "POST", body: { email: correo } });
+    assert.equal(cuarta.status, 429);
+    assert.ok(Number(cuarta.headers["retry-after"]) > 0, `Retry-After: ${cuarta.headers["retry-after"]}`);
+    assert.equal(cuarta.data.code, "rate_limited");
+  });
+
+  await suite("Errores: Problem Details con requestId y X-Request-ID", async () => {
+    const r = await guest.raw("/events");
+    assert.equal(r.status, 401);
+    assert.match(r.headers["content-type"], /^application\/problem\+json/);
+    assert.equal(r.data.type, "about:blank");
+    assert.equal(r.data.status, 401);
+    assert.equal(r.data.code, "unauthorized");
+    assert.ok(r.data.title && r.data.detail, r.text);
+    assert.equal(r.data.requestId, r.headers["x-request-id"]);
+    // Un X-Request-ID recibido se conserva para seguir la petición en los logs
+    const propio = await guest.raw("/health", { headers: { "X-Request-ID": "prueba-1234567890" } });
+    assert.equal(propio.headers["x-request-id"], "prueba-1234567890");
+    // /api/health solo dice el estado
+    assert.deepEqual(propio.data, { status: "ok" });
   });
 
   mkdirSync("qa-artifacts", { recursive: true });

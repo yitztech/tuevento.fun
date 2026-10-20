@@ -118,13 +118,10 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
       registerMode ? registerSchema : loginSchema,
       validationOptions(getLocale()),
     ) as unknown as Resolver<RegisterInput>,
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
-      password: "",
-    },
+    // Solo los campos del esquema de cada modo: los esquemas no admiten campos de más
+    defaultValues: registerMode
+      ? { firstName: "", lastName: "", phone: "", email: "", password: "" }
+      : { email: "", password: "" },
   });
   const submit = form.handleSubmit(async (data) => {
     setError("");

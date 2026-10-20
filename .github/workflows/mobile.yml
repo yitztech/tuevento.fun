@@ -39,10 +39,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: {node-version: 24, cache: npm}
+        with: {node-version-file: .nvmrc, cache: npm}
       - uses: actions/setup-java@v6
         with: {distribution: temurin, java-version: '21'}
-      - uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm run test:unit && node scripts/validate-mobile-env.mjs
       - run: npm run build && npx cap sync android
         working-directory: apps/web
@@ -106,7 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: {node-version: 24, cache: npm}
+        with: {node-version-file: .nvmrc, cache: npm}
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm run test:unit && node scripts/validate-mobile-env.mjs
       - run: npm run build && npx cap sync ios
         working-directory: apps/web

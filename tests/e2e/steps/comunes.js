@@ -24,6 +24,23 @@ Given("que tengo una cuenta creada y abro mi perfil", async ({ page, ctx }) => {
   await page.goto("/perfil");
 });
 
+Given("que tengo una cuenta creada por la API sin sesión en el navegador", async ({ request, ctx }) => {
+  ctx.cuenta = nuevaCuenta();
+  // `request` no comparte las cookies del navegador: hay que entrar con el formulario
+  const r = await request.post("/api/auth/register", { headers: cabecera, data: ctx.cuenta });
+  expect(r.status()).toBe(201);
+});
+
+When("escribo mi correo y mi contraseña en el formulario de acceso", async ({ ui, ctx }) => {
+  await ui.escribir("Correo electrónico", ctx.cuenta.email);
+  await ui.escribir("Contraseña", ctx.cuenta.password);
+});
+
+Then("entro en mi espacio", async ({ page }) => {
+  await expect(page.getByRole("heading", { name: "Tu próxima historia empieza aquí" })).toBeVisible();
+  await expect(page).not.toHaveURL(/\/acceso$/);
+});
+
 When("escribo {string} en el campo {string}", async ({ ui }, texto, campo) => {
   await ui.escribir(campo, texto);
 });

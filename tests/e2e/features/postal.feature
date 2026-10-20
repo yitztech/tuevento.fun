@@ -1,5 +1,5 @@
 # language: es
-@postal @solo-web
+@postal @solo-web @REQ-04
 Característica: Postal editable por evento
 
   Escenario: Diseñar la postal y verla en la invitación

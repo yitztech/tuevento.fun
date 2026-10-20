@@ -1,0 +1,5 @@
+# Squawk revisa las migraciones nuevas en el job «Base de datos» del CI (PRU-15).
+# Cada migración corre en su propia transacción (apps/api/src/database.ts): no cabe
+# CREATE INDEX CONCURRENTLY, y las tablas son pequeñas.
+assume_in_transaction = true
+excluded_rules = ["require-concurrent-index-creation", "require-concurrent-index-deletion"]

@@ -1,6 +1,7 @@
 # Publica las imágenes en GHCR y despliega en Coolify cuando cambia main.
 #
-#   probar → publicar (gateway, web, api, admin y postgres) → desplegar (webhook de Coolify) → comprobar
+#   CI (Verificar, Escenarios, Base de datos y Seguridad) → publicar (gateway, web, api, admin y
+#   postgres) → desplegar (webhook de Coolify) → comprobar la versión → prueba de humo
 #
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variables SITE_URL y
 # SITE_URL_EN) lo rellena la plataforma. Mientras no exista, se publican las imágenes
@@ -22,24 +23,18 @@ permissions:
   contents: read
 
 jobs:
-  probar:
-    name: Pruebas
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      # El typecheck necesita los paquetes compartidos compilados
-      - run: npm run build -w @tuevento/contracts && npm run build -w @tuevento/client
-      - run: npm run typecheck
-      - run: npm run test:unit
+  # Los mismos checks que en cada PR: no se publica nada sin los escenarios en verde (DEP-12)
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
 
   publicar:
     name: Publicar ${{ matrix.name }}
-    needs: probar
+    needs: ci
     # La etiqueta :main solo puede salir de main (también con workflow_dispatch)
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -147,3 +142,31 @@ jobs:
             fi
             sleep 10
           done
+
+      # Prueba de humo con reintentos en los dos dominios y en el panel (DEP-11)
+      - name: Prueba de humo
+        if: steps.coolify.outputs.listo == 'true'
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL_EN: ${{ vars.SITE_URL_EN }}
+          ADMIN_URL: ${{ vars.ADMIN_URL || 'https://admin.tuevento.fun' }}
+        run: |
+          comprobar() {
+            for _ in $(seq 1 10); do
+              if "$@"; then return 0; fi
+              sleep 6
+            done
+            return 1
+          }
+          # shellcheck disable=SC2329 # se llaman a través de comprobar
+          salud() { [ "$(curl --fail --silent --max-time 10 "$1/api/health" | jq -r '.status')" = "ok" ]; }
+          # shellcheck disable=SC2329
+          pagina() { curl --fail --silent --output /dev/null --max-time 15 "$1/"; }
+          fallos=0
+          for url in "$SITE_URL" "$SITE_URL_EN"; do
+            comprobar salud "$url" || { echo "::error::$url/api/health no responde {\"status\":\"ok\"}"; fallos=1; }
+            comprobar pagina "$url" || { echo "::error::La portada de $url no responde 200"; fallos=1; }
+          done
+          comprobar pagina "$ADMIN_URL" || { echo "::error::$ADMIN_URL no responde 200"; fallos=1; }
+          [ "$fallos" -eq 0 ] && echo "Humo correcto en $SITE_URL, $SITE_URL_EN y $ADMIN_URL"
+          exit "$fallos"

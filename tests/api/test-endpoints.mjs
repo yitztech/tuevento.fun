@@ -58,10 +58,10 @@ try {
     await organizador.call(ruta, "PUT", { ...diseno, texts: [] });
     assert.equal((await organizador.call(`${ruta}/versions`)).length, 2);
     assert.equal((await organizador.call(`${ruta}/versions/${primera.id}/restore`, "POST", {}, 201)).design.texts.length, 1);
-    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...diseno.texts[0], content: "x".repeat(201) }] }, 400);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...diseno.texts[0], content: "x".repeat(201) }] }, 422);
     await organizador.call(ruta, "PUT", { background: { type: "photo", photo: "00000000-0000-4000-8000-000000000000" }, photos: [], texts: [] }, 400);
     await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 201);
-    await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 400);
+    await organizador.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 409);
     await organizador.call(`/events/${evento.id}`, "DELETE");
     const borrada = await send(new URL(foto.url, base), { headers: { "x-tuevento-client": "1" } });
     assert.equal(borrada.status, 404);
@@ -82,10 +82,10 @@ try {
     const anterior = { ...diseno, texts: [{ ...texto, shadow: undefined }] };
     assert.equal((await organizador.call(ruta, "PUT", anterior)).design.texts[0].shadow, undefined);
     // Límites: sombra fuera de rango o color que no es hexadecimal se rechazan
-    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, blur: 11 } }] }, 400);
-    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, x: -6 } }] }, 400);
-    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, color: "rojo" } }] }, 400);
-    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, color: "azul" }] }, 400);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, blur: 11 } }] }, 422);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, x: -6 } }] }, 422);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, shadow: { ...sombra, color: "rojo" } }] }, 422);
+    await organizador.call(ruta, "PUT", { ...diseno, texts: [{ ...texto, color: "azul" }] }, 422);
     await organizador.call(`/events/${evento.id}`, "DELETE");
   });
 
@@ -112,7 +112,7 @@ try {
     await otro.call(`/events/${otroEvento.id}`, "PATCH", eventData({ slug }), 409);
     // Formato: minúsculas, números y guiones entre palabras, de 3 a 60
     for (const malo of ["Boda Ana", "ab", "-evento", "evento-", "evento--x", "a".repeat(61)]) {
-      await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: malo }), 400);
+      await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: malo }), 422);
     }
     // Quitarla deja el evento sin dirección pública; archivarlo también la cierra
     assert.equal((await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: "" }))).slug, "");
@@ -178,7 +178,7 @@ try {
     assert.equal(vista.kind, "open");
     assert.deepEqual(vista.members, []);
     assert.equal(vista.registrationsFull, false);
-    await organizador.call(`/events/${evento.id}/invitations`, "POST", { name: "Para todos", kind: "open", email: "", phone: "", notes: "", members: [{ name: "Alguien", kind: "adult", notes: "" }] }, 400);
+    await organizador.call(`/events/${evento.id}/invitations`, "POST", { name: "Para todos", kind: "open", email: "", phone: "", notes: "", members: [{ name: "Alguien", kind: "adult", notes: "" }] }, 422);
     const registro = await visitante.call(`/invitations/${abierta.token}/register`, "POST", {
       name: "Familia Ruiz",
       email: `ruiz-${unique}@example.invalid`,
@@ -196,8 +196,8 @@ try {
     const lista = await organizador.call(`/events/${evento.id}/invitations`);
     assert.equal(lista.find((i) => i.token === registro.token).parentId, abierta.id);
     // Un registro sin personas, o con tipo "open", no se acepta
-    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Sin personas", kind: "individual", email: "", phone: "", notes: "", members: [] }, 400);
-    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Tipo abierto", kind: "open", email: "", phone: "", notes: "", members: [{ name: "A", kind: "adult", notes: "", status: "pending" }] }, 400);
+    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Sin personas", kind: "individual", email: "", phone: "", notes: "", members: [] }, 422);
+    await visitante.call(`/invitations/${abierta.token}/register`, "POST", { name: "Tipo abierto", kind: "open", email: "", phone: "", notes: "", members: [{ name: "A", kind: "adult", notes: "", status: "pending" }] }, 422);
     // Solo las genéricas aceptan registros: una personal responde 404
     await visitante.call(`/invitations/${personal.token}/register`, "POST", { name: "Intruso", kind: "individual", email: "", phone: "", notes: "", members: [{ name: "Intruso", kind: "adult", notes: "", status: "pending" }] }, 404);
     // Cancelado: no admite registros
@@ -247,8 +247,8 @@ try {
     const bad = await guest.raw("/auth/google", { method: "POST", body: { credential: "no-es-un-jwt", nonce: r.data.nonce } });
     // 503 si el entorno no tiene GOOGLE_CLIENT_ID (CI); 400 o 401 si lo tiene
     assert.ok([400, 401, 503].includes(bad.status), `credencial falsa → ${bad.status}`);
-    assert.equal((await guest.raw("/auth/google", { method: "POST", body: { credential: "x" } })).status, 400);
-    assert.equal((await guest.raw("/auth/google", { method: "POST", body: { credential: "x".repeat(12001), nonce: r.data.nonce } })).status, 400);
+    assert.equal((await guest.raw("/auth/google", { method: "POST", body: { credential: "x" } })).status, 422);
+    assert.equal((await guest.raw("/auth/google", { method: "POST", body: { credential: "x".repeat(12001), nonce: r.data.nonce } })).status, 422);
   });
 
   await suite("Idiomas es, en, pt, de, fr: el idioma de la cuenta y de los mensajes", async () => {
@@ -271,7 +271,7 @@ try {
       assert.equal((await c.call("/auth/me")).locale, locale);
       // El mensaje de error llega en el idioma de la petición
       const r = await client().raw("/auth/register", { method: "POST", body: { email: "mal" }, headers });
-      assert.equal(r.status, 400);
+      assert.equal(r.status, 422);
       assert.equal(r.headers["content-language"], locale);
       assert.ok(JSON.stringify(r.data).includes(translate(locale, "validation.enterValidEmailAddress")), `${locale}: ${r.text}`);
     }
@@ -283,14 +283,22 @@ try {
     assert.equal(raro.locale, "en");
   });
 
-  await suite("Validación de entradas: lo inválido responde 400 con el campo", async () => {
+  await suite("Validación de entradas: lo inválido responde 422 en Problem Details con el campo", async () => {
     const a = client();
     await a.call("/auth/register", "POST", account(P, "val"), 201);
     const largo = (n, c = "a") => c.repeat(n);
     const mal = async (path, method, body, campo) => {
       const r = await a.raw(path, { method, body });
-      assert.equal(r.status, 400, `${method} ${path} ${JSON.stringify(body).slice(0, 80)} → ${r.status} ${r.text.slice(0, 120)}`);
-      if (campo) assert.ok(r.data.fields?.[campo], `falta el campo ${campo}: ${r.text}`);
+      assert.equal(r.status, 422, `${method} ${path} ${JSON.stringify(body).slice(0, 80)} → ${r.status} ${r.text.slice(0, 120)}`);
+      assert.match(r.headers["content-type"], /^application\/problem\+json/);
+      assert.equal(r.data.status, 422);
+      assert.equal(r.data.code, "validation_failed");
+      assert.ok(r.data.requestId && r.data.requestId === r.headers["x-request-id"], `requestId: ${r.text}`);
+      if (campo) {
+        assert.ok(r.data.errors?.some((e) => e.field === campo && e.code && e.message), `falta el campo ${campo}: ${r.text}`);
+        // Las versiones publicadas de la app leen `fields` hasta la siguiente versión mayor
+        assert.ok(r.data.fields?.[campo], `falta fields.${campo}: ${r.text}`);
+      }
     };
     // login
     await mal("/auth/login", "POST", {});
@@ -322,7 +330,7 @@ try {
     const inv = await a.call(`/events/${e.id}/invitations`, "POST", invitationData(), 201);
     await mal(`/invitations/${inv.token}/rsvp`, "POST", { members: [{ id: inv.members[0].id, status: "quizas" }] });
     // Los límites exactos sí se aceptan
-    await a.call("/profile", "PATCH", { firstName: largo(50), lastName: largo(50), phone: "1".repeat(15) }, 200);
+    await a.call("/profile", "PATCH", { firstName: largo(50), lastName: largo(50), phone: "+52 (777) 123-45-67" }, 200);
   });
 
   await suite("Recursos inexistentes o con formato inválido responden 404/400, nunca 500", async () => {

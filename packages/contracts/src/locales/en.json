@@ -766,7 +766,8 @@
     "useHexColor": "Choose a color from the palette.",
     "maximum60Characters": "Maximum 60 characters.",
     "eventSlugFormat": "Use only lowercase letters, numbers and hyphens between words, 3 to 60 characters.",
-    "openInvitationNoMembers": "An open invitation has no people: each guest adds their own."
+    "openInvitationNoMembers": "An open invitation has no people: each guest adds their own.",
+    "unknownField": "This field isn’t allowed."
   },
   "pricing": {
     "title": "Pricing",
@@ -811,5 +812,17 @@
     "sending": "Sending…",
     "submit": "Send my reply",
     "title": "Register for the event"
+  },
+  "problems": {
+    "badRequest": "Invalid request",
+    "unauthorized": "Sign in required",
+    "forbidden": "Access denied",
+    "notFound": "Not found",
+    "conflict": "Conflicts with the current data",
+    "payloadTooLarge": "Content too large",
+    "validationFailed": "Invalid data",
+    "rateLimited": "Too many requests",
+    "internalError": "Internal error",
+    "serviceUnavailable": "Service unavailable"
   }
 }

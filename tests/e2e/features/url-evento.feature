@@ -1,5 +1,5 @@
 # language: es
-@url-evento @solo-web
+@url-evento @solo-web @REQ-03
 Característica: Dirección pública del evento
 
   Escenario: Publicar el evento en una dirección propia
@@ -27,6 +27,7 @@ Característica: Dirección pública del evento
     Y guardo los cambios del evento
     Entonces veo el aviso "Usa solo letras minúsculas sin acentos, números y guiones entre palabras, de 3 a 60 caracteres."
 
+  @solo-lectura
   Escenario: Una dirección que no existe muestra que el evento no está disponible
     Cuando abro la dirección pública "no-existe-esta-direccion"
     Entonces veo el encabezado "No encontramos este evento"

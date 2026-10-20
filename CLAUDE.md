@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # TuEventoFun
 
 ## Idiomas: todo texto nace en todos los idiomas
@@ -27,7 +29,7 @@ Todo límite de longitud de un dato (máximo de caracteres, dígitos…) vive en
 
 - **Frontend:** `maxLength={accountLimits.x}` en el campo.
 - **Backend:** el esquema Zod usa `accountLimits.x` y un mensaje traducido (`validation.maximumNCharacters`, en todos los idiomas).
-- **Base de datos:** una migración nueva (`apps/api/migrations/NNN_*.sql`, nunca editar una ya aplicada) con `ALTER TABLE t ADD CONSTRAINT t_col_max_length CHECK (char_length(col) <= N)`.
+- **Base de datos:** una migración nueva (`apps/api/migrations/NNN_*.sql`, nunca editar una ya aplicada) con `ALTER TABLE t ADD CONSTRAINT t_col_max_length CHECK (char_length(col) <= N)`. En una tabla con datos, la restricción se añade `NOT VALID` y se valida (`VALIDATE CONSTRAINT`) en la migración siguiente, como en la 009, con `SET lock_timeout` al principio; Squawk revisa cada migración nueva en el CI (`.squawk.toml`).
 
 Al crear o cambiar un límite, añade su columna a `packages/contracts/src/limits.test.ts`: ese test (dentro de `npm test`) falla si el valor de la base de datos y el de `accountLimits` difieren o si un límite no tiene columna. Un dato sin columna (p. ej. la contraseña, que se guarda como hash) se declara ahí como excepción.
 
@@ -39,7 +41,7 @@ Antes de cerrar un cambio, con la app arriba (`docker compose up -d`): `npm run 
 
 ## Primero en local, después en CI o producción
 
-Toda prueba, script o workflow nuevo se valida **primero en local** y solo cuando pasa ahí se lleva a CI o a producción; nunca al revés. **Solo dos grupos de pruebas se ejecutan solo en local** por ahora, por decisión del usuario: las de las **apps móviles** (emulador de Android, simulador de iOS: `npm run e2e:movil`; `.github/workflows/mobile-e2e.yml` queda en manual) y las de la **base de datos** (`tests/db`, `npm run test:db`). Ninguna se añade a los PR ni a un despliegue hasta que el usuario lo pida. El resto (web, API, contracts) sí corre en CI como siempre, después de pasar en local. Un cambio en un workflow de CI se prueba antes ejecutando en local lo mismo que hace (los mismos comandos), y se avisa de lo que no se pudo comprobar.
+Toda prueba, script o workflow nuevo se valida **primero en local** y solo cuando pasa ahí se lleva a CI o a producción; nunca al revés. **Solo las pruebas de las apps móviles se ejecutan solo en local** por ahora, por decisión del usuario (emulador de Android, simulador de iOS: `npm run e2e:movil`; `.github/workflows/mobile-e2e.yml` queda en manual); no se añaden a los PR ni a un despliegue hasta que el usuario lo pida. El resto (web, API, contracts y base de datos) corre en CI, después de pasar en local. Un cambio en un workflow de CI se prueba antes ejecutando en local lo mismo que hace (los mismos comandos), y se avisa de lo que no se pudo comprobar.
 
 ## Pruebas: cada capa tiene las suyas
 
@@ -48,5 +50,5 @@ Toda prueba, script o workflow nuevo se valida **primero en local** y solo cuand
 - Un endpoint nuevo o cambiado se entrega con su prueba de API; si toca autenticación, permisos, datos de otras cuentas o entradas del usuario, también con su caso en `tests/api/test-security.mjs`.
 - Una migración, restricción o columna nueva se entrega con su prueba en `tests/db/specs/`.
 - Idiomas soportados: es, en, pt, de y fr; cualquier prueba que dependa del idioma cubre los cinco.
-- **La API siempre corre en GitHub Actions** (`test:api`, `test:endpoints`, `test:security`: la sirve a varios clientes). **Base de datos (`tests/db`) y móviles, solo en local** hasta que el usuario pida pasarlas a CI.
+- **La API siempre corre en GitHub Actions** (`test:api`, `test:endpoints`, `test:security`: la sirve a varios clientes), y la base de datos también (`tests/db` y Squawk, job «Base de datos»). **Móviles, solo en local** hasta que el usuario pida pasarlas a CI.
 - En los workflows, `npm run test:unit` (rápido, sin app) sustituye a `npm test`, que necesita la app arriba.

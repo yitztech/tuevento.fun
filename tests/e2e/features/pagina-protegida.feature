@@ -1,5 +1,5 @@
 # language: es
-@proteccion @solo-web
+@proteccion @solo-web @REQ-03
 Característica: Página pública protegida y dirección sugerida
 
   Escenario: Una página protegida por contraseña solo se abre con la contraseña
