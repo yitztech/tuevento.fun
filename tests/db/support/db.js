@@ -29,7 +29,17 @@ const passwordApi = env.TEST_DB_API_PASSWORD || env.API_DB_PASSWORD || "dev-api"
 export const migracionesDir = join(raiz, "apps/api/migrations");
 export const migraciones = readdirSync(migracionesDir).filter((f) => f.endsWith(".sql")).sort();
 
-const conexion = (user, password, database) => new pg.Pool({ host, port, user, password, database, max: 4 });
+/** Un pool sin listener de `error` lanza la excepción no capturada cuando el servidor cierra una conexión
+ * ociosa (57P01, p. ej. al borrar la base con FORCE). Ese cierre es esperado al terminar; el resto se muestra. */
+export function conectarPool(config) {
+  const pool = new pg.Pool(config);
+  pool.on("error", (error) => {
+    if (error.code !== "57P01") console.error(`PostgreSQL (pool): ${error.message}`);
+  });
+  return pool;
+}
+
+const conexion = (user, password, database) => conectarPool({ host, port, user, password, database, max: 4 });
 
 /** Pool como administrador (crear/borrar la base temporal y consultar roles). */
 export const admin = (database = "postgres") => conexion("tuevento", passwordAdmin, database);

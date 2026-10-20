@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import pg from "pg";
-import { admin, baseTemporal } from "../support/db.js";
+import { admin, baseTemporal, conectarPool } from "../support/db.js";
 
 // El rol del panel (services/postgres/sql/admin-role.sql) solo lee lo que muestra el panel.
 // Se aplica el mismo SQL sobre una base temporal y con un nombre de rol único, para no tocar
@@ -15,7 +14,7 @@ const rol = `admin_ro_test_${randomBytes(3).toString("hex")}`;
 
 let base, lector;
 const conectar = (password) =>
-  new pg.Pool({ host: process.env.TEST_DB_HOST || "127.0.0.1", port: Number(process.env.TEST_DB_PORT || process.env.DB_PORT || 5487), user: rol, password, database: base.nombre, max: 1 });
+  conectarPool({ host: process.env.TEST_DB_HOST || "127.0.0.1", port: Number(process.env.TEST_DB_PORT || process.env.DB_PORT || 5487), user: rol, password, database: base.nombre, max: 1 });
 
 // Psql no corre aquí: se sustituyen sus variables (:'admin_pw', :"db") y el nombre del rol
 async function aplicar(password) {
