@@ -8,8 +8,8 @@ dist/
 *.log
 .DS_Store
 coverage/
-qa-artifacts/*.json
-qa-artifacts/*.jsonl
+# Capturas y resultados de QA: solo en local (las postales pueden tener datos personales)
+qa-artifacts/
 .impeccable/mocks/
 
 *.jks

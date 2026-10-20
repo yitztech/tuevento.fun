@@ -54,14 +54,20 @@ services:
       SMTP_PASSWORD_EN: dev
       MAIL_FROM_EN: no-reply@en.tueventofun.orb.local
 
-  # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
   admin:
     build:
       context: .
       dockerfile: services/admin/Dockerfile
+    environment:
+      # compose.prod.yml exige las variables de Umami (llegan de .env.ci), pero su API solo responde
+      # a producción: vacías, el panel funciona sin países, como en local
+      UMAMI_API_URL: ""
+      UMAMI_API_USER: ""
+      UMAMI_API_PASSWORD: ""
     ports:
       - "127.0.0.1:${ADMIN_PORT:-8188}:3088"
 
+  # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
   mailpit:
     image: axllent/mailpit:v1.31.5
     environment:

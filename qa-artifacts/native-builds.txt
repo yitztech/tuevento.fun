@@ -1,4 +1,0 @@
-Android: assembleDebug; JDK 21; SDK 36; BUILD SUCCESSFUL.
-iOS: Xcode simulator Debug, CODE_SIGNING_ALLOWED=NO; BUILD SUCCEEDED.
-Compiled only; production origin and distribution signatures not configured. No physical-device runtime validation.
-GitHub workflows: actionlint passed locally; not run on GitHub.

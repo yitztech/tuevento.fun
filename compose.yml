@@ -117,6 +117,11 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       # Las pruebas entran una y otra vez desde la misma IP: sin este límite se bloquearían solas
       ADMIN_MAX_FAILURES: ${ADMIN_MAX_FAILURES:-1000}
+      # Sin Umami en local (su API solo responde al servidor de producción): el panel lo indica
+      UMAMI_API_URL: ${UMAMI_API_URL:-}
+      UMAMI_API_USER: ${UMAMI_API_USER:-}
+      UMAMI_API_PASSWORD: ${UMAMI_API_PASSWORD:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
     ports:
       - "127.0.0.1:${ADMIN_PORT:-8188}:3088"
     depends_on:

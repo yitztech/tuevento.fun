@@ -140,6 +140,21 @@
               </tbody>
             </table>
           </article>
+          <article class="card" aria-labelledby="countries-title">
+            <h2 id="countries-title">Visitantes por país</h2>
+            <p class="error" role="alert" ng-if="vm.countriesError">{{vm.countriesError}}</p>
+            <p class="muted" ng-if="vm.countries && !vm.countries.available">Umami no está configurado en este entorno.</p>
+            <table ng-if="vm.countries.available && vm.countries.rows.length">
+              <tbody>
+                <tr ng-repeat="c in vm.countries.rows | limitTo: 15">
+                  <th scope="row">{{vm.countryName(c.country)}}</th>
+                  <td>{{c.visitors}}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="muted" ng-if="vm.countries.available && !vm.countries.rows.length">Sin visitas en este periodo.</p>
+            <p class="muted" ng-if="vm.countries.available">Fuente: Umami (datos desde el 19 de octubre de 2026).</p>
+          </article>
           <article class="card">
             <h2>Páginas más visitadas</h2>
             <table>

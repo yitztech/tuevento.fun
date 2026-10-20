@@ -6,6 +6,7 @@ import { createAuth } from "./auth.mjs";
 import { createDatabase } from "./db.mjs";
 import { isPasswordHash } from "./password.mjs";
 import * as stats from "./stats.mjs";
+import { umamiFromEnv } from "./umami.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(here, "../public");
@@ -102,6 +103,7 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
     passwordHash,
     maxFailures: Number(process.env.ADMIN_MAX_FAILURES || 10),
   });
+  const umami = umamiFromEnv();
   const db = createDatabase({ connectionString: required("DATABASE_URL"), password: process.env.PGPASSWORD });
 
   const requireSession = (req, res) => {
@@ -144,6 +146,18 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
       const days = intParam(url.searchParams.get("days"), 1, 90, 30);
       const [overview, activity] = await Promise.all([stats.overview(db), stats.activity(db, days)]);
       return json(res, 200, { overview, activity });
+    },
+    // Países: Umami los guarda, la base no. Sin Umami configurado (desarrollo), el panel lo dice.
+    "GET /api/countries": async (req, res, url) => {
+      if (!requireSession(req, res)) return;
+      const days = intParam(url.searchParams.get("days"), 1, 90, 30);
+      if (!umami) return json(res, 200, { available: false, days, rows: [] });
+      try {
+        return json(res, 200, { available: true, days, rows: await umami.countries(days) });
+      } catch (error) {
+        console.error(`Umami: ${error.message}`);
+        return json(res, 502, { error: "umami" });
+      }
     },
     "GET /api/users": async (req, res, url) => {
       if (!requireSession(req, res)) return;
