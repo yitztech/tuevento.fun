@@ -118,7 +118,7 @@ npm run dev
 
 Vite escucha en 5187 y hace proxy a la API en 3087. Sin `gateway` y `web` no hay idioma por dominio (siempre español), `canonical`/`hreflang`, `robots.txt` ni `sitemap.xml`. Al terminar, detén Vite y ejecuta `docker compose start web gateway`. No ejecutes Vite y el gateway en el mismo puerto. Normalmente no hace falta: `docker compose up --watch` ya recarga la web en caliente dentro del contenedor `web`.
 
-La matriz y evidencia de QA están en [docs/QA.md](docs/QA.md) y `qa-artifacts/`. No son prueba de despliegue público, de Google configurado ni de un dispositivo Smart TV físico.
+La matriz y evidencia de QA están en [docs/QA.md](docs/QA.md); las capturas de `qa-artifacts/` se quedan en local y no se suben al repositorio (pueden tener datos personales). No son prueba de despliegue público, de Google configurado ni de un dispositivo Smart TV físico.
 
 La descripción de captación y sus rutas están en [docs/LANDING.md](docs/LANDING.md); su revisión visual independiente, en [docs/LANDING-DESIGN-REVIEW.md](docs/LANDING-DESIGN-REVIEW.md).
 
@@ -136,6 +136,7 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `TRUSTED_PROXY_CIDR` | gateway | Subred de Traefik: solo desde ella se acepta `X-Forwarded-For` |
 | `SITE_URL_ES`, `SITE_URL_EN` | web, api | Origen de cada idioma; también forman `ALLOWED_ORIGINS` |
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | web | Analítica (vacío = sin analítica) |
+| `UMAMI_API_URL`, `UMAMI_API_USER`, `UMAMI_API_PASSWORD` | admin | API de Umami con un usuario de solo lectura, para los visitantes por país del panel. `UMAMI_WEBSITE_ID` (admin) toma por defecto el sitio único de los dos dominios |
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
 | `ADMIN_DB_PASSWORD` | admin, postgres | Contraseña del rol de solo lectura `admin_ro` del panel |
@@ -207,17 +208,18 @@ Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no
 
 ## Panel de administración
 
-`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y AngularJS 1.8.3 (última versión de la rama 1.x, sin soporte desde 2022) servidos por el mismo contenedor, responsivo para el móvil. Solo en español: el panel no está traducido a propósito. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Solo lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos). El país de cada visita no se guarda, así que no hay mapa.
+`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y AngularJS 1.8.3 (última versión de la rama 1.x, sin soporte desde 2022) servidos por el mismo contenedor, responsivo para el móvil. Solo en español: el panel no está traducido a propósito. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Solo lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos). El país de cada visita no se guarda en la base: los visitantes por país salen de Umami (`https://stats.yunitztech.com`, un solo sitio para los dos dominios, datos desde el 19 de octubre de 2026). El panel entra con `POST /api/auth/login`, pide `GET /api/websites/<id>/metrics?type=country&startAt&endAt` (milisegundos) y guarda el resultado 5 minutos. La API de Umami solo responde al servidor de producción: en local, sin esas variables, el panel indica que Umami no está configurado.
 
 Puesta en marcha en producción:
 
-1. Generar el hash de la contraseña sin dejarla en el historial de la shell: `printf '%s' 'contraseña' | npm run hash-password -w @tuevento/admin`.
-2. Definir en Coolify `ADMIN_USER`, `ADMIN_PASSWORD_HASH` y `ADMIN_DB_PASSWORD`, y añadir `ADMIN_HOST` al servicio `gateway` como dominio. Sin estas variables el despliegue se detiene.
-3. Crear el rol de solo lectura en un volumen existente, como el dueño de la base (es seguro repetirlo):
+1. Generar el hash de la contraseña sin dejarla en el historial de la shell: `printf '%s' 'contraseña' | npm run hash-password -w @tuevento/admin`. Sale con el formato `scrypt:N:r:p:sal:hash`, sin `$`, para que Docker Compose y Coolify no lo interpreten como variable y lo recorten. Un hash del formato anterior (con `$`) se acepta, pero en Coolify habría que escribir cada `$` como `$$`: mejor generar uno nuevo.
+2. Definir en Coolify `ADMIN_USER`, `ADMIN_PASSWORD_HASH` (el valor entero, sin comillas), `ADMIN_DB_PASSWORD` y `UMAMI_API_URL`, `UMAMI_API_USER`, `UMAMI_API_PASSWORD`, y añadir `ADMIN_HOST` al servicio `gateway` como dominio. Sin estas variables el despliegue se detiene, y con un hash recortado o mal pegado `admin` no arranca y lo dice en su log.
+3. Crear el rol de solo lectura en un volumen existente, como el dueño de la base. Se puede repetir (también para cambiar la contraseña): crea el rol si falta, nunca lo borra y deja sus permisos en la lista del script:
 ```bash
 docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventofun -v admin_pw="$ADMIN_DB_PASSWORD" -v db=tueventofun < services/postgres/sql/admin-role.sql
 ```
-   Antes de hacerlo, el servicio `admin` no arranca (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
+   Antes de hacerlo, el servicio `admin` no puede leer la base (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
+4. Comprobar `https://admin.tuevento.fun/api/health`: 200 `{"status":"ok"}` si el rol entra y tiene sus permisos; 503 `{"status":"error"}` si no (rol sin crear, contraseña distinta o migración 014 sin aplicar). Es la ruta que puede vigilar Uptime Kuma. `/healthz`, la del `healthcheck` de Docker, solo dice que el proceso vive, como pide el contrato de la plataforma.
 
 En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
 

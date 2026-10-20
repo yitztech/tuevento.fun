@@ -13,6 +13,7 @@ Regla: **todo componente, pantalla, correo, error o validación que muestre text
 - Tono: tuteo en español, «você» en portugués de Brasil (`pt-BR`), «du» en alemán, «tu» en francés (con espacio fino no separable antes de `? ! : ;` y dentro de « »).
 - El contenido de los usuarios (títulos, nombres, notas, lugares) nunca se traduce.
 - Si se añade un idioma a la tabla, esta regla lo incluye automáticamente: actualiza la lista de arriba.
+- **Excepción aprobada:** el panel de administración (`apps/admin`, subdominio admin) va solo en español. Lo usa solo el administrador del sitio; esta regla no se aplica a sus textos.
 
 Antes de cerrar un cambio con texto: `npm run build -w @tuevento/contracts`, `npm run typecheck` y `npm run test:unit` (paridad de claves, plurales, variables, marcas y claves sin uso o inexistentes en todos los idiomas). `npm test` ejecuta además la API, la base de datos y los escenarios web (ver [docs/TESTS.md](docs/TESTS.md)).
 

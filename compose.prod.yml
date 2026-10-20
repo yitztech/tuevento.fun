@@ -138,6 +138,12 @@ services:
       ADMIN_USER: ${ADMIN_USER:?Define ADMIN_USER}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?Define ADMIN_PASSWORD_HASH}
       COOKIE_SECURE: "true"
+      # Visitantes por país: los lee de Umami con un usuario de solo lectura (la red frontend tiene salida)
+      UMAMI_API_URL: ${UMAMI_API_URL:?Define UMAMI_API_URL}
+      UMAMI_API_USER: ${UMAMI_API_USER:?Define UMAMI_API_USER}
+      UMAMI_API_PASSWORD: ${UMAMI_API_PASSWORD:?Define UMAMI_API_PASSWORD}
+      # El mismo sitio de Umami para los dos dominios
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-a9bab77a-9e00-4815-8007-7a3d3f78b0ab}
     depends_on:
       postgres: { condition: service_healthy }
     healthcheck:

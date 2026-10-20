@@ -16,6 +16,32 @@ Característica: Panel de administración
     Cuando pido las estadísticas del panel sin haber entrado
     Entonces el panel responde 401
 
+  Escenario: La salud del panel comprueba que puede leer la base de datos
+    Cuando pido la salud del panel
+    Entonces el panel responde 200 con el estado "ok"
+
+  Escenario: Sin sesión, los países no se ven
+    Cuando pido los países del panel sin haber entrado
+    Entonces el panel responde 401
+
+  Escenario: Sin Umami configurado, el panel lo indica en los países
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Entonces veo "Umami no está configurado en este entorno." en los visitantes por país
+
+  Escenario: El panel muestra los visitantes por país con su nombre en español
+    Dado que Umami responde con 7 visitantes de "MX" y 3 de "ES"
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Entonces los visitantes por país muestran "México" con 7 y "España" con 3
+
+  Escenario: Si Umami falla, el resto del resumen se sigue viendo
+    Dado que Umami no responde
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Entonces veo "No se pudo consultar Umami." en los visitantes por país
+    Y veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
+
   Escenario: El panel se usa en un móvil sin desbordamiento horizontal
     Dado que el panel se abre en un móvil de 390 por 844
     Cuando abro el panel de administración

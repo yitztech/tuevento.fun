@@ -10,7 +10,6 @@ set -eu
 
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
      -v admin_pw="$ADMIN_DB_PASSWORD" -v db="$POSTGRES_DB" <<'SQL'
-DROP ROLE IF EXISTS admin_ro;
 CREATE ROLE admin_ro LOGIN PASSWORD :'admin_pw';
 GRANT CONNECT ON DATABASE :"db" TO admin_ro;
 GRANT USAGE ON SCHEMA public TO admin_ro;

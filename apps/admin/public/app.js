@@ -12,8 +12,10 @@
   var MESSAGES = {
     invalid: "Usuario o contraseña incorrectos.",
     blocked: "Demasiados intentos. Espera unos minutos.",
-    error: "No se pudieron cargar los datos."
+    error: "No se pudieron cargar los datos.",
+    countries: "No se pudo consultar Umami."
   };
+  var REGIONS = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["es"], { type: "region" }) : null;
 
   angular.module("admin", []).controller("AdminController", ["$http", "$interval", "$scope", function ($http, $interval, $scope) {
     var vm = this;
@@ -29,6 +31,8 @@
     vm.stats = null;
     vm.users = null;
     vm.events = null;
+    vm.countries = null;
+    vm.countriesError = "";
 
     // ── Textos ──────────────────────────────────────────────────────────────
     vm.platformName = function (platform) {
@@ -36,6 +40,15 @@
     };
     vm.themeName = function (theme) {
       return THEMES[theme] || theme;
+    };
+    // Umami da el código ISO del país ("MX"); el nombre sale en español del navegador
+    vm.countryName = function (code) {
+      if (!code) return "Desconocido";
+      try {
+        return (REGIONS && REGIONS.of(code)) || code;
+      } catch (e) {
+        return code;
+      }
     };
     vm.date = function (value) {
       if (!value) return "";
@@ -94,14 +107,27 @@
     vm.logout = function () {
       $http.post("/api/logout", {}, { headers: { "Content-Type": "application/json" } }).finally(function () {
         vm.session = "out";
-        vm.stats = vm.users = vm.events = null;
+        vm.stats = vm.users = vm.events = vm.countries = null;
       });
     };
 
     vm.loadStats = function () {
+      vm.loadCountries();
       return request("/api/stats?days=" + vm.days).then(function (data) {
         vm.stats = data;
       }).catch(angular.noop);
+    };
+
+    // Aparte del resumen: si Umami falla, el resto del panel se sigue viendo
+    vm.loadCountries = function () {
+      vm.countriesError = "";
+      return $http.get("/api/countries?days=" + vm.days).then(function (res) {
+        vm.countries = res.data;
+      }).catch(function (res) {
+        if (res.status === 401) return;
+        vm.countries = null;
+        vm.countriesError = MESSAGES.countries;
+      });
     };
 
     vm.show = function (tab) {
