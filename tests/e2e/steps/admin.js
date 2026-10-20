@@ -19,6 +19,27 @@ When("entro al panel con el usuario {string} y la contraseña {string}", async (
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
 });
 
+const clave = (page) => page.getByLabel("Contraseña", { exact: true });
+
+When("escribo la contraseña {string} en el panel", async ({ page }, texto) => {
+  await clave(page).fill(texto);
+});
+
+When("pulso {string} en el panel", async ({ page }, nombre) => {
+  await page.getByRole("button", { name: nombre, exact: true }).click();
+});
+
+Then("la contraseña del panel está oculta", async ({ page }) => {
+  await expect(clave(page)).toHaveAttribute("type", "password");
+  await expect(page.getByRole("button", { name: "Mostrar contraseña", exact: true })).toHaveAttribute("aria-pressed", "false");
+});
+
+Then("la contraseña del panel se ve como {string}", async ({ page }, texto) => {
+  await expect(clave(page)).toHaveAttribute("type", "text");
+  await expect(clave(page)).toHaveValue(texto);
+  await expect(page.getByRole("button", { name: "Ocultar contraseña", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
 When("salgo del panel", async ({ page }) => {
   await page.getByRole("button", { name: "Salir", exact: true }).click();
 });

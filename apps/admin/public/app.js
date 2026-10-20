@@ -28,6 +28,7 @@
     vm.error = "";
     vm.loginError = "";
     vm.credentials = { username: "", password: "" };
+    vm.showPassword = false;
     vm.stats = null;
     vm.users = null;
     vm.events = null;
@@ -87,8 +88,13 @@
         });
     }
 
+    vm.togglePassword = function () {
+      vm.showPassword = !vm.showPassword;
+    };
+
     vm.login = function () {
       vm.loginError = "";
+      vm.showPassword = false;
       vm.busy = true;
       $http.post("/api/login", vm.credentials, { headers: { "Content-Type": "application/json" } })
         .then(function () {
