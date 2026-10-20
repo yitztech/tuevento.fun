@@ -191,6 +191,16 @@ conf=/etc/nginx/conf.d/sites.conf
   for lang in $pages_locales; do
     alternates="$alternates<link rel=\"alternate\" hreflang=\"$lang\" href=\"$(seo_url "$lang")\"/>"
   done
+  echo '# <title> y <meta name="description"> del HTML inicial, en el idioma de la página'
+  for kind in title description; do
+    echo "map \$page_lang \$seo_$kind {"
+    for lang in $pages_locales; do
+      text=$(awk -v kind="$kind" -v lang="$lang" '$1 == kind && $2 == lang { sub(/^[a-z]+ [a-z]+ /, ""); print }' "$manifest")
+      [ "$lang" = "$default" ] && echo "    default \"$text\";"
+      echo "    $lang \"$text\";"
+    done
+    echo '}'
+  done
   echo '# Marcas que sustituyen a <meta name="tuevento-seo"/> en index.html'
   echo "map \$site_lang \$seo_sites_meta { default '<meta name=\"tuevento:sites\" content=\"$sites\"/>'; }"
   echo "map \$site_lang \$seo_links { default '<link rel=\"canonical\" href=\"\$seo_canonical\"/>$alternates<link rel=\"alternate\" hreflang=\"x-default\" href=\"\$origin_$default\$seo_path_$default\"/>\$seo_sites_meta'; }"

@@ -53,10 +53,12 @@ server {
         # /pt/… en un dominio que no aloja ese idioma → el dominio que sí
         if ($locale_redirect) { return 301 $locale_redirect; }
         include /etc/nginx/snippets/security-headers.conf;
-        include /etc/nginx/snippets/analytics*.conf;
+        include /etc/nginx/conf.d/analytics*.snippet;
         add_header Cache-Control "no-cache" always;
         add_header Vary "Host" always;
         sub_filter '<html lang="es">' '<html lang="$page_lang">';
+        sub_filter '<title>TuEventoFun</title>' '<title>$seo_title</title>';
+        sub_filter '<meta name="description" content="TuEventoFun"/>' '<meta name="description" content="$seo_description"/>';
         sub_filter '<meta name="tuevento-seo"/>' '$seo_links';
         try_files $uri $uri/ /index.html;
     }

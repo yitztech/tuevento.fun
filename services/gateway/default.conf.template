@@ -38,6 +38,8 @@ server {
     listen 80;
     server_name ${ADMIN_HOST};
     client_max_body_size 4k;
+    # El panel no pasa por `web`, que es quien pone las cabeceras de las páginas: HSTS aquí (SEG-04)
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     location / {
         include /etc/nginx/snippets/proxy-headers.conf;
@@ -49,12 +51,25 @@ server {
 server {
     listen 80 default_server;
     server_name _;
-    client_max_body_size 3m;
+    # 1 MB como la API (AGENTS.md §23); las subidas de imágenes, 3 MB (sus locations)
+    client_max_body_size 1m;
 
     location = /healthz {
         access_log off;
         default_type text/plain;
         return 200 'ok';
+    }
+
+    # Subidas de imágenes (avatar y fotos de la postal): el mismo límite que la API en esas rutas
+    location = /api/profile/avatar {
+        client_max_body_size 3m;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream;
+    }
+    location ~ ^/api/events/[^/]+/postcard/images$ {
+        client_max_body_size 3m;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream;
     }
 
     # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas

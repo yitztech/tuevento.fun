@@ -4,6 +4,8 @@
 //   locale es
 //   hosted pt en        (pt se sirve en el dominio de en, bajo /pt)
 //   path privacy es /privacidad
+//   title es TuEventoFun · Invita, reúne y celebra
+//   description es Crea invitaciones…
 // Uso: node services/web/locales-manifest.cjs packages/contracts/dist > locales.txt
 const { resolve } = require("node:path");
 const {
@@ -12,6 +14,7 @@ const {
   localizedPages,
   localizedPath,
   siteLocale,
+  translate,
 } = require(resolve(process.argv[2] || "packages/contracts/dist"));
 
 const lines = [`default ${defaultLocale}`];
@@ -27,5 +30,14 @@ for (const page of localizedPages)
     const path = localizedPath(page, locale);
     if (!/^\/[a-z0-9/-]*$/.test(path)) throw new Error(`Ruta no válida: ${path}`);
     lines.push(`path ${page} ${locale} ${path}`);
+  }
+// <title> y <meta name="description"> del HTML inicial en cada idioma (I18N-07). Se insertan
+// entre comillas dobles en nginx y en el HTML: se escapan &, < y > y se rechaza lo que no cabe.
+const html = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+for (const locale of supportedLocales)
+  for (const [kind, key] of [["title", "landing.tueventofunInviteGatherCelebrate"], ["description", "common.metaDescription"]]) {
+    const text = translate(locale, key);
+    if (/["$\\\n{}]/.test(text)) throw new Error(`Texto SEO no válido (${locale} ${key}): ${text}`);
+    lines.push(`${kind} ${locale} ${html(text)}`);
   }
 process.stdout.write(`${lines.join("\n")}\n`);

@@ -7,7 +7,9 @@
 set -eu
 
 origin=""
-snippet=/etc/nginx/snippets/analytics.conf
+# En conf.d (tmpfs: la imagen corre con el sistema de archivos de solo lectura). La extensión
+# .snippet evita que nginx lo incluya en el bloque http: solo lo incluye la location de la SPA.
+snippet=/etc/nginx/conf.d/analytics.snippet
 rm -f "$snippet"
 
 if [ -n "${UMAMI_SCRIPT_URL:-}" ] && [ -n "${UMAMI_WEBSITE_ID:-}" ]; then

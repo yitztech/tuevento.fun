@@ -42,6 +42,8 @@ server {
         proxy_read_timeout 86400s;
 
         sub_filter '<html lang="es">' '<html lang="$page_lang">';
+        sub_filter '<title>TuEventoFun</title>' '<title>$seo_title</title>';
+        sub_filter '<meta name="description" content="TuEventoFun"/>' '<meta name="description" content="$seo_description"/>';
         sub_filter '<meta name="tuevento-seo"/>' '$seo_sites_meta';
         sub_filter_types text/html;
         sub_filter_once on;

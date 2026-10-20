@@ -25,8 +25,9 @@ services:
   gateway:
     <<: *hardening
     image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX, p. ej. ghcr.io/yitztech/tuevento.fun}-gateway:${IMAGE_TAG:-main}
-    # nginx necesita estas capacidades para arrancar como root y bajar a su usuario
-    cap_add: [CHOWN, SETGID, SETUID, NET_BIND_SERVICE]
+    # Corre como 101:101 (nginx) sin capacidades; solo escribe en los tmpfs
+    read_only: true
+    tmpfs: ["/tmp:uid=101,gid=101", "/var/cache/nginx:uid=101,gid=101", "/etc/nginx/conf.d:uid=101,gid=101"]
     mem_limit: 64m
     cpus: 0.25
     environment:
@@ -51,6 +52,9 @@ services:
     image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-web:${IMAGE_TAG:-main}
     # Escucha en 8080: arranca como root y baja a su usuario, sin NET_BIND_SERVICE
     cap_add: [CHOWN, SETGID, SETUID]
+    # Solo escribe la configuración generada al arrancar (conf.d, seo) y su caché, en tmpfs
+    read_only: true
+    tmpfs: [/tmp, /run, /var/cache/nginx, /etc/nginx/conf.d, /etc/nginx/seo]
     mem_limit: 64m
     cpus: 0.25
     environment:
@@ -162,6 +166,9 @@ services:
     # lo recorre ya siendo de postgres en cada rearranque (DAC_READ_SEARCH) y baja a
     # ese usuario (SETGID, SETUID). Mínimo comprobado con volumen nuevo y existente.
     cap_add: [CHOWN, DAC_READ_SEARCH, SETGID, SETUID]
+    # Escribe solo en su volumen; el socket y los temporales, en tmpfs
+    read_only: true
+    tmpfs: [/tmp, /var/run/postgresql]
     mem_limit: 512m
     cpus: 1.0
     environment:
