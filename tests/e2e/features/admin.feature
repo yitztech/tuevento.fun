@@ -7,6 +7,15 @@ Característica: Panel de administración
     Y entro al panel con el usuario "admin-dev" y la contraseña "clave-equivocada-1"
     Entonces veo el error "Usuario o contraseña incorrectos." del panel
 
+  Escenario: El administrador puede ver y ocultar la contraseña que escribe
+    Cuando abro el panel de administración
+    Y escribo la contraseña "admin-dev-password" en el panel
+    Entonces la contraseña del panel está oculta
+    Cuando pulso "Mostrar contraseña" en el panel
+    Entonces la contraseña del panel se ve como "admin-dev-password"
+    Cuando pulso "Ocultar contraseña" en el panel
+    Entonces la contraseña del panel está oculta
+
   Escenario: El administrador entra y ve el resumen del sitio
     Cuando abro el panel de administración
     Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
