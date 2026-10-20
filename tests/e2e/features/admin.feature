@@ -62,6 +62,27 @@ Característica: Panel de administración
     Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
     Entonces el panel cabe en pantalla sin desbordamiento horizontal
 
+  Escenario: El administrador ve las listas de usuarios y de eventos
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y abro la pestaña "Usuarios" del panel
+    Entonces veo la tabla del panel con las columnas "Nombre", "Correo" y "Última actividad" en la página 1
+    Cuando abro la pestaña "Eventos" del panel
+    Entonces veo la tabla del panel con las columnas "Evento", "Organizador" y "Confirmados" en la página 1
+
+  Escenario: Cambiar el periodo vuelve a pedir el resumen de ese periodo
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y elijo el periodo "7 días" en el panel
+    Entonces el panel pide el resumen y los países de 7 días
+
+  Escenario: La sesión del panel sigue abierta al recargar la página
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Entonces veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
+    Cuando recargo el panel
+    Entonces veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
+
   Escenario: El administrador sale del panel
     Cuando abro el panel de administración
     Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"

@@ -21,7 +21,7 @@ Antes de cerrar un cambio con texto: `npm run build -w @tuevento/contracts`, `np
 
 ## Dependencias: una sola versión por paquete
 
-Un mismo paquete (zod, react…) lleva **el mismo rango en todos los workspaces**, y cada workspace declara en su `package.json` todo lo que importa (la imagen de producción instala solo `--workspace @tuevento/api`). `node scripts/check-versions.mjs` lo comprueba y corre dentro de `npm test` (y por tanto en CI). Si un paquete va atado a otro (p. ej. `fastify` fijado en `5.12.5` por `@nestjs/platform-fastify`), usa la versión que exige el otro, no la última.
+Un mismo paquete (zod, react…) lleva **el mismo rango en todos los workspaces**, y cada workspace declara en su `package.json` todo lo que importa (la imagen de producción instala solo `--workspace @tuevento/api`). `node scripts/check-versions.mjs` lo comprueba y corre dentro de `npm test` (y por tanto en CI). Si un paquete va atado a otro (p. ej. `fastify` fijado en `5.12.5` por `@nestjs/platform-fastify`), usa la versión que exige el otro, no la última; si eso obliga a un rango distinto en un solo workspace (p. ej. `typescript ~6.0.3` en `@tuevento/admin`, por `@angular/compiler-cli`), se anota en `atados` de `scripts/check-versions.mjs`.
 
 ## Límites de datos: los mismos en frontend, backend y base de datos
 

@@ -11,7 +11,7 @@
       "!**/.features-gen",
       "!apps/web/android",
       "!apps/web/ios",
-      "!apps/admin/public/vendor"
+      "!**/.angular"
     ]
   },
   "formatter": { "enabled": false },

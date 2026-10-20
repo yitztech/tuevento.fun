@@ -2,12 +2,8 @@
 // revisión: pasada esa fecha, la excepción deja de valer y el check falla hasta que se revise.
 import { execFileSync } from "node:child_process";
 
-const excepciones = {
-  // AngularJS 1.x no tiene versión corregida (fin de soporte). Solo lo carga el panel de
-  // administración (admin.tuevento.fun, en español), detrás de su login y para el administrador
-  // del sitio; la web, la API y las apps no lo usan. Sustituirlo es un cambio aparte.
-  angular: { motivo: "AngularJS sin soporte, solo en el panel de administración", revisar: "2027-01-19" },
-};
+// Formato: paquete: { motivo: "…", revisar: "AAAA-MM-DD" }. Hoy no hay ninguna.
+const excepciones = {};
 
 const graves = new Set(["high", "critical"]);
 let salida;

@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Caché de compilación de Angular (panel de administración)
+.angular/
 .env
 .env.*
 !.env.ci

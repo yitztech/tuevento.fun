@@ -11,7 +11,7 @@
     "tests/*"
   ],
   "scripts": {
-    "build": "npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api && npm run build -w @tuevento/web",
+    "build": "npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api && npm run build -w @tuevento/web && npm run build -w @tuevento/admin",
     "dev": "npm run dev -w @tuevento/web",
     "lint": "biome lint",
     "typecheck": "npm run typecheck --workspaces --if-present",

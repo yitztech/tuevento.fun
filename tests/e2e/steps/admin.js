@@ -110,6 +110,43 @@ Then("el panel cabe en pantalla sin desbordamiento horizontal", async ({ page })
   expect(ancho).toBeLessThanOrEqual(visible);
 });
 
+When("abro la pestaña {string} del panel", async ({ page }, nombre) => {
+  await page.getByRole("tab", { name: nombre, exact: true }).click();
+});
+
+Then(
+  "veo la tabla del panel con las columnas {string}, {string} y {string} en la página {int}",
+  async ({ page }, primera, segunda, tercera, pagina) => {
+    for (const columna of [primera, segunda, tercera]) {
+      await expect(page.getByRole("columnheader", { name: columna, exact: true })).toBeVisible();
+    }
+    await expect(page.getByText(`Página ${pagina}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Anterior", exact: true })).toBeDisabled();
+  },
+);
+
+// El nombre accesible del selector incluye la opción elegida («Periodo 30 días»)
+const periodo = (page) => page.getByRole("combobox", { name: /^Periodo/ });
+
+When("elijo el periodo {string} en el panel", async ({ page, ctx }, texto) => {
+  const dias = Number.parseInt(texto, 10);
+  await expect(page.getByText("Conectados ahora", { exact: true })).toBeVisible();
+  ctx.periodo = Promise.all([
+    page.waitForResponse((r) => r.url().endsWith(`/api/stats?days=${dias}`) && r.ok()),
+    page.waitForResponse((r) => r.url().endsWith(`/api/countries?days=${dias}`) && r.ok()),
+  ]);
+  await periodo(page).selectOption({ label: texto });
+});
+
+Then("el panel pide el resumen y los países de {int} días", async ({ page, ctx }, dias) => {
+  await ctx.periodo;
+  await expect(periodo(page).locator("option:checked")).toHaveText(`${dias} días`);
+});
+
+When("recargo el panel", async ({ page }) => {
+  await page.reload();
+});
+
 Then("veo el formulario de entrada del panel", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Entrar al panel", exact: true })).toBeVisible();
 });

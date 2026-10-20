@@ -44,7 +44,8 @@ body {
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   padding-bottom: env(safe-area-inset-bottom);
 }
-[ng-cloak] { display: none !important; }
+/* El componente raíz no añade caja: la cabecera y el contenido cuelgan del body como antes. */
+admin-root { display: contents; }
 h1 { font-size: 1.4rem; margin: 0 0 1rem; }
 h2 { font-size: 0.95rem; margin: 0 0 0.5rem; color: var(--muted); font-weight: 600; }
 
