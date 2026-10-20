@@ -59,7 +59,12 @@ export default defineConfig({
           // atiende el dominio inglés por la URL absoluta de cada petición.
           {
             name: "iphone-safari",
-            use: { ...devices["iPhone 15"], ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: new URL(baseURL).hostname } } : {}) },
+            use: {
+              ...devices["iPhone 15"],
+              // Sin --host-resolver-rules, que es de Chromium: WebKit no arranca con él en Linux
+              launchOptions: { slowMo },
+              ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: new URL(baseURL).hostname } } : {}),
+            },
             grepInvert: /@admin/,
           },
           // Firefox, en la ejecución semanal (E2E_FIREFOX=1)
