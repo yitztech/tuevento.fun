@@ -23,6 +23,13 @@ RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client
 COPY services/web/locales-manifest.cjs services/web/
 RUN node services/web/locales-manifest.cjs packages/contracts/dist > /etc/nginx/locales.txt
 COPY services/web/default.dev.conf.template /etc/nginx/templates/default.dev.conf.template
+# Las cabeceras de seguridad de producción, con dos cambios para Vite: scripts en línea
+# (el preámbulo de React Refresh) y sin la analítica, que en desarrollo no se carga
+COPY services/web/snippets/security-headers.conf /tmp/security-headers.conf
+RUN mkdir -p /etc/nginx/snippets \
+ && sed -e "s/script-src 'self'/script-src 'self' 'unsafe-inline'/" -e 's/\$analytics_src//g' \
+      /tmp/security-headers.conf > /etc/nginx/snippets/security-headers.conf \
+ && rm /tmp/security-headers.conf
 COPY --chmod=755 services/web/17-sites.sh /17-sites.sh
 COPY --chmod=755 services/web/dev-entrypoint.sh /dev-entrypoint.sh
 EXPOSE 8080

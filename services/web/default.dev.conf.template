@@ -1,5 +1,6 @@
 # Frontend de desarrollo: Nginx delante de Vite (recarga en caliente). Aplica el mismo
-# idioma por dominio que producción; /api y /.well-known los reparte el gateway.
+# idioma por dominio, canonical, hreflang y cabeceras de seguridad que producción;
+# /api y /.well-known los reparte el gateway.
 # $connection_upgrade lo define el nginx.conf del paquete de Alpine.
 
 server {
@@ -31,6 +32,7 @@ server {
 
     # Vite con HMR por WebSocket
     location / {
+        include /etc/nginx/snippets/security-headers.conf;
         # /pt/… en un dominio que no aloja ese idioma → el dominio que sí
         if ($locale_redirect) { return 301 $locale_redirect; }
         proxy_pass http://127.0.0.1:5187;
@@ -44,7 +46,7 @@ server {
         sub_filter '<html lang="es">' '<html lang="$page_lang">';
         sub_filter '<title>TuEventoFun</title>' '<title>$seo_title</title>';
         sub_filter '<meta name="description" content="TuEventoFun"/>' '<meta name="description" content="$seo_description"/>';
-        sub_filter '<meta name="tuevento-seo"/>' '$seo_sites_meta';
+        sub_filter '<meta name="tuevento-seo"/>' '$seo_links';
         sub_filter_types text/html;
         sub_filter_once on;
     }
