@@ -38,10 +38,10 @@ test("Un Host desconocido, vacío o sin dominio del idioma usa el principal", ()
     "es",
   );
 });
-test("En desarrollo el dominio en de OrbStack es inglés", () => {
-  const dev = { en: "https://en.tueventofun.orb.local" };
-  assert.equal(localeForHost("en.tueventofun.orb.local", dev), "en");
-  assert.equal(localeForHost("tueventofun.orb.local", dev), "es");
+test("En desarrollo en.localhost es inglés y localhost, español", () => {
+  const dev = { en: "http://en.localhost:5187" };
+  assert.equal(localeForHost("en.localhost:5187", dev), "en");
+  assert.equal(localeForHost("en.localhost", dev), "en");
   assert.equal(localeForHost("localhost:5187", dev), "es");
 });
 test("Mapa común de rutas traducidas", () => {

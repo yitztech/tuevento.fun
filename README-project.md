@@ -14,19 +14,20 @@ bash scripts/setup.sh
 
 El script crea `.env` con una contraseña aleatoria de PostgreSQL (`POSTGRES_PASSWORD`) si no existe, compila, levanta los servicios y espera sus healthchecks. Si tu `.env` es anterior y usa `DB_PASSWORD`, la renombra. No crea un usuario organizador predeterminado. El registro está en **http://localhost:5187/registro**.
 
-| Servicio            | Dirección local                  | Con OrbStack                                |
-| ------------------- | -------------------------------- | ------------------------------------------- |
-| Aplicación (es)     | http://localhost:5187            | https://tueventofun.orb.local               |
-| Aplicación (en)     | —                                | https://en.tueventofun.orb.local            |
-| Aplicación (pt, de, fr) | —                            | https://en.tueventofun.orb.local/pt, /de, /fr |
-| Salud del gateway   | http://localhost:5187/healthz    | https://tueventofun.orb.local/healthz       |
-| Salud API           | http://localhost:3087/api/health | https://tueventofun.orb.local/api/health    |
-| PostgreSQL          | 127.0.0.1:5487                   | postgres.tueventofun.orb.local:5432         |
-| Correos (Mailpit)   | http://127.0.0.1:8026            | http://mail.tueventofun.orb.local:8025      |
+| Servicio                  | Dirección local                       |
+| ------------------------- | ------------------------------------- |
+| Aplicación (es)           | http://localhost:5187                 |
+| Aplicación (en)           | http://en.localhost:5187              |
+| Aplicación (pt, de, fr)   | http://en.localhost:5187/pt, /de, /fr |
+| Panel de administración   | http://admin.localhost:5187           |
+| Salud del gateway         | http://localhost:5187/healthz         |
+| Salud API                 | http://localhost:3087/api/health      |
+| PostgreSQL                | 127.0.0.1:5487                        |
+| Correos (Mailpit)         | http://127.0.0.1:8026                 |
 
 Los puertos se ligan a loopback y no interfieren con otros proyectos. Los datos están en el volumen `tueventofun_postgres_data`. Si tenías un volumen de PostgreSQL 17, no sirve para la 18: bórralo (`docker compose down -v`, borra los datos) o migra los datos con `pg_dump`.
 
-Con OrbStack, el gateway responde en dos dominios con su certificado local de confianza: `tueventofun.orb.local` (español) y `en.tueventofun.orb.local` (inglés), igual que `tuevento.fun` y `yourevent.fun` en producción. También responde `gateway.tueventofun.orb.local`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si cambias el nombre del proyecto Compose o los dominios, añádelos ahí o los POST darán 403. `localhost` es un Host desconocido y se sirve en español. Para Google, añade los dos orígenes de OrbStack como autorizados. Los enlaces de invitación generados desde estas URL solo se abren en este Mac.
+Un idioma por dominio, como `tuevento.fun` y `yourevent.fun` en producción: `localhost` (español) y `en.localhost` (inglés), los dos en el puerto 5187. Los navegadores resuelven cualquier `*.localhost` a este Mac sin DNS ni certificados, y lo tratan como origen seguro aunque vaya por `http`. Esos orígenes ya están en `ALLOWED_ORIGINS`; si añades otro, ponlo ahí o los POST darán 403. Cualquier otro Host se sirve en español. Los enlaces de invitación generados en local solo se abren en este Mac.
 
 ```bash
 docker compose ps
@@ -64,7 +65,7 @@ Se utilizan i18next/react-i18next y un catálogo compartido con el backend. Cons
 La integración usa Google Identity Services en la web y `google-auth-library` para verificar la firma, audiencia, expiración y nonce en el backend. Nunca confía en un correo enviado por el frontend.
 
 1. Crea un cliente OAuth **Aplicación web** en tu proyecto de Google y configura la pantalla de consentimiento y los usuarios de prueba cuando aplique.
-2. Añade como orígenes JavaScript autorizados los dos dominios de producción (`https://tuevento.fun`, `https://yourevent.fun`) y en local `http://localhost:5187`, `https://tueventofun.orb.local` y `https://en.tueventofun.orb.local`. No hacen falta URI de redirección: el botón abre un popup y la app móvil reutiliza ese acceso web. La CSP del gateway ya admite Google Identity Services.
+2. Añade como orígenes JavaScript autorizados los dos dominios de producción (`https://tuevento.fun`, `https://yourevent.fun`) y en local `http://localhost:5187`. Google no admite subdominios de `localhost` (`en.localhost`) ni dominios sin sufijo público, así que en local el acceso con Google se prueba en español; el código es el mismo para los dos idiomas. No hacen falta URI de redirección: el botón abre un popup y la app móvil reutiliza ese acceso web. La CSP del gateway ya admite Google Identity Services.
 3. Pon su ID público en `.env`: `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`. En producción lo pasa la plataforma.
 4. Ejecuta `docker compose up -d --force-recreate api` y recarga la web.
 
@@ -98,13 +99,11 @@ npm run test:password
 
 `test:browser` ejecuta el recorrido completo ES/EN, captura escritorio/móvil/tablet/TV y elimina la cuenta que creó al finalizar en localhost. Usa `HEADED=1 npm run test:browser` para ver el navegador. Las capturas quedan en `qa-artifacts/`.
 
-Para probar contra los dominios de OrbStack, Node necesita su CA local, porque no usa el llavero de macOS (sin ella falla con `SELF_SIGNED_CERT_IN_CHAIN`):
+Para probar a través del gateway (como en producción) en lugar del backend directo:
 
 ```bash
-security find-certificate -c "OrbStack Development Root CA" -p > /tmp/orbstack-ca.pem
-export NODE_EXTRA_CA_CERTS=/tmp/orbstack-ca.pem
-TEST_API_URL=https://tueventofun.orb.local/api npm run test:api
-TEST_WEB_URL=https://tueventofun.orb.local npm run test:browser
+TEST_API_URL=http://localhost:5187/api npm run test:api
+TEST_WEB_URL=http://localhost:5187 npm run test:browser
 ```
 
 Con `TEST_WEB_URL`, `test:browser` no borra la cuenta de prueba que crea.

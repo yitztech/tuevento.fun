@@ -7,7 +7,7 @@ const target = process.env.TEST_WEB_URL || "http://localhost:5187";
 // se usa ese host en el mismo puerto y Chromium lo resuelve a 127.0.0.1, así la
 // prueba no depende de DNS (CI) y el gateway recibe el Host inglés.
 const englishHost = new URL(
-  process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
+  process.env.TEST_SITE_URL_EN || "http://en.localhost:5187",
 ).hostname;
 const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(target).hostname);
 const targetEn =

@@ -7,8 +7,8 @@ import https from "node:https";
 
 export const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 // Dominios de desarrollo: el idioma de la API depende del Host (gateway).
-export const englishHost = new URL(process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local").hostname;
-export const spanishHost = new URL(process.env.TEST_SITE_URL_ES || "https://tueventofun.orb.local").hostname;
+export const englishHost = new URL(process.env.TEST_SITE_URL_EN || "http://en.localhost:5187").hostname;
+export const spanishHost = new URL(process.env.TEST_SITE_URL_ES || "http://localhost:5187").hostname;
 
 /** fetch() de Node no deja fijar Host (y el idioma depende de él): node:http/https sí. */
 export function send(url, { method = "GET", headers = {}, body } = {}) {

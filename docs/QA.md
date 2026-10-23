@@ -84,7 +84,7 @@ Infraestructura verificada en local con Docker (OrbStack), sin acceso a Coolify 
 - Por Host: `tuevento.fun` → `lang="es"`, `yourevent.fun` y `www.yourevent.fun` → `en`, Host desconocido → `es`. `canonical`, `hreflang` (es, en, x-default) con `/privacidad`↔`/privacy` y `/condiciones`↔`/terms`; `robots.txt` y `sitemap.xml` propios de cada dominio. Rutas con `"`, `<` o `%` no llegan al HTML. `.well-known/*` llega a la API en los dos dominios.
 - Un `X-Forwarded-For` falso desde fuera de `TRUSTED_PROXY_CIDR` se ignora. Umami se inyecta y amplía la CSP sin chocar con las sustituciones de idioma.
 - Contraseña de PostgreSQL con `@ / : # ?`: la API conecta (se pasa como `PGPASSWORD`, no dentro de la URL).
-- `compose.yml` de desarrollo: dos dominios de OrbStack (`tueventofun.orb.local` en español, `en.tueventofun.orb.local` en inglés). `test:api` 17/17 directo y vía gateway (incluido SSE), `test:platform` 9/9.
+- `compose.yml` de desarrollo: dos dominios locales (español e inglés). `test:api` 17/17 directo y vía gateway (incluido SSE), `test:platform` 9/9.
 - `actionlint` sin errores en los cuatro workflows.
 
 No verificado: el despliegue real en Coolify, la subred real de Traefik, los workflows ejecutándose en GitHub y la API con el límite de 256 MB procesando un avatar grande.
