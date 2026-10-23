@@ -6,7 +6,7 @@ const { execFileSync } = require("node:child_process");
 const target = process.env.TEST_WEB_URL || "http://localhost:5187";
 // Un idioma por dominio (ver test-browser.cjs): el inglés en el host de SITE_URL_EN.
 const englishHost = new URL(
-  process.env.TEST_SITE_URL_EN || "http://en.localhost:5187",
+  process.env.TEST_SITE_URL_EN || "http://yourevent.localhost:5187",
 ).hostname;
 const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(target).hostname);
 const targetEn =

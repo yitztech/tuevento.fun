@@ -5,7 +5,7 @@ const fs=require('node:fs');
 fs.mkdirSync('.impeccable/review',{recursive:true});
 const base=process.env.TEST_WEB_URL||'http://localhost:5187';
 // Idioma por dominio: el inglés en el host de SITE_URL_EN (resuelto a 127.0.0.1 contra localhost).
-const englishHost=new URL(process.env.TEST_SITE_URL_EN||'http://en.localhost:5187').hostname;
+const englishHost=new URL(process.env.TEST_SITE_URL_EN||'http://yourevent.localhost:5187').hostname;
 const local=/^(localhost|127\.0\.0\.1)$/.test(new URL(base).hostname);
 const baseEn=process.env.TEST_WEB_URL_EN||(local?`http://${englishHost}:${new URL(base).port||80}`:`https://${englishHost}`);
 const sql=q=>execFileSync('docker',['compose','exec','-T','postgres','psql','-U','tuevento','-d','tueventofun','-Atc',q],{encoding:'utf8'});

@@ -27,4 +27,4 @@ NODE
   fi
 fi
 docker compose up -d --build --wait
-printf '\nTuEventoFun está disponible en http://localhost:5187 (es) y http://en.localhost:5187 (en)\n'
+printf '\nTuEventoFun está disponible en http://tuevento.localhost:5187 (es) y http://yourevent.localhost:5187 (en)\n'

@@ -23,8 +23,8 @@ services:
       args:
         RELEASE_SHA: ${RELEASE_SHA:-ci}
     environment:
-      SITE_URL_ES: ${SITE_URL_ES:-http://localhost:5187}
-      SITE_URL_EN: ${SITE_URL_EN:-http://en.localhost:5187}
+      SITE_URL_ES: ${SITE_URL_ES:-http://tuevento.localhost:5187}
+      SITE_URL_EN: ${SITE_URL_EN:-http://yourevent.localhost:5187}
 
   api:
     build:
@@ -42,19 +42,19 @@ services:
       PUBLIC_RATE_LIMIT_PER_IP: "100000"
       # El global de Fastify también: la web en escritorio, Android e iPhone corre en paralelo
       RATE_LIMIT_MAX: "100000"
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,http://en.localhost:5187}
-      SITE_URL_ES: ${SITE_URL_ES:-http://localhost:5187}
-      SITE_URL_EN: ${SITE_URL_EN:-http://en.localhost:5187}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,http://tuevento.localhost:5187,http://yourevent.localhost:5187}
+      SITE_URL_ES: ${SITE_URL_ES:-http://tuevento.localhost:5187}
+      SITE_URL_EN: ${SITE_URL_EN:-http://yourevent.localhost:5187}
       # Las pruebas leen los correos en Mailpit para comprobar idioma, remitente y enlace
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
       SMTP_SECURE: "false"
       SMTP_USER: dev
       SMTP_PASSWORD: dev
-      MAIL_FROM: no-reply@localhost
+      MAIL_FROM: no-reply@tuevento.localhost
       SMTP_USER_EN: dev
       SMTP_PASSWORD_EN: dev
-      MAIL_FROM_EN: no-reply@en.localhost
+      MAIL_FROM_EN: no-reply@yourevent.localhost
 
   admin:
     build:

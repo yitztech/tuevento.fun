@@ -38,10 +38,11 @@ test("Un Host desconocido, vacío o sin dominio del idioma usa el principal", ()
     "es",
   );
 });
-test("En desarrollo en.localhost es inglés y localhost, español", () => {
-  const dev = { en: "http://en.localhost:5187" };
-  assert.equal(localeForHost("en.localhost:5187", dev), "en");
-  assert.equal(localeForHost("en.localhost", dev), "en");
+test("En desarrollo yourevent.localhost es inglés; tuevento.localhost y localhost, español", () => {
+  const dev = { es: "http://tuevento.localhost:5187", en: "http://yourevent.localhost:5187" };
+  assert.equal(localeForHost("yourevent.localhost:5187", dev), "en");
+  assert.equal(localeForHost("yourevent.localhost", dev), "en");
+  assert.equal(localeForHost("tuevento.localhost:5187", dev), "es");
   assert.equal(localeForHost("localhost:5187", dev), "es");
 });
 test("Mapa común de rutas traducidas", () => {

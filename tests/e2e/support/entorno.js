@@ -1,11 +1,11 @@
 // Contra qué app se prueba. Por defecto, la de `docker compose up` en localhost.
 export const baseURL = process.env.E2E_BASE_URL || "http://localhost:5187";
-// Un idioma por dominio: el inglés vive en en.localhost, que el navegador resuelve a
+// Un idioma por dominio: el inglés vive en yourevent.localhost, que el navegador resuelve a
 // 127.0.0.1 sin DNS (también en CI).
 // Panel de administración (servicio admin, puerto de desarrollo; en producción, su subdominio).
 export const adminURL = process.env.E2E_ADMIN_URL || "http://127.0.0.1:8188";
 export const englishURL =
-  process.env.E2E_BASE_URL_EN || `http://en.localhost:${new URL(baseURL).port || 80}`;
+  process.env.E2E_BASE_URL_EN || `http://yourevent.localhost:${new URL(baseURL).port || 80}`;
 export const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(baseURL).hostname);
 
 // Ritmo "humano" para seguir la ejecución a ojo (todo en ms, 0 = a toda velocidad):

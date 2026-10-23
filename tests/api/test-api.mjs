@@ -7,7 +7,7 @@ import https from "node:https";
 const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 // Dominio inglés de desarrollo (mismo valor que SITE_URL_EN del compose).
 const englishHost = new URL(
-  process.env.TEST_SITE_URL_EN || "http://en.localhost:5187",
+  process.env.TEST_SITE_URL_EN || "http://yourevent.localhost:5187",
 ).hostname;
 // API de Mailpit (compose.yml y compose.ci.yml): ahí llegan los correos de la API
 const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
@@ -493,7 +493,7 @@ try {
       assert.equal(unknown.message, known.message);
       assert.match(known.message, /^If that email has an account/);
       const mail = await mailTo(data.email, /^Reset your TuEventoFun password$/);
-      assert.equal(mail.From.Address, "no-reply@en.localhost");
+      assert.equal(mail.From.Address, "no-reply@yourevent.localhost");
       const link = new URL(mail.Text.match(/https?:\/\/\S+\?token=[\w-]{43}/)[0]);
       assert.equal(link.hostname, englishHost);
       assert.equal(link.pathname, "/nueva-contrasena");
@@ -542,7 +542,7 @@ try {
         201,
       );
       const notice = await mailTo(data.email, /^Your TuEventoFun password was changed$/);
-      assert.equal(notice.From.Address, "no-reply@en.localhost");
+      assert.equal(notice.From.Address, "no-reply@yourevent.localhost");
       // Desde el dominio español: correo en español, desde tuevento y con enlace a tuevento
       const spanish = await guest.call(
         "/auth/password/forgot",
@@ -552,8 +552,8 @@ try {
       );
       assert.match(spanish.message, /^Si ese correo tiene una cuenta/);
       const es = await mailTo(data.email, /^Restablece tu contraseña de TuEventoFun$/);
-      assert.equal(es.From.Address, "no-reply@localhost");
-      assert.match(es.Text, /http:\/\/localhost:5187\/nueva-contrasena\?token=[\w-]{43}/);
+      assert.equal(es.From.Address, "no-reply@tuevento.localhost");
+      assert.match(es.Text, /http:\/\/tuevento\.localhost:5187\/nueva-contrasena\?token=[\w-]{43}/);
       // Un enlace inventado se rechaza
       const invalid = await guest.call(
         "/auth/password/reset",

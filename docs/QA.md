@@ -75,7 +75,7 @@ Resultados: `qa-artifacts/landing-results.json`. Capturas: `landing-desktop.png`
 
 ## Adaptación a la plataforma yitztech — 2026-10-14
 
-Infraestructura verificada en local con Docker (OrbStack), sin acceso a Coolify ni a los dominios reales:
+Infraestructura verificada en local con Docker, sin acceso a Coolify ni a los dominios reales:
 
 - `docker build --target gateway --build-arg RELEASE_SHA=prueba` y `--target api` construyen. La imagen de la API no lleva dependencias de desarrollo ni de la web (437 MB, antes 690 MB).
 - Gateway solo, sin API y con `TRUSTED_PROXY_CIDR=127.0.0.1/32`: `/version.json` → `{"revision":"prueba"}` con `Cache-Control: no-store`; `/healthz` → `ok`.
