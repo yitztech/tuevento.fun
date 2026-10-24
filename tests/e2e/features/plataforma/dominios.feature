@@ -34,3 +34,13 @@ Característica: Un idioma por dominio, con sus cabeceras y su HTML inicial
     Cuando abro "/pt/" en el dominio en "es"
     Entonces la respuesta fue una redirección 301
     Y estoy en la portada en "pt"
+
+  Esquema del escenario: Un idioma con dominio propio pedido con su prefijo en otro dominio redirige con 301 a su dominio
+    Cuando abro "<ruta>" en el dominio en "<dominio>"
+    Entonces la respuesta fue una redirección 301
+    Y estoy en la portada en "<idioma>"
+
+    Ejemplos:
+      | ruta | dominio | idioma |
+      | /en/ | es      | en     |
+      | /es  | en      | es     |

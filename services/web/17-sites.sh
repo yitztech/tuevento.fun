@@ -150,7 +150,7 @@ conf=/etc/nginx/conf.d/sites.conf
     echo "    \"~^$site $prefix(?<seo_rest_$lang>/.*)\$\" \$seo_rest_$lang;"
   done
   echo '}'
-  echo '# Prefijo de un idioma alojado en otro dominio (tuevento.fun/pt/…): 301 a su dominio'
+  echo '# Prefijo de un idioma en un dominio que no es el suyo (tuevento.fun/pt/…, tuevento.fun/en/…): 301 a su dominio'
   echo 'map "$site_lang $seo_raw_path" $locale_redirect {'
   echo '    default "";'
   for lang in $pages_locales; do
@@ -158,6 +158,15 @@ conf=/etc/nginx/conf.d/sites.conf
     [ -z "$prefix" ] && continue
     for other in $locales; do
       if [ "$other" != "$site" ]; then echo "    \"~^$other $prefix(/.*)?\$\" \$origin_$site\$request_uri;"; fi
+    done
+  done
+  # /<código> de un idioma con dominio propio en otro dominio (tuevento.fun/en/…): 301 a
+  # la misma ruta sin el prefijo en su dominio, para no servir el idioma equivocado
+  for lang in $locales; do
+    for other in $locales; do
+      [ "$other" = "$lang" ] && continue
+      echo "    \"~^$other /$lang/?\$\" \$origin_$lang/\$is_args\$args;"
+      echo "    \"~^$other /$lang(?<locale_rest_${other}_$lang>/.+)\$\" \$origin_$lang\$locale_rest_${other}_$lang\$is_args\$args;"
     done
   done
   echo '}'
