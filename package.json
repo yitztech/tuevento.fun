@@ -52,6 +52,10 @@
     "xcode": {
       "uuid": "^14.0.3"
     },
-    "shell-quote": "^1.12.0"
+    "shell-quote": "^1.12.0",
+    "@angular/build": {
+      "vite": "^8.3.5"
+    },
+    "body-parser": "^2.4.0"
   }
 }
