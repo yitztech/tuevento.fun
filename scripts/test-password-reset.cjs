@@ -8,7 +8,7 @@ const target = process.env.TEST_WEB_URL || "http://localhost:5187";
 const api = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
 const englishHost = new URL(
-  process.env.TEST_SITE_URL_EN || "https://en.tueventofun.orb.local",
+  process.env.TEST_SITE_URL_EN || "http://yourevent.localhost:5187",
 ).hostname;
 const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(target).hostname);
 const targetEn =
@@ -65,7 +65,7 @@ async function mailTo(address, subject) {
     checks.push("Solicitud desde el dominio inglés, en inglés");
 
     const mail = await mailTo(email, /^Reset your TuEventoFun password$/);
-    expect(mail.From.Address).toBe("no-reply@en.tueventofun.orb.local");
+    expect(mail.From.Address).toBe("no-reply@yourevent.localhost");
     const link = new URL(mail.Text.match(/https?:\/\/\S+\?token=[\w-]{43}/)[0]);
     expect(link.hostname).toBe(englishHost);
     checks.push("Correo en inglés desde el dominio inglés, con enlace a ese dominio");

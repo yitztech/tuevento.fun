@@ -41,9 +41,9 @@ services:
       PORT: 3087
       DATABASE_URL: postgres://api@postgres:5432/tueventofun
       PGPASSWORD: ${API_DB_PASSWORD:-dev-api}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,https://tueventofun.orb.local,http://tueventofun.orb.local,https://en.tueventofun.orb.local,http://en.tueventofun.orb.local,http://en.tueventofun.orb.local:5187,https://gateway.tueventofun.orb.local,http://gateway.tueventofun.orb.local}
-      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
-      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,http://tuevento.localhost:5187,http://yourevent.localhost:5187}
+      SITE_URL_ES: ${SITE_URL_ES:-http://tuevento.localhost:5187}
+      SITE_URL_EN: ${SITE_URL_EN:-http://yourevent.localhost:5187}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       # Correo: Mailpit recibe todo en local (http://127.0.0.1:8026); un remitente por dominio
       SMTP_HOST: ${SMTP_HOST:-mailpit}
@@ -51,10 +51,10 @@ services:
       SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-dev}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-dev}
-      MAIL_FROM: ${MAIL_FROM:-TuEventoFun <no-reply@tueventofun.orb.local>}
+      MAIL_FROM: ${MAIL_FROM:-TuEventoFun <no-reply@tuevento.localhost>}
       SMTP_USER_EN: ${SMTP_USER_EN:-dev}
       SMTP_PASSWORD_EN: ${SMTP_PASSWORD_EN:-dev}
-      MAIL_FROM_EN: ${MAIL_FROM_EN:-TuEventoFun <no-reply@en.tueventofun.orb.local>}
+      MAIL_FROM_EN: ${MAIL_FROM_EN:-TuEventoFun <no-reply@yourevent.localhost>}
       # Newsletter: un Listmonk por idioma (vacío = solo se guarda en la base de datos)
       LISTMONK_URL: ${LISTMONK_URL:-}
       LISTMONK_LIST_UUID: ${LISTMONK_LIST_UUID:-}
@@ -68,6 +68,8 @@ services:
       RESET_MAX_PER_IP: ${RESET_MAX_PER_IP:-1000}
       # Las suites de pruebas salen todas de la misma IP: límites por IP altos (los de cuenta no cambian)
       PUBLIC_RATE_LIMIT_PER_IP: ${PUBLIC_RATE_LIMIT_PER_IP:-100000}
+      # El global de Fastify también: la web en escritorio, Android e iPhone corre en paralelo
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100000}
     volumes:
       # Fotos de las postales (el contenedor es el único que las escribe)
       - postcard_images:/data/postcards
@@ -143,12 +145,10 @@ services:
     restart: unless-stopped
 
   # Buzón de pruebas: atrapa todos los correos de la API (como en micitaentiempo).
-  # Interfaz: http://127.0.0.1:8026 o http://mail.tueventofun.orb.local:8025
+  # Interfaz: http://127.0.0.1:8026
   # (8026 en el host para convivir con el Mailpit de micitaentiempo, que usa 8025).
   mailpit:
     image: axllent/mailpit:v1.31.5
-    labels:
-      dev.orbstack.domains: mail.tueventofun.orb.local
     environment:
       # Acepta cualquier usuario SMTP: así se ejercita la autenticación sin TLS
       MP_SMTP_AUTH_ACCEPT_ANY: "1"
@@ -162,11 +162,9 @@ services:
     build:
       context: .
       dockerfile: services/gateway/Dockerfile
-    labels:
-      dev.orbstack.domains: tueventofun.orb.local,en.tueventofun.orb.local
     environment:
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
-      ADMIN_HOST: ${ADMIN_HOST:-admin.tueventofun.orb.local}
+      ADMIN_HOST: ${ADMIN_HOST:-admin.tuevento.localhost}
     ports:
       - "127.0.0.1:${WEB_PORT:-5187}:80"
     depends_on:
@@ -192,8 +190,8 @@ services:
       dockerfile: services/web/Dockerfile
       target: dev
     environment:
-      SITE_URL_ES: ${SITE_URL_ES:-https://tueventofun.orb.local}
-      SITE_URL_EN: ${SITE_URL_EN:-https://en.tueventofun.orb.local}
+      SITE_URL_ES: ${SITE_URL_ES:-http://tuevento.localhost:5187}
+      SITE_URL_EN: ${SITE_URL_EN:-http://yourevent.localhost:5187}
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
       interval: 10s
