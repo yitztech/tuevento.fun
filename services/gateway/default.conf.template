@@ -62,11 +62,13 @@ server {
 
     # Subidas de imágenes (avatar y fotos de la postal): el mismo límite que la API en esas rutas
     location = /api/profile/avatar {
+        add_header X-Robots-Tag "noindex" always;
         client_max_body_size 3m;
         include /etc/nginx/snippets/proxy-headers.conf;
         proxy_pass http://api_upstream;
     }
     location ~ ^/api/events/[^/]+/postcard/images$ {
+        add_header X-Robots-Tag "noindex" always;
         client_max_body_size 3m;
         include /etc/nginx/snippets/proxy-headers.conf;
         proxy_pass http://api_upstream;
@@ -74,6 +76,7 @@ server {
 
     # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas
     location /api/ {
+        add_header X-Robots-Tag "noindex" always;
         include /etc/nginx/snippets/proxy-headers.conf;
         proxy_buffering off;
         proxy_read_timeout 1h;

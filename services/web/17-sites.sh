@@ -8,6 +8,7 @@
 #     www → ese idioma; cualquier otro Host → el principal), $page_lang (el del dominio o
 #     el alojado si la ruta empieza por su prefijo), el origen y la ruta de la petición en
 #     cada idioma, y $seo_links / $seo_sites_meta para el HTML.
+#   - $slash_redirect, $seo_route y $seo_robots: forma única de cada URL, rutas que existen y las privadas.
 #   - /etc/nginx/seo/robots-<dominio>.txt y sitemap-<dominio>.xml (con sus idiomas alojados).
 # Un idioma cuyo dominio no se publica tampoco: no tiene Host, hreflang ni sitemap.
 # Igual que 16-analytics.sh, se lee el entorno aquí y no en la plantilla, para no
@@ -90,6 +91,12 @@ url_of() {
   eval "origin=\$origin_$site"
   if [ -n "$prefix" ] && [ "$2" = "/" ]; then printf '%s%s/' "$origin" "$prefix"; else printf '%s%s%s' "$origin" "$prefix" "$2"; fi
 }
+
+# Páginas públicas, en el sitemap; las traducidas, con @ y su nombre en packages/contracts
+public_pages="/ /descargas /registro /acceso $(printf '@%s ' $pages)"
+# Páginas privadas o de sesión: se sirven con X-Robots-Tag: noindex, nunca con Disallow en robots.txt,
+# que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/… y /app-link/…
+private_pages='app|pago|conectar-app|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
 
 conf=/etc/nginx/conf.d/sites.conf
 {
@@ -213,35 +220,45 @@ conf=/etc/nginx/conf.d/sites.conf
   echo '# Marcas que sustituyen a <meta name="tuevento-seo"/> en index.html'
   echo "map \$site_lang \$seo_sites_meta { default '<meta name=\"tuevento:sites\" content=\"$sites\"/>'; }"
   echo "map \$site_lang \$seo_links { default '<link rel=\"canonical\" href=\"\$seo_canonical\"/>$alternates<link rel=\"alternate\" hreflang=\"x-default\" href=\"\$origin_$default\$seo_path_$default\"/>\$seo_sites_meta'; }"
+  echo ''
+  # Indexación (AGENTS.md §9.2): cada ruta es pública, privada (X-Robots-Tag) o no existe (404)
+  echo '# Una sola forma por URL: sin barra final ni /index.html; la raíz de un idioma alojado, con barra'
+  echo 'map "$site_lang $seo_raw_path" $slash_redirect {'
+  echo '    default "";'
+  for lang in $pages_locales; do
+    eval "site=\$site_$lang; prefix=\$prefix_$lang"
+    [ -z "$prefix" ] && continue
+    echo "    \"~^$site $prefix/\$\" \"\";"
+    echo "    \"~^$site $prefix\$\" $prefix/;"
+  done
+  echo '    "~^\S+ (?<slash_idx>/(.*/)?)index\.html$" $slash_idx;'
+  echo '    "~^\S+ (?<slash_path>/.*[^/])/+$" $slash_path;'
+  echo '}'
+  echo '# Rutas de la SPA (apps/web/src/main.tsx y packages/app/src/App.tsx). Las demás, 404'
+  echo 'map $seo_rest $seo_route {'
+  echo '    default missing;'
+  for page in $public_pages; do
+    case $page in
+      @*) awk -v page="${page#@}" '$1 == "path" && $2 == page { print $4 }' "$manifest" | sort -u |
+            while read -r path; do echo "    $path public;"; done ;;
+      *) echo "    $page public;" ;;
+    esac
+  done
+  echo "    \"~^/($private_pages)\$\" private;"
+  echo "    \"~^/eventos(/.*)?\$\" private;"
+  echo "    \"~^/(i|e|app-link)/.+\$\" private;"
+  echo '}'
+  echo 'map $seo_route $seo_robots { private "noindex"; default ""; }'
 } > "$conf"
 
 mkdir -p /etc/nginx/seo
 
-# Rutas privadas o de sesión: no se indexan
-disallow='/app
-/app-link/
-/i/
-/e/
-/eventos
-/invitados
-/notificaciones
-/perfil
-/administracion
-/conectar-app
-/disenos
-/ayuda
-/recuperar-contrasena
-/nueva-contrasena'
-
-# Páginas públicas; las traducidas, con @ y su nombre en packages/contracts
-public_pages="/ /descargas /registro /acceso $(printf '@%s ' $pages)"
 
 for lang in $locales; do
   eval "own=\$origin_$lang"
   {
     echo 'User-agent: *'
     echo 'Allow: /'
-    printf '%s\n' "$disallow" | sed 's/^/Disallow: /'
     echo ''
     echo "Sitemap: $own/sitemap.xml"
   } > "/etc/nginx/seo/robots-$lang.txt"

@@ -4,7 +4,7 @@ import { expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
 import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
-import { baseURL, englishURL } from "../support/entorno.js";
+import { baseURL, englishURL, local } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 /** Idiomas alojados en el dominio inglés bajo un prefijo (yourevent.fun/pt). */
@@ -233,4 +233,57 @@ Then("axe no encuentra infracciones graves ni críticas", async ({ page }) => {
   expect(
     graves.map((v) => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(", ")}`),
   ).toEqual([]);
+});
+
+// ── Indexación (AGENTS.md §9.2) ──────────────────────────────────
+
+When("pido {string} en el dominio en {string}", async ({ page, ctx }, ruta, idioma) => {
+  ctx.dominio = dominioDe(idioma);
+  ctx.respuesta = await page.request.get(`${ctx.dominio}${ruta}`, { maxRedirects: 0 });
+});
+
+Then("la respuesta es {int}", async ({ ctx }, estado) => {
+  expect(ctx.respuesta.status()).toBe(estado);
+});
+
+Then("la respuesta es {int} hacia {string}", async ({ ctx }, estado, destino) => {
+  expect(ctx.respuesta.status()).toBe(estado);
+  // Relativa o absoluta, nunca a http:// si la petición era https://
+  const location = ctx.respuesta.headers().location ?? "";
+  expect(new URL(location, ctx.dominio).pathname).toBe(destino);
+  expect(location.startsWith("http://") && ctx.dominio.startsWith("https://")).toBe(false);
+});
+
+Then("la respuesta lleva X-Robots-Tag noindex", async ({ ctx }) => {
+  expect(ctx.respuesta.headers()["x-robots-tag"] ?? "").toMatch(/noindex/);
+});
+
+Then("el HTML no lleva canonical", async ({ ctx }) => {
+  expect(await ctx.respuesta.text()).not.toMatch(/rel="canonical"/);
+});
+
+Then("robots.txt no lleva Disallow y apunta a su sitemap", async ({ ctx }) => {
+  expect(ctx.respuesta.headers()["content-type"]).toMatch(/^text\/plain/);
+  const texto = await ctx.respuesta.text();
+  expect(texto).not.toMatch(/^Disallow:\s*\S/im);
+  expect(texto).toMatch(/^Sitemap: \S+\/sitemap\.xml$/m);
+});
+
+Then("cada URL del sitemap responde 200 sin noindex y con su canonical", async ({ page, ctx }) => {
+  expect(ctx.respuesta.status()).toBe(200);
+  const urls = [...(await ctx.respuesta.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  expect(urls.length).toBeGreaterThan(0);
+  for (const url of urls) {
+    // Las <loc> llevan el dominio público (SITE_URL_*); se piden al dominio en prueba
+    const { pathname } = new URL(url);
+    const respuesta = await page.request.get(`${ctx.dominio}${pathname}`, { maxRedirects: 0 });
+    expect(respuesta.status(), url).toBe(200);
+    expect(respuesta.headers()["x-robots-tag"] ?? "", url).not.toMatch(/noindex/);
+    const html = await respuesta.text();
+    expect(html, url).not.toMatch(/<meta name="robots" content="[^"]*noindex/);
+    const canonical = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? "";
+    // En local el origen del canonical sigue al Host pedido; en producción, idéntico a la <loc>
+    if (local) expect(new URL(canonical, ctx.dominio).pathname, url).toBe(pathname);
+    else expect(canonical, url).toBe(url);
+  }
 });
