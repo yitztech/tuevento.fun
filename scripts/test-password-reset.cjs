@@ -97,8 +97,13 @@ async function mailTo(address, subject) {
     ).toBeVisible();
     await expect(spanish.getByRole("link", { name: "Pedir un enlace nuevo" })).toBeVisible();
     checks.push("Páginas en español y enlace no válido");
+    // Sin Disallow en robots.txt: Google tiene que poder leer el noindex (AGENTS.md §9.2).
     const robots = await fetch(target + "/robots.txt").then((r) => r.text());
-    expect(robots).toContain("Disallow: /nueva-contrasena");
+    expect(robots).not.toContain("Disallow");
+    for (const ruta of ["/recuperar-contrasena", "/nueva-contrasena"]) {
+      const res = await fetch(target + ruta);
+      expect(res.headers.get("x-robots-tag")).toContain("noindex");
+    }
     checks.push("Las páginas de recuperación no se indexan");
     expect(errors).toEqual([]);
     console.log(JSON.stringify({ checks, errors }, null, 2));
