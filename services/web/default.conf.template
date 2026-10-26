@@ -30,12 +30,31 @@ server {
 
     # robots.txt y sitemap.xml del dominio que se visita
     location = /robots.txt {
+        default_type text/plain;
         add_header Cache-Control "public, max-age=3600" always;
         alias /etc/nginx/seo/robots-$site_lang.txt;
     }
     location = /sitemap.xml {
+        default_type application/xml;
         add_header Cache-Control "public, max-age=3600" always;
         alias /etc/nginx/seo/sitemap-$site_lang.xml;
+    }
+
+    # Ruta que no existe: 404 de verdad con la SPA, que muestra su «no encontrada», sin
+    # canonical ni hreflang y con noindex (nunca un 200: soft 404)
+    error_page 404 /404.html;
+    location = /404.html {
+        internal;
+        include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/conf.d/analytics*.snippet;
+        add_header Cache-Control "no-cache" always;
+        add_header Vary "Host" always;
+        add_header X-Robots-Tag "noindex" always;
+        sub_filter '<html lang="es">' '<html lang="$page_lang">';
+        sub_filter '<title>TuEventoFun</title>' '<title>$seo_title</title>';
+        sub_filter '<meta name="description" content="TuEventoFun"/>' '<meta name="description" content="$seo_description"/>';
+        sub_filter '<meta name="tuevento-seo"/>' '$seo_sites_meta';
+        alias /usr/share/nginx/html/index.html;
     }
 
     # Recursos con hash en el nombre: caché inmutable (el gateway puede guardarlos)
@@ -52,6 +71,8 @@ server {
     location / {
         # /pt/… en un dominio que no aloja ese idioma → el dominio que sí
         if ($locale_redirect) { return 301 $locale_redirect; }
+        # /precios/ → /precios, /index.html → /, /pt → /pt/
+        if ($slash_redirect) { return 301 $slash_redirect$is_args$args; }
         include /etc/nginx/snippets/security-headers.conf;
         include /etc/nginx/conf.d/analytics*.snippet;
         add_header Cache-Control "no-cache" always;
@@ -60,6 +81,14 @@ server {
         sub_filter '<title>TuEventoFun</title>' '<title>$seo_title</title>';
         sub_filter '<meta name="description" content="TuEventoFun"/>' '<meta name="description" content="$seo_description"/>';
         sub_filter '<meta name="tuevento-seo"/>' '$seo_links';
-        try_files $uri $uri/ /index.html;
+        # Lo privado (app, invitaciones, cuenta) no se indexa: cabecera, no robots.txt
+        add_header X-Robots-Tag $seo_robots always;
+        try_files $uri @spa;
+    }
+
+    # Una ruta de la SPA sirve index.html; cualquier otra, 404 ($seo_route, 17-sites.sh)
+    location @spa {
+        if ($seo_route = missing) { return 404; }
+        rewrite ^ /index.html last;
     }
 }
