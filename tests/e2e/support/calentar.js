@@ -2,9 +2,11 @@
 // de optimizar dependencias. Tras recrear los contenedores, el primer arranque es lento y
 // recarga la página, lo que hacía fallar escenarios que no tienen nada roto.
 import { chromium } from "@playwright/test";
-import { baseURL } from "./entorno.js";
+import { baseURL, local } from "./entorno.js";
 
 export default async function calentar() {
+  // Solo hace falta contra el Vite local; contra producción no hay nada que calentar.
+  if (!local) return;
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
