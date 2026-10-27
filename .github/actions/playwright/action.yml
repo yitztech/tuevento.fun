@@ -57,8 +57,10 @@ runs:
         if [ "${#debs[@]}" -gt 0 ]; then
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${debs[@]}"
         fi
-    # apt-get descarga directamente en la carpeta de la caché y la conserva; un mirror que no
-    # responde se abandona a los 15 s por el siguiente de /etc/apt/apt-mirrors.txt
+    # apt-get descarga directamente en la carpeta de la caché y la conserva. Primero del archivo
+    # de Ubuntu y después del mirror de Azure: el 27-oct el de Azure servía a pocos KB/s, sin
+    # cortar la conexión, y apt no cambia de mirror por lentitud. Un mirror que no responde se
+    # abandona a los 15 s.
     - if: steps.debs.outputs.cache-hit != 'true'
       shell: bash
       env:
@@ -66,6 +68,11 @@ runs:
         DIR: ${{ steps.claves.outputs.dir }}
       run: |
         mkdir -p "$DIR"
+        sudo cp /etc/apt/apt-mirrors.txt /etc/apt/apt-mirrors.txt.orig
+        printf '%s\tpriority:%s\n' \
+          http://archive.ubuntu.com/ubuntu/ 1 \
+          http://azure.archive.ubuntu.com/ubuntu/ 2 \
+          http://security.ubuntu.com/ubuntu/ 3 | sudo tee /etc/apt/apt-mirrors.txt
         printf '%s\n' \
           "Dir::Cache::Archives \"$DIR/\";" \
           'Binary::apt-get::APT::Keep-Downloaded-Packages "true";' \
@@ -74,6 +81,7 @@ runs:
         # shellcheck disable=SC2086 # un navegador por palabra
         npx playwright install-deps $BROWSERS
         sudo rm -f /etc/apt/apt.conf.d/99playwright-ci
+        sudo mv /etc/apt/apt-mirrors.txt.orig /etc/apt/apt-mirrors.txt
         sudo rm -rf "$DIR/partial" "$DIR/lock"
         sudo chown -R "$(id -u):$(id -g)" "$DIR"
     - if: steps.debs.outputs.cache-hit != 'true'
