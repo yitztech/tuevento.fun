@@ -51,7 +51,12 @@
     "startSomethingWonderful": "Empieza algo bonito.",
     "tueventofunMadeSharedMoments": "TuEventoFun · Hecho para compartir momentos.",
     "uploadProfileImage": "Cargar avatar de registro",
-    "yourInformation": "Tu información"
+    "yourInformation": "Tu información",
+    "accountTypeLegend": "¿Cómo vas a usar TuEventoFun?",
+    "organizerTitle": "Organizo eventos",
+    "organizerHint": "Bodas, cumpleaños y reuniones: invitados, respuestas y diseños.",
+    "providerTitle": "Ofrezco servicios para eventos",
+    "providerHint": "Banquetes, música, fotografía, salones… Publica tu negocio gratis."
   },
   "app": {
     "backOverview": "Volver al resumen",
@@ -277,7 +282,8 @@
     "openInvitationFull": "Este enlace ya tiene el número máximo de registros.",
     "eventPasswordIncorrect": "La contraseña no es correcta.",
     "geocoderUnavailable": "La búsqueda en el mapa no está disponible ahora. Inténtalo en unos minutos o pega un enlace de mapas.",
-    "mapLinkWithoutCoordinates": "Ese enlace no trae la ubicación. En la app de mapas, abre el lugar, pulsa «Compartir» y copia ese enlace."
+    "mapLinkWithoutCoordinates": "Ese enlace no trae la ubicación. En la app de mapas, abre el lugar, pulsa «Compartir» y copia ese enlace.",
+    "wrongAccountType": "Esta parte es para otro tipo de cuenta."
   },
   "events": {
     "actions": "Acciones",
@@ -478,7 +484,10 @@
     "weddingAmongFlowersBirthday": "Una boda entre flores, un cumpleaños con todos los colores o un brindis porque sí. Encuentra el estilo que se siente tuyo.",
     "wellWriteLanguageUnsubscribe": "Te escribiremos en este idioma. Puedes darte de baja en cualquier momento.",
     "yesAccountBringsTogether": "Sí. Tu cuenta reúne tus eventos, sus listas de invitados y las respuestas de cada celebración.",
-    "yesEditEventInformation": "Sí. Puedes editar la información del evento, elegir otro diseño y ajustar las personas de cada invitación desde tu espacio."
+    "yesEditEventInformation": "Sí. Puedes editar la información del evento, elegir otro diseño y ajustar las personas de cada invitación desde tu espacio.",
+    "providersTitle": "¿Ofreces servicios para eventos?",
+    "providersText": "Publícate gratis y llega a quienes están preparando su celebración.",
+    "providersAction": "Crear mi cuenta de proveedor"
   },
   "language": {
     "changeLanguage": "Cambiar idioma",
@@ -772,7 +781,8 @@
     "useLeast3Characters": "Escribe al menos 3 caracteres.",
     "maximum2048Characters": "Máximo 2048 caracteres.",
     "invalidCoordinates": "Las coordenadas no son válidas.",
-    "mapLinkNotSupported": "Pega un enlace https de Google Maps, Apple Maps o Waze."
+    "mapLinkNotSupported": "Pega un enlace https de Google Maps, Apple Maps o Waze.",
+    "invalidAccountType": "Elige si organizas eventos u ofreces servicios."
   },
   "pricing": {
     "title": "Precios",
@@ -862,5 +872,13 @@
     "copied": "Dirección copiada",
     "share": "Compartir ubicación",
     "shareText": "{{place}} — {{url}}"
+  },
+  "provider": {
+    "business": "Mi negocio",
+    "workspace": "Tu negocio de eventos",
+    "accountLabel": "Proveedor",
+    "homeTitle": "Tu negocio, a la vista de quien organiza",
+    "homeIntro": "Desde aquí vas a gestionar lo que ofreces a quienes preparan un evento.",
+    "homeNext": "Muy pronto podrás añadir tus servicios, tus fotos y tu página pública para que te encuentren."
   }
 }

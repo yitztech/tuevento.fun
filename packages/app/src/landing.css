@@ -539,8 +539,13 @@
   height: 100%;
   min-height: 380px;
 }
-.landing-newsletter {
+.landing-newsletter,
+.landing-providers {
   margin-bottom: 78px;
+}
+.landing-providers .landing-newsletter-copy > svg {
+  color: var(--primary);
+  margin-bottom: 12px;
 }
 .landing-newsletter-card {
   display: flex;

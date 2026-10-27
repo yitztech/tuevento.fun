@@ -24,6 +24,7 @@ import {
   Heart,
   CircleHelp,
   ChevronRight,
+  Store,
 } from "lucide-react";
 import { EventApi, ApiError } from "@tuevento/client";
 import type { User, Event, Notification } from "@tuevento/contracts";
@@ -39,6 +40,7 @@ import {
 } from "./dashboard";
 import { EventEditor, EventDetail, TvPage } from "./event-pages";
 import { MobileConnect } from "./mobile-connect";
+import { ProviderHome } from "./provider";
 import { OwnerDashboard } from "./owner";
 import {
   AuthPage,
@@ -131,8 +133,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       clearTimeout(timer.current);
     };
   }, [api]);
+  // Quien ofrece servicios no tiene eventos ni avisos de invitados: la API se los niega (403)
+  const provider = user?.accountType === "provider";
   useEffect(() => {
-    if (!user) return;
+    if (!user || provider) return;
     void reload().catch((e) => toast(errorText(e)));
     const off = runtime.subscribe?.(() => {
       void reload().catch(() => {});
@@ -144,7 +148,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       off?.();
       clearInterval(timer);
     };
-  }, [user?.id, reload, runtime, toast]);
+  }, [user?.id, provider, reload, runtime, toast]);
   useEffect(() => {
     setMenu(false);
     window.scrollTo(0, 0);
@@ -179,7 +183,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       </div>
     );
   const unread = notifications.filter((n) => !n.read).length;
-  const navigation = [
+  const navigation = provider
+    ? [{ to: "/app", text: tr("provider.business"), icon: Store }]
+    : [
     ...(user?.isOwner ? [{ to: "/administracion", text: tr("app.systemDashboard"), icon: LayoutDashboard }] : []),
     { to: "/app", text: tr("app.overview"), icon: LayoutDashboard },
     { to: "/eventos", text: tr("common.events"), icon: CalendarDays },
@@ -252,7 +258,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
             </div>
             <div className="workspace-label">
               <span className="workspace-dot" />
-              {tr("app.spaceCelebrate")}
+              {provider ? tr("provider.workspace") : tr("app.spaceCelebrate")}
             </div>
             <nav aria-label={tr("app.mainNavigation")}>
               {navigation.map(({ to, text, icon: Icon }) => (
@@ -271,6 +277,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               ))}
             </nav>
             <div className="sidebar-bottom">
+              {!provider && (
               <div className="celebrate-note">
                 <Heart size={24} />
                 <strong>
@@ -284,6 +291,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   <ArrowUpRightIcon />
                 </Link>
               </div>
+              )}
               {user.isDemo && (
                 <Link to="/registro" className="demo-label">
                   <span className="dot pending" />
@@ -306,7 +314,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                     {user.firstName} {user.lastName}
                   </strong>
                   <span>
-                    {user.isDemo ? tr("app.demoAccount") : tr("common.host")}
+                    {user.isDemo ? tr("app.demoAccount") : provider ? tr("provider.accountLabel") : tr("common.host")}
                   </span>
                 </div>
                 <button
@@ -350,6 +358,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                     year: "numeric",
                   }).format(new Date())}
                 </span>
+                {!provider && (
                 <Link
                   className="bell-button icon-button"
                   to="/notificaciones"
@@ -364,12 +373,23 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                     </span>
                   )}
                 </Link>
+                )}
                 <Link to="/perfil" aria-label={tr("app.profile")}>
                   <Avatar user={user} />
                 </Link>
               </div>
             </header>
             <main id="main" className="main-content">
+              {provider ? (
+                <Routes>
+                  <Route path="/app" element={<ProviderHome />} />
+                  <Route path="/conectar-app" element={<MobileConnect />} />
+                  <Route path="/perfil" element={<ProfilePage />} />
+                  <Route path="/ayuda" element={<HelpPage />} />
+                  {/* Eventos, invitados y diseños son de quien organiza: el proveedor vuelve a su inicio */}
+                  <Route path="*" element={<Navigate to="/app" replace />} />
+                </Routes>
+              ) : (
               <Routes>
                 <Route path="/" element={<Navigate to="/app" replace />} />
                 <Route path="/app" element={<Dashboard />} />
@@ -397,6 +417,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   }
                 />
               </Routes>
+              )}
             </main>
             <footer className="app-footer">
               <span>{tr("common.madeBringFavoritePeople")}</span>

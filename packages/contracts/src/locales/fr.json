@@ -51,7 +51,12 @@
     "startSomethingWonderful": "Commence quelque chose de beau.",
     "tueventofunMadeSharedMoments": "TuEventoFun · Fait pour partager des moments.",
     "uploadProfileImage": "Téléverser une image de profil",
-    "yourInformation": "Tes informations"
+    "yourInformation": "Tes informations",
+    "accountTypeLegend": "Comment vas-tu utiliser TuEventoFun ?",
+    "organizerTitle": "J'organise des événements",
+    "organizerHint": "Mariages, anniversaires et réunions : invités, réponses et designs.",
+    "providerTitle": "Je propose des services pour les événements",
+    "providerHint": "Traiteur, musique, photo, salles… Publie ton activité gratuitement."
   },
   "app": {
     "backOverview": "Retour à l’aperçu",
@@ -277,7 +282,8 @@
     "openInvitationFull": "Ce lien a atteint le nombre maximal d’inscriptions.",
     "eventPasswordIncorrect": "Le mot de passe n’est pas correct.",
     "geocoderUnavailable": "La recherche sur la carte n'est pas disponible pour le moment. Réessaie dans quelques minutes ou colle un lien de carte.",
-    "mapLinkWithoutCoordinates": "Ce lien ne contient pas le lieu. Dans ton appli de cartes, ouvre le lieu, appuie sur « Partager » et copie ce lien."
+    "mapLinkWithoutCoordinates": "Ce lien ne contient pas le lieu. Dans ton appli de cartes, ouvre le lieu, appuie sur « Partager » et copie ce lien.",
+    "wrongAccountType": "Cette partie est réservée à un autre type de compte."
   },
   "events": {
     "actions": "Actions",
@@ -478,7 +484,10 @@
     "weddingAmongFlowersBirthday": "Un mariage parmi les fleurs, un anniversaire plein de couleurs ou un toast juste comme ça. Trouve le style qui te ressemble.",
     "wellWriteLanguageUnsubscribe": "Nous t’écrirons dans cette langue. Tu peux te désabonner à tout moment.",
     "yesAccountBringsTogether": "Oui. Ton compte réunit tes événements, leurs listes d’invités et les réponses de chaque fête.",
-    "yesEditEventInformation": "Oui. Tu peux modifier les informations de l’événement, choisir un autre modèle et ajuster les personnes de chaque invitation depuis ton espace."
+    "yesEditEventInformation": "Oui. Tu peux modifier les informations de l’événement, choisir un autre modèle et ajuster les personnes de chaque invitation depuis ton espace.",
+    "providersTitle": "Tu proposes des services pour les événements ?",
+    "providersText": "Publie ton activité gratuitement et touche ceux qui préparent leur fête.",
+    "providersAction": "Créer mon compte prestataire"
   },
   "language": {
     "changeLanguage": "Changer de langue",
@@ -772,7 +781,8 @@
     "useLeast3Characters": "Saisis au moins 3 caractères.",
     "maximum2048Characters": "2048 caractères maximum.",
     "invalidCoordinates": "Les coordonnées ne sont pas valides.",
-    "mapLinkNotSupported": "Colle un lien https de Google Maps, Apple Plans ou Waze."
+    "mapLinkNotSupported": "Colle un lien https de Google Maps, Apple Plans ou Waze.",
+    "invalidAccountType": "Choisis si tu organises des événements ou proposes des services."
   },
   "pricing": {
     "title": "Tarifs",
@@ -862,5 +872,13 @@
     "copied": "Adresse copiée",
     "share": "Partager le lieu",
     "shareText": "{{place}} — {{url}}"
+  },
+  "provider": {
+    "business": "Mon activité",
+    "workspace": "Ton activité événementielle",
+    "accountLabel": "Prestataire",
+    "homeTitle": "Ton activité sous les yeux des organisateurs",
+    "homeIntro": "C'est ici que tu vas gérer ce que tu proposes à ceux qui préparent un événement.",
+    "homeNext": "Bientôt, tu pourras ajouter tes services, tes photos et ta page publique pour qu'on te trouve."
   }
 }

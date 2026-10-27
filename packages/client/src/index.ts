@@ -18,6 +18,7 @@ import type {
   PostcardVersion,
   GeoPlace,
   GeoPoint,
+  AccountType,
 } from "@tuevento/contracts";
 export class ApiError extends Error {
   constructor(
@@ -88,8 +89,9 @@ export class EventApi {
     this.request<User>("/auth/register", "POST", data);
   login = (email: string, password: string) =>
     this.request<User>("/auth/login", "POST", { email, password });
-  google = (credential: string, nonce: string) =>
-    this.request<User>("/auth/google", "POST", { credential, nonce });
+  /** `accountType` solo cuenta si la cuenta se crea en ese momento. */
+  google = (credential: string, nonce: string, accountType?: AccountType) =>
+    this.request<User>("/auth/google", "POST", { credential, nonce, ...(accountType ? { accountType } : {}) });
   forgotPassword = (email: string) =>
     this.request<{ ok: boolean; message: string }>(
       "/auth/password/forgot",

@@ -386,6 +386,31 @@ try {
     await a.call("/profile", "PATCH", { firstName: largo(50), lastName: largo(50), phone: "+52 (777) 123-45-67" }, 200);
   });
 
+  await suite("Tipo de cuenta: se elige al registrarse, sin elegirlo se organiza y no se cambia después", async () => {
+    const organizador = client();
+    assert.equal((await organizador.call("/auth/register", "POST", account(P, "tipo-org"), 201)).accountType, "organizer");
+    const proveedor = client();
+    const creado = await proveedor.call("/auth/register", "POST", account(P, "tipo-prov", { accountType: "provider" }), 201);
+    assert.equal(creado.accountType, "provider");
+    assert.equal((await proveedor.call("/auth/me")).accountType, "provider");
+    const explicito = client();
+    assert.equal((await explicito.call("/auth/register", "POST", account(P, "tipo-org2", { accountType: "organizer" }), 201)).accountType, "organizer");
+    // Un tipo que no existe: 422 con el campo, traducido
+    for (const [locale, headers] of [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]]) {
+      const r = await client().raw("/auth/register", { method: "POST", body: account(P, `tipo-mal-${locale}`, { accountType: "admin" }), headers });
+      assert.equal(r.status, 422);
+      const error = r.data.errors.find((e) => e.field === "accountType");
+      assert.equal(error?.message, translate(locale, "validation.invalidAccountType"), r.text);
+    }
+    // Google acepta el tipo (solo cuenta al crear la cuenta) y rechaza uno inválido antes de verificar
+    const { nonce } = await client().call("/auth/google/nonce", "POST", {}, 201);
+    assert.equal((await client().raw("/auth/google", { method: "POST", body: { credential: "x", nonce, accountType: "admin" } })).status, 422);
+    // Ni el organizador ni el proveedor cambian su tipo desde el perfil
+    const perfil = { firstName: "Ana", lastName: "Pérez", phone: "" };
+    assert.equal((await proveedor.raw("/profile", { method: "PATCH", body: { ...perfil, accountType: "organizer" } })).status, 422);
+    assert.equal((await proveedor.call("/profile", "PATCH", perfil)).accountType, "provider");
+  });
+
   await suite("Ubicación: el punto del mapa se guarda, se quita y llega a la invitación y al .ics", async () => {
     const organizador = client();
     await organizador.call("/auth/register", "POST", account(P, "geo"), 201);

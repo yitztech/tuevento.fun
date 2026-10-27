@@ -279,12 +279,24 @@ const password = z
   .string()
   .min(10, "validation.useLeast10Characters")
   .max(accountLimits.password, "validation.maximum128Characters");
+/** Tipo de cuenta, fijo desde el registro: organiza eventos u ofrece servicios para ellos. */
+export const accountTypes = ["organizer", "provider"] as const;
+export type AccountType = (typeof accountTypes)[number];
+const accountType = z.enum(accountTypes, "validation.invalidAccountType");
 export const registerSchema = z.strictObject({
   firstName: personName,
   lastName: personName,
   email,
   phone,
   password,
+  // Las apps anteriores no lo envían: organizan eventos
+  accountType: accountType.default("organizer"),
+});
+/** Acceso con Google; el tipo solo cuenta si la cuenta se crea en ese momento. */
+export const googleLoginSchema = z.strictObject({
+  credential: z.string().max(12000),
+  nonce: z.string().min(20).max(100),
+  accountType: accountType.optional(),
 });
 export const loginSchema = z.strictObject({
   email,
@@ -431,6 +443,7 @@ export type User = {
   locale: Locale;
   /** Código público de la cuenta, primera parte de la URL de sus landings. */
   publicCode: string;
+  accountType: AccountType;
 };
 export type Metrics = {
   invitations: number;
