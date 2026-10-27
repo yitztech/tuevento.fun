@@ -663,7 +663,9 @@ export class EventsService {
   ): Promise<string> {
     const landing = await this.landing(code, slug, viewerId, access);
     if (landing.access === "locked") throw new NotFoundException("errors.eventIsntAvailable");
-    return this.calendar(await this.eventByAddress(code, slug), this.landingUrl(code, slug, locale));
+    // La URL sale de lo guardado, no de lo que llegó en la petición
+    const r = await this.eventByAddress(code, slug);
+    return this.calendar(r, this.landingUrl(r.public_code, r.slug, locale));
   }
   async calendarForInvitation(token: string, locale: Locale): Promise<string> {
     const [r] = await this.db.query(
