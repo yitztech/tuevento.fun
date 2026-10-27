@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import http from "node:http";
 import https from "node:https";
+import { deflateSync } from "node:zlib";
 
 export const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 // Dominios de desarrollo: el idioma de la API depende del Host (gateway).
@@ -126,3 +127,47 @@ export function cleanup(prefix) {
       { stdio: "ignore" });
   } catch { /* limpieza de cortesía */ }
 }
+
+/** PNG de un color, como data URL: una foto válida y diminuta para las subidas. */
+export function pngDataUrl(width = 4, height = 3) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (buf) => {
+    let c = 0xffffffff;
+    for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type, data) => {
+    const body = Buffer.concat([Buffer.from(type), data]);
+    const out = Buffer.alloc(body.length + 8);
+    out.writeUInt32BE(data.length, 0);
+    body.copy(out, 4);
+    out.writeUInt32BE(crc(body), body.length + 4);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, 0x88)]);
+  const png = Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(Buffer.concat(Array(height).fill(row)))),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+  return `data:image/png;base64,${png.toString("base64")}`;
+}
+
+/** Datos mínimos de un negocio que se puede publicar (le falta la foto). */
+export const providerData = (extra = {}) => ({
+  businessName: `Banquetes QA ${unique}`,
+  categories: ["catering"],
+  geo: { lat: 18.921831, lng: -99.234567 },
+  whatsapp: "+52 777 123 4567",
+  city: "Cuernavaca",
+  ...extra,
+});

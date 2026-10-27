@@ -10,7 +10,7 @@ Característica: Cuenta de organizador o de proveedor
     Cuando elijo la opción "Ofrezco servicios para eventos"
     Y relleno el registro con datos válidos
     Y envío el formulario de registro
-    Entonces entro a mi espacio
+    Entonces estoy en "/negocio"
     Y veo el enlace "Mi negocio" en el menú
     Y no veo el enlace "Mis eventos" en el menú
 
@@ -33,5 +33,5 @@ Característica: Cuenta de organizador o de proveedor
   Escenario: Un proveedor que abre la página de eventos vuelve a su negocio
     Dado que tengo una cuenta de proveedor con la sesión abierta
     Cuando abro la página "/eventos"
-    Entonces estoy en "/app"
+    Entonces estoy en "/negocio"
     Y veo el enlace "Mi negocio" en el menú

@@ -174,8 +174,19 @@ export const accountLimits = {
   eventSlug: 60,
   /** Texto con el que se busca un lugar en el mapa (sin columna: no se guarda). */
   geoQuery: 200,
-  /** Enlace de mapas que se pega para fijar un punto (sin columna). */
+  /** Enlaces: el de mapas que se pega (sin columna) y los del perfil de proveedor. */
   url: 2048,
+  providerSlug: 60,
+  businessName: 150,
+  headline: 150,
+  providerDescription: 5000,
+  serviceTitle: 150,
+  serviceDescription: 2000,
+  imageAlt: 255,
+  addressLine: 200,
+  city: 200,
+  region: 200,
+  postalCode: 10,
 } as const;
 /** Punto en el mapa (WGS 84). */
 export const geoPointSchema = z.strictObject({
@@ -585,6 +596,278 @@ export const statusLabels = {
   declined: "status.declined",
   pending: "status.pending",
 } as const satisfies Record<Status, MessageKey>;
+
+/* ───────────────────────────── Proveedores (fase 3) ───────────────────────────── */
+
+/** Categorías de proveedor: códigos estables (el CHECK de la migración 021 usa los mismos). */
+export const providerCategories = [
+  "venue",
+  "planner",
+  "wedding-planner",
+  "furniture-rental",
+  "catering",
+  "bakery",
+  "dj",
+  "live-music",
+  "photo-video",
+  "decoration",
+  "lighting-sound",
+  "entertainment",
+  "bar",
+  "beauty",
+  "attire",
+  "transport",
+  "other",
+] as const;
+export type ProviderCategory = (typeof providerCategories)[number];
+/** Cuántos elementos caben en cada lista del perfil, y el tamaño de cada foto. */
+export const providerLimits = {
+  categories: 5,
+  services: 50,
+  images: 40,
+  imagesPerService: 10,
+  /** Bytes de la foto ya decodificada; el gateway admite 3 MB de cuerpo (base64 incluido). */
+  imageBytes: 2 * 1024 * 1024,
+  /** Lado mayor de cada tamaño que se guarda. */
+  imageSizes: [1600, 480],
+  serviceRadiusKm: 500,
+  /** Precio «desde», en centavos: hasta 100 millones en la moneda. */
+  priceCents: 10_000_000_000,
+} as const;
+export const providerImageSizes = providerLimits.imageSizes;
+export type ProviderImageSize = (typeof providerImageSizes)[number];
+export const priceUnits = ["event", "hour", "person", "item", "day"] as const;
+export type PriceUnit = (typeof priceUnits)[number];
+export const providerCurrencies = ["MXN", "USD", "EUR", "BRL", "COP", "ARS", "CLP", "PEN"] as const;
+/**
+ * Direcciones que no puede usar un proveedor: rutas que la búsqueda y las categorías usarán
+ * (fases 4 y 6) y palabras que confundirían.
+ */
+export const reservedProviderSlugs = [
+  "buscar", "busqueda", "search", "categoria", "categorias", "category", "categories", "mapa", "map",
+  "nuevo", "nueva", "new", "editar", "edit", "admin", "api", "proveedor", "proveedores", "providers",
+  "negocio", "tuevento", "yourevent",
+] as const;
+
+/** Texto opcional con su máximo, sin recortar en silencio: "" si no se envía. */
+const optionalText = (max: number, message: MessageKey) =>
+  text().max(max, message).optional().default("");
+/** Enlace https (§23: solo ese esquema); `hosts` limita el sitio en los campos de redes sociales. */
+const httpsUrl = (hosts?: readonly string[]) =>
+  z
+    .string()
+    .trim()
+    .max(accountLimits.url, "validation.maximum2048Characters")
+    .refine((v) => {
+      if (v === "") return true;
+      try {
+        const u = new URL(v);
+        const host = u.hostname.toLowerCase();
+        return u.protocol === "https:" && (!hosts || hosts.some((h) => host === h || host.endsWith(`.${h}`)));
+      } catch {
+        return false;
+      }
+    }, hosts ? "validation.useProfileLink" : "validation.useHttpsLink")
+    .optional()
+    .default("");
+
+export const providerProfileSchema = z.strictObject({
+  /** Vacía, la API la crea a partir del nombre del negocio. */
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(accountLimits.providerSlug, "validation.maximum60Characters")
+    .refine((v) => v === "" || (v.length >= 3 && eventSlugPattern.test(v)), "validation.eventSlugFormat")
+    .refine((v) => !(reservedProviderSlugs as readonly string[]).includes(v), "validation.reservedAddress")
+    .default(""),
+  businessName: text()
+    .min(2, "validation.enterLeast2Characters")
+    .max(accountLimits.businessName, "validation.maximum150Characters"),
+  headline: optionalText(accountLimits.headline, "validation.maximum150Characters"),
+  description: z
+    .string()
+    .trim()
+    .max(accountLimits.providerDescription, "validation.maximum5000Characters")
+    .optional()
+    .default(""),
+  categories: z
+    .array(z.enum(providerCategories, "validation.invalidCategory"))
+    .max(providerLimits.categories, "validation.maximum5Categories")
+    .refine((v) => new Set(v).size === v.length, "validation.repeatedCategory")
+    .default([]),
+  phone: optionalPhone,
+  whatsapp: optionalPhone,
+  publicEmail: optionalEmail,
+  website: httpsUrl(),
+  instagramUrl: httpsUrl(["instagram.com"]),
+  facebookUrl: httpsUrl(["facebook.com", "fb.com"]),
+  tiktokUrl: httpsUrl(["tiktok.com"]),
+  address: optionalText(accountLimits.addressLine, "validation.maximum200Characters"),
+  city: optionalText(accountLimits.city, "validation.maximum200Characters"),
+  region: optionalText(accountLimits.region, "validation.maximum200Characters"),
+  postalCode: z
+    .string()
+    .trim()
+    .max(accountLimits.postalCode, "validation.maximum10Characters")
+    .regex(/^[A-Za-z0-9 -]*$/, "validation.postalCodeFormat")
+    .optional()
+    .default(""),
+  country: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{2}$/, "validation.countryCode")
+    .default("MX"),
+  geo: geoPointSchema.nullable().default(null),
+  addressVisibility: z.enum(["exact", "approximate"]).default("approximate"),
+  serviceRadiusKm: z
+    .number("validation.serviceRadius")
+    .int("validation.serviceRadius")
+    .min(0, "validation.serviceRadius")
+    .max(providerLimits.serviceRadiusKm, "validation.serviceRadius")
+    .default(25),
+});
+export type ProviderProfileInput = z.input<typeof providerProfileSchema>;
+export type ProviderProfileData = z.infer<typeof providerProfileSchema>;
+
+/** Precio «desde» de un servicio: en centavos, con su moneda y su unidad. */
+export const providerPriceSchema = z.strictObject({
+  fromCents: z
+    .number("validation.invalidPrice")
+    .int("validation.invalidPrice")
+    .min(0, "validation.invalidPrice")
+    .max(providerLimits.priceCents, "validation.invalidPrice"),
+  currency: z.enum(providerCurrencies, "validation.invalidCurrency"),
+  unit: z.enum(priceUnits, "validation.invalidPriceUnit"),
+});
+export type ProviderPrice = z.infer<typeof providerPriceSchema>;
+export const providerServiceSchema = z.strictObject({
+  title: text()
+    .min(2, "validation.enterLeast2Characters")
+    .max(accountLimits.serviceTitle, "validation.maximum150Characters"),
+  description: z
+    .string()
+    .trim()
+    .max(accountLimits.serviceDescription, "validation.maximum2000Characters")
+    .optional()
+    .default(""),
+  price: providerPriceSchema.nullable().default(null),
+});
+export type ProviderServiceInput = z.input<typeof providerServiceSchema>;
+const imageAlt = text().max(accountLimits.imageAlt, "validation.maximum255Characters");
+export const providerImageUploadSchema = z.strictObject({
+  dataUrl: z
+    .string()
+    .max(3_000_000, "errors.imageMustSmallerThan")
+    .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "errors.usePngJpgWebp"),
+  alt: imageAlt.optional().default(""),
+  serviceId: z.uuid().nullable().optional().default(null),
+});
+export const providerImageUpdateSchema = z.strictObject({
+  alt: imageAlt,
+  serviceId: z.uuid().nullable(),
+});
+/** Nuevo orden de servicios o fotos: todos sus identificadores, sin repetir. */
+export const providerOrderSchema = z.strictObject({
+  ids: z
+    .array(z.uuid())
+    .max(providerLimits.images)
+    .refine((v) => new Set(v).size === v.length, "validation.repeatedItem"),
+});
+/** Portada o logo: una foto del perfil, o null para quitarla. */
+export const providerImageChoiceSchema = z.strictObject({ imageId: z.uuid().nullable() });
+
+export type ProviderImage = {
+  id: string;
+  alt: string;
+  serviceId: string | null;
+  width: number;
+  height: number;
+  /** URL de cada tamaño (lado mayor en píxeles). */
+  urls: Record<ProviderImageSize, string>;
+};
+export type ProviderService = {
+  id: string;
+  title: string;
+  description: string;
+  price: ProviderPrice | null;
+};
+export type ProviderStatus = "draft" | "published" | "suspended";
+/** Lo que falta para publicar, como códigos (`providers.missing.<código>` en el catálogo). */
+export const providerRequirements = ["businessName", "category", "location", "photo", "photoAlt", "contact"] as const;
+export type ProviderRequirement = (typeof providerRequirements)[number];
+/** Perfil completo, como lo ve su dueño en el panel. */
+export type ProviderProfile = ProviderProfileData & {
+  id: string;
+  status: ProviderStatus;
+  publishedAt: string | null;
+  coverImageId: string | null;
+  logoImageId: string | null;
+  services: ProviderService[];
+  images: ProviderImage[];
+  missing: ProviderRequirement[];
+};
+
+/** Nombre de cada categoría, requisito y unidad de precio en el catálogo. */
+export const providerCategoryLabels: Record<ProviderCategory, MessageKey> = {
+  venue: "providers.categories.venue",
+  planner: "providers.categories.planner",
+  "wedding-planner": "providers.categories.wedding-planner",
+  "furniture-rental": "providers.categories.furniture-rental",
+  catering: "providers.categories.catering",
+  bakery: "providers.categories.bakery",
+  dj: "providers.categories.dj",
+  "live-music": "providers.categories.live-music",
+  "photo-video": "providers.categories.photo-video",
+  decoration: "providers.categories.decoration",
+  "lighting-sound": "providers.categories.lighting-sound",
+  entertainment: "providers.categories.entertainment",
+  bar: "providers.categories.bar",
+  beauty: "providers.categories.beauty",
+  attire: "providers.categories.attire",
+  transport: "providers.categories.transport",
+  other: "providers.categories.other",
+};
+export const providerRequirementLabels: Record<ProviderRequirement, MessageKey> = {
+  businessName: "providers.missing.businessName",
+  category: "providers.missing.category",
+  location: "providers.missing.location",
+  photo: "providers.missing.photo",
+  photoAlt: "providers.missing.photoAlt",
+  contact: "providers.missing.contact",
+};
+export const priceUnitLabels: Record<PriceUnit, MessageKey> = {
+  event: "providers.units.event",
+  hour: "providers.units.hour",
+  person: "providers.units.person",
+  item: "providers.units.item",
+  day: "providers.units.day",
+};
+
+/**
+ * Requisitos para publicar: nombre, al menos una categoría, el punto en el mapa, al menos una foto
+ * (todas con texto alternativo) y un medio de contacto. La usan el panel y la API.
+ */
+export function providerCompleteness(p: {
+  businessName: string;
+  categories: readonly string[];
+  geo: GeoPoint | null;
+  images: readonly { alt: string }[];
+  phone: string;
+  whatsapp: string;
+  publicEmail: string;
+  website: string;
+}): ProviderRequirement[] {
+  const missing: ProviderRequirement[] = [];
+  if (p.businessName.trim().length < 2) missing.push("businessName");
+  if (p.categories.length === 0) missing.push("category");
+  if (!p.geo) missing.push("location");
+  if (p.images.length === 0) missing.push("photo");
+  else if (p.images.some((i) => i.alt.trim() === "")) missing.push("photoAlt");
+  if (![p.phone, p.whatsapp, p.publicEmail, p.website].some((v) => v.trim() !== "")) missing.push("contact");
+  return missing;
+}
 
 export * from "./i18n";
 export * from "./calendar";

@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -256,4 +256,56 @@ test("Tipo de cuenta: organiza por defecto y solo admite organizer o provider", 
     assert.equal(await codigoError(() => db.query("UPDATE users SET account_type=$2 WHERE id=$1", [id, valor])), CHECK_VIOLATION, valor);
   assert.equal(await codigoError(() => db.query("UPDATE users SET account_type=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
   assert.equal((await uno("SELECT convalidated FROM pg_constraint WHERE conname='users_account_type_check'")).convalidated, true, "la 020 valida la restricción");
+});
+
+test("Proveedor: restricciones del perfil, los servicios y las fotos", async () => {
+  const dueno = await usuario(db);
+  const p = await uno("INSERT INTO provider_profiles(id,user_id,slug,business_name) VALUES(gen_random_uuid(),$1,'p-'||md5(random()::text),'Negocio') RETURNING id, updated_at", [dueno]);
+  const cambio = (sql, params = []) => codigoError(() => db.query(sql, [p.id, ...params]));
+  for (const [col, valor] of [["status", "borrado"], ["address_visibility", "secreta"], ["country", "mex"], ["slug", "Con Espacios"], ["slug", "ab"]])
+    assert.equal(await cambio(`UPDATE provider_profiles SET ${col}=$2 WHERE id=$1`, [valor]), CHECK_VIOLATION, `${col}=${valor}`);
+  assert.equal(await cambio("UPDATE provider_profiles SET service_radius_km=501 WHERE id=$1"), CHECK_VIOLATION);
+  assert.equal(await cambio("UPDATE provider_profiles SET latitude=18.9 WHERE id=$1"), CHECK_VIOLATION, "una coordenada sin la otra");
+  assert.equal(await cambio("UPDATE provider_profiles SET business_name=$2 WHERE id=$1", ["x".repeat(accountLimits.businessName + 1)]), CHECK_VIOLATION);
+  assert.equal(await cambio("INSERT INTO provider_categories(provider_id,category) VALUES($1,'pirotecnia')"), CHECK_VIOLATION);
+  await db.query("INSERT INTO provider_categories(provider_id,category) VALUES($1,'catering')", [p.id]);
+  assert.equal(await cambio("INSERT INTO provider_categories(provider_id,category) VALUES($1,'catering')"), UNIQUE_VIOLATION);
+  // Precio, moneda y unidad van juntos; los centavos no son negativos
+  const servicio = "INSERT INTO provider_services(id,provider_id,title,price_from_cents,currency,price_unit) VALUES(gen_random_uuid(),$1,'S',$2,$3,$4)";
+  for (const precio of [[100, null, null], [null, "MXN", null], [100, "MXN", null], [-1, "MXN", "event"], [100, "mxn", "event"], [100, "MXN", "semana"]])
+    assert.equal(await cambio(servicio, precio), CHECK_VIOLATION, JSON.stringify(precio));
+  await db.query(servicio, [p.id, 150000, "MXN", "event"]);
+  await db.query(servicio, [p.id, null, null, null]);
+  assert.equal(await cambio("INSERT INTO provider_images(id,provider_id,width,height) VALUES(gen_random_uuid(),$1,0,10)"), CHECK_VIOLATION);
+  // updated_at lo pone la base de datos en cada cambio
+  await db.query("SELECT pg_sleep(0.01)");
+  await db.query("UPDATE provider_profiles SET headline='Nueva' WHERE id=$1", [p.id]);
+  const despues = await uno("SELECT updated_at FROM provider_profiles WHERE id=$1", [p.id]);
+  assert.ok(despues.updated_at > p.updated_at);
+  // La dirección es única entre todos los negocios, y cada cuenta tiene un solo perfil
+  const { slug } = await uno("SELECT slug FROM provider_profiles WHERE id=$1", [p.id]);
+  assert.equal(await codigoError(() => db.query("INSERT INTO provider_profiles(id,user_id,slug,business_name) VALUES(gen_random_uuid(),$1,$2,'Otro')", [dueno, `${slug}-x`])), UNIQUE_VIOLATION);
+});
+
+test("Proveedor: borrar la cuenta borra perfil, servicios y fotos, y sus direcciones quedan como borradas", async () => {
+  const dueno = await usuario(db);
+  const slug = `negocio-${Date.now()}`;
+  const p = await uno("INSERT INTO provider_profiles(id,user_id,slug,business_name) VALUES(gen_random_uuid(),$1,$2,'Negocio') RETURNING id", [dueno, slug]);
+  const s = await uno("INSERT INTO provider_services(id,provider_id,title) VALUES(gen_random_uuid(),$1,'S') RETURNING id", [p.id]);
+  const foto = await uno("INSERT INTO provider_images(id,provider_id,service_id,width,height) VALUES(gen_random_uuid(),$1,$2,10,10) RETURNING id", [p.id, s.id]);
+  await db.query("UPDATE provider_profiles SET cover_image_id=$2 WHERE id=$1", [p.id, foto.id]);
+  await db.query("INSERT INTO provider_slug_history(slug,provider_id) VALUES($1,$2)", [`${slug}-antes`, p.id]);
+  // Borrar un servicio deja la foto sin servicio; borrar la foto deja el perfil sin portada
+  await db.query("DELETE FROM provider_services WHERE id=$1", [s.id]);
+  assert.equal((await uno("SELECT service_id FROM provider_images WHERE id=$1", [foto.id])).service_id, null);
+  await db.query("DELETE FROM provider_images WHERE id=$1", [foto.id]);
+  assert.equal((await uno("SELECT cover_image_id FROM provider_profiles WHERE id=$1", [p.id])).cover_image_id, null);
+  await db.query("INSERT INTO provider_images(id,provider_id,width,height) VALUES(gen_random_uuid(),$1,10,10)", [p.id]);
+  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
+  for (const tabla of ["provider_profiles", "provider_services", "provider_images", "provider_categories", "provider_slug_history"]) {
+    const columna = tabla === "provider_profiles" ? "id" : "provider_id";
+    assert.equal((await uno(`SELECT count(*)::int AS n FROM ${tabla} WHERE ${columna}=$1`, [p.id])).n, 0, tabla);
+  }
+  const borradas = (await db.query("SELECT slug FROM provider_deleted_slugs WHERE slug = ANY($1) ORDER BY slug", [[slug, `${slug}-antes`]])).rows.map((r) => r.slug);
+  assert.deepEqual(borradas, [slug, `${slug}-antes`].sort());
 });

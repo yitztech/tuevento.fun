@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
-import { base, client, account, cleanup, englishHost, send, spanishHost, suiteRunner, eventData, invitationData, unique } from "./api.mjs";
+import { base, client, account, cleanup, englishHost, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -409,6 +409,163 @@ try {
     const perfil = { firstName: "Ana", lastName: "Pérez", phone: "" };
     assert.equal((await proveedor.raw("/profile", { method: "PATCH", body: { ...perfil, accountType: "organizer" } })).status, 422);
     assert.equal((await proveedor.call("/profile", "PATCH", perfil)).accountType, "provider");
+  });
+
+  const locales = [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]];
+  const proveedorNuevo = async (n) => {
+    const c = client();
+    await c.call("/auth/register", "POST", account(P, n, { accountType: "provider" }), 201);
+    return c;
+  };
+
+  await suite("Proveedor: el perfil se crea, se valida campo a campo en 5 idiomas y se edita", async () => {
+    const p = await proveedorNuevo("prov-perfil");
+    assert.deepEqual(await p.call("/provider/profile"), { profile: null });
+    // Servicios y fotos esperan a que exista el negocio
+    assert.equal((await p.raw("/provider/services", { method: "POST", body: { title: "Mesa de postres" } })).status, 404);
+    const perfil = await p.call("/provider/profile", "PUT", providerData({ description: "  Banquetes para bodas  " }));
+    assert.equal(perfil.slug, `banquetes-qa-${unique}`);
+    assert.equal(perfil.whatsapp, "+527771234567");
+    assert.equal(perfil.description, "Banquetes para bodas");
+    assert.equal(perfil.status, "draft");
+    assert.deepEqual(perfil.missing, ["photo"]);
+    assert.deepEqual((await p.call("/provider/profile")).profile.categories, ["catering"]);
+    // Cada campo inválido responde 422 con su campo y el mensaje en el idioma de la petición
+    const malos = [
+      [{ businessName: "x".repeat(151) }, "businessName", "validation.maximum150Characters"],
+      [{ description: "x".repeat(5001) }, "description", "validation.maximum5000Characters"],
+      [{ categories: ["catering", "dj", "bar", "bakery", "venue", "other"] }, "categories", "validation.maximum5Categories"],
+      [{ categories: ["pirotecnia"] }, "categories.0", "validation.invalidCategory"],
+      [{ website: "http://banquetes.example" }, "website", "validation.useHttpsLink"],
+      [{ instagramUrl: "https://evil.example/banquetes" }, "instagramUrl", "validation.useProfileLink"],
+      [{ whatsapp: "777 123 abcd" }, "whatsapp", "validation.useNumbersSpaces"],
+      [{ postalCode: "62<00>" }, "postalCode", "validation.postalCodeFormat"],
+      [{ serviceRadiusKm: 900 }, "serviceRadiusKm", "validation.serviceRadius"],
+      [{ slug: "buscar" }, "slug", "validation.reservedAddress"],
+      [{ geo: { lat: 99, lng: 0 } }, "geo.lat", "validation.invalidCoordinates"],
+    ];
+    for (const [cambio, campo, mensaje] of malos)
+      for (const [locale, headers] of locales) {
+        const r = await p.raw("/provider/profile", { method: "PUT", body: providerData(cambio), headers });
+        assert.equal(r.status, 422, `${campo}: ${r.text}`);
+        // El mensaje esperado está entre los del campo (un dato puede incumplir varias reglas)
+        const mensajes = r.data.errors.filter((e) => e.field === campo).map((e) => e.message);
+        assert.ok(mensajes.includes(translate(locale, mensaje)), `${locale} ${campo}: ${r.text}`);
+      }
+    assert.equal((await p.raw("/provider/profile", { method: "PUT", body: { ...providerData(), status: "published" } })).status, 422);
+  });
+
+  await suite("Proveedor: la dirección es única, se comprueba antes y la anterior de una página publicada queda reservada", async () => {
+    const a = await proveedorNuevo("prov-slug-a");
+    const b = await proveedorNuevo("prov-slug-b");
+    const slug = `fiestas-${unique}`;
+    await a.call("/provider/profile", "PUT", providerData({ slug }));
+    assert.deepEqual(await b.call(`/provider/slug-available?slug=${slug}`), { available: false });
+    assert.deepEqual(await a.call(`/provider/slug-available?slug=${slug}`), { available: true });
+    assert.deepEqual(await b.call("/provider/slug-available?slug=buscar"), { available: false });
+    const ocupada = await b.raw("/provider/profile", { method: "PUT", body: providerData({ slug }) });
+    assert.equal(ocupada.status, 409);
+    // Sin escribirla, el mismo nombre recibe -2
+    assert.equal((await b.call("/provider/profile", "PUT", providerData({ businessName: `Fiestas ${unique}` }))).slug, `${slug}-2`);
+    // Publicada y renombrada: la dirección anterior no la puede usar nadie
+    await a.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: "Mesa de banquete" }, 201);
+    await a.call("/provider/publish", "POST", {});
+    const nueva = `${slug}-nueva`;
+    assert.equal((await a.call("/provider/profile", "PUT", providerData({ slug: nueva }))).slug, nueva);
+    assert.deepEqual(await b.call(`/provider/slug-available?slug=${slug}`), { available: false });
+    assert.equal((await b.raw("/provider/profile", { method: "PUT", body: providerData({ slug }) })).status, 409);
+    // Volver a la anterior sí se puede
+    assert.equal((await a.call("/provider/profile", "PUT", providerData({ slug }))).slug, slug);
+  });
+
+  await suite("Proveedor: publicar exige lo mínimo y una página que deja de cumplirlo vuelve a borrador", async () => {
+    const p = await proveedorNuevo("prov-publicar");
+    await p.call("/provider/profile", "PUT", { businessName: `Luz ${unique}` });
+    const r = await p.raw("/provider/publish", { method: "POST", body: {} });
+    assert.equal(r.status, 422);
+    assert.equal(r.data.code, "provider_not_complete");
+    assert.deepEqual(r.data.errors.map((e) => e.field).sort(), ["category", "contact", "location", "photo"]);
+    assert.equal(r.data.errors.find((e) => e.field === "photo").message, translate("es", "providers.missing.photo"));
+    await p.call("/provider/profile", "PUT", providerData({ businessName: `Luz ${unique}` }));
+    const sinTexto = await p.call("/provider/images", "POST", { dataUrl: pngDataUrl() }, 201);
+    assert.deepEqual(sinTexto.missing, ["photoAlt"]);
+    const [foto] = sinTexto.images;
+    await p.call(`/provider/images/${foto.id}`, "PATCH", { alt: "Escenario iluminado", serviceId: null });
+    const publicado = await p.call("/provider/publish", "POST", {});
+    assert.equal(publicado.status, "published");
+    assert.ok(publicado.publishedAt);
+    // Sin la única foto, la página vuelve a borrador sola
+    assert.equal((await p.call(`/provider/images/${foto.id}`, "DELETE")).status, "draft");
+    assert.equal((await p.call("/provider/unpublish", "POST", {})).status, "draft");
+  });
+
+  await suite("Proveedor: servicios con precio en centavos, orden y borrado", async () => {
+    const p = await proveedorNuevo("prov-servicios");
+    await p.call("/provider/profile", "PUT", providerData());
+    const precio = { fromCents: 1250000, currency: "MXN", unit: "event" };
+    const a = await p.call("/provider/services", "POST", { title: "Banquete de 3 tiempos", price: precio }, 201);
+    assert.deepEqual(a.price, precio);
+    const b = await p.call("/provider/services", "POST", { title: "Mesa de postres", description: "Pasteles y galletas" }, 201);
+    assert.equal(b.price, null);
+    assert.equal((await p.call(`/provider/services/${b.id}`, "PUT", { title: "Mesa de dulces", price: { ...precio, unit: "person" } })).price.unit, "person");
+    assert.deepEqual((await p.call("/provider/services/order", "PUT", { ids: [b.id, a.id] })).services.map((s) => s.id), [b.id, a.id]);
+    // El orden tiene que incluir todos: uno de menos es 409
+    assert.equal((await p.raw("/provider/services/order", { method: "PUT", body: { ids: [a.id] } })).status, 409);
+    for (const [cambio, campo] of [
+      [{ price: { ...precio, fromCents: -1 } }, "price.fromCents"],
+      [{ price: { ...precio, fromCents: 10.5 } }, "price.fromCents"],
+      [{ price: { ...precio, currency: "XXX" } }, "price.currency"],
+      [{ price: { fromCents: 100 } }, "price.currency"],
+      [{ title: "x".repeat(151) }, "title"],
+      [{ description: "x".repeat(2001) }, "description"],
+    ]) {
+      const r = await p.raw("/provider/services", { method: "POST", body: { title: "Servicio", ...cambio } });
+      assert.equal(r.status, 422, JSON.stringify(cambio));
+      assert.ok(r.data.errors.some((e) => e.field === campo), `${campo}: ${r.text}`);
+    }
+    assert.equal((await p.raw(`/provider/services/${a.id}`, { method: "DELETE" })).status, 204);
+    assert.equal((await p.raw(`/provider/services/${a.id}`, { method: "PUT", body: { title: "Otra vez" } })).status, 404);
+    assert.equal((await p.raw("/provider/services/no-es-uuid", { method: "PUT", body: { title: "Otra" } })).status, 400);
+  });
+
+  await suite("Proveedor: fotos en dos tamaños, portada, logo, servicio, orden y cuotas", async () => {
+    const p = await proveedorNuevo("prov-fotos");
+    await p.call("/provider/profile", "PUT", providerData());
+    const servicio = await p.call("/provider/services", "POST", { title: "Pasteles" }, 201);
+    let perfil = await p.call("/provider/images", "POST", { dataUrl: pngDataUrl(40, 30), alt: "Pastel de tres pisos", serviceId: servicio.id }, 201);
+    const [foto] = perfil.images;
+    assert.deepEqual([foto.width, foto.height, foto.serviceId], [40, 30, servicio.id]);
+    assert.deepEqual(Object.keys(foto.urls).sort(), ["1600", "480"]);
+    // Sin publicar, la foto solo la ve su dueño
+    assert.equal((await p.raw(foto.urls[480].replace(/^\/api/, ""))).status, 200);
+    assert.equal((await client().raw(foto.urls[480].replace(/^\/api/, ""))).status, 404);
+    assert.equal((await p.raw(foto.urls[480].replace(/^\/api/, "").replace(/480$/, "999"))).status, 404);
+    perfil = await p.call("/provider/cover", "PUT", { imageId: foto.id });
+    assert.equal(perfil.coverImageId, foto.id);
+    assert.equal((await p.call("/provider/logo", "PUT", { imageId: foto.id })).logoImageId, foto.id);
+    await p.call("/provider/publish", "POST", {});
+    const publica = await client().raw(foto.urls[1600].replace(/^\/api/, ""));
+    assert.equal(publica.status, 200);
+    assert.equal(publica.headers["content-type"], "image/jpeg");
+    assert.match(publica.headers["cache-control"], /immutable/);
+    // Archivos que no son imagen o con otro tipo: 422
+    for (const dataUrl of ["data:image/png;base64,bm8gZXMgdW5hIGltYWdlbg==", "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=", "data:text/html;base64,PHNjcmlwdD4="])
+      assert.equal((await p.raw("/provider/images", { method: "POST", body: { dataUrl } })).status, 422, dataUrl.slice(0, 25));
+    // Hasta 10 fotos por servicio y 40 por perfil: la 41 se rechaza
+    for (let n = 2; n <= 10; n++) await p.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: `Pastel ${n}`, serviceId: servicio.id }, 201);
+    const once = await p.raw("/provider/images", { method: "POST", body: { dataUrl: pngDataUrl(), serviceId: servicio.id } });
+    assert.equal(once.status, 422);
+    for (let n = 11; n <= 40; n++) await p.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: `Foto ${n}` }, 201);
+    const cuarentaYUna = await p.raw("/provider/images", { method: "POST", body: { dataUrl: pngDataUrl(), alt: "Una más" } });
+    assert.equal(cuarentaYUna.status, 422);
+    assert.equal(cuarentaYUna.data.detail, translate("es", "errors.providerImageLimit"));
+    // Orden y borrado: la portada que se borra deja de serlo
+    const ids = (await p.call("/provider/profile")).profile.images.map((i) => i.id);
+    assert.deepEqual((await p.call("/provider/images/order", "PUT", { ids: [...ids].reverse() })).images.map((i) => i.id), [...ids].reverse());
+    perfil = await p.call(`/provider/images/${foto.id}`, "DELETE");
+    assert.equal(perfil.coverImageId, null);
+    assert.equal(perfil.images.length, 39);
+    assert.equal((await client().raw(foto.urls[480].replace(/^\/api/, ""))).status, 404);
   });
 
   await suite("Ubicación: el punto del mapa se guarda, se quita y llega a la invitación y al .ics", async () => {

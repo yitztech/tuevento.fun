@@ -76,6 +76,8 @@ services:
     volumes:
       # Fotos de las postales (el contenedor es el único que las escribe)
       - postcard_images:/data/postcards
+      # Fotos de los proveedores: termina en _uploads para que el backup de la plataforma lo copie
+      - provider_uploads:/data/providers
     ports:
       - "127.0.0.1:${API_PORT:-3087}:3087"
     depends_on:
@@ -260,3 +262,4 @@ volumes:
   postgres_data:
   mobile_tls_data:
   postcard_images:
+  provider_uploads:

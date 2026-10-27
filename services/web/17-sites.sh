@@ -97,7 +97,7 @@ public_pages="/ /descargas /registro /acceso $(printf '@%s ' $pages)"
 # Páginas privadas o de sesión: se sirven con X-Robots-Tag: noindex, nunca con Disallow en robots.txt,
 # que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/…, /app-link/… y
 # las landings /<código>/<dirección>
-private_pages='app|pago|conectar-app|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
+private_pages='app|negocio|negocio/servicios|negocio/fotos|pago|conectar-app|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
 
 conf=/etc/nginx/conf.d/sites.conf
 {

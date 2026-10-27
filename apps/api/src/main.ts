@@ -19,7 +19,7 @@ import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 /** Cuerpo JSON de 1 MB como máximo (§23); las subidas de imágenes declaran el suyo. */
 const BODY_LIMIT = 1024 * 1024;
 const UPLOAD_BODY_LIMIT = 3 * 1024 * 1024;
-const uploadRoutes = new Set(["/api/profile/avatar", "/api/events/:id/postcard/images"]);
+const uploadRoutes = new Set(["/api/profile/avatar", "/api/events/:id/postcard/images", "/api/provider/images"]);
 /** `X-Request-ID` del cliente o del gateway si es razonable; si no, uno nuevo. */
 const requestIdPattern = /^[A-Za-z0-9._-]{8,128}$/;
 
