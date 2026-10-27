@@ -1,5 +1,6 @@
 import { accountLimits, eventInput, eventLandingPath, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
+import { LocationPicker, MapLinks, MapView } from "./location";
 import { useState, useEffect } from "react";
 import {
   Link,
@@ -116,6 +117,7 @@ export function EventEditor() {
       slug: "",
       cancelled: false,
       location: "",
+      geo: null,
       theme: themes.some((t) => t.id === query.get("tema"))
         ? (query.get("tema") as Event["theme"])
         : "floral",
@@ -250,6 +252,20 @@ export function EventEditor() {
               maxLength={300}
             />
           </Field>
+          <Controller
+            control={form.control}
+            name="geo"
+            render={({ field }) => (
+              <LocationPicker
+                place={values.location}
+                value={field.value ?? null}
+                onChange={(geo) => field.onChange(geo)}
+                onUseAddress={(label) =>
+                  form.setValue("location", label.slice(0, 300), { shouldDirty: true, shouldValidate: true })
+                }
+              />
+            )}
+          />
           <Field
             label={tr("events.messageGuests")}
             error={form.formState.errors.description?.message}
@@ -467,6 +483,8 @@ export function EventDetail() {
               {event.location}
             </span>
           </div>
+          {event.geo && <MapView point={event.geo} label={event.location} />}
+          <MapLinks label={event.location} geo={event.geo} />
         </div>
         <div className="button-group">
           <Link className="button secondary" to={`/eventos/${id}/pantalla`}>

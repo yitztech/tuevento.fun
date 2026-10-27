@@ -23,6 +23,18 @@ const runtime: Runtime = {
   openExternal: (url) => {
     window.open(url, "_blank", "noopener,noreferrer");
   },
+  getPosition: () =>
+    new Promise((resolve, reject) =>
+      navigator.geolocation
+        ? navigator.geolocation.getCurrentPosition(
+            ({ coords }) => resolve({ lat: coords.latitude, lng: coords.longitude }),
+            reject,
+            { enableHighAccuracy: true, timeout: 15000 },
+          )
+        : reject(new Error("geolocation")),
+    ),
+  // Hoja de compartir del navegador (móviles); en escritorio, la app copia el texto
+  share: typeof navigator !== "undefined" && "share" in navigator ? (data) => navigator.share(data) : undefined,
   subscribe: (onChange) => {
     const source = new EventSource("/api/stream", { withCredentials: true });
     source.onmessage = (event) => {

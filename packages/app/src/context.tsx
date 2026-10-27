@@ -1,7 +1,7 @@
 import { tr, trMessage, formatLocale } from "./i18n";
 import { createContext, useContext } from "react";
 import { EventApi } from "@tuevento/client";
-import type { User, Event, Notification } from "@tuevento/contracts";
+import type { User, Event, Notification, GeoPoint } from "@tuevento/contracts";
 export type Runtime = {
   apiBase: string;
   platform?: "web" | "android" | "ios";
@@ -12,6 +12,10 @@ export type Runtime = {
   copy: (text: string) => Promise<void>;
   openExternal: (url: string) => void;
   subscribe?: (onChange: () => void) => () => void;
+  /** Posición del dispositivo, con el permiso del sistema. Sin ella no se ofrece «Usar mi ubicación». */
+  getPosition?: () => Promise<GeoPoint>;
+  /** Hoja de compartir del sistema. Sin ella se copia el texto. */
+  share?: (data: { title: string; text: string; url?: string }) => Promise<void>;
 };
 export type AppState = {
   api: EventApi;

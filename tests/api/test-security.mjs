@@ -343,6 +343,29 @@ try {
     assert.equal(cuarta.data.code, "rate_limited");
   });
 
+  await suite("Mapas: pegar un enlace exige la cabecera propia y no sigue hosts ajenos (SSRF)", async () => {
+    const guest = client();
+    const body = { url: "https://maps.google.com/?q=18.9,-99.2" };
+    assert.equal((await guest.raw("/geo/parse-link", { method: "POST", body, csrf: false })).status, 403);
+    assert.equal((await guest.raw("/geo/parse-link", { method: "POST", body, headers: { Origin: "https://evil.example" } })).status, 403);
+    // Solo https y hosts de mapas: ni la red interna, ni metadatos de la nube, ni un dominio parecido
+    for (const url of [
+      "http://geocoder-fake:8080/search?q=x",
+      "https://169.254.169.254/latest/meta-data/",
+      "https://127.0.0.1/maps/@18.9,-99.2,15z",
+      "https://maps.google.com.evil.example/?q=18.9,-99.2",
+      "https://evil.example/maps.app.goo.gl/x",
+      "file:///etc/passwd",
+    ]) {
+      const r = await guest.raw("/geo/parse-link", { method: "POST", body: { url } });
+      assert.equal(r.status, 422, `${url} → ${r.status}`);
+    }
+    // La búsqueda trata SQL y HTML como texto
+    const r = await guest.raw(`/geo/search?q=${encodeURIComponent(`'; DROP TABLE geo_cache; -- <script>${Date.now()}`)}`);
+    assert.equal(r.status, 200, r.text);
+    assert.equal(r.headers["content-type"].split(";")[0], "application/json");
+  });
+
   await suite("Errores: Problem Details con requestId y X-Request-ID", async () => {
     const r = await guest.raw("/events");
     assert.equal(r.status, 401);

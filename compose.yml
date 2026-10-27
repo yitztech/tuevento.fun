@@ -70,6 +70,9 @@ services:
       PUBLIC_RATE_LIMIT_PER_IP: ${PUBLIC_RATE_LIMIT_PER_IP:-100000}
       # El global de Fastify también: la web en escritorio, Android e iPhone corre en paralelo
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100000}
+      # Búsqueda en el mapa: el doble en local (GEOCODER_URL vacío = Nominatim real)
+      GEOCODER_URL: ${GEOCODER_URL-http://geocoder-fake:8080}
+      GEOCODER_MIN_INTERVAL_MS: ${GEOCODER_MIN_INTERVAL_MS:-0}
     volumes:
       # Fotos de las postales (el contenedor es el único que las escribe)
       - postcard_images:/data/postcards
@@ -155,6 +158,19 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: "1"
     ports:
       - "127.0.0.1:${MAIL_UI_PORT:-8026}:8025"
+    restart: unless-stopped
+
+  # Doble de Nominatim: respuestas fijas para buscar en el mapa sin llamar a OpenStreetMap
+  geocoder-fake:
+    build:
+      context: .
+      dockerfile: services/geocoder-fake/Dockerfile
+    labels:
+      tuevento.solo-pruebas: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      retries: 10
     restart: unless-stopped
 
   # Mismo gateway que producción: solo reparte el tráfico entre web y api

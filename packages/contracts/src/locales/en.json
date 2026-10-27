@@ -275,7 +275,9 @@
     "eventIsntAvailable": "This event isn't available.",
     "eventCancelled": "This event is cancelled.",
     "openInvitationFull": "This link has reached its maximum number of registrations.",
-    "eventPasswordIncorrect": "The password is not correct."
+    "eventPasswordIncorrect": "The password is not correct.",
+    "geocoderUnavailable": "Map search isn't available right now. Try again in a few minutes or paste a map link.",
+    "mapLinkWithoutCoordinates": "That link doesn't include the location. In your maps app, open the place, tap “Share” and copy that link."
   },
   "events": {
     "actions": "Actions",
@@ -654,7 +656,6 @@
     "replySavedShort": "Reply saved",
     "saveReply": "Save my reply",
     "savingReply": "Saving your reply…",
-    "viewLocation": "View location",
     "withLove": "With love,",
     "wouldntSameWithout": "It wouldn't be the same without you.",
     "yesIllThere": "Yes, I'll be there!",
@@ -767,7 +768,11 @@
     "maximum60Characters": "Maximum 60 characters.",
     "eventSlugFormat": "Use only lowercase letters, numbers and hyphens between words, 3 to 60 characters.",
     "openInvitationNoMembers": "An open invitation has no people: each guest adds their own.",
-    "unknownField": "This field isn’t allowed."
+    "unknownField": "This field isn’t allowed.",
+    "useLeast3Characters": "Enter at least 3 characters.",
+    "maximum2048Characters": "Maximum 2048 characters.",
+    "invalidCoordinates": "The coordinates aren't valid.",
+    "mapLinkNotSupported": "Paste an https link from Google Maps, Apple Maps or Waze."
   },
   "pricing": {
     "title": "Pricing",
@@ -831,5 +836,31 @@
     "rateLimited": "Too many requests",
     "internalError": "Internal error",
     "serviceUnavailable": "Service unavailable"
+  },
+  "location": {
+    "searchOnMap": "Find on map",
+    "useMyLocation": "Use my location",
+    "pasteLink": "Paste a map link",
+    "linkLabel": "Google Maps, Apple Maps or Waze link",
+    "linkPlaceholder": "Paste the link you copied",
+    "applyLink": "Use this link",
+    "searching": "Searching…",
+    "chooseResult": "Choose the right place:",
+    "noResults": "We couldn't find that place. Try another address or paste a map link.",
+    "attribution": "Place data © OpenStreetMap contributors",
+    "pinSet": "The exact spot is pinned on the map.",
+    "removePin": "Remove pin",
+    "useAddress": "Use this address: {{address}}",
+    "hint": "Pin the exact spot so nobody gets lost on the way.",
+    "locationDenied": "We couldn't get your location. Check the location permission in your browser or phone.",
+    "mapLabel": "Map of {{place}}",
+    "openGoogle": "Google Maps",
+    "openApple": "Apple Maps",
+    "openWaze": "Waze",
+    "directions": "Get directions",
+    "copyAddress": "Copy address",
+    "copied": "Address copied",
+    "share": "Share location",
+    "shareText": "{{place}} — {{url}}"
   }
 }

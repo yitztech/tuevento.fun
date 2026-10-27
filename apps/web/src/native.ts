@@ -2,6 +2,8 @@ import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Clipboard } from '@capacitor/clipboard';
+import { Geolocation } from '@capacitor/geolocation';
+import { Share } from '@capacitor/share';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { EventApi } from '@tuevento/client';
 import { landingRoute } from '@tuevento/contracts';
@@ -48,6 +50,8 @@ export async function nativeRuntime():Promise<Runtime> {
  };
  return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,subscribe,
  copy:async text=>{await Clipboard.write({string:text})},
+ getPosition:async()=>{const {coords}=await Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:15000});return {lat:coords.latitude,lng:coords.longitude}},
+ share:async({title,text,url})=>{await Share.share({title,text,url,dialogTitle:title})},
  openExternal:url=>{const u=new URL(url);if(['https:','mailto:','tel:'].includes(u.protocol))window.open(url,'_blank','noopener,noreferrer')},
  startNativeLogin:async()=>{const verifier=base64url(crypto.getRandomValues(new Uint8Array(32)).buffer);await SecureStorage.setItem(PKCE_KEY,verifier);const challenge=base64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));await Browser.open({url:`${origin.origin}/acceso?appChallenge=${challenge}&source=${platform}`})}
  };

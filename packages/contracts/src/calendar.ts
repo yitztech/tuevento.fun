@@ -43,6 +43,7 @@ export function calendarFile(event: {
   description: string;
   start: Date;
   location: string;
+  geo?: { lat: number; lng: number } | null;
   url?: string;
   cancelled: boolean;
   now?: Date;
@@ -62,6 +63,7 @@ export function calendarFile(event: {
     `SUMMARY:${icsText(event.title)}`,
     ...(event.description ? [`DESCRIPTION:${icsText(event.description)}`] : []),
     ...(event.location ? [`LOCATION:${icsText(event.location)}`] : []),
+    ...(event.geo ? [`GEO:${coordinate(event.geo.lat)};${coordinate(event.geo.lng)}`] : []),
     ...(event.url ? [`URL:${event.url}`] : []),
     `STATUS:${event.cancelled ? "CANCELLED" : "CONFIRMED"}`,
     "END:VEVENT",
@@ -91,6 +93,31 @@ export function googleCalendarUrl(event: {
 /** Enlace de búsqueda en Google Maps para la ubicación escrita por el organizador. */
 export function mapsSearchUrl(location: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+}
+
+/** Coordenada con 6 decimales (~10 cm), como la escriben las apps de mapas. */
+const coordinate = (value: number) => value.toFixed(6).replace(/\.?0+$/, "");
+
+/**
+ * Enlaces universales a las apps de mapas: en el teléfono abren la app instalada y, si no,
+ * su web. Con punto exacto van a las coordenadas; sin él, buscan el texto del lugar.
+ */
+export function mapLinks(place: { label: string; geo?: { lat: number; lng: number } | null }) {
+  const text = encodeURIComponent(place.label);
+  if (!place.geo)
+    return {
+      google: mapsSearchUrl(place.label),
+      directions: `https://www.google.com/maps/dir/?api=1&destination=${text}`,
+      apple: `https://maps.apple.com/?q=${text}`,
+      waze: `https://waze.com/ul?q=${text}&navigate=yes`,
+    };
+  const point = `${coordinate(place.geo.lat)},${coordinate(place.geo.lng)}`;
+  return {
+    google: `https://www.google.com/maps/search/?api=1&query=${point}`,
+    directions: `https://www.google.com/maps/dir/?api=1&destination=${point}`,
+    apple: `https://maps.apple.com/?q=${text}&ll=${point}`,
+    waze: `https://waze.com/ul?ll=${point}&navigate=yes`,
+  };
 }
 
 /** Dirección pública a partir del título: sin acentos, en minúsculas y con guiones. */

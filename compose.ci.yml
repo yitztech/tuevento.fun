@@ -55,6 +55,9 @@ services:
       SMTP_USER_EN: dev
       SMTP_PASSWORD_EN: dev
       MAIL_FROM_EN: no-reply@yourevent.localhost
+      # Búsqueda en el mapa contra el doble, sin la espera de 1 s entre llamadas de Nominatim
+      GEOCODER_URL: http://geocoder-fake:8080
+      GEOCODER_MIN_INTERVAL_MS: "0"
 
   admin:
     build:
@@ -82,6 +85,20 @@ services:
       - "127.0.0.1:${MAIL_UI_PORT:-8026}:8025"
     networks: [frontend]
 
+  # Doble de Nominatim: respuestas fijas para buscar en el mapa sin llamar a OpenStreetMap
+  geocoder-fake:
+    # Nombre fijo: bake y `compose -p` lo encuentran igual sea cual sea el proyecto
+    image: tueventofun-geocoder-fake:ci
+    build:
+      context: .
+      dockerfile: services/geocoder-fake/Dockerfile
+    labels:
+      tuevento.solo-pruebas: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      retries: 10
+    networks: [frontend]
   postgres:
     build:
       context: .

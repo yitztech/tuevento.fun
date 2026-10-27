@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { defaultLocale, locales, type Locale, type MessageKey } from "./i18n";
+import { isMapLinkHost } from "./geo";
 z.config(z.locales[locales[defaultLocale].zod]());
 
 export const themeIds = [
@@ -171,7 +172,45 @@ export const accountLimits = {
   password: 128,
   postcardText: 200,
   eventSlug: 60,
+  /** Texto con el que se busca un lugar en el mapa (sin columna: no se guarda). */
+  geoQuery: 200,
+  /** Enlace de mapas que se pega para fijar un punto (sin columna). */
+  url: 2048,
 } as const;
+/** Punto en el mapa (WGS 84). */
+export const geoPointSchema = z.strictObject({
+  lat: z.number().min(-90, "validation.invalidCoordinates").max(90, "validation.invalidCoordinates"),
+  lng: z.number().min(-180, "validation.invalidCoordinates").max(180, "validation.invalidCoordinates"),
+});
+export type GeoPoint = z.infer<typeof geoPointSchema>;
+/** Búsqueda de un lugar por texto (`GET /api/geo/search`). */
+export const geoSearchSchema = z.strictObject({
+  q: z
+    .string()
+    .trim()
+    .min(3, "validation.useLeast3Characters")
+    .max(accountLimits.geoQuery, "validation.maximum200Characters"),
+});
+/** Dirección de un punto (`GET /api/geo/reverse`), con las coordenadas como texto de la URL. */
+export const geoReverseSchema = z.strictObject({
+  lat: z.coerce.number().min(-90, "validation.invalidCoordinates").max(90, "validation.invalidCoordinates"),
+  lng: z.coerce.number().min(-180, "validation.invalidCoordinates").max(180, "validation.invalidCoordinates"),
+});
+/** Enlace de mapas pegado (`POST /api/geo/parse-link`). */
+export const geoLinkSchema = z.strictObject({
+  url: z
+    .string()
+    .trim()
+    .max(accountLimits.url, "validation.maximum2048Characters")
+    .refine((v) => {
+      try {
+        const u = new URL(v);
+        return u.protocol === "https:" && isMapLinkHost(u.hostname);
+      } catch {
+        return false;
+      }
+    }, "validation.mapLinkNotSupported"),
+});
 /** Dirección de un evento: minúsculas, números y guiones entre palabras. */
 export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 /** Código público de una cuenta, primera parte de la URL de sus landings (users.public_code). */
@@ -295,6 +334,8 @@ export const eventSchema = z.strictObject({
       }
     }, "validation.invalidTimeZone"),
   location: z.string().trim().min(3, "validation.enterEventLocation").max(300),
+  /** Punto exacto del lugar: undefined lo conserva, null lo quita. */
+  geo: geoPointSchema.nullable().optional(),
   theme: z.enum(themeIds),
   archived: z.boolean().default(false),
   /** Evento cancelado: sigue visible con aviso, y se avisa a los invitados. */
@@ -400,7 +441,8 @@ export type Metrics = {
   declined: number;
   pending: number;
 };
-export type Event = Omit<EventInput, "publicPassword"> & {
+export type Event = Omit<EventInput, "publicPassword" | "geo"> & {
+  geo: GeoPoint | null;
   id: string;
   createdAt: string;
   metrics: Metrics;
@@ -415,6 +457,7 @@ export type PublicEvent = {
   date: string;
   timeZone: string;
   location: string;
+  geo: GeoPoint | null;
   theme: EventInput["theme"];
   host: Pick<User, "firstName" | "lastName" | "avatar">;
   /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
@@ -468,7 +511,7 @@ export type PublicInvitation = {
   kind: "individual" | "family" | "open";
   event: Pick<
     Event,
-    "title" | "description" | "date" | "timeZone" | "location" | "theme" | "cancelled"
+    "title" | "description" | "date" | "timeZone" | "location" | "geo" | "theme" | "cancelled"
   >;
   /** Solo en genéricas: ya hay tantos registros como permite el enlace. */
   registrationsFull: boolean;
@@ -488,6 +531,7 @@ export const eventInput = (e: Event): EventInput => ({
   date: e.date,
   timeZone: e.timeZone,
   location: e.location,
+  geo: e.geo,
   theme: e.theme,
   archived: e.archived,
   cancelled: e.cancelled,
@@ -531,6 +575,7 @@ export const statusLabels = {
 
 export * from "./i18n";
 export * from "./calendar";
+export * from "./geo";
 export * from "./pricing";
 export * from "./problems";
 
