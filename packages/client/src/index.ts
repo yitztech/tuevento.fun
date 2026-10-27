@@ -19,6 +19,10 @@ import type {
   GeoPlace,
   GeoPoint,
   AccountType,
+  ProviderProfile,
+  ProviderProfileInput,
+  ProviderService,
+  ProviderServiceInput,
 } from "@tuevento/contracts";
 export class ApiError extends Error {
   constructor(
@@ -167,6 +171,26 @@ export class EventApi {
     );
   /** Coordenadas de un enlace de Google Maps, Apple Maps o Waze. */
   parseMapLink = (url: string) => this.request<GeoPoint>("/geo/parse-link", "POST", { url });
+  // Panel del proveedor (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, fase 3)
+  providerProfile = () => this.request<{ profile: ProviderProfile | null }>("/provider/profile");
+  saveProviderProfile = (data: ProviderProfileInput) => this.request<ProviderProfile>("/provider/profile", "PUT", data);
+  providerSlugAvailable = (slug: string) =>
+    this.request<{ available: boolean }>(`/provider/slug-available?slug=${encodeURIComponent(slug)}`);
+  publishProvider = (publish: boolean) =>
+    this.request<ProviderProfile>(publish ? "/provider/publish" : "/provider/unpublish", "POST", {});
+  createProviderService = (data: ProviderServiceInput) => this.request<ProviderService>("/provider/services", "POST", data);
+  updateProviderService = (id: string, data: ProviderServiceInput) =>
+    this.request<ProviderService>(`/provider/services/${id}`, "PUT", data);
+  removeProviderService = (id: string) => this.request<void>(`/provider/services/${id}`, "DELETE");
+  orderProviderServices = (ids: string[]) => this.request<ProviderProfile>("/provider/services/order", "PUT", { ids });
+  uploadProviderImage = (data: { dataUrl: string; alt: string; serviceId: string | null }) =>
+    this.request<ProviderProfile>("/provider/images", "POST", data);
+  updateProviderImage = (id: string, data: { alt: string; serviceId: string | null }) =>
+    this.request<ProviderProfile>(`/provider/images/${id}`, "PATCH", data);
+  removeProviderImage = (id: string) => this.request<ProviderProfile>(`/provider/images/${id}`, "DELETE");
+  orderProviderImages = (ids: string[]) => this.request<ProviderProfile>("/provider/images/order", "PUT", { ids });
+  chooseProviderImage = (kind: "cover" | "logo", imageId: string | null) =>
+    this.request<ProviderProfile>(`/provider/${kind}`, "PUT", { imageId });
   rsvp = (token: string, members: { id: string; status: Status }[]) =>
     this.request<PublicInvitation>(`/invitations/${token}/rsvp`, "POST", {
       members,

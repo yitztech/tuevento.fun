@@ -25,6 +25,8 @@ import {
   CircleHelp,
   ChevronRight,
   Store,
+  ClipboardList,
+  Images,
 } from "lucide-react";
 import { EventApi, ApiError } from "@tuevento/client";
 import type { User, Event, Notification } from "@tuevento/contracts";
@@ -40,7 +42,7 @@ import {
 } from "./dashboard";
 import { EventEditor, EventDetail, TvPage } from "./event-pages";
 import { MobileConnect } from "./mobile-connect";
-import { ProviderHome } from "./provider";
+import { ProviderBusinessPage, ProviderPhotosPage, ProviderServicesPage } from "./provider";
 import { OwnerDashboard } from "./owner";
 import {
   AuthPage,
@@ -184,7 +186,11 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     );
   const unread = notifications.filter((n) => !n.read).length;
   const navigation = provider
-    ? [{ to: "/app", text: tr("provider.business"), icon: Store }]
+    ? [
+        { to: "/negocio", text: tr("provider.business"), icon: Store },
+        { to: "/negocio/servicios", text: tr("provider.services"), icon: ClipboardList },
+        { to: "/negocio/fotos", text: tr("provider.photos"), icon: Images },
+      ]
     : [
     ...(user?.isOwner ? [{ to: "/administracion", text: tr("app.systemDashboard"), icon: LayoutDashboard }] : []),
     { to: "/app", text: tr("app.overview"), icon: LayoutDashboard },
@@ -262,7 +268,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
             </div>
             <nav aria-label={tr("app.mainNavigation")}>
               {navigation.map(({ to, text, icon: Icon }) => (
-                <NavLink key={to} to={to} end={to === "/app"}>
+                <NavLink key={to} to={to} end={to === "/app" || to === "/negocio"}>
                   <Icon size={19} />
                   <span>{text}</span>
                   {to === "/notificaciones" && unread > 0 && (
@@ -340,10 +346,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <span>{tr("app.space")}</span>
                 <ChevronRight size={13} />
                 <strong>
-                  {navigation.find(
-                    (n) =>
-                      n.to !== "/app" && location.pathname.startsWith(n.to),
-                  )?.text ||
+                  {navigation
+                    // La ruta más concreta gana: /negocio/fotos antes que /negocio
+                    .filter((n) => n.to !== "/app" && location.pathname.startsWith(n.to))
+                    .sort((x, y) => y.to.length - x.to.length)[0]?.text ||
                     (location.pathname === "/perfil"
                       ? tr("app.profile")
                       : tr("app.overview"))}
@@ -382,12 +388,14 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
             <main id="main" className="main-content">
               {provider ? (
                 <Routes>
-                  <Route path="/app" element={<ProviderHome />} />
+                  <Route path="/negocio" element={<ProviderBusinessPage />} />
+                  <Route path="/negocio/servicios" element={<ProviderServicesPage />} />
+                  <Route path="/negocio/fotos" element={<ProviderPhotosPage />} />
                   <Route path="/conectar-app" element={<MobileConnect />} />
                   <Route path="/perfil" element={<ProfilePage />} />
                   <Route path="/ayuda" element={<HelpPage />} />
                   {/* Eventos, invitados y diseños son de quien organiza: el proveedor vuelve a su inicio */}
-                  <Route path="*" element={<Navigate to="/app" replace />} />
+                  <Route path="*" element={<Navigate to="/negocio" replace />} />
                 </Routes>
               ) : (
               <Routes>

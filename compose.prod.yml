@@ -80,6 +80,8 @@ services:
     # Fotos de las postales: el único sitio escribible además de /tmp
     volumes:
       - postcard_images:/data/postcards
+      # Fotos de los proveedores: termina en _uploads para que el backup de la plataforma lo copie
+      - provider_uploads:/data/providers
     mem_limit: 256m
     cpus: 0.5
     environment:
@@ -190,6 +192,7 @@ services:
 volumes:
   postgres_data:
   postcard_images:
+  provider_uploads:
 
 networks:
   frontend:

@@ -3,7 +3,7 @@
 // cabeceras y límites. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password, unique } from "./api.mjs";
+import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-sec";
@@ -372,6 +372,58 @@ try {
     assert.equal((await proveedor.call("/profile", "PATCH", { firstName: "Luis", lastName: "Mora", phone: "" })).firstName, "Luis");
     // Sin sesión sigue siendo 401, no 403
     assert.equal((await client().raw("/events")).status, 401);
+  });
+
+  await suite("Proveedor: un organizador no entra al panel y un proveedor no toca servicios ni fotos de otro (IDOR)", async () => {
+    const nuevo = async (n, extra = {}) => {
+      const c = client();
+      await c.call("/auth/register", "POST", account(P, n, extra), 201);
+      return c;
+    };
+    const a = await nuevo("prov-a", { accountType: "provider" });
+    const b = await nuevo("prov-b", { accountType: "provider" });
+    const organizador = await nuevo("prov-org");
+    await a.call("/provider/profile", "PUT", providerData({ businessName: `Negocio A ${unique}` }));
+    await b.call("/provider/profile", "PUT", providerData({ businessName: `Negocio B ${unique}` }));
+    const servicio = await a.call("/provider/services", "POST", { title: "Servicio de A" }, 201);
+    const [foto] = (await a.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: "Foto de A" }, 201)).images;
+    const id = servicio.id;
+    // Todo el panel del proveedor: un endpoint nuevo que se olvide de la guardia aparece aquí
+    const rutas = [
+      ["GET", "/provider/profile"], ["PUT", "/provider/profile"], ["GET", "/provider/slug-available?slug=abc"],
+      ["POST", "/provider/publish"], ["POST", "/provider/unpublish"],
+      ["POST", "/provider/services"], ["PUT", "/provider/services/order"], ["PUT", `/provider/services/${id}`], ["DELETE", `/provider/services/${id}`],
+      ["POST", "/provider/images"], ["PUT", "/provider/images/order"], ["PATCH", `/provider/images/${foto.id}`], ["DELETE", `/provider/images/${foto.id}`],
+      ["PUT", "/provider/cover"], ["PUT", "/provider/logo"],
+    ];
+    for (const [method, path] of rutas) {
+      const r = await organizador.raw(path, { method, body: ["GET", "DELETE"].includes(method) ? undefined : {} });
+      assert.equal(r.status, 403, `organizador ${method} ${path} → ${r.status}`);
+      assert.equal(r.data.code, "wrong_account_type");
+      assert.equal((await client().raw(path, { method, body: ["GET", "DELETE"].includes(method) ? undefined : {} })).status, 401, `sin sesión ${method} ${path}`);
+    }
+    // B no ve ni toca lo de A: 404, como si no existiera
+    assert.equal((await b.raw(`/provider/services/${id}`, { method: "PUT", body: { title: "Robado" } })).status, 404);
+    assert.equal((await b.raw(`/provider/services/${id}`, { method: "DELETE" })).status, 404);
+    assert.equal((await b.raw(`/provider/images/${foto.id}`, { method: "PATCH", body: { alt: "Robada", serviceId: null } })).status, 404);
+    assert.equal((await b.raw(`/provider/images/${foto.id}`, { method: "DELETE" })).status, 404);
+    assert.equal((await b.raw("/provider/cover", { method: "PUT", body: { imageId: foto.id } })).status, 404);
+    assert.equal((await b.raw("/provider/images", { method: "POST", body: { dataUrl: pngDataUrl(), serviceId: id } })).status, 404);
+    assert.equal((await b.raw("/provider/services/order", { method: "PUT", body: { ids: [id] } })).status, 409);
+    // Ni la foto de un borrador ajeno
+    assert.equal((await b.raw(foto.urls[480].replace(/^\/api/, ""))).status, 404);
+    const deA = (await a.call("/provider/profile")).profile;
+    assert.equal(deA.services[0].title, "Servicio de A");
+    assert.equal(deA.images[0].alt, "Foto de A");
+    // HTML y SQL llegan como texto
+    const raro = `<script>alert(1)</script>'; DROP TABLE provider_profiles; --`;
+    const guardado = await a.call("/provider/profile", "PUT", providerData({ businessName: `Negocio A ${unique}`, headline: raro.slice(0, 150) }));
+    assert.equal(guardado.headline, raro.slice(0, 150));
+    // Una subida de más de 3 MB no llega a la API
+    const enorme = await a.raw("/provider/images", { method: "POST", body: JSON.stringify({ dataUrl: "data:image/png;base64," + "A".repeat(4 * 1024 * 1024) }), json: false, headers: { "Content-Type": "application/json" } });
+    assert.equal(enorme.status, 413);
+    // Ni el tipo de cuenta ni el estado se cambian por el cuerpo
+    assert.equal((await a.raw("/provider/profile", { method: "PUT", body: { ...providerData(), status: "published", userId: deA.id } })).status, 422);
   });
 
   await suite("Mapas: pegar un enlace exige la cabecera propia y no sigue hosts ajenos (SSRF)", async () => {
