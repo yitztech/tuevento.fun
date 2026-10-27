@@ -10,6 +10,8 @@
 #     cada idioma, y $seo_links / $seo_sites_meta para el HTML.
 #   - $slash_redirect, $seo_route y $seo_robots: forma única de cada URL, rutas que existen y las privadas.
 #   - /etc/nginx/seo/robots-<dominio>.txt y sitemap-<dominio>.xml (con sus idiomas alojados).
+#   - /etc/nginx/conf.d/providers.locations: la página de cada proveedor (/proveedores/<dirección>),
+#     cuyo estado (200, 301, 404, 410) y título pregunta a la API; $provider_slug y $provider_links.
 # Un idioma cuyo dominio no se publica tampoco: no tiene Host, hreflang ni sitemap.
 # Igual que 16-analytics.sh, se lee el entorno aquí y no en la plantilla, para no
 # ampliar NGINX_ENVSUBST_FILTER.
@@ -41,6 +43,8 @@ path_of() {
 }
 
 hosted_of() { awk -v lang="$1" '$1 == "hosted" && $2 == lang { print $3 }' "$manifest"; }
+# Ruta de la sección de proveedores en un idioma (/proveedores, /vendors…)
+section_of() { awk -v lang="$1" '$1 == "section" && $2 == "providers" && $3 == lang { print $4 }' "$manifest"; }
 
 # Idiomas con dominio propio, el principal primero
 locales=""
@@ -252,7 +256,84 @@ conf=/etc/nginx/conf.d/sites.conf
   echo "    \"~^/[a-z0-9]{8}/[a-z0-9]+(-[a-z0-9]+)*\$\" private;"
   echo '}'
   echo 'map $seo_route $seo_robots { private "noindex"; default ""; }'
+  echo ''
+  # Páginas de proveedores: /<sección del idioma>/<dirección>. Solo la sección del idioma de la
+  # página vale (en tuevento.fun, /proveedores/x; /vendors/x es 404)
+  echo '# Dirección del proveedor si la ruta es la de la sección en el idioma de la página'
+  echo 'map "$page_lang $seo_rest" $provider_slug {'
+  echo '    default "";'
+  for lang in $pages_locales; do
+    section=$(section_of "$lang")
+    echo "    \"~^$lang $section/(?<provider_slug_$lang>[a-z0-9]+(-[a-z0-9]+)*)\$\" \$provider_slug_$lang;"
+  done
+  echo '}'
+  provider_url() {
+    eval "site=\$site_$1; prefix=\$prefix_$1"
+    printf '$origin_%s%s%s/$provider_slug' "$site" "$prefix" "$(section_of "$1")"
+  }
+  echo 'map $page_lang $provider_canonical {'
+  echo "    default \"$(provider_url "$default")\";"
+  for lang in $pages_locales; do echo "    $lang \"$(provider_url "$lang")\";"; done
+  echo '}'
+  provider_alternates=""
+  for lang in $pages_locales; do
+    provider_alternates="$provider_alternates<link rel=\"alternate\" hreflang=\"$lang\" href=\"$(provider_url "$lang")\"/>"
+  done
+  echo "map \$site_lang \$provider_links { default '<link rel=\"canonical\" href=\"\$provider_canonical\"/>$provider_alternates<link rel=\"alternate\" hreflang=\"x-default\" href=\"$(provider_url "$default")\"/>\$seo_sites_meta'; }"
 } > "$conf"
+
+# Rutas de la sección de proveedores en cada idioma publicado, con su prefijo (/pt/fornecedores)
+provider_sections=""
+for lang in $pages_locales; do
+  eval "prefix=\$prefix_$lang"
+  provider_sections="$provider_sections${provider_sections:+|}$prefix$(section_of "$lang")"
+done
+# Se incluye dentro del server de default.conf.template (no termina en .conf: no va al nivel http)
+cat > /etc/nginx/conf.d/providers.locations <<LOCATIONS
+# Generado por 17-sites.sh. Página de un proveedor: la API dice su estado (AGENTS.md §9.2)
+location ~ "^($provider_sections)/" {
+    if (\$locale_redirect) { return 301 \$locale_redirect; }
+    if (\$slash_redirect) { return 301 \$slash_redirect\$is_args\$args; }
+    if (\$provider_slug = "") { return 404; }
+    auth_request /_provider_seo;
+    auth_request_set \$provider_title \$upstream_http_x_seo_title;
+    auth_request_set \$provider_description \$upstream_http_x_seo_description;
+    auth_request_set \$provider_image \$upstream_http_x_seo_image;
+    auth_request_set \$provider_redirect \$upstream_http_x_seo_redirect;
+    # 401: dirección anterior (301) o borrada (410); 403: borrador, suspendido o desconocido
+    # (las error_page de aquí sustituyen a las del server: la de 404 se repite)
+    error_page 401 = @provider_moved;
+    error_page 403 =404 /404.html;
+    error_page 404 /404.html;
+    include /etc/nginx/snippets/security-headers.conf;
+    include /etc/nginx/conf.d/analytics*.snippet;
+    add_header Cache-Control "no-cache" always;
+    add_header Vary "Host" always;
+    sub_filter '<html lang="es">' '<html lang="\$page_lang">';
+    sub_filter '<title>TuEventoFun</title>' '<title>\$provider_title</title>';
+    sub_filter '<meta name="description" content="TuEventoFun"/>' '<meta name="description" content="\$provider_description"/>';
+    # Título, descripción e imagen llegan de la API ya escapados para HTML
+    sub_filter '<meta name="tuevento-seo"/>' '\$provider_links<meta property="og:type" content="business.business"/><meta property="og:title" content="\$provider_title"/><meta property="og:description" content="\$provider_description"/><meta property="og:image" content="\$provider_image"/><meta property="og:url" content="\$provider_canonical"/>';
+    try_files /index.html =404;
+}
+location @provider_moved {
+    add_header X-Robots-Tag "noindex" always;
+    if (\$provider_redirect) { return 301 \$provider_redirect; }
+    return 410;
+}
+# Subpetición a la API por la red interna del compose; el gateway no expone /api/internal/
+location = /_provider_seo {
+    internal;
+    proxy_pass http://api_seo/api/internal/seo/providers/\$provider_slug;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header Host \$http_host;
+    proxy_set_header X-App-Locale \$page_lang;
+    proxy_connect_timeout 2s;
+    proxy_read_timeout 5s;
+}
+LOCATIONS
+
 
 mkdir -p /etc/nginx/seo
 
@@ -264,6 +345,7 @@ for lang in $locales; do
     echo 'Allow: /'
     echo ''
     echo "Sitemap: $own/sitemap.xml"
+    echo "Sitemap: $own/sitemap-providers.xml"
   } > "/etc/nginx/seo/robots-$lang.txt"
 
   {

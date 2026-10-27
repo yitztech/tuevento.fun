@@ -80,6 +80,18 @@ server {
         proxy_pass http://api_upstream;
     }
 
+    # Solo para `web` por la red interna (estado de las páginas de proveedores)
+    location /api/internal/ {
+        add_header X-Robots-Tag "noindex" always;
+        return 404;
+    }
+
+    # Sitemap de las páginas de proveedores del dominio (lo genera la API)
+    location = /sitemap-providers.xml {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/public/sitemap/providers.xml;
+    }
+
     # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas
     location /api/ {
         add_header X-Robots-Tag "noindex" always;

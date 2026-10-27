@@ -5,6 +5,11 @@
 # $analytics_src, 16-analytics.sh.
 server_tokens off;
 
+# La API, para el estado de las páginas de proveedores (providers.locations, de 17-sites.sh).
+# Con `resolve` nginx arranca aunque la API aún no exista y sigue su IP si Docker la cambia.
+resolver 127.0.0.11 valid=10s ipv6=off;
+upstream api_seo { zone api_seo 64k; server api:3087 resolve; keepalive 4; }
+
 server {
     # Puerto sin privilegios: no necesita NET_BIND_SERVICE
     listen 8080;
@@ -56,6 +61,9 @@ server {
         sub_filter '<meta name="tuevento-seo"/>' '$seo_sites_meta';
         alias /usr/share/nginx/html/index.html;
     }
+
+    # Página de cada proveedor: 200, 301, 404 o 410 según la API, con su título y su imagen
+    include /etc/nginx/conf.d/providers.locations;
 
     # Recursos con hash en el nombre: caché inmutable (el gateway puede guardarlos)
     location /assets/ {

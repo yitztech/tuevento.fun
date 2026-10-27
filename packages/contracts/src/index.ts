@@ -809,6 +809,39 @@ export type ProviderProfile = ProviderProfileData & {
   missing: ProviderRequirement[];
 };
 
+/**
+ * Página pública de un proveedor publicado. Sin datos de la cuenta (correo, id de usuario).
+ * Con la dirección «aproximada», ni `address` ni `postalCode`, y `geo` redondeado a 2
+ * decimales (~1 km): el mapa pinta la zona, no el punto.
+ */
+export type ProviderPublic = {
+  slug: string;
+  businessName: string;
+  headline: string;
+  description: string;
+  categories: ProviderCategory[];
+  phone: string;
+  whatsapp: string;
+  publicEmail: string;
+  website: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  address: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  country: string;
+  geo: GeoPoint | null;
+  addressVisibility: "exact" | "approximate";
+  serviceRadiusKm: number;
+  cover: ProviderImage | null;
+  logo: ProviderImage | null;
+  services: ProviderService[];
+  images: ProviderImage[];
+  updatedAt: string;
+};
+
 /** Nombre de cada categoría, requisito y unidad de precio en el catálogo. */
 export const providerCategoryLabels: Record<ProviderCategory, MessageKey> = {
   venue: "providers.categories.venue",

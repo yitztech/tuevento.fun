@@ -10,9 +10,10 @@ import { MailService } from "./mail";
 import { NoticeService } from "./notices";
 import { PostcardsService } from "./postcards";
 import { GeoController, GeoService } from "./geo";
+import { ProviderPagesController } from "./provider-pages";
 import { ProviderController, ProviderImagesController, ProvidersService } from "./providers";
 @Module({
-  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController],
+  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController],
   providers: [
     Database,
     AuthService,

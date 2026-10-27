@@ -82,6 +82,7 @@ type ProfileRow = {
   published_at: Date | null;
   cover_image_id: string | null;
   logo_image_id: string | null;
+  updated_at: Date;
 };
 
 const notFound = () => new NotFoundException("errors.providerProfileNotFound");
@@ -125,7 +126,39 @@ export class ProvidersService {
   /** Perfil de la cuenta, o null si aún no guardó los datos de su negocio. */
   async profile(userId: string, db: Queryable = this.db.pool): Promise<ProviderProfile | null> {
     const { rows: [r] } = await db.query<ProfileRow>("SELECT * FROM provider_profiles WHERE user_id=$1", [userId]);
-    if (!r) return null;
+    return r ? this.view(r, db) : null;
+  }
+
+  /**
+   * Perfil publicado con esa dirección. Una dirección anterior lleva a la actual (`movedTo`);
+   * la de un perfil borrado, a `gone`. Un borrador, uno suspendido o una dirección
+   * desconocida: null (404).
+   */
+  async published(slug: string): Promise<{ profile: ProviderProfile; updatedAt: Date } | { movedTo: string } | { gone: true } | null> {
+    const { rows: [r] } = await this.db.pool.query<ProfileRow>(
+      "SELECT * FROM provider_profiles WHERE slug=$1 AND status='published'",
+      [slug],
+    );
+    if (r) return { profile: await this.view(r, this.db.pool), updatedAt: r.updated_at };
+    const { rows: [moved] } = await this.db.pool.query<{ slug: string }>(
+      `SELECT p.slug FROM provider_slug_history h JOIN provider_profiles p ON p.id = h.provider_id
+        WHERE h.slug=$1 AND p.status='published'`,
+      [slug],
+    );
+    if (moved) return { movedTo: moved.slug };
+    const { rowCount } = await this.db.pool.query("SELECT 1 FROM provider_deleted_slugs WHERE slug=$1", [slug]);
+    return rowCount ? { gone: true } : null;
+  }
+
+  /** Direcciones y fecha de cambio de todos los perfiles publicados, para el sitemap. */
+  async publishedSlugs(): Promise<{ slug: string; updatedAt: Date }[]> {
+    const { rows } = await this.db.pool.query<{ slug: string; updated_at: Date }>(
+      "SELECT slug, updated_at FROM provider_profiles WHERE status='published' ORDER BY published_at, slug LIMIT 50000",
+    );
+    return rows.map((r) => ({ slug: r.slug, updatedAt: r.updated_at }));
+  }
+
+  private async view(r: ProfileRow, db: Queryable): Promise<ProviderProfile> {
     const [{ rows: categories }, { rows: services }, { rows: images }] = await Promise.all([
       db.query("SELECT category FROM provider_categories WHERE provider_id=$1 ORDER BY category", [r.id]),
       db.query("SELECT * FROM provider_services WHERE provider_id=$1 ORDER BY position, created_at", [r.id]),

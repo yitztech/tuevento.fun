@@ -61,6 +61,9 @@ async function bootstrap() {
     ),
     timeWindow: "1 minute",
     keyGenerator: (req) => req.ip,
+    // El estado de las páginas de proveedores lo pide el nginx de `web` (una sola IP) por
+    // cada visita; el gateway no deja llegar /api/internal/ desde fuera
+    allowList: (req) => req.url.startsWith("/api/internal/"),
   });
   const origins = (
     process.env.ALLOWED_ORIGINS || "http://localhost:5187,http://127.0.0.1:5187"

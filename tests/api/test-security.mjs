@@ -426,6 +426,32 @@ try {
     assert.equal((await a.raw("/provider/profile", { method: "PUT", body: { ...providerData(), status: "published", userId: deA.id } })).status, 422);
   });
 
+  await suite("Proveedor: la página pública no expone la cuenta, un borrador ni HTML sin escapar", async () => {
+    const c = client();
+    const cuenta = account(P, "prov-pub", { accountType: "provider" });
+    const yo = await c.call("/auth/register", "POST", cuenta, 201);
+    const slug = `publica-${unique}`;
+    const raro = `<script>alert(1)</script>"'\r\nSet-Cookie: x=1`;
+    await c.call("/provider/profile", "PUT", providerData({ slug, headline: raro, publicEmail: "" }));
+    // Borrador: ni sus datos ni su estado
+    assert.equal((await client().raw(`/public/providers/${slug}`)).status, 404);
+    await c.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: "Foto" }, 201);
+    await c.call("/provider/publish", "POST", {});
+    const r = await client().raw(`/public/providers/${slug}`);
+    assert.equal(r.status, 200);
+    // Ni el correo de la cuenta, ni su id, ni el de la cuenta en ninguna forma
+    assert.ok(!r.text.includes(cuenta.email), "expone el correo de la cuenta");
+    assert.ok(!r.text.includes(yo.id), "expone el id de la cuenta");
+    // Para nginx el texto va escapado: sin <, >, comillas ni saltos de línea que inyecten cabeceras
+    const seo = await client().raw(`/internal/seo/providers/${slug}`);
+    assert.equal(seo.status, 204);
+    assert.doesNotMatch(seo.headers["x-seo-description"], /[<>"'\r\n]/);
+    assert.ok(!("set-cookie" in seo.headers), "una cabecera inyectada");
+    // Una dirección con caracteres raros nunca llega a la consulta ni da 500
+    for (const ruta of ["/public/providers/x'%20OR%201=1--", "/internal/seo/providers/%3Cscript%3E"])
+      assert.ok([403, 404].includes((await client().raw(ruta)).status), ruta);
+  });
+
   await suite("Mapas: pegar un enlace exige la cabecera propia y no sigue hosts ajenos (SSRF)", async () => {
     const guest = client();
     const body = { url: "https://maps.google.com/?q=18.9,-99.2" };
