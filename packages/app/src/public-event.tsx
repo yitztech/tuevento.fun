@@ -1,39 +1,24 @@
 import { tr, LanguageSwitcher, Lines } from "./i18n";
 import { useState, useEffect, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Heart, CalendarDays, MapPin, Lock } from "lucide-react";
+import { Link, Navigate, useParams } from "react-router-dom";
+import { Heart, CalendarDays, MapPin, Lock, LayoutDashboard } from "lucide-react";
 import {
+  eventLandingPath,
   googleCalendarUrl,
   mapsSearchUrl,
-  type LockedPublicEvent,
-  type PublicEvent as PublicEventView,
+  type EventLanding as EventLandingView,
+  type LandingAddress,
+  type PublicEvent,
 } from "@tuevento/contracts";
+import { ApiError } from "@tuevento/client";
 import { useApp, errorText, dateText } from "./context";
 import { Logo, Avatar, ErrorBox } from "./components";
 import { PostcardCanvas } from "./postcard-canvas";
 import { CalendarLinks } from "./calendar-links";
+import { PublicRsvp } from "./public-rsvp";
 
-/** Página pública de un evento con dirección propia (/e/:slug): la postal y los datos, sin invitados. */
-export function PublicEvent() {
-  const { slug } = useParams(),
-    { api } = useApp(),
-    [event, setEvent] = useState<PublicEventView | LockedPublicEvent | null>(null),
-    [error, setError] = useState(""),
-    [loading, setLoading] = useState(true);
-  const load = () =>
-    api
-      .publicEvent(slug!)
-      .then((data) => {
-        setEvent(data);
-        setError("");
-      })
-      .catch((e) => setError(errorText(e)))
-      .finally(() => setLoading(false));
-  useEffect(() => {
-    setLoading(true);
-    load();
-  }, [slug]);
-  // Página de evento privada por elección del organizador: fuera de los buscadores
+/** Fuera de los buscadores: la landing es solo para los invitados y el organizador. */
+function useNoIndex() {
   useEffect(() => {
     const robots = document.createElement("meta");
     robots.name = "robots";
@@ -41,6 +26,37 @@ export function PublicEvent() {
     document.head.append(robots);
     return () => robots.remove();
   }, []);
+}
+
+/**
+ * Landing del evento (/<código>/<dirección>). El organizador la ve con el enlace a su panel; un
+ * invitado que entró con su enlace personal, con su invitación para responder; y con contraseña,
+ * quien la acierte. Sin acceso, solo un aviso de que es para invitados.
+ */
+export function EventLanding() {
+  const { code, slug } = useParams(),
+    { api } = useApp(),
+    [landing, setLanding] = useState<EventLandingView | null>(null),
+    [error, setError] = useState(""),
+    [guestsOnly, setGuestsOnly] = useState(false),
+    [loading, setLoading] = useState(true);
+  useNoIndex();
+  const load = () =>
+    api
+      .landing(code!, slug!)
+      .then((data) => {
+        setLanding(data);
+        setError("");
+      })
+      .catch((e) => {
+        setGuestsOnly(e instanceof ApiError && e.status === 404);
+        setError(errorText(e));
+      })
+      .finally(() => setLoading(false));
+  useEffect(() => {
+    setLoading(true);
+    void load();
+  }, [code, slug]);
   if (loading)
     return (
       <div className="startup">
@@ -48,18 +64,88 @@ export function PublicEvent() {
         <p role="status">{tr("publicEvent.opening")}</p>
       </div>
     );
-  if (!event)
-    return (
+  if (!landing)
+    return guestsOnly ? (
       <div className="startup">
         <Logo />
-        <h1>{tr("publicEvent.unavailable")}</h1>
-        <ErrorBox message={error} />
+        <Lock size={28} />
+        <h1>{tr("eventLanding.guestsOnlyTitle")}</h1>
+        <p>{tr("eventLanding.guestsOnlyText")}</p>
         <Link className="button secondary" to="/registro">
           {tr("rsvp.createOwnEvent")}
         </Link>
       </div>
+    ) : (
+      <div className="startup">
+        <Logo />
+        <h1>{tr("publicEvent.unavailable")}</h1>
+        <ErrorBox message={error} />
+      </div>
     );
-  if (event.locked) return <PasswordGate slug={slug!} onUnlocked={load} />;
+  if (landing.access === "guest")
+    return (
+      <>
+        {landing.eventId && <OwnerBar eventId={landing.eventId} />}
+        <PublicRsvp token={landing.token} />
+      </>
+    );
+  if (landing.access === "locked") return <PasswordGate code={code!} slug={slug!} onUnlocked={load} />;
+  return (
+    <EventView
+      event={landing.event}
+      icsHref={`/api/public/landing/${code}/${slug}/calendar.ics`}
+      ownerEventId={landing.access === "owner" ? landing.eventId : undefined}
+    />
+  );
+}
+
+/** Las direcciones /e/<dirección> de antes de la landing llevan a ella. */
+export function LegacyEventAddress() {
+  const { slug } = useParams(),
+    { api } = useApp(),
+    [address, setAddress] = useState<LandingAddress | null>(null),
+    [error, setError] = useState("");
+  useNoIndex();
+  useEffect(() => {
+    api
+      .legacyEventAddress(slug!)
+      .then(setAddress)
+      .catch((e) => setError(errorText(e)));
+  }, [slug]);
+  if (address) return <Navigate to={eventLandingPath(address.code, address.slug)} replace />;
+  return (
+    <div className="startup">
+      <Logo />
+      {error ? (
+        <>
+          <h1>{tr("publicEvent.unavailable")}</h1>
+          <ErrorBox message={error} />
+          <Link className="button secondary" to="/registro">
+            {tr("rsvp.createOwnEvent")}
+          </Link>
+        </>
+      ) : (
+        <p role="status">{tr("publicEvent.opening")}</p>
+      )}
+    </div>
+  );
+}
+
+/** El organizador ve la landing como sus invitados, con el acceso a su panel. */
+function OwnerBar({ eventId }: { eventId: string }) {
+  return (
+    <div className="landing-owner-bar">
+      <p>{tr("eventLanding.ownerNote")}</p>
+      <Link className="button" to={`/eventos/${eventId}`}>
+        <LayoutDashboard size={17} />
+        {tr("eventLanding.goToPanel")}
+      </Link>
+    </div>
+  );
+}
+
+/** La postal y los datos del evento, sin invitados. */
+function EventView({ event, icsHref, ownerEventId }: { event: PublicEvent; icsHref: string; ownerEventId?: string }) {
   const start = new Date(event.date);
   return (
     <div className="public-page">
@@ -68,6 +154,7 @@ export function PublicEvent() {
         <LanguageSwitcher />
         <span>{tr("rsvp.goodReasonTogether")}</span>
       </header>
+      {ownerEventId && <OwnerBar eventId={ownerEventId} />}
       <main className="rsvp-layout">
         <section className="public-art">
           <PostcardCanvas design={event.postcard.design} photos={event.postcard.photos} />
@@ -108,7 +195,7 @@ export function PublicEvent() {
           </p>
           {event.description && <p className="rsvp-description">{event.description}</p>}
           <CalendarLinks
-            icsHref={`/api/public/events/${slug}/calendar.ics`}
+            icsHref={icsHref}
             googleHref={googleCalendarUrl({
               title: event.title,
               description: event.description,
@@ -116,17 +203,19 @@ export function PublicEvent() {
               location: event.location,
             })}
           />
-          <p className="public-event-note">
-            <Lines k="publicEvent.inviteHint" />
-          </p>
+          {!ownerEventId && (
+            <p className="public-event-note">
+              <Lines k="publicEvent.inviteHint" />
+            </p>
+          )}
         </section>
       </main>
     </div>
   );
 }
 
-/** Contraseña para ver la página pública; sin acertarla no se muestra nada del evento. */
-function PasswordGate({ slug, onUnlocked }: { slug: string; onUnlocked: () => void }) {
+/** Contraseña del evento; sin acertarla no se muestra nada de él. */
+function PasswordGate({ code, slug, onUnlocked }: { code: string; slug: string; onUnlocked: () => void }) {
   const { api } = useApp(),
     [password, setPassword] = useState(""),
     [busy, setBusy] = useState(false),
@@ -136,7 +225,7 @@ function PasswordGate({ slug, onUnlocked }: { slug: string; onUnlocked: () => vo
     setBusy(true);
     setError("");
     try {
-      await api.unlockEvent(slug, password);
+      await api.unlockLanding(code, slug, password);
       onUnlocked();
     } catch (e) {
       setError(errorText(e));

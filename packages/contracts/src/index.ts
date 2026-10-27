@@ -172,8 +172,17 @@ export const accountLimits = {
   postcardText: 200,
   eventSlug: 60,
 } as const;
-/** Dirección pública de un evento: minúsculas, números y guiones entre palabras. */
+/** Dirección de un evento: minúsculas, números y guiones entre palabras. */
 export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+/** Código público de una cuenta, primera parte de la URL de sus landings (users.public_code). */
+export const publicCodePattern = /^[a-z0-9]{8}$/;
+/** Landing de un evento: /<código de la cuenta>/<dirección>, detrás del prefijo del idioma. */
+export const eventLandingPath = (code: string, slug: string) => `/${code}/${slug}`;
+/** Reconoce una ruta de landing y devuelve sus dos partes. */
+export function landingRoute(pathname: string): { code: string; slug: string } | null {
+  const match = /^\/([a-z0-9]{8})\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(pathname);
+  return match ? { code: match[1], slug: match[2] } : null;
+}
 const email = z
   .email("validation.enterValidEmailAddress")
   .max(accountLimits.email, "validation.maximum254Characters")
@@ -295,7 +304,7 @@ export const eventSchema = z.strictObject({
     .string()
     .max(accountLimits.password, "validation.maximum128Characters")
     .optional(),
-  /** Dirección pública (/e/…); vacía si el evento no tiene. */
+  /** Dirección de la landing (/<código>/<dirección>); vacía, la API la crea a partir del título. */
   slug: z
     .string()
     .trim()
@@ -379,6 +388,8 @@ export type User = {
   isDemo: boolean;
   /** Idioma de la cuenta: el del dominio donde se registró. */
   locale: Locale;
+  /** Código público de la cuenta, primera parte de la URL de sus landings. */
+  publicCode: string;
 };
 export type Metrics = {
   invitations: number;
@@ -396,11 +407,8 @@ export type Event = Omit<EventInput, "publicPassword"> & {
   /** Si la página pública pide contraseña (la contraseña nunca se devuelve). */
   hasPublicPassword: boolean;
 };
-/** Evento visto desde su dirección pública: sin invitados ni respuestas. */
-/** Página pública bloqueada por contraseña: no revela nada del evento. */
-export type LockedPublicEvent = { locked: true };
+/** Evento visto desde su landing: sin invitados ni respuestas. */
 export type PublicEvent = {
-  locked: false;
   title: string;
   cancelled: boolean;
   description: string;
@@ -412,6 +420,19 @@ export type PublicEvent = {
   /** Postal del evento, o la plantilla de su tema si el organizador no la ha editado. */
   postcard: Pick<Postcard, "design" | "photos">;
 };
+/**
+ * Landing de un evento según quién la abre: un invitado que entró con su enlace personal (el token
+ * de su invitación, para ver la postal y responder), el organizador (con el enlace a su panel), alguien que acertó la contraseña,
+ * o `locked` si el evento tiene contraseña y aún no hay acceso. Sin acceso ni contraseña, 404.
+ */
+export type EventLanding =
+  | { access: "owner"; eventId: string; event: PublicEvent }
+  /** `eventId`, solo si quien abre el enlace personal es el propio organizador. */
+  | { access: "guest"; token: string; eventId?: string }
+  | { access: "password"; event: PublicEvent }
+  | { access: "locked" };
+/** Landing a la que lleva un enlace personal: el acceso del invitado viaja en una cookie. */
+export type LandingAddress = { code: string; slug: string };
 export type Member = {
   id: string;
   name: string;

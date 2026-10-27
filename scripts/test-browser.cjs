@@ -380,9 +380,11 @@ fs.mkdirSync(artifacts, { recursive: true });
       path: path.join(artifacts, "rsvp-en-mobile.png"),
       fullPage: true,
     });
+    // El enlace personal lleva a la landing del evento; el selector cambia de dominio sin salir de ella
+    await expect(guest).toHaveURL(new RegExp(`^${targetEn}/[a-z0-9]{8}/[a-z0-9-]+$`));
     await expect(
       guest.locator('a.language-option[hreflang="es"]').first(),
-    ).toHaveAttribute("href", link);
+    ).toHaveAttribute("href", guest.url().replace(targetEn, target));
     await guest.goto(link);
     await expect(
       guest.getByRole("button", { name: "Guardar mi respuesta", exact: true }),

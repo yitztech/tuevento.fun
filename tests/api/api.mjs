@@ -27,9 +27,17 @@ export function send(url, { method = "GET", headers = {}, body } = {}) {
   });
 }
 
-/** Cliente con su propia cookie de sesión. `raw` devuelve la respuesta sin interpretar. */
+/**
+ * Cliente con sus propias cookies (la de sesión y las de acceso a landings), como un navegador.
+ * `raw` devuelve la respuesta sin interpretar.
+ */
 export function client() {
-  let cookie = "";
+  const jar = new Map();
+  const load = (value) => {
+    jar.clear();
+    for (const pair of value.split("; ").filter(Boolean)) jar.set(pair.split("=")[0], pair);
+  };
+  const header = () => [...jar.values()].join("; ");
   const api = {
     async raw(path, { method = "GET", body, headers = {}, json = true, csrf = true } = {}) {
       const r = await send(base + path, {
@@ -37,13 +45,19 @@ export function client() {
         headers: {
           ...(body !== undefined && json ? { "Content-Type": "application/json" } : {}),
           ...(csrf ? { "X-TuEvento-Client": "1" } : {}),
-          ...(cookie ? { Cookie: cookie } : {}),
+          ...(jar.size ? { Cookie: header() } : {}),
           ...headers,
         },
         ...(body !== undefined ? { body: json ? JSON.stringify(body) : body } : {}),
       });
       const set = r.headers["set-cookie"];
-      if (set?.length) cookie = set[0].split(";")[0];
+      for (const line of set ?? []) {
+        const pair = line.split(";")[0];
+        const name = pair.split("=")[0];
+        // Una cookie vacía o caducada es la forma de borrarla
+        if (pair.endsWith("=") || /max-age=0\b|expires=thu, 01 jan 1970/i.test(line)) jar.delete(name);
+        else jar.set(name, pair);
+      }
       let data = {};
       try { data = JSON.parse(r.text || "{}"); } catch { data = { _text: r.text }; }
       return { status: r.status, headers: r.headers, data, text: r.text, setCookie: set ?? [] };
@@ -54,8 +68,8 @@ export function client() {
       assert.equal(r.status, expected, `${method} ${path} → ${r.status} ${r.text.slice(0, 200)}`);
       return r.data;
     },
-    cookie: () => cookie,
-    setCookie: (value) => { cookie = value; },
+    cookie: header,
+    setCookie: load,
   };
   return api;
 }

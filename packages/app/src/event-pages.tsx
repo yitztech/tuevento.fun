@@ -1,4 +1,4 @@
-import { accountLimits, eventInput, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
+import { accountLimits, eventInput, eventLandingPath, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { useState, useEffect } from "react";
 import {
@@ -89,10 +89,13 @@ import {
 const formSchema = eventSchema.extend({
   date: z.string().min(1, "events.chooseDateTime"),
 });
+/** URL de la landing tal como se comparte, sin el protocolo. */
+const landingText = (origin: string, code: string, slug: string) =>
+  `${origin.replace(/^https?:\/\//, "")}${eventLandingPath(code, slug)}`;
 export function EventEditor() {
   const { id } = useParams(),
     [query] = useSearchParams(),
-    { api, reload, toast } = useApp(),
+    { api, reload, toast, runtime, user } = useApp(),
     navigate = useNavigate();
   const [error, setError] = useState(""),
     [loading, setLoading] = useState(!!id);
@@ -270,7 +273,7 @@ export function EventEditor() {
               slugFree === false
                 ? tr("events.publicAddressTaken")
                 : tr("events.publicAddressHint", {
-                    url: `${window.location.host}/e/${values.slug || "tu-evento"}`,
+                    url: landingText(runtime.publicOrigin, user?.publicCode ?? "", values.slug || slugify(values.title) || "…"),
                   })
             }
           >
@@ -355,7 +358,7 @@ export function EventEditor() {
 }
 export function EventDetail() {
   const { id } = useParams(),
-    { api, events, reload, toast } = useApp(),
+    { api, events, reload, toast, runtime, user } = useApp(),
     navigate = useNavigate();
   const event = events.find((e) => e.id === id),
     [invitations, setInvitations] = useState<Invitation[]>([]),
@@ -479,12 +482,13 @@ export function EventDetail() {
             {tr("events.editEvent")}
           </Link>
         </div>
-        {event.slug && (
+        {user && event.slug && (
           <p className="event-public-link">
             <Link2 size={16} />
-            <a href={`/e/${event.slug}`} target="_blank" rel="noreferrer">
-              {`${window.location.host}/e/${event.slug}`}
-            </a>
+            <span>{tr("eventLanding.eventPage")}</span>
+            <Link to={eventLandingPath(user.publicCode, event.slug)}>
+              {landingText(runtime.publicOrigin, user.publicCode, event.slug)}
+            </Link>
           </p>
         )}
       </div>

@@ -8,11 +8,12 @@ escenarios de un requisito: `npm run e2e -- --grep @REQ-03`.
 |---|---|---|
 | `@REQ-01` | Crear una cuenta y entrar: datos válidos, filtros de nombre y teléfono, longitudes, validación de la API | `registro`, `acceso`, `api-registro` |
 | `@REQ-02` | Perfil de la cuenta: nombre, teléfono con prefijo del país | `perfil` |
-| `@REQ-03` | Eventos e invitaciones: dirección pública, página protegida, enlace genérico, calendario y cancelación | `url-evento`, `pagina-protegida`, `invitacion-generica`, `calendario-y-avisos` |
+| `@REQ-03` | Eventos e invitaciones: dirección del evento, landing protegida, enlace genérico, calendario y cancelación | `url-evento`, `pagina-protegida`, `invitacion-generica`, `calendario-y-avisos` |
 | `@REQ-04` | Postal del evento y diseños: editor, textos, colores, variantes en móviles y tabletas | `postal`, `postal-texto`, `disenos` |
 | `@REQ-05` | Precios y demostración | `precios`, `demo` |
 | `@REQ-06` | Selector de idioma | `idioma` |
 | `@REQ-07` | Panel de administración (admin.tuevento.fun) | `admin` |
+| `@REQ-08` | Landing de cada evento: URL con el código de la cuenta y la dirección, vista del organizador con su panel, acceso de los invitados con su enlace personal, en web y en la app | `landing-evento` |
 
 Las reglas comunes de la plataforma (salud, dominios e idiomas, páginas legales, errores de la API, cookies,
 límites y accesibilidad) están en `tests/e2e/features/plataforma/`, etiquetadas con la regla de la auditoría.

@@ -47,6 +47,7 @@ export type UserRow = {
   is_owner: boolean | null;
   locale: string | null;
   password_hash: string | null;
+  public_code: string;
 };
 export const userView = (r: UserRow): User => ({
   id: r.id,
@@ -58,6 +59,7 @@ export const userView = (r: UserRow): User => ({
   isDemo: r.is_demo,
   isOwner: r.is_owner === true,
   locale: normalizeLocale(r.locale),
+  publicCode: r.public_code,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin

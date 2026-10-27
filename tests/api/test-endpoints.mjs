@@ -89,39 +89,86 @@ try {
     await organizador.call(`/events/${evento.id}`, "DELETE");
   });
 
-  await suite("Dirección pública del evento: se elige, es única, se lee sin sesión y no muestra invitados", async () => {
+  await suite("Landing del evento: dirección automática y única por cuenta, el organizador la ve y el invitado entra con su enlace", async () => {
     const organizador = client();
     const otro = client();
+    const visitante = client();
     await organizador.call("/auth/register", "POST", account(P, "url-a"), 201);
     await otro.call("/auth/register", "POST", account(P, "url-b"), 201);
+    const { publicCode: codigo } = await organizador.call("/auth/me");
+    assert.match(codigo, /^[a-z0-9]{8}$/);
+    assert.notEqual((await otro.call("/auth/me")).publicCode, codigo);
+    // Todo evento tiene dirección: sin escribirla, sale del título; repetida en la cuenta, con -2
+    const titulo = `Fiesta ${unique}`;
+    const evento = await organizador.call("/events", "POST", eventData({ title: titulo }), 201);
+    assert.equal(evento.slug, `fiesta-${unique}`);
+    assert.equal((await organizador.call("/events", "POST", eventData({ title: titulo }), 201)).slug, `fiesta-${unique}-2`);
+    // Al editar sin dirección, se conserva la que tenía
+    assert.equal((await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ title: titulo, slug: "" }))).slug, evento.slug);
     const slug = `evento-${unique}`;
-    const evento = await organizador.call("/events", "POST", eventData(), 201);
-    assert.equal(evento.slug, "");
-    const publicado = await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }));
-    assert.equal(publicado.slug, slug);
+    assert.equal((await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }))).slug, slug);
+    const landing = `/public/landing/${codigo}/${slug}`;
     const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData({ email: `url-${unique}@example.invalid` }), 201);
-    const publico = await guest.call(`/public/events/${slug}`);
-    assert.deepEqual(Object.keys(publico).sort(), ["cancelled", "date", "description", "host", "location", "locked", "postcard", "theme", "timeZone", "title"]);
-    assert.deepEqual(Object.keys(publico.host).sort(), ["avatar", "firstName", "lastName"]);
-    assert.equal(JSON.stringify(publico).includes(invitacion.token), false);
-    assert.equal(JSON.stringify(publico).includes(`url-${unique}@example.invalid`), false);
-    // Dos eventos no comparten dirección, ni al crear ni al editar
-    const ajeno = await otro.call("/events", "POST", eventData({ slug }), 409);
-    assert.equal(ajeno.message, translate("es", "errors.eventSlugTaken"));
-    const otroEvento = await otro.call("/events", "POST", eventData(), 201);
-    await otro.call(`/events/${otroEvento.id}`, "PATCH", eventData({ slug }), 409);
+    // El organizador ve su landing con el acceso a su panel, sin invitados
+    const propia = await organizador.call(landing);
+    assert.equal(propia.access, "owner");
+    assert.equal(propia.eventId, evento.id);
+    assert.deepEqual(Object.keys(propia.event).sort(), ["cancelled", "date", "description", "host", "location", "postcard", "theme", "timeZone", "title"]);
+    assert.deepEqual(Object.keys(propia.event.host).sort(), ["avatar", "firstName", "lastName"]);
+    assert.equal(JSON.stringify(propia).includes(invitacion.token), false);
+    assert.equal(JSON.stringify(propia).includes(`url-${unique}@example.invalid`), false);
+    // Sin sesión ni enlace personal, la landing no existe para quien pregunta
+    await visitante.call(landing, "GET", undefined, 404);
+    await otro.call(landing, "GET", undefined, 404);
+    // El enlace personal da acceso: una cookie solo para la landing, y la landing muestra su invitación
+    const acceso = await visitante.raw(`/invitations/${invitacion.token}/access`, { method: "POST", body: {} });
+    assert.equal(acceso.status, 200);
+    assert.deepEqual(acceso.data, { code: codigo, slug });
+    const cookie = acceso.setCookie.find((c) => c.startsWith(`landing_${evento.id}=`));
+    assert.ok(cookie && /HttpOnly/i.test(cookie) && /Path=\/api\/public\/landing/i.test(cookie) && /SameSite=Lax/i.test(cookie), cookie);
+    assert.deepEqual(await visitante.call(landing), { access: "guest", token: invitacion.token });
+    assert.equal((await visitante.raw(`${landing}/calendar.ics`)).status, 200);
+    assert.equal((await client().raw(`${landing}/calendar.ics`)).status, 404);
+    // El organizador que abre el enlace personal de un invitado ve esa invitación, con su panel a mano
+    await organizador.call(`/invitations/${invitacion.token}/access`, "POST", {});
+    assert.deepEqual(await organizador.call(landing), { access: "guest", token: invitacion.token, eventId: evento.id });
+    // El calendario de la invitación enlaza a la landing, en el idioma de quien lo pide
+    assert.match((await visitante.raw(`/invitations/${invitacion.token}/calendar.ics`)).text, new RegExp(`/${codigo}/${slug}`));
+    // Las respuestas siguen yendo por la invitación
+    const respuesta = await visitante.call(`/invitations/${invitacion.token}/rsvp`, "POST", { members: invitacion.members.map((m) => ({ id: m.id, status: "accepted" })) }, 201);
+    assert.ok(respuesta.members.every((m) => m.status === "accepted"));
+    await visitante.call(`/invitations/${"x".repeat(32)}/access`, "POST", {}, 404);
+    // Borrar la invitación quita su acceso
+    await organizador.call(`/events/${evento.id}/invitations/${invitacion.id}`, "DELETE");
+    await visitante.call(landing, "GET", undefined, 404);
+    // La dirección es única dentro de la cuenta; otra cuenta puede usar la misma
+    const repetida = await organizador.call("/events", "POST", eventData({ slug }), 409);
+    assert.equal(repetida.message, translate("es", "errors.eventSlugTaken"));
+    const ajeno = await otro.call("/events", "POST", eventData({ slug }), 201);
+    assert.equal(ajeno.slug, slug);
+    assert.equal((await organizador.call(`/events/slug-available?slug=${slug}`)).available, false);
+    assert.equal((await otro.call(`/events/slug-available?slug=fiesta-${unique}`)).available, true);
     // Formato: minúsculas, números y guiones entre palabras, de 3 a 60
     for (const malo of ["Boda Ana", "ab", "-evento", "evento-", "evento--x", "a".repeat(61)]) {
       await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: malo }), 422);
     }
-    // Quitarla deja el evento sin dirección pública; archivarlo también la cierra
-    assert.equal((await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: "" }))).slug, "");
-    await guest.call(`/public/events/${slug}`, "GET", undefined, 404);
-    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }));
-    assert.equal((await guest.call(`/public/events/${slug}`)).title, eventData().title);
-    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, archived: true }));
-    await guest.call(`/public/events/${slug}`, "GET", undefined, 404);
-    await guest.call(`/public/events/no-existe-${unique}`, "GET", undefined, 404);
+    // Las direcciones /e/… de antes llevan a la landing si solo un evento la usa
+    const unica = `unica-${unique}`;
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: unica }));
+    assert.deepEqual(await client().call(`/public/events/${unica}`), { code: codigo, slug: unica });
+    // Con dos cuentas en la misma dirección, /e/… no sabe a cuál llevar
+    await organizador.call("/events", "POST", eventData({ slug }), 201);
+    await client().call(`/public/events/${slug}`, "GET", undefined, 404);
+    await client().call(`/public/events/no-existe-${unique}`, "GET", undefined, 404);
+    // Archivado: el organizador lo sigue viendo; los invitados ya no
+    const segunda = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    const invitado = client();
+    await invitado.call(`/invitations/${segunda.token}/access`, "POST", {});
+    await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug: unica, archived: true }));
+    await invitado.call(`/public/landing/${codigo}/${unica}`, "GET", undefined, 404);
+    assert.equal((await organizador.call(`/public/landing/${codigo}/${unica}`)).access, "owner");
+    await invitado.call(`/invitations/${segunda.token}/access`, "POST", {}, 404);
+    await client().call(`/public/landing/${codigo}/no-existe-${unique}`, "GET", undefined, 404);
   });
 
   await suite("Calendario, contraseña de la página pública e invitación genérica", async () => {
@@ -149,27 +196,33 @@ try {
     assert.equal((await visitante.call(`/invitations/${personal.token}`)).event.cancelled, true);
     await visitante.call(`/invitations/${personal.token}/rsvp`, "POST", { members: [{ id: personal.members[0].id, status: "accepted" }] }, 400);
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, cancelled: false }));
-    // Contraseña de la página pública: bloquea, se desbloquea con la clave y se conserva al editar
+    // Contraseña del evento: otra forma de entrar a la landing; se conserva al editar
+    const { publicCode: codigo } = await organizador.call("/auth/me");
+    const landing = `/public/landing/${codigo}/${slug}`;
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, publicPassword: "clave-de-prueba" }));
     assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, true);
-    assert.deepEqual(await visitante.call(`/public/events/${slug}`), { locked: true });
-    assert.equal((await visitante.raw(`/public/events/${slug}/calendar.ics`)).status, 404);
-    await visitante.call(`/public/events/${slug}/unlock`, "POST", { password: "mal" }, 401);
-    const acceso = await visitante.raw(`/public/events/${slug}/unlock`, { method: "POST", body: { password: "clave-de-prueba" } });
+    assert.deepEqual(await visitante.call(landing), { access: "locked" });
+    assert.equal((await visitante.raw(`${landing}/calendar.ics`)).status, 404);
+    await visitante.call(`${landing}/unlock`, "POST", { password: "mal" }, 401);
+    const acceso = await visitante.raw(`${landing}/unlock`, { method: "POST", body: { password: "clave-de-prueba" } });
     assert.equal(acceso.status, 200);
-    assert.ok(acceso.setCookie.some((c) => c.startsWith("event_access=") && /HttpOnly/.test(c)));
-    assert.equal((await visitante.call(`/public/events/${slug}`)).locked, false);
-    assert.equal((await visitante.raw(`/public/events/${slug}/calendar.ics`)).status, 200);
+    assert.ok(acceso.setCookie.some((c) => c.startsWith(`landing_${evento.id}=`) && /HttpOnly/.test(c)));
+    assert.equal((await visitante.call(landing)).access, "password");
+    assert.equal((await visitante.raw(`${landing}/calendar.ics`)).status, 200);
+    // Con contraseña, quien entra con su enlace personal sigue viendo su invitación
+    const conEnlace = client();
+    await conEnlace.call(`/invitations/${personal.token}/access`, "POST", {});
+    assert.deepEqual(await conEnlace.call(landing), { access: "guest", token: personal.token });
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug }));
     assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, true);
     // Tras diez fallos, la contraseña se bloquea un rato aunque sea la correcta
     const intentos = client();
-    for (let i = 0; i < 10; i++) await intentos.call(`/public/events/${slug}/unlock`, "POST", { password: "mal" }, 401);
-    await intentos.call(`/public/events/${slug}/unlock`, "POST", { password: "clave-de-prueba" }, 429);
-    // Quitar la contraseña deja la página abierta
+    for (let i = 0; i < 10; i++) await intentos.call(`${landing}/unlock`, "POST", { password: "mal" }, 401);
+    await intentos.call(`${landing}/unlock`, "POST", { password: "clave-de-prueba" }, 429);
+    // Sin contraseña, la landing vuelve a ser solo para invitados y organizador
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, publicPassword: "" }));
     assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, false);
-    assert.equal((await visitante.call(`/public/events/${slug}`)).locked, false);
+    await visitante.call(landing, "GET", undefined, 404);
     // Invitación genérica: sin personas, y cada invitado se registra con sus propios datos
     const abierta = await organizador.call(`/events/${evento.id}/invitations`, "POST", { name: "Para todos", kind: "open", email: "", phone: "", notes: "", members: [] }, 201);
     assert.equal(abierta.kind, "open");

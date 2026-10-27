@@ -45,7 +45,11 @@ const conexion = (user, password, database) => conectarPool({ host, port, user, 
 export const admin = (database = "postgres") => conexion("tuevento", passwordAdmin, database);
 
 /** Crea la base temporal, aplica las migraciones como `api` y devuelve { api, nombre, cerrar }. */
-export async function baseTemporal() {
+/**
+ * Base temporal con todas las migraciones o, con `hasta`, solo las anteriores a esa: así se
+ * prueba una migración sobre datos del esquema de la versión anterior (`aplicarResto`).
+ */
+export async function baseTemporal({ hasta } = {}) {
   const nombre = `tuevento_test_${randomBytes(4).toString("hex")}`;
   const raizAdmin = admin();
   try {
@@ -63,7 +67,7 @@ export async function baseTemporal() {
   const api = conexion("api", passwordApi, nombre);
   // Igual que apps/api/src/database.ts: una transacción por migración, registrada
   await api.query("CREATE TABLE IF NOT EXISTS schema_migrations(name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
-  for (const archivo of migraciones) {
+  const aplicar = async (archivo) => {
     const c = await api.connect();
     try {
       await c.query("BEGIN");
@@ -76,10 +80,15 @@ export async function baseTemporal() {
     } finally {
       c.release();
     }
-  }
+  };
+  const antes = hasta ? migraciones.filter((m) => m < hasta) : migraciones;
+  for (const archivo of antes) await aplicar(archivo);
   return {
     api,
     nombre,
+    async aplicarResto() {
+      for (const archivo of migraciones.filter((m) => !antes.includes(m))) await aplicar(archivo);
+    },
     async cerrar() {
       await api.end();
       await raizAdmin.query(`DROP DATABASE IF EXISTS ${nombre} WITH (FORCE)`);

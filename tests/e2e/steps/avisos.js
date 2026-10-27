@@ -95,6 +95,12 @@ When("abro la página pública del evento", async ({ page, ctx }) => {
   await page.goto(`/e/${ctx.slug}`);
 });
 
+// La dirección antigua (/e/…) lleva a la landing; sin la sesión del organizador, como un visitante
+When("abro la página pública del evento sin sesión", async ({ page, ctx }) => {
+  await page.context().clearCookies();
+  await page.goto(`/e/${ctx.slug}`);
+});
+
 When("relleno el campo {string} con {string}", async ({ page }, campo, texto) => {
   await page.getByLabel(campo, { exact: true }).fill(texto);
 });
@@ -123,7 +129,8 @@ Then("veo el enlace {string}", async ({ page }, texto) => {
 Then("veo a {string} en su propia invitación", async ({ page, ctx }, nombre) => {
   await expect(page.getByText(nombre).first()).toBeVisible();
   await expect(page).not.toHaveURL(new RegExp(ctx.genericToken));
-  await expect(page).toHaveURL(/\/i\/[\w-]{32}$/);
+  // Su propia invitación se abre en la landing del evento (/<código>/<dirección>)
+  await expect(page).toHaveURL(/\/[a-z0-9]{8}\/[a-z0-9-]+$/);
 });
 
 Then("la página pide no indexarla", async ({ page }) => {
