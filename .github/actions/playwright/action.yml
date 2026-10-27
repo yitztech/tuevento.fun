@@ -1,0 +1,91 @@
+# Navegadores de Playwright y las librerías del sistema que necesitan, desde la caché.
+#
+# Las librerías (unos 180 paquetes .deb, ~115 MB para Chromium y WebKit) se guardan por imagen
+# del runner y versión de Playwright: con la caché se instalan con dpkg sin tocar el mirror de
+# apt. El 27-oct-2026 azure.archive.ubuntu.com tardó más de 45 minutos en servirlas y canceló
+# el despliegue. Sin caché (imagen nueva del runner, otra versión de Playwright) se descargan
+# una vez, con timeouts cortos de apt, y se guardan.
+#
+# Las acciones compuestas no admiten timeout-minutes: lo pone el paso que la usa.
+name: Playwright
+description: Navegadores de Playwright y sus librerías del sistema, cacheados
+inputs:
+  browsers:
+    description: Navegadores separados por espacios (chromium webkit firefox)
+    required: true
+runs:
+  using: composite
+  steps:
+    - id: claves
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+      run: |
+        version=$(node -p "require('playwright-core/package.json').version")
+        navegadores=$(echo "$BROWSERS" | tr -s ' ' '-')
+        # ImageOS e ImageVersion los pone el runner: cada imagen nueva trae otras versiones de apt
+        # shellcheck disable=SC2154
+        {
+          echo "navegadores=playwright-$navegadores-$RUNNER_OS-$version"
+          echo "debs=playwright-debs-$navegadores-$ImageOS-$ImageVersion-$version"
+          echo "dir=$HOME/.cache/playwright-debs"
+        } >> "$GITHUB_OUTPUT"
+
+    - id: navegadores
+      uses: actions/cache@v6
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.claves.outputs.navegadores }}
+    - if: steps.navegadores.outputs.cache-hit != 'true'
+      shell: bash
+      run: npx playwright install ${{ inputs.browsers }}
+
+    - id: debs
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.claves.outputs.dir }}
+        key: ${{ steps.claves.outputs.debs }}
+    - if: steps.debs.outputs.cache-hit == 'true'
+      shell: bash
+      env:
+        DIR: ${{ steps.claves.outputs.dir }}
+      # apt-get y no dpkg -i, que no ordena los Pre-Depends (systemd-sysv). Sin --no-download:
+      # con archivos locales apt no descarga nada, y esa opción los rechaza («not absolute»)
+      run: |
+        shopt -s nullglob
+        debs=("$DIR"/*.deb)
+        if [ "${#debs[@]}" -gt 0 ]; then
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${debs[@]}"
+        fi
+    # apt-get descarga directamente en la carpeta de la caché y la conserva. Primero del archivo
+    # de Ubuntu y después del mirror de Azure: el 27-oct el de Azure servía a pocos KB/s, sin
+    # cortar la conexión, y apt no cambia de mirror por lentitud. Un mirror que no responde se
+    # abandona a los 15 s.
+    - if: steps.debs.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+        DIR: ${{ steps.claves.outputs.dir }}
+      run: |
+        mkdir -p "$DIR"
+        sudo cp /etc/apt/apt-mirrors.txt /etc/apt/apt-mirrors.txt.orig
+        printf '%s\tpriority:%s\n' \
+          http://archive.ubuntu.com/ubuntu/ 1 \
+          http://azure.archive.ubuntu.com/ubuntu/ 2 \
+          http://security.ubuntu.com/ubuntu/ 3 | sudo tee /etc/apt/apt-mirrors.txt
+        printf '%s\n' \
+          "Dir::Cache::Archives \"$DIR/\";" \
+          'Binary::apt-get::APT::Keep-Downloaded-Packages "true";' \
+          'Acquire::http::Timeout "15";' \
+          'Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/99playwright-ci
+        # shellcheck disable=SC2086 # un navegador por palabra
+        npx playwright install-deps $BROWSERS
+        sudo rm -f /etc/apt/apt.conf.d/99playwright-ci
+        sudo mv /etc/apt/apt-mirrors.txt.orig /etc/apt/apt-mirrors.txt
+        sudo rm -rf "$DIR/partial" "$DIR/lock"
+        sudo chown -R "$(id -u):$(id -g)" "$DIR"
+    - if: steps.debs.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.claves.outputs.dir }}
+        key: ${{ steps.claves.outputs.debs }}

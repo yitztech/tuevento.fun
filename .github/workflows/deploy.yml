@@ -38,6 +38,7 @@ jobs:
     # La etiqueta :main solo puede salir de main (también con workflow_dispatch)
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
@@ -64,18 +65,23 @@ jobs:
             build_args: ""
     steps:
       - uses: actions/checkout@v7
+        timeout-minutes: 2
       - uses: docker/setup-buildx-action@v4
+        timeout-minutes: 2
       - uses: docker/login-action@v4
+        timeout-minutes: 2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       # GHCR exige minúsculas: ghcr.io/yitztech/tuevento.fun-gateway, -web, -api, -admin y -postgres
       - id: image
+        timeout-minutes: 1
         env:
           REPOSITORY: ${{ github.repository }}
         run: echo "name=ghcr.io/${REPOSITORY,,}-${{ matrix.name }}" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v7
+        timeout-minutes: 12
         with:
           context: .
           file: services/${{ matrix.name }}/Dockerfile
@@ -94,8 +100,10 @@ jobs:
     needs: publicar
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 15
     steps:
       - name: ¿Coolify está configurado?
+        timeout-minutes: 1
         id: coolify
         env:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
@@ -111,6 +119,7 @@ jobs:
           fi
 
       - name: Pedir el despliegue a Coolify
+        timeout-minutes: 5
         if: steps.coolify.outputs.listo == 'true'
         env:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
@@ -123,6 +132,7 @@ jobs:
       # Cada redespliegue corta el sitio ~1 minuto (Coolify para y arranca los
       # contenedores): se espera a que los dos dominios sirvan el commit nuevo.
       - name: Comprobar que la versión nueva ya sirve en los dos dominios
+        timeout-minutes: 12
         if: steps.coolify.outputs.listo == 'true'
         env:
           SITE_URL: ${{ vars.SITE_URL }}
@@ -145,6 +155,7 @@ jobs:
 
       # Prueba de humo con reintentos en los dos dominios y en el panel (DEP-11)
       - name: Prueba de humo
+        timeout-minutes: 5
         if: steps.coolify.outputs.listo == 'true'
         env:
           SITE_URL: ${{ vars.SITE_URL }}
