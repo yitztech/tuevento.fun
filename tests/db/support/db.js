@@ -62,6 +62,9 @@ export async function baseTemporal({ hasta } = {}) {
   // Mismos permisos que da services/postgres/initdb/00-roles.sh en la base real
   await propia.query(`GRANT CONNECT ON DATABASE ${nombre} TO api`);
   await propia.query("GRANT USAGE, CREATE ON SCHEMA public TO api");
+  // Las extensiones de la búsqueda las crea el superusuario (services/postgres/sql/search-bootstrap.sql)
+  await propia.query("CREATE EXTENSION IF NOT EXISTS pg_trgm");
+  await propia.query("CREATE EXTENSION IF NOT EXISTS unaccent");
   await propia.end();
 
   const api = conexion("api", passwordApi, nombre);

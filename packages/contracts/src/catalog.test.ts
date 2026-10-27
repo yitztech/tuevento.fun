@@ -80,12 +80,13 @@ test("Ningún mensaje queda vacío ni sin traducir por error", () => {
 // Las claves se escriben siempre completas en el código ("account.signIn"), nunca
 // armadas por partes: así se pueden buscar y esta prueba detecta las que sobran o faltan.
 const root = join(__dirname, "../../..");
-const sourceDirs = ["packages/app/src", "packages/contracts/src", "packages/client/src", "apps/api/src", "apps/web/src"];
+// services/search: el servicio de búsqueda en Go usa las claves desde shared.json
+const sourceDirs = ["packages/app/src", "packages/contracts/src", "packages/client/src", "apps/api/src", "apps/web/src", "services/search"];
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return sources(path);
-    return /\.tsx?$/.test(name) && !name.endsWith(".test.ts") ? [path] : [];
+    return /\.(tsx?|go)$/.test(name) && !/(\.test\.ts|_test\.go)$/.test(name) ? [path] : [];
   });
 }
 const code = sourceDirs.flatMap((dir) => sources(join(root, dir))).map((file) => readFileSync(file, "utf8"));
@@ -101,7 +102,8 @@ test("Toda clave del catálogo se usa en el código", () => {
 test("Toda clave citada en el código existe en el catálogo", () => {
   const known = new Set(catalogKeys(defaultLocale).map(base));
   const namespaces = Object.keys(locales[defaultLocale].messages).join("|");
-  const pattern = new RegExp(`["'\`]((?:${namespaces})\\.[A-Za-z0-9.]+)["'\`]`, "g");
+  // Un prefijo para componer claves ("providers.categories." + código) termina en punto: no es una clave
+  const pattern = new RegExp(`["'\`]((?:${namespaces})\\.[A-Za-z0-9.]*[A-Za-z0-9])["'\`]`, "g");
   const missing = new Set<string>();
   for (const text of code)
     for (const [, key] of text.matchAll(pattern)) if (!known.has(key)) missing.add(key);

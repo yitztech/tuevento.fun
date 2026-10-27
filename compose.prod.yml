@@ -160,6 +160,33 @@ services:
     # frontend: la alcanza el gateway (solo para su subdominio). backend: habla con postgres.
     networks: [frontend, backend]
 
+  # Búsqueda de proveedores (Go, services/search): GET /api/search/ a través del gateway. Lee solo
+  # la tabla provider_search con el rol `search_ro`. Binario estático sobre scratch, sin root.
+  search:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-search:${IMAGE_TAG:-main}
+    read_only: true
+    mem_limit: 64m
+    cpus: 0.25
+    environment:
+      DATABASE_URL: postgres://search_ro@postgres:5432/tueventofun
+      PGPASSWORD: ${SEARCH_DB_PASSWORD:?Define SEARCH_DB_PASSWORD}
+      # Los mismos orígenes que la API: las apps Capacitor leen la búsqueda desde otro origen
+      ALLOWED_ORIGINS: ${SITE_URL_ES:?Define SITE_URL_ES},${SITE_URL_EN:?Define SITE_URL_EN},capacitor://localhost,https://localhost
+      SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}
+      SITE_URL_EN: ${SITE_URL_EN:?Define SITE_URL_EN}
+      # ~90 % del límite de memoria (AGENTS.md §20)
+      GOMEMLIMIT: 56MiB
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, /search, healthcheck]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    # frontend: la alcanza el gateway. backend: habla con postgres.
+    networks: [frontend, backend]
+
   # La plataforma hace el backup de cada contenedor PostgreSQL en marcha.
   postgres:
     <<: *hardening
@@ -179,6 +206,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
       API_DB_PASSWORD: ${API_DB_PASSWORD:?Define API_DB_PASSWORD}
       ADMIN_DB_PASSWORD: ${ADMIN_DB_PASSWORD:?Define ADMIN_DB_PASSWORD}
+      SEARCH_DB_PASSWORD: ${SEARCH_DB_PASSWORD:?Define SEARCH_DB_PASSWORD}
     volumes:
       # PostgreSQL 18: el volumen se monta en /var/lib/postgresql (no en /data)
       - postgres_data:/var/lib/postgresql

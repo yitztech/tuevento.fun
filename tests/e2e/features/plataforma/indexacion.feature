@@ -36,6 +36,7 @@ Característica: Cada URL en un solo estado para los buscadores
       | en     | /eventos/1/editar  |
       | es     | /k7p2x9qa/boda-ana |
       | en     | /pt/k7p2x9qa/boda  |
+      | es     | /api/search/providers?q=boda |
 
   @WEB-08
   Esquema del escenario: Cada URL del sitemap es pública y su canonical es ella misma

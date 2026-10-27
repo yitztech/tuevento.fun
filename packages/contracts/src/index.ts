@@ -187,6 +187,8 @@ export const accountLimits = {
   city: 200,
   region: 200,
   postalCode: 10,
+  /** Texto de la búsqueda de proveedores (sin columna: no se guarda). */
+  search: 100,
 } as const;
 /** Punto en el mapa (WGS 84). */
 export const geoPointSchema = z.strictObject({
@@ -840,6 +842,30 @@ export type ProviderPublic = {
   services: ProviderService[];
   images: ProviderImage[];
   updatedAt: string;
+};
+
+/** Búsqueda de proveedores (`GET /api/search/providers`, servicio `search` en Go). */
+export const searchLimits = { defaultLimit: 20, maxLimit: 50, defaultRadiusKm: 30, maxRadiusKm: 200 } as const;
+export const searchSorts = ["relevance", "distance"] as const;
+export type SearchSort = (typeof searchSorts)[number];
+/** Tarjeta de un proveedor en los resultados. */
+export type ProviderCard = {
+  slug: string;
+  businessName: string;
+  headline: string;
+  city: string;
+  region: string;
+  categories: ProviderCategory[];
+  /** Portada en 480 px, o null. */
+  coverUrl: string | null;
+  priceFrom: { fromCents: number; currency: string } | null;
+  /** Solo si se buscó desde un punto. */
+  distanceKm: number | null;
+};
+export type ProviderSearchResult = {
+  items: ProviderCard[];
+  nextCursor: string | null;
+  facets: { categories: Partial<Record<ProviderCategory, number>> };
 };
 
 /** Nombre de cada categoría, requisito y unidad de precio en el catálogo. */

@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {

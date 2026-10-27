@@ -631,6 +631,87 @@ try {
     assert.doesNotMatch((await client().raw("/public/sitemap/providers.xml", { headers: { Host: spanishHost } })).text, new RegExp(slug));
   });
 
+  // Servicio de búsqueda en Go (services/search): directo en su puerto, como la API en el suyo
+  const buscar = async (query, headers = {}) => {
+    const r = await send(`${process.env.TEST_SEARCH_URL || "http://127.0.0.1:3089"}/api/search/providers?${query}`, { headers: { Host: spanishHost, ...headers } });
+    return { ...r, data: r.text ? JSON.parse(r.text) : null };
+  };
+
+  await suite("Búsqueda de proveedores: texto sin acentos, categoría, distancia, páginas y errores en 5 idiomas", async () => {
+    // Solo letras: los trigramas de los dígitos de `unique` coincidirían con otros proveedores de la ejecución
+    const marca = `zafiro${String(unique).replace(/\d/g, (d) => "bcdfghjklm"[d])}`;
+    const cerca = await proveedorNuevo("busca-cerca");
+    await cerca.call("/provider/profile", "PUT", providerData({ businessName: `Florería Ñandú ${marca}`, categories: ["decoration"], geo: { lat: 18.92, lng: -99.23 } }));
+    await cerca.call("/provider/services", "POST", { title: "Arco de flores", price: { fromCents: 350000, currency: "MXN", unit: "event" } }, 201);
+    const lejos = await proveedorNuevo("busca-lejos");
+    await lejos.call("/provider/profile", "PUT", providerData({ businessName: `Banquetes ${marca}`, categories: ["catering"], geo: { lat: 19.43, lng: -99.13 } }));
+    for (const p of [cerca, lejos]) await p.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: "Foto" }, 201);
+    // Un borrador nunca aparece
+    assert.equal((await buscar(`q=${marca}`)).data.items.length, 0);
+    await cerca.call("/provider/publish", "POST", {});
+    await lejos.call("/provider/publish", "POST", {});
+
+    const todos = await buscar(`q=${marca}`);
+    assert.equal(todos.status, 200);
+    assert.equal(todos.headers["cache-control"], "public, max-age=60");
+    assert.equal(todos.data.items.length, 2);
+    assert.deepEqual(todos.data.facets.categories, { catering: 1, decoration: 1 });
+    const tarjeta = todos.data.items.find((i) => i.categories.includes("decoration"));
+    assert.deepEqual(Object.keys(tarjeta).sort(), ["businessName", "categories", "city", "coverUrl", "distanceKm", "headline", "priceFrom", "region", "slug"]);
+    assert.deepEqual(tarjeta.priceFrom, { fromCents: 350000, currency: "MXN" });
+    // Sin acentos ni mayúsculas, y por el título de un servicio: el que coincide en todo, primero
+    assert.equal((await buscar(`q=${encodeURIComponent(`floreria nandu ${marca.toUpperCase()}`)}`)).data.items[0].slug, tarjeta.slug);
+    assert.equal((await buscar(`q=${encodeURIComponent(`arco ${marca}`)}`)).data.items[0].slug, tarjeta.slug);
+    // Categoría y distancia desde Cuernavaca: la Ciudad de México queda a ~60 km
+    assert.deepEqual((await buscar(`q=${marca}&categories=catering`)).data.items.map((i) => i.categories), [["catering"]]);
+    const desde = "lat=18.9218&lng=-99.2345";
+    assert.equal((await buscar(`q=${marca}&${desde}&radiusKm=30`)).data.items.length, 1);
+    const ordenados = (await buscar(`q=${marca}&${desde}&radiusKm=100&sort=distance`)).data.items;
+    assert.equal(ordenados.length, 2);
+    assert.ok(ordenados[0].distanceKm < 2 && ordenados[1].distanceKm > 50, JSON.stringify(ordenados.map((i) => i.distanceKm)));
+    // Páginas: el cursor sigue sin repetir; uno manipulado es un 400
+    const primera = await buscar(`q=${marca}&limit=1`);
+    assert.ok(primera.data.nextCursor);
+    const segunda = await buscar(`q=${marca}&limit=1&cursor=${encodeURIComponent(primera.data.nextCursor)}`);
+    assert.notEqual(segunda.data.items[0].slug, primera.data.items[0].slug);
+    assert.equal(segunda.data.nextCursor, null);
+    assert.equal((await buscar(`q=${marca}&limit=1&${desde}&sort=distance&cursor=${encodeURIComponent(primera.data.nextCursor)}`)).status, 400);
+    // Al despublicar sale de la búsqueda en la misma transacción
+    await lejos.call("/provider/unpublish", "POST", {});
+    assert.equal((await buscar(`q=${marca}`)).data.items.length, 1);
+
+    // Errores: Problem Details con el campo, en el idioma de la página
+    for (const [lang, headers] of locales) {
+      const r = await buscar("limit=500&color=rojo", headers);
+      assert.equal(r.status, 400, lang);
+      assert.match(r.headers["content-type"], /^application\/problem\+json/);
+      assert.equal(r.headers["content-language"], lang);
+      assert.equal(r.data.code, "bad_request");
+      assert.equal(r.data.title, translate(lang, "problems.badRequest"), lang);
+      const campos = Object.fromEntries(r.data.errors.map((e) => [e.field, e]));
+      assert.equal(campos.color.code, "unknown_field");
+      assert.equal(campos.limit.message, translate(lang, "search.invalidLimit", { max: 50 }), lang);
+    }
+    for (const [query, campo, codigo] of [
+      [`q=${"a".repeat(101)}`, "q", "too_long"],
+      ["categories=pirotecnia", "categories", "invalid_category"],
+      ["lat=91&lng=0", "lat", "out_of_range"],
+      ["lat=18", "lng", "required"],
+      ["sort=distance", "sort", "required"],
+      ["cursor=%27%20OR%201%3D1", "cursor", "invalid_format"],
+    ]) {
+      const r = await buscar(query);
+      assert.equal(r.status, 400, query);
+      assert.equal(r.data.errors.find((e) => e.field === campo)?.code, codigo, query);
+    }
+    // SQL en el texto llega como texto
+    assert.equal((await buscar(`q=${encodeURIComponent("'; DROP TABLE provider_search; --")}`)).status, 200);
+    assert.equal((await buscar("q=")).status, 200);
+    const r = await send(`${process.env.TEST_SEARCH_URL || "http://127.0.0.1:3089"}/api/search/otra`);
+    assert.equal(r.status, 404);
+    assert.equal(JSON.parse(r.text).code, "not_found");
+  });
+
   await suite("Ubicación: el punto del mapa se guarda, se quita y llega a la invitación y al .ics", async () => {
     const organizador = client();
     await organizador.call("/auth/register", "POST", account(P, "geo"), 201);

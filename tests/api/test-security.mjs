@@ -475,6 +475,43 @@ try {
     assert.equal(r.headers["content-type"].split(";")[0], "application/json");
   });
 
+  await suite("Búsqueda: solo lectura, sin CORS para orígenes ajenos, sin fugas y con límite de longitud", async () => {
+    const search = process.env.TEST_SEARCH_URL || "http://127.0.0.1:3089";
+    const buscar = (query, headers = {}) => send(`${search}/api/search/providers?${query}`, { headers });
+    // Escribir no existe: ni en el servicio ni a través del gateway (que solo deja pasar GET)
+    for (const method of ["POST", "PUT", "DELETE", "PATCH"]) {
+      assert.equal((await send(`${search}/api/search/providers`, { method })).status, 405, method);
+      assert.equal((await send(`${process.env.E2E_BASE_URL || "http://127.0.0.1:5187"}/api/search/providers`, { method })).status, 403, `gateway ${method}`);
+    }
+    // CORS: el origen permitido sí, sin credenciales; uno ajeno, nada
+    const propio = await buscar("q=x", { Origin: origin });
+    assert.equal(propio.headers["access-control-allow-origin"], origin);
+    assert.equal(propio.headers["access-control-allow-credentials"], undefined);
+    assert.equal((await buscar("q=x", { Origin: "https://atacante.example" })).headers["access-control-allow-origin"], undefined);
+    // Cabeceras de seguridad, también en los errores
+    for (const r of [propio, await buscar("limit=0")]) {
+      assert.equal(r.headers["x-content-type-options"], "nosniff");
+      assert.equal(r.headers["x-frame-options"], "SAMEORIGIN");
+      assert.equal(r.headers["referrer-policy"], "no-referrer");
+    }
+    // Inyección: llega como texto, sin trazas ni SQL en la respuesta; un cursor manipulado no pasa
+    for (const q of ["' OR 1=1 --", "%' UNION SELECT password_hash FROM users --", "<script>alert(1)</script>", "\\x00"]) {
+      const r = await buscar(`q=${encodeURIComponent(q)}`);
+      assert.equal(r.status, 200, q);
+      assert.doesNotMatch(r.text, /password|SELECT|pg_|stack|<script>/i, q);
+    }
+    const cursor = Buffer.from(JSON.stringify({ s: "relevance", v: 1, i: "1' OR '1'='1" })).toString("base64url");
+    assert.equal((await buscar(`cursor=${cursor}`)).status, 400);
+    // Más de 100 caracteres: 400 con too_long, nunca recortado en silencio
+    const largo = await buscar(`q=${"a".repeat(101)}`);
+    assert.equal(largo.status, 400);
+    assert.equal(JSON.parse(largo.text).errors[0].code, "too_long");
+    // Las tarjetas solo llevan datos públicos de la página
+    const r = await buscar("limit=50");
+    for (const item of JSON.parse(r.text).items)
+      for (const privado of ["id", "userId", "email", "phone", "whatsapp", "address", "postalCode", "status"]) assert.ok(!(privado in item), privado);
+  });
+
   await suite("Errores: Problem Details con requestId y X-Request-ID", async () => {
     const r = await guest.raw("/events");
     assert.equal(r.status, 401);

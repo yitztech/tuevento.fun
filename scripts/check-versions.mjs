@@ -71,6 +71,11 @@ for (const dir of dirs.filter((d) => d !== ".")) {
   for (const name of missing) errors.push(`${pkg.name} importa ${name} sin declararlo en su package.json`);
 }
 
+// Go (services/search): la versión de go.mod es la de la imagen que lo compila
+const goMod = readFileSync("services/search/go.mod", "utf8").match(/^go (\S+)$/m)?.[1];
+const goImage = readFileSync("services/search/Dockerfile", "utf8").match(/^FROM golang:([0-9.]+)-/m)?.[1];
+if (!goMod || goMod !== goImage) errors.push(`services/search: go.mod pide Go ${goMod} y el Dockerfile usa golang:${goImage}`);
+
 if (errors.length) {
   console.error(errors.map((e) => `✗ ${e}`).join("\n"));
   process.exit(1);

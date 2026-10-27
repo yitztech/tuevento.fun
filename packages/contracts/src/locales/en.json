@@ -1052,5 +1052,15 @@
     "notFoundText": "The business may have unpublished it, or the address may be wrong.",
     "ownBusiness": "Do you offer services for events?",
     "ownBusinessLink": "Create your business page"
+  },
+  "search": {
+    "unknownParameter": "Search doesn't accept the parameter “{{name}}”.",
+    "tooLong": "Use at most {{max}} characters.",
+    "invalidLimit": "Ask for between 1 and {{max}} results.",
+    "invalidRadius": "The distance must be between 1 and {{max}} km.",
+    "needsPoint": "To search or sort by distance, also give the latitude and longitude.",
+    "invalidSort": "Sort by relevance or by distance.",
+    "invalidCursor": "That page of results is no longer valid: search again.",
+    "unavailable": "Search isn't available right now. Please try again in a few minutes."
   }
 }

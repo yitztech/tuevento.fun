@@ -18,6 +18,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-postgres}
       API_DB_PASSWORD: ${API_DB_PASSWORD:-dev-api}
       ADMIN_DB_PASSWORD: ${ADMIN_DB_PASSWORD:-dev-admin}
+      SEARCH_DB_PASSWORD: ${SEARCH_DB_PASSWORD:-dev-search}
     ports:
       - "127.0.0.1:${DB_PORT:-5487}:5432"
     volumes:
@@ -147,6 +148,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+    restart: unless-stopped
+
+  # Búsqueda de proveedores (Go): /api/search/ a través del gateway, con el rol search_ro.
+  # En http://127.0.0.1:3089 directo. Tras cambiar el código: docker compose up -d --build search
+  search:
+    build:
+      context: .
+      dockerfile: services/search/Dockerfile
+    environment:
+      DATABASE_URL: postgres://search_ro@postgres:5432/tueventofun
+      PGPASSWORD: ${SEARCH_DB_PASSWORD:-dev-search}
+      SITE_URL_ES: ${SITE_URL_ES:-http://tuevento.localhost:5187}
+      SITE_URL_EN: ${SITE_URL_EN:-http://yourevent.localhost:5187}
+      # Las pruebas salen todas de la misma IP
+      SEARCH_RATE_LIMIT: ${SEARCH_RATE_LIMIT:-100000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,http://tuevento.localhost:5187,http://yourevent.localhost:5187}
+    ports:
+      - "127.0.0.1:${SEARCH_PORT:-3089}:3089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/search", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
     restart: unless-stopped
 
   # Buzón de pruebas: atrapa todos los correos de la API (como en micitaentiempo).

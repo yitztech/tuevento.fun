@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   domainLocales,
   localeForHost,
@@ -163,4 +165,12 @@ test("Página de un proveedor: la sección cambia con el idioma y la dirección 
   assert.equal(localeUrl("pt", "/proveedores/salon-luna", EN), "https://yourevent.fun/pt/fornecedores/salon-luna");
   // Cada idioma tiene su propia sección, sin repetir la de otro
   assert.equal(new Set(supportedLocales.map((l) => locales[l].paths.providers)).size, supportedLocales.length);
+});
+
+// Los mismos casos los prueba el servicio de búsqueda en Go (services/search/internal/api): si la
+// regla cambia en un lado y no en el otro, falla alguna de las dos pruebas.
+test("Idioma de la petición: casos compartidos con el servicio en Go", () => {
+  const { origins, cases } = JSON.parse(readFileSync(join(__dirname, "locale-cases.json"), "utf8"));
+  for (const { host, appLocale, mobile, expected } of cases)
+    assert.equal(localeForRequest(host, appLocale ?? undefined, mobile, origins), expected, JSON.stringify({ host, appLocale, mobile }));
 });

@@ -1,6 +1,7 @@
 # Checks de cada PR con los nombres comunes de la plataforma (PRU-18, DEP-08):
 #
-#   Verificar      instalación, lint, tipos, unitarias, build, npm audit y Trivy sobre las 5 imágenes
+#   Verificar      instalación, lint, tipos, unitarias, build, npm audit, Go (vet, pruebas y govulncheck)
+#                  y Trivy sobre las 6 imágenes
 #   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador
 #   Base de datos  tests/db contra PostgreSQL 18 (la imagen del proyecto) y Squawk en migraciones nuevas
 #   Seguridad      test:security, CodeQL y ZAP baseline
@@ -48,6 +49,20 @@ jobs:
       # Altas y críticas, salvo las excepciones con fecha de scripts/check-audit.mjs
       - run: npm run check:audit
         timeout-minutes: 2
+      # Servicio de búsqueda en Go: el build de contracts ya dejó su shared.json embebido
+      - uses: actions/setup-go@v7
+        timeout-minutes: 3
+        with:
+          go-version-file: services/search/go.mod
+          cache-dependency-path: services/search/go.sum
+      - name: Go (formato, vet, pruebas y vulnerabilidades)
+        timeout-minutes: 5
+        working-directory: services/search
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+          go vet ./...
+          go test ./...
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       - name: Construir imágenes
@@ -56,11 +71,11 @@ jobs:
           set -a; . ./.env.ci; set +a
           docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
             --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
-      - name: Trivy sobre las 5 imágenes
+      - name: Trivy sobre las 6 imágenes
         timeout-minutes: 5
         run: |
           set -a; . ./.env.ci; set +a
-          for servicio in gateway web api admin postgres; do
+          for servicio in gateway web api admin search postgres; do
             echo "::group::$servicio"
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
               --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
@@ -146,7 +161,7 @@ jobs:
           docker build -f services/postgres/Dockerfile -t tuevento-postgres .
           docker run -d --name postgres -p 127.0.0.1:5487:5432 \
             -e POSTGRES_DB=tueventofun -e POSTGRES_USER=tuevento -e POSTGRES_PASSWORD=ci-postgres \
-            -e API_DB_PASSWORD=ci-api -e ADMIN_DB_PASSWORD=ci-admin tuevento-postgres
+            -e API_DB_PASSWORD=ci-api -e ADMIN_DB_PASSWORD=ci-admin -e SEARCH_DB_PASSWORD=ci-search tuevento-postgres
           for _ in $(seq 1 30); do
             docker exec postgres pg_isready -U tuevento -d tueventofun -h 127.0.0.1 && exit 0
             sleep 2
@@ -173,6 +188,43 @@ jobs:
           if [ -z "$nuevas" ]; then echo "Sin migraciones nuevas."; exit 0; fi
           echo "$nuevas"
           echo "$nuevas" | xargs npx --yes squawk-cli@2.70.0
+
+  # CodeQL del servicio Go: compila con build-mode manual (el de JS y Actions va sin compilar)
+  codeql-go:
+    name: CodeQL Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+        timeout-minutes: 2
+      - uses: actions/setup-node@v7
+        timeout-minutes: 3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npm run build -w @tuevento/contracts
+        timeout-minutes: 2
+      - uses: actions/setup-go@v7
+        timeout-minutes: 3
+        with:
+          go-version-file: services/search/go.mod
+          cache-dependency-path: services/search/go.sum
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        timeout-minutes: 3
+        with:
+          languages: go
+          build-mode: manual
+      - run: go build ./...
+        timeout-minutes: 3
+        working-directory: services/search
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        timeout-minutes: 5
 
   seguridad:
     name: Seguridad
