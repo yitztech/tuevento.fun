@@ -22,14 +22,19 @@ import {
   calendarFile,
   countMetrics,
   defaultLocale,
+  eventLandingPath,
   eventSlugPattern,
   notificationMessage,
   openInvitationLimits,
+  publicCodePattern,
+  slugify,
   type EventInput,
+  type EventLanding,
   type Invitation,
   type Event,
   type InvitationInput,
-  type LockedPublicEvent,
+  type LandingAddress,
+  type Locale,
   type Member,
   type PublicEvent,
   type PublicInvitation,
@@ -40,6 +45,8 @@ import {
 /** Cuántos intentos fallidos bloquean la contraseña de una página pública, y por cuánto tiempo. */
 const EVENT_PASSWORD_MAX_FAILURES = 10;
 const EVENT_PASSWORD_LOCK_MINUTES = 15;
+/** Lo que dura el acceso de un invitado a la landing desde su enlace personal. */
+const GUEST_ACCESS_DAYS = 180;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 type Counts = { accepted: number; declined: number; pending: number };
 const countStatuses = (members: { status: Status }[]): Counts => {
@@ -50,6 +57,7 @@ const countStatuses = (members: { status: Status }[]): Counts => {
 /** Fila de `events` tal como la devuelve PostgreSQL. */
 type EventRow = {
   id: string;
+  user_id: string;
   title: string;
   description: string;
   date: Date;
@@ -192,6 +200,8 @@ export class EventsService {
   async saveEvent(userId: string, input: EventInput, id?: string) {
     const before = id ? await this.owned(userId, id) : null;
     const eventId = id || randomUUID();
+    // Todo evento tiene landing: sin dirección escrita, se conserva la que tenía o sale del título
+    const slug = input.slug || before?.slug || (await this.freeSlug(userId, input.title, eventId));
     // undefined conserva la contraseña actual; "" la quita; cualquier otro texto la cambia
     const keepPassword = input.publicPassword === undefined;
     const passwordHash =
@@ -211,7 +221,7 @@ export class EventsService {
             input.theme,
             input.archived,
             input.cancelled,
-            input.slug || null,
+            slug,
             keepPassword,
             passwordHash,
             id,
@@ -234,7 +244,7 @@ export class EventsService {
             input.theme,
             input.archived,
             input.cancelled,
-            input.slug || null,
+            slug,
             passwordHash,
           ],
         )
@@ -279,14 +289,31 @@ export class EventsService {
       ],
     );
   }
-  /** Dirección pública libre, para avisar mientras el organizador escribe. */
+  /** Dirección libre en la cuenta, para avisar mientras el organizador escribe. */
   async slugAvailable(userId: string, slug: string, eventId?: string) {
     if (eventId) await this.owned(userId, eventId);
     const rows = await this.db.query(
-      "SELECT id FROM events WHERE slug=$1 AND ($2::uuid IS NULL OR id<>$2)",
-      [slug, eventId ?? null],
+      "SELECT id FROM events WHERE user_id=$1 AND slug=$2 AND ($3::uuid IS NULL OR id<>$3)",
+      [userId, slug, eventId ?? null],
     );
     return { available: rows.length === 0 };
+  }
+  /** Dirección a partir del título, libre en la cuenta: la limpia y, si está ocupada, con -2, -3… */
+  private async freeSlug(userId: string, title: string, eventId: string) {
+    let base = slugify(title, accountLimits.eventSlug - 5);
+    if (base.length < 3) base = base ? `evento-${base}` : "evento";
+    const taken = new Set(
+      (
+        await this.db.query(
+          "SELECT slug FROM events WHERE user_id=$1 AND id<>$2 AND (slug=$3 OR slug LIKE $3 || '-%')",
+          [userId, eventId, base],
+        )
+      ).map((r) => r.slug as string),
+    );
+    for (let n = 1; ; n++) {
+      const candidate = n === 1 ? base : `${base}-${n}`;
+      if (!taken.has(candidate)) return candidate;
+    }
   }
   async removeEvent(userId: string, id: string) {
     await this.owned(userId, id);
@@ -506,13 +533,19 @@ export class EventsService {
     }
     return { token: childToken };
   }
-  /** Evento por su dirección pública, sin invitados. Con contraseña y sin acceso, solo `locked`. */
-  async publicEvent(slug: string, access?: string): Promise<PublicEvent | LockedPublicEvent> {
-    const r = await this.eventBySlug(slug);
-    if (r.public_password_hash && !(await this.hasAccess(r.id, access)))
-      return { locked: true };
+  /** Evento por el código de su cuenta y su dirección; los archivados solo los ve su dueño. */
+  private async eventByAddress(code: string, slug: string) {
+    if (!publicCodePattern.test(code) || !eventSlugPattern.test(slug) || slug.length > accountLimits.eventSlug)
+      throw new NotFoundException("errors.eventIsntAvailable");
+    const [r] = await this.db.query(
+      "SELECT e.*,u.public_code,u.first_name,u.last_name,u.avatar FROM events e JOIN users u ON u.id=e.user_id WHERE u.public_code=$1 AND e.slug=$2",
+      [code, slug],
+    );
+    if (!r) throw new NotFoundException("errors.eventIsntAvailable");
+    return r;
+  }
+  private async publicView(r: EventRow & { first_name: string; last_name: string; avatar: string | null }): Promise<PublicEvent> {
     return {
-      locked: false,
       title: r.title,
       description: r.description,
       date: r.date.toISOString(),
@@ -524,30 +557,73 @@ export class EventsService {
       postcard: await this.postcards.publicPostcard(r.id, r.theme),
     };
   }
-  private async eventBySlug(slug: string) {
-    if (!eventSlugPattern.test(slug) || slug.length > accountLimits.eventSlug)
-      throw new NotFoundException("errors.eventIsntAvailable");
+  /** Acceso vigente a la landing: el de un invitado (con el token de su invitación) o el de la contraseña. */
+  private async grantedAccess(eventId: string, token?: string) {
+    if (!token) return null;
     const [r] = await this.db.query(
-      "SELECT e.*,u.first_name,u.last_name,u.avatar FROM events e JOIN users u ON u.id=e.user_id WHERE e.slug=$1 AND e.archived=false",
-      [slug],
-    );
-    if (!r) throw new NotFoundException("errors.eventIsntAvailable");
-    return r;
-  }
-  private async hasAccess(eventId: string, token?: string) {
-    if (!token) return false;
-    const rows = await this.db.query(
-      "SELECT 1 FROM event_access WHERE token_hash=$1 AND event_id=$2 AND expires_at>now()",
+      "SELECT a.invitation_id,i.token FROM event_access a LEFT JOIN invitations i ON i.id=a.invitation_id WHERE a.token_hash=$1 AND a.event_id=$2 AND a.expires_at>now()",
       [digest(token), eventId],
     );
-    return rows.length > 0;
+    return r ? { invitationToken: (r.token as string | null) ?? null, guest: r.invitation_id !== null } : null;
   }
   /**
-   * Contraseña de la página pública. Devuelve el token de acceso (solo se guarda su hash),
-   * o null si el evento no tiene contraseña. Tras varios fallos, bloquea un rato.
+   * Landing según quién la abre: el organizador; un invitado que entró con su enlace personal; o
+   * alguien que acertó la contraseña. Sin acceso, el evento no existe para quien pregunta (404),
+   * salvo que tenga contraseña: entonces solo `locked`.
    */
-  async unlockEvent(slug: string, password: string): Promise<string | null> {
-    const r = await this.eventBySlug(slug);
+  async landing(
+    code: string,
+    slug: string,
+    viewerId: string | null,
+    access: (eventId: string) => string | undefined,
+  ): Promise<EventLanding> {
+    const r = await this.eventByAddress(code, slug);
+    const owner = viewerId === r.user_id;
+    if (r.archived && !owner) throw new NotFoundException("errors.eventIsntAvailable");
+    // Quien abrió un enlace personal ve esa invitación, aunque sea el organizador comprobándolo
+    const granted = await this.grantedAccess(r.id, access(r.id));
+    if (granted?.invitationToken && !r.archived)
+      return { access: "guest", token: granted.invitationToken, ...(owner ? { eventId: r.id } : {}) };
+    if (owner) return { access: "owner", eventId: r.id, event: await this.publicView(r) };
+    if (r.public_password_hash)
+      return granted && !granted.guest
+        ? { access: "password", event: await this.publicView(r) }
+        : { access: "locked" };
+    throw new NotFoundException("errors.eventIsntAvailable");
+  }
+  /** Enlace personal: crea el acceso del invitado a la landing (solo se guarda su hash). */
+  async invitationAccess(token: string): Promise<LandingAddress & { eventId: string; access: string }> {
+    const [r] = await this.db.query(
+      "SELECT i.id,i.event_id,e.slug,u.public_code FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
+      [token],
+    );
+    if (!r) throw new NotFoundException("errors.invitationIsntAvailablePlease");
+    await this.db.query("DELETE FROM event_access WHERE expires_at<now()");
+    const access = randomBytes(32).toString("base64url");
+    await this.db.query(
+      "INSERT INTO event_access(token_hash,event_id,invitation_id,expires_at) VALUES($1,$2,$3,now()+make_interval(days => $4))",
+      [digest(access), r.event_id, r.id, GUEST_ACCESS_DAYS],
+    );
+    return { code: r.public_code, slug: r.slug, eventId: r.event_id, access };
+  }
+  /** Las direcciones /e/<dirección> de antes de la landing: a cuál llevan, si solo hay una. */
+  async legacyAddress(slug: string): Promise<LandingAddress> {
+    if (!eventSlugPattern.test(slug) || slug.length > accountLimits.eventSlug)
+      throw new NotFoundException("errors.eventIsntAvailable");
+    const rows = await this.db.query(
+      "SELECT u.public_code,e.slug FROM events e JOIN users u ON u.id=e.user_id WHERE e.slug=$1 AND e.archived=false LIMIT 2",
+      [slug],
+    );
+    if (rows.length !== 1) throw new NotFoundException("errors.eventIsntAvailable");
+    return { code: rows[0].public_code, slug: rows[0].slug };
+  }
+  /**
+   * Contraseña del evento. Devuelve el token de acceso (solo se guarda su hash) y el evento,
+   * o null si no tiene contraseña. Tras varios fallos, bloquea un rato.
+   */
+  async unlockLanding(code: string, slug: string, password: string): Promise<{ token: string; eventId: string } | null> {
+    const r = await this.eventByAddress(code, slug);
+    if (r.archived) throw new NotFoundException("errors.eventIsntAvailable");
     if (!r.public_password_hash) return null;
     if (r.public_password_locked_until && new Date(r.public_password_locked_until) > new Date())
       throw new HttpException("errors.tooManyAttemptsPlease", HttpStatus.TOO_MANY_REQUESTS);
@@ -575,21 +651,30 @@ export class EventsService {
       "INSERT INTO event_access(token_hash,event_id,expires_at) VALUES($1,$2,now()+interval '1 day')",
       [digest(token), r.id],
     );
-    return token;
+    return { token, eventId: r.id };
   }
-  async calendarForEvent(slug: string, access?: string): Promise<string> {
-    const r = await this.eventBySlug(slug);
-    if (r.public_password_hash && !(await this.hasAccess(r.id, access)))
-      throw new NotFoundException("errors.eventIsntAvailable");
-    return this.calendar(r, `${siteUrl(defaultLocale)}/e/${slug}`);
+  /** .ics de la landing, para quien puede verla. */
+  async calendarForLanding(
+    code: string,
+    slug: string,
+    viewerId: string | null,
+    access: (eventId: string) => string | undefined,
+    locale: Locale,
+  ): Promise<string> {
+    const landing = await this.landing(code, slug, viewerId, access);
+    if (landing.access === "locked") throw new NotFoundException("errors.eventIsntAvailable");
+    return this.calendar(await this.eventByAddress(code, slug), this.landingUrl(code, slug, locale));
   }
-  async calendarForInvitation(token: string): Promise<string> {
+  async calendarForInvitation(token: string, locale: Locale): Promise<string> {
     const [r] = await this.db.query(
-      "SELECT e.* FROM invitations i JOIN events e ON e.id=i.event_id WHERE i.token=$1 AND e.archived=false",
+      "SELECT e.*,u.public_code FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
       [token],
     );
     if (!r) throw new NotFoundException("errors.invitationIsntAvailablePlease");
-    return this.calendar(r, r.slug ? `${siteUrl(defaultLocale)}/e/${r.slug}` : undefined);
+    return this.calendar(r, this.landingUrl(r.public_code, r.slug, locale));
+  }
+  private landingUrl(code: string, slug: string, locale: Locale) {
+    return `${siteUrl(locale)}${eventLandingPath(code, slug)}`;
   }
   private calendar(r: EventRow, url?: string) {
     return calendarFile({

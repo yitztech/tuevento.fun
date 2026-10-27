@@ -1,6 +1,6 @@
 import { tr, LanguageSwitcher, RichText } from "./i18n";
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Check,
   X,
@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import {
+  eventLandingPath,
   rsvpSchema,
   type PublicInvitation,
   type Status,
@@ -23,8 +24,15 @@ import { PostcardCanvas } from "./postcard-canvas";
 import { CalendarLinks } from "./calendar-links";
 import { OpenRegistration } from "./open-registration";
 import { googleCalendarUrl, mapsSearchUrl } from "@tuevento/contracts";
-export function PublicRsvp() {
-  const { token } = useParams(),
+/**
+ * Invitación de un invitado: la postal, los datos y su respuesta. Por su enlace personal
+ * (/i/:token) primero le da acceso a la landing del evento y lo lleva a ella, que la muestra
+ * con el token que le corresponde.
+ */
+export function PublicRsvp({ token: landingToken }: { token?: string }) {
+  const params = useParams(),
+    token = landingToken ?? params.token,
+    navigate = useNavigate(),
     { api } = useApp(),
     [invitation, setInvitation] = useState<PublicInvitation | null>(null),
     [statuses, setStatuses] = useState<Record<string, Status>>({}),
@@ -33,16 +41,30 @@ export function PublicRsvp() {
     [saved, setSaved] = useState(false),
     [loading, setLoading] = useState(true);
   useEffect(() => {
-    api
-      .publicInvitation(token!)
-      .then((data) => {
-        setInvitation(data);
-        setStatuses(
-          Object.fromEntries(data.members.map((m) => [m.id, m.status])),
-        );
-      })
-      .catch((e) => setError(errorText(e)))
-      .finally(() => setLoading(false));
+    let alive = true;
+    const show = () =>
+      api
+        .publicInvitation(token!)
+        .then((data) => {
+          setInvitation(data);
+          setStatuses(Object.fromEntries(data.members.map((m) => [m.id, m.status])));
+        })
+        .catch((e) => setError(errorText(e)))
+        .finally(() => setLoading(false));
+    if (landingToken) void show();
+    else
+      // Si no se puede dar el acceso, la invitación se muestra aquí (o su error)
+      void api
+        .invitationAccess(token!)
+        .then((address) => {
+          if (alive) navigate(eventLandingPath(address.code, address.slug), { replace: true });
+        })
+        .catch(() => {
+          if (alive) void show();
+        });
+    return () => {
+      alive = false;
+    };
   }, [token]);
   const save = async () => {
     setBusy(true);

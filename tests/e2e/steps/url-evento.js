@@ -28,6 +28,23 @@ Given("que otra cuenta ya usa una dirección pública", async ({ page, ctx }) =>
   expect(evento.status()).toBe(201);
 });
 
+Given("que otro de mis eventos ya usa una dirección", async ({ page, ctx }) => {
+  ctx.ocupada = direccionUnica();
+  const evento = await page.request.post("/api/events", {
+    headers: cabecera,
+    data: {
+      title: "Otro evento mío",
+      description: "",
+      date: "2027-06-12T18:00:00Z",
+      timeZone: "America/Mexico_City",
+      location: "Jardín de pruebas",
+      theme: "floral",
+      slug: ctx.ocupada,
+    },
+  });
+  expect(evento.status()).toBe(201);
+});
+
 When("abro la edición del evento", async ({ page, ctx }) => {
   await page.goto(`/eventos/${ctx.evento.id}/editar`);
 });

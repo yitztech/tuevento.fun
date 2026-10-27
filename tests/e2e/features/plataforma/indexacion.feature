@@ -16,6 +16,7 @@ Característica: Cada URL en un solo estado para los buscadores
       | es     | /no-existe-prueba |
       | en     | /pt/no-existe     |
       | es     | /images/nada.jpg  |
+      | es     | /k7p2x9q/boda-ana |
 
   @WEB-07
   Esquema del escenario: robots.txt no bloquea nada y lo privado lleva noindex en la cabecera
@@ -31,6 +32,8 @@ Característica: Cada URL en un solo estado para los buscadores
       | es     | /app               |
       | es     | /e/una-celebracion |
       | en     | /eventos/1/editar  |
+      | es     | /k7p2x9qa/boda-ana |
+      | en     | /pt/k7p2x9qa/boda  |
 
   @WEB-08
   Esquema del escenario: Cada URL del sitemap es pública y su canonical es ella misma

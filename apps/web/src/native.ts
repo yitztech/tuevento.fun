@@ -4,6 +4,7 @@ import { Browser } from '@capacitor/browser';
 import { Clipboard } from '@capacitor/clipboard';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { EventApi } from '@tuevento/client';
+import { landingRoute } from '@tuevento/contracts';
 import { tr, type Runtime } from '@tuevento/app';
 // Verificador PKCE del acceso con navegador: vive en el llavero de iOS o el Keystore de Android
 // solo mientras dura el flujo (FE-03), nunca en localStorage.
@@ -25,7 +26,10 @@ export async function nativeRuntime():Promise<Runtime> {
  const handleURL=async(url:string)=>{
   // Solo el App Link verificado del propio dominio; el esquema tueventofun:// se retiró
   // porque cualquier app puede registrarlo y robar el código.
-  const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!==origin.hostname||parsed.pathname!=='/app-link/auth')return;
+  const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!==origin.hostname)return;
+  // Enlace personal o landing de un evento: la misma pantalla, dentro de la app
+  if(parsed.pathname.startsWith('/i/')||landingRoute(parsed.pathname)){window.location.hash=parsed.pathname;return}
+  if(parsed.pathname!=='/app-link/auth')return;
   const verifier=await SecureStorage.getItem(PKCE_KEY).catch(()=>null);if(!verifier)return;
   try{await api.request('/auth/mobile/exchange','POST',{code:parsed.searchParams.get('code'),verifier});await SecureStorage.removeItem(PKCE_KEY).catch(()=>{});await Browser.close().catch(()=>{});window.location.hash='/app';window.location.reload()}catch{window.alert(tr('app.sessionConnectError'))}
  };

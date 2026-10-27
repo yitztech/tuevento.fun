@@ -63,29 +63,59 @@ try {
     assert.equal((await a.call(`/events/${evento.id}/invitations`)).length, 1);
   });
 
+  await suite("Landing: otra cuenta no la ve, el acceso de un invitado no abre otro evento y la URL no expone el UUID", async () => {
+    const { publicCode } = await a.call("/auth/me");
+    const landing = `/public/landing/${publicCode}/${evento.slug}`;
+    assert.equal(JSON.stringify(await a.call("/auth/me")).includes(publicCode), true);
+    assert.equal(publicCode.includes(evento.id.slice(0, 8)), false);
+    // Con la sesión de otra cuenta, la landing ajena no existe (404, no 403)
+    await b.call(landing, "GET", undefined, 404);
+    await guest.call(landing, "GET", undefined, 404);
+    // El acceso de una invitación de otro evento no abre esta landing, ni con el nombre de su cookie
+    const ajeno = await b.call("/events", "POST", eventData(), 201);
+    const suya = await b.call(`/events/${ajeno.id}/invitations`, "POST", invitationData(), 201);
+    const invitado = client();
+    await invitado.call(`/invitations/${suya.token}/access`, "POST", {});
+    await invitado.call(landing, "GET", undefined, 404);
+    const valor = invitado.cookie().split("; ").find((c) => c.startsWith(`landing_${ajeno.id}=`)).split("=")[1];
+    assert.equal((await guest.raw(landing, { headers: { Cookie: `landing_${evento.id}=${valor}` } })).status, 404);
+    // El acceso exige la cabecera propia y un origen permitido, como toda escritura
+    assert.equal((await guest.raw(`/invitations/${invitacion.token}/access`, { method: "POST", body: {}, csrf: false })).status, 403);
+    // El acceso de un invitado da su invitación y nada más: ni otras invitaciones ni datos de contacto
+    const conAcceso = client();
+    await conAcceso.call(`/invitations/${invitacion.token}/access`, "POST", {});
+    assert.deepEqual(await conAcceso.call(landing), { access: "guest", token: invitacion.token });
+  });
+
   await suite("Dirección pública: solo la cuenta dueña la cambia, y un slug malicioso no encuentra nada", async () => {
     const ruta = `/events/${evento.id}`;
     await guest.raw(ruta, { method: "PATCH", body: eventData({ slug: `seg-${unique}` }) }).then((r) => assert.equal(r.status, 401));
     await b.raw(ruta, { method: "PATCH", body: eventData({ slug: `seg-${unique}` }) }).then((r) => assert.equal(r.status, 404));
+    const { publicCode } = await a.call("/auth/me");
     for (const malicioso of ["..%2Fetc", "x'%20OR%201=1--", "%3Cscript%3E", "a%00b"]) {
       await guest.call(`/public/events/${malicioso}`, "GET", undefined, 404);
+      await guest.call(`/public/landing/${publicCode}/${malicioso}`, "GET", undefined, 404);
+      await guest.call(`/public/landing/${malicioso}/evento`, "GET", undefined, 404);
     }
   });
 
   await suite("Avisos, contraseña y registro genérico: sin sesión no hay acceso y una contraseña no abre otra página", async () => {
     assert.equal((await guest.raw(`/events/slug-available?slug=abc-${unique}`)).status, 401);
-    // Una página con contraseña no revela nada del evento hasta acertarla
+    // Una landing con contraseña no revela nada del evento hasta acertarla
+    const codigo = (await a.call("/auth/me")).publicCode;
     const cerrada = `seg-clave-${unique}`;
-    await a.call("/events", "POST", eventData({ slug: cerrada, publicPassword: "clave-segura-1" }), 201);
-    assert.deepEqual(Object.keys(await guest.call(`/public/events/${cerrada}`)), ["locked"]);
-    assert.equal((await guest.raw(`/public/events/${cerrada}/unlock`, { method: "POST", body: { password: "nope" } })).status, 401);
-    // Un acceso concedido por otra página no abre esta, y un token inventado tampoco
+    const eventoCerrado = await a.call("/events", "POST", eventData({ slug: cerrada, publicPassword: "clave-segura-1" }), 201);
+    assert.deepEqual(await guest.call(`/public/landing/${codigo}/${cerrada}`), { access: "locked" });
+    assert.equal((await guest.raw(`/public/landing/${codigo}/${cerrada}/unlock`, { method: "POST", body: { password: "nope" } })).status, 401);
+    // Un acceso concedido por otra landing no abre esta, ni copiado con su nombre, y un token inventado tampoco
     const otra = `seg-otra-${unique}`;
-    await a.call("/events", "POST", eventData({ slug: otra, publicPassword: "otra-clave-1" }), 201);
+    const eventoOtro = await a.call("/events", "POST", eventData({ slug: otra, publicPassword: "otra-clave-1" }), 201);
     const visitante = client();
-    await visitante.call(`/public/events/${otra}/unlock`, "POST", { password: "otra-clave-1" });
-    assert.deepEqual(await visitante.call(`/public/events/${cerrada}`), { locked: true });
-    assert.equal((await guest.raw(`/public/events/${cerrada}`, { headers: { Cookie: `event_access=${"a".repeat(43)}` } })).data.locked, true);
+    await visitante.call(`/public/landing/${codigo}/${otra}/unlock`, "POST", { password: "otra-clave-1" });
+    assert.deepEqual(await visitante.call(`/public/landing/${codigo}/${cerrada}`), { access: "locked" });
+    const valor = visitante.cookie().split("; ").find((c) => c.startsWith(`landing_${eventoOtro.id}=`)).split("=")[1];
+    for (const falsa of [valor, "a".repeat(43)])
+      assert.deepEqual((await guest.raw(`/public/landing/${codigo}/${cerrada}`, { headers: { Cookie: `landing_${eventoCerrado.id}=${falsa}` } })).data, { access: "locked" });
     // Solo el dueño cambia la contraseña de su página
     assert.equal((await b.raw(`/events/${evento.id}`, { method: "PATCH", body: eventData({ slug: `seg-b-${unique}`, publicPassword: "robada-1" }) })).status, 404);
     // Un enlace personal no acepta registros; y la invitación genérica no muestra a otros invitados

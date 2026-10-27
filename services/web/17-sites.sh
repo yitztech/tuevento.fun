@@ -95,7 +95,8 @@ url_of() {
 # Páginas públicas, en el sitemap; las traducidas, con @ y su nombre en packages/contracts
 public_pages="/ /descargas /registro /acceso $(printf '@%s ' $pages)"
 # Páginas privadas o de sesión: se sirven con X-Robots-Tag: noindex, nunca con Disallow en robots.txt,
-# que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/… y /app-link/…
+# que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/…, /app-link/… y
+# las landings /<código>/<dirección>
 private_pages='app|pago|conectar-app|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
 
 conf=/etc/nginx/conf.d/sites.conf
@@ -247,6 +248,8 @@ conf=/etc/nginx/conf.d/sites.conf
   echo "    \"~^/($private_pages)\$\" private;"
   echo "    \"~^/eventos(/.*)?\$\" private;"
   echo "    \"~^/(i|e|app-link)/.+\$\" private;"
+  # Landing de cada evento: /<código de la cuenta>/<dirección> (landingRoute en packages/contracts)
+  echo "    \"~^/[a-z0-9]{8}/[a-z0-9]+(-[a-z0-9]+)*\$\" private;"
   echo '}'
   echo 'map $seo_route $seo_robots { private "noindex"; default ""; }'
 } > "$conf"

@@ -5,8 +5,8 @@ import type {
   Invitation,
   InvitationInput,
   Notification,
-  LockedPublicEvent,
-  PublicEvent,
+  EventLanding,
+  LandingAddress,
   RegistrationInput,
   PublicInvitation,
   RegisterInput,
@@ -138,10 +138,16 @@ export class EventApi {
   readNotifications = () => this.request("/notifications/read", "POST", {});
   publicInvitation = (token: string) =>
     this.request<PublicInvitation>(`/invitations/${token}`);
-  publicEvent = (slug: string) =>
-    this.request<PublicEvent | LockedPublicEvent>(`/public/events/${slug}`);
-  unlockEvent = (slug: string, password: string) =>
-    this.request<{ ok: boolean }>(`/public/events/${slug}/unlock`, "POST", { password });
+  /** Enlace personal: concede al invitado el acceso a la landing y dice cuál es. */
+  invitationAccess = (token: string) =>
+    this.request<LandingAddress>(`/invitations/${token}/access`, "POST", {});
+  landing = (code: string, slug: string) =>
+    this.request<EventLanding>(`/public/landing/${code}/${slug}`);
+  unlockLanding = (code: string, slug: string, password: string) =>
+    this.request<{ ok: boolean }>(`/public/landing/${code}/${slug}/unlock`, "POST", { password });
+  /** Las direcciones /e/<dirección> anteriores a la landing: a qué landing llevan. */
+  legacyEventAddress = (slug: string) =>
+    this.request<LandingAddress>(`/public/events/${slug}`);
   slugAvailable = (slug: string, eventId?: string) => {
     const query = new URLSearchParams({ slug, ...(eventId ? { eventId } : {}) });
     return this.request<{ available: boolean }>(`/events/slug-available?${query}`);

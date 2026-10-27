@@ -71,6 +71,8 @@ export const limits = {
   newsletterEmail: new RateLimit(3, minutes(60)),
   publicForm: new RateLimit(perIp(60), minutes(15)),
   unlockIp: new RateLimit(perIp(20), minutes(15)),
+  /** Accesos a la landing desde enlaces personales: cada uno crea una fila en event_access. */
+  landingAccessIp: new RateLimit(perIp(60), minutes(15)),
 };
 
 export const ipKey = (scope: string, req: FastifyRequest) => `${scope}:ip:${req.ip}`;

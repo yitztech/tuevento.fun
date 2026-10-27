@@ -1,10 +1,11 @@
 # language: es
 @proteccion @solo-web @REQ-03
-Característica: Página pública protegida y dirección sugerida
+Característica: Landing protegida por contraseña y dirección sugerida
+  La contraseña es otra forma de entrar a la landing para quien no tiene enlace personal.
 
-  Escenario: Una página protegida por contraseña solo se abre con la contraseña
+  Escenario: Sin enlace personal, una landing protegida solo se abre con la contraseña
     Dado que tengo un evento con dirección pública y contraseña "clave-de-prueba"
-    Cuando abro la página pública del evento
+    Cuando abro la página pública del evento sin sesión
     Entonces veo el encabezado "Evento protegido"
     Cuando escribo la contraseña "mal"
     Y pulso "Ver el evento"
@@ -21,4 +22,4 @@ Característica: Página pública protegida y dirección sugerida
   Escenario: Al escribir el nombre del evento se sugiere su dirección pública
     Dado que tengo una cuenta creada y abro un evento nuevo
     Cuando escribo el nombre del evento "Fiesta de cumpleaños" con un número único
-    Entonces el campo "Dirección pública (opcional)" sugiere una dirección que empieza por "fiesta-de-cumpleanos"
+    Entonces el campo "Dirección del evento" sugiere una dirección que empieza por "fiesta-de-cumpleanos"

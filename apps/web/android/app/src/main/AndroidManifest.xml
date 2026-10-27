@@ -29,6 +29,17 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/app-link/auth" />
             </intent-filter>
+
+            <!-- Enlaces personales (/i/…) y landings de eventos (/<código de 8>/<dirección>): con la app
+                 instalada se abren en ella. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${appLinkHost}" />
+                <data android:pathPrefix="/i/" />
+                <data android:pathPattern="/......../..*" />
+            </intent-filter>
         </activity>
 
         <provider

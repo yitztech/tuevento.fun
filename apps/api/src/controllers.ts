@@ -200,18 +200,38 @@ export class PublicController {
   ) {
     return this.events.publicInvitation(this.token(token, req));
   }
-  @Get("public/events/:slug") publicEvent(
-    @Req() req: FastifyRequest,
-    @Param("slug") slug: string,
-  ) {
-    return this.events.publicEvent(slug, req.cookies?.[EVENT_ACCESS_COOKIE]);
+  /** Las direcciones /e/<dirección> de antes de la landing: a qué landing llevan. */
+  @Get("public/events/:slug") legacyEventAddress(@Param("slug") slug: string) {
+    return this.events.legacyAddress(slug);
   }
-  /** Contraseña de la página pública: al acertarla se entrega una cookie de acceso de 1 día. */
-  @Post("public/events/:slug/unlock")
+  /** Enlace personal: deja al invitado una cookie de acceso a la landing y dice cuál es. */
+  @Post("invitations/:token/access")
   @HttpCode(200)
-  async unlockEvent(
+  async invitationAccess(
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("token") token: string,
+  ) {
+    limits.landingAccessIp.hit(ipKey("landing-access", req));
+    const { code, slug, eventId, access } = await this.events.invitationAccess(this.token(token, req));
+    setLandingAccess(reply, eventId, access, GUEST_ACCESS_SECONDS);
+    return { code, slug };
+  }
+  @Get("public/landing/:code/:slug") async landing(
+    @Req() req: FastifyRequest,
+    @Param("code") code: string,
+    @Param("slug") slug: string,
+  ) {
+    const viewer = await this.auth.current(req).catch(() => null);
+    return this.events.landing(code, slug, viewer?.id ?? null, landingAccess(req));
+  }
+  /** Contraseña del evento: al acertarla se entrega una cookie de acceso de 1 día. */
+  @Post("public/landing/:code/:slug/unlock")
+  @HttpCode(200)
+  async unlockLanding(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("code") code: string,
     @Param("slug") slug: string,
     @Body() body: unknown,
   ) {
@@ -221,23 +241,18 @@ export class PublicController {
       req,
     );
     limits.unlockIp.hit(ipKey("unlock", req));
-    const token = await this.events.unlockEvent(slug, password);
-    if (token)
-      reply.setCookie(EVENT_ACCESS_COOKIE, token, {
-        path: `/api/public/events/${slug}`,
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.COOKIE_SECURE === "true",
-        maxAge: 86400,
-      });
+    const granted = await this.events.unlockLanding(code, slug, password);
+    if (granted) setLandingAccess(reply, granted.eventId, granted.token, 86400);
     return { ok: true };
   }
-  @Get("public/events/:slug/calendar.ics") async eventCalendar(
+  @Get("public/landing/:code/:slug/calendar.ics") async landingCalendar(
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
+    @Param("code") code: string,
     @Param("slug") slug: string,
   ) {
-    const ics = await this.events.calendarForEvent(slug, req.cookies?.[EVENT_ACCESS_COOKIE]);
+    const viewer = await this.auth.current(req).catch(() => null);
+    const ics = await this.events.calendarForLanding(code, slug, viewer?.id ?? null, landingAccess(req), requestLocale(req));
     return calendarResponse(reply, ics);
   }
   @Get("invitations/:token/calendar.ics") async invitationCalendar(
@@ -245,7 +260,7 @@ export class PublicController {
     @Res({ passthrough: true }) reply: FastifyReply,
     @Param("token") token: string,
   ) {
-    const ics = await this.events.calendarForInvitation(this.token(token, req));
+    const ics = await this.events.calendarForInvitation(this.token(token, req), requestLocale(req));
     return calendarResponse(reply, ics);
   }
   /** Invitado de una invitación genérica: entrega sus datos y personas, y recibe su propia invitación. */
@@ -528,7 +543,24 @@ export class OrganizerController {
   }
 }
 
-const EVENT_ACCESS_COOKIE = "event_access";
+/**
+ * Acceso a la landing (de un invitado o por la contraseña): una cookie por evento, solo para las
+ * rutas de la landing en la API. El valor es un token aleatorio; la base de datos guarda su hash.
+ */
+const landingCookie = (eventId: string) => `landing_${eventId}`;
+const LANDING_COOKIE_PATH = "/api/public/landing";
+/** Lo que dura el acceso del invitado: lo mismo que su fila en event_access. */
+const GUEST_ACCESS_SECONDS = 180 * 86400;
+const landingAccess = (req: FastifyRequest) => (eventId: string) => req.cookies?.[landingCookie(eventId)];
+function setLandingAccess(reply: FastifyReply, eventId: string, token: string, maxAge: number) {
+  reply.setCookie(landingCookie(eventId), token, {
+    path: LANDING_COOKIE_PATH,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.COOKIE_SECURE === "true",
+    maxAge,
+  });
+}
 /** Archivo de calendario descargable (.ics). */
 function calendarResponse(reply: FastifyReply, ics: string) {
   reply.header("Content-Type", "text/calendar; charset=utf-8");

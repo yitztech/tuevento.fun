@@ -78,11 +78,11 @@ test("Idiomas soportados (es, en, pt, de, fr): la base de datos los acepta y rec
 
 test("Valores permitidos: tema, tipo y estado solo admiten los definidos", async () => {
   const dueno = await usuario(db);
-  const evento = async (theme) => db.query("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E', now(),'UTC','L',$2)", [dueno, theme]);
+  const evento = async (theme) => db.query("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text), now(),'UTC','L',$2)", [dueno, theme]);
   for (const bueno of themeIds) assert.equal(await codigoError(() => evento(bueno)), null, bueno);
   assert.equal(await codigoError(() => evento("inexistente")), CHECK_VIOLATION);
 
-  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
   const invitacion = async (kind) => db.query("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'I',$2,$3)", [e.id, kind, crypto.randomUUID().replaceAll("-", "")]);
   assert.equal(await codigoError(() => invitacion("individual")), null);
   assert.equal(await codigoError(() => invitacion("family")), null);
@@ -102,14 +102,14 @@ test("Valores permitidos: tema, tipo y estado solo admiten los definidos", async
 
 test("Integridad referencial: no hay filas huérfanas", async () => {
   const sinDueno = crypto.randomUUID();
-  assert.equal(await codigoError(() => db.query("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold')", [sinDueno])), FK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold')", [sinDueno])), FK_VIOLATION);
   assert.equal(await codigoError(() => db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES('x',$1, now())", [sinDueno])), FK_VIOLATION);
   assert.equal(await codigoError(() => db.query("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'I','family','t')", [crypto.randomUUID()])), FK_VIOLATION);
 });
 
 test("Borrar un evento borra sus invitaciones, miembros y notificaciones", async () => {
   const dueno = await usuario(db);
-  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
   const inv = await uno("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'I','family',$2) RETURNING id", [e.id, crypto.randomUUID().replaceAll("-", "")]);
   await db.query("INSERT INTO members(id,invitation_id,name,kind) VALUES(gen_random_uuid(),$1,'M','adult')", [inv.id]);
   await db.query("INSERT INTO notifications(id,user_id,event_id,guest_name,message) VALUES(gen_random_uuid(),$1,$2,'G','m')", [dueno, e.id]);
@@ -124,7 +124,7 @@ test("Borrar una cuenta borra todo lo suyo, salvo la actividad anónima que se c
   await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '1 day')", [`s-${id}`, id]);
   await db.query("INSERT INTO password_resets(token_hash,user_id,locale,expires_at) VALUES($1,$2,'es', now() + interval '1 hour')", [`p-${id}`, id]);
   await db.query("INSERT INTO mobile_auth_codes(code_hash,challenge,user_id,expires_at) VALUES($1,'c',$2, now() + interval '1 minute')", [`m-${id}`, id]);
-  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [id]);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [id]);
   const act = await uno("INSERT INTO activity(id,kind,platform,user_id) VALUES(gen_random_uuid(),'registration','web',$1) RETURNING id", [id]);
   await db.query("DELETE FROM users WHERE id=$1", [id]);
   for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["events", "user_id"]])
@@ -151,31 +151,71 @@ test("El rol api no tiene privilegios de administrador (en el servidor real)", a
 
 test("Postal: el diseño tiene tamaño acotado y se borra con su evento", async () => {
   const dueno = await usuario(db);
-  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
   await db.query("INSERT INTO postcards(event_id) VALUES($1)", [e.id]);
   assert.equal(await codigoError(() => db.query("UPDATE postcards SET design=$2 WHERE event_id=$1", [e.id, JSON.stringify({ texto: "x".repeat(20000) })])), CHECK_VIOLATION);
   await db.query("DELETE FROM events WHERE id=$1", [e.id]);
   assert.equal((await uno("SELECT count(*)::int AS n FROM postcards WHERE event_id=$1", [e.id])).n, 0);
 });
 
-test("Dirección pública del evento: formato, longitud y unicidad en todo el servicio", async () => {
+test("Dirección del evento: obligatoria, con formato y longitud, y única dentro de cada cuenta", async () => {
   const [a, b] = [await usuario(db), await usuario(db)];
-  const evento = (dueno) => uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
-  const e1 = await evento(a);
-  const e2 = await evento(b);
+  const evento = (dueno, slug) => uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',$2,now(),'UTC','L','gold') RETURNING id", [dueno, slug]);
+  const e1 = await evento(a, "boda-ana-2026");
+  assert.equal(await codigoError(() => evento(a, null)), CHECK_VIOLATION, "sin dirección no hay landing");
   assert.equal(await codigoError(() => db.query("UPDATE events SET slug='Boda Ana' WHERE id=$1", [e1.id])), CHECK_VIOLATION);
   assert.equal(await codigoError(() => db.query("UPDATE events SET slug='ab' WHERE id=$1", [e1.id])), CHECK_VIOLATION);
   assert.equal(await codigoError(() => db.query("UPDATE events SET slug=$2 WHERE id=$1", [e1.id, "a".repeat(accountLimits.eventSlug + 1)])), CHECK_VIOLATION);
-  await db.query("UPDATE events SET slug='boda-ana-2026' WHERE id=$1", [e1.id]);
-  assert.equal(await codigoError(() => db.query("UPDATE events SET slug='boda-ana-2026' WHERE id=$1", [e2.id])), UNIQUE_VIOLATION);
-  // Sin dirección (NULL) no compite con nadie: varios eventos pueden no tener una
-  await db.query("UPDATE events SET slug=NULL WHERE id=$1", [e2.id]);
-  await db.query("UPDATE events SET slug=NULL WHERE id=$1", [e1.id]);
+  assert.equal(await codigoError(() => db.query("UPDATE events SET slug=NULL WHERE id=$1", [e1.id])), CHECK_VIOLATION);
+  // La misma dirección no se repite en una cuenta, pero otra cuenta sí puede usarla: la URL lleva su código
+  assert.equal(await codigoError(() => evento(a, "boda-ana-2026")), UNIQUE_VIOLATION);
+  await evento(b, "boda-ana-2026");
+});
+
+test("Código público de la cuenta: se genera solo, con 8 caracteres, y es único", async () => {
+  const [a, b] = [await usuario(db), await usuario(db)];
+  const codigo = async (id) => (await uno("SELECT public_code FROM users WHERE id=$1", [id])).public_code;
+  assert.match(await codigo(a), /^[a-z0-9]{8}$/);
+  assert.notEqual(await codigo(a), await codigo(b));
+  const deA = await codigo(a);
+  assert.equal(await codigoError(() => db.query("UPDATE users SET public_code=$2 WHERE id=$1", [b, deA])), UNIQUE_VIOLATION);
+  for (const malo of [null, "ABCDEFGH", "abc", "abcdefghi", "abcd-fgh"])
+    assert.equal(await codigoError(() => db.query("UPDATE users SET public_code=$2 WHERE id=$1", [b, malo])), CHECK_VIOLATION, `public_code = ${JSON.stringify(malo)}`);
+});
+
+test("La 015 da código a las cuentas y dirección a los eventos que ya existían", async () => {
+  const vieja = await baseTemporal({ hasta: "015_landing_evento.sql" });
+  try {
+    const q = (sql, params) => vieja.api.query(sql, params);
+    const dueno = await usuario(vieja.api);
+    const otro = await usuario(vieja.api);
+    const evento = (user, title, slug = null) =>
+      q("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,$2,$3,now(),'UTC','L','gold') RETURNING id", [user, title, slug]).then((r) => r.rows[0].id);
+    const conDireccion = await evento(dueno, "Mi fiesta", "fiesta-del-ano");
+    const boda1 = await evento(dueno, "¡Boda de Ana & Luis!");
+    const boda2 = await evento(dueno, "Boda de Ana y Luis");
+    const choca = await evento(dueno, "Fiesta del año");
+    const corta = await evento(otro, "!!");
+    const deOtro = await evento(otro, "Boda de Ana y Luis");
+    await vieja.aplicarResto();
+    const slug = async (id) => (await q("SELECT slug FROM events WHERE id=$1", [id])).rows[0].slug;
+    assert.equal(await slug(conDireccion), "fiesta-del-ano", "la que ya tenía no cambia");
+    assert.equal(await slug(boda1), "boda-de-ana-luis");
+    assert.equal(await slug(boda2), "boda-de-ana-y-luis");
+    assert.match(await slug(choca), /^fiesta-del-ano-[0-9a-f]{6}$/, "si ya la usa otro evento de la cuenta, con sufijo");
+    assert.equal(await slug(corta), "evento", "sin letras del título, «evento»");
+    assert.equal(await slug(deOtro), "boda-de-ana-y-luis", "otra cuenta puede repetirla");
+    const codigos = (await q("SELECT public_code FROM users WHERE id=ANY($1::uuid[])", [[dueno, otro]])).rows.map((r) => r.public_code);
+    assert.equal(codigos.length, 2);
+    for (const c of codigos) assert.match(c, /^[a-z0-9]{8}$/);
+  } finally {
+    await vieja.cerrar();
+  }
 });
 
 test("Invitación genérica y avisos: tipos válidos, registros enlazados al enlace y acceso protegido", async () => {
   const dueno = await usuario(db);
-  const e = await uno("INSERT INTO events(id,user_id,title,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E',now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
   assert.equal((await uno("SELECT cancelled FROM events WHERE id=$1", [e.id])).cancelled, false);
   const abierta = await uno("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'Abierta','open',gen_random_uuid()::text) RETURNING id", [e.id]);
   const hijo = await uno("INSERT INTO invitations(id,event_id,name,kind,token,parent_id) VALUES(gen_random_uuid(),$1,'Hijo','individual',gen_random_uuid()::text,$2) RETURNING id", [e.id, abierta.id]);
@@ -183,6 +223,12 @@ test("Invitación genérica y avisos: tipos válidos, registros enlazados al enl
   // Al borrar el enlace, sus registros siguen existiendo como invitaciones normales
   await db.query("DELETE FROM invitations WHERE id=$1", [abierta.id]);
   assert.equal((await uno("SELECT parent_id FROM invitations WHERE id=$1", [hijo.id])).parent_id, null);
+  // Acceso de un invitado a la landing: se borra con su invitación
+  const personal = await uno("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'Ana','individual',gen_random_uuid()::text) RETURNING id", [e.id]);
+  await db.query("INSERT INTO event_access(token_hash,event_id,invitation_id,expires_at) VALUES($1,$2,$3,now()+interval '1 day')", ["hash-de-invitado", e.id, personal.id]);
+  await db.query("DELETE FROM invitations WHERE id=$1", [personal.id]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM event_access WHERE token_hash='hash-de-invitado'")).n, 0);
+  assert.equal(await codigoError(() => db.query("INSERT INTO event_access(token_hash,event_id,invitation_id,expires_at) VALUES($1,$2,gen_random_uuid(),now())", ["hash-huerfano", e.id])), FK_VIOLATION);
   // Acceso a la página protegida: con caducidad, y se borra con su evento
   await db.query("INSERT INTO event_access(token_hash,event_id,expires_at) VALUES($1,$2,now()+interval '1 day')", ["hash-de-prueba", e.id]);
   await db.query("DELETE FROM events WHERE id=$1", [e.id]);
