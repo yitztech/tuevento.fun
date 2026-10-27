@@ -343,6 +343,37 @@ try {
     assert.equal(cuarta.data.code, "rate_limited");
   });
 
+  await suite("Tipo de cuenta: un proveedor no usa ningún endpoint de eventos, invitaciones, postales ni avisos", async () => {
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "tipo-o"), 201);
+    const evento = await organizador.call("/events", "POST", eventData(), 201);
+    const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    const proveedor = client();
+    await proveedor.call("/auth/register", "POST", account(P, "tipo-p", { accountType: "provider" }), 201);
+    const id = evento.id, otro = "00000000-0000-4000-8000-000000000000";
+    // Toda la API de quien organiza: un endpoint nuevo que se olvide de la guardia aparece aquí
+    const rutas = [
+      ["GET", "/stream"],
+      ["GET", "/events"], ["POST", "/events"], ["GET", "/events/slug-available?slug=abc"],
+      ["GET", `/events/${id}`], ["PATCH", `/events/${id}`], ["DELETE", `/events/${id}`],
+      ["GET", `/events/${id}/postcard`], ["PUT", `/events/${id}/postcard`], ["GET", `/events/${id}/postcard/versions`],
+      ["POST", `/events/${id}/postcard/versions/${otro}/restore`], ["POST", `/events/${id}/postcard/images`], ["DELETE", `/events/${id}/postcard/images/${otro}`],
+      ["GET", `/events/${id}/invitations`], ["POST", `/events/${id}/invitations`],
+      ["PUT", `/events/${id}/invitations/${invitacion.id}`], ["DELETE", `/events/${id}/invitations/${invitacion.id}`],
+      ["GET", "/notifications"], ["POST", "/notifications/read"],
+    ];
+    for (const [method, path] of rutas) {
+      const r = await proveedor.raw(path, { method, body: ["GET", "DELETE"].includes(method) ? undefined : {} });
+      assert.equal(r.status, 403, `${method} ${path} → ${r.status}`);
+      assert.equal(r.data.code, "wrong_account_type", `${method} ${path}: ${r.text}`);
+    }
+    // El evento sigue intacto y el proveedor mantiene su perfil
+    assert.equal((await organizador.call(`/events/${id}`)).id, id);
+    assert.equal((await proveedor.call("/profile", "PATCH", { firstName: "Luis", lastName: "Mora", phone: "" })).firstName, "Luis");
+    // Sin sesión sigue siendo 401, no 403
+    assert.equal((await client().raw("/events")).status, 401);
+  });
+
   await suite("Mapas: pegar un enlace exige la cabecera propia y no sigue hosts ajenos (SSRF)", async () => {
     const guest = client();
     const body = { url: "https://maps.google.com/?q=18.9,-99.2" };

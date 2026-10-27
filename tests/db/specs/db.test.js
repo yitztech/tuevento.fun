@@ -247,3 +247,13 @@ test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; 
   await db.query("INSERT INTO geo_cache(kind,key_hash,locale,response) VALUES('search',md5(random()::text),'es','[]')");
   assert.equal(await codigoError(() => db.query("INSERT INTO geo_cache(kind,key_hash,locale,response) VALUES('otro','x','es','[]')")), CHECK_VIOLATION);
 });
+
+test("Tipo de cuenta: organiza por defecto y solo admite organizer o provider", async () => {
+  const id = await usuario(db);
+  assert.equal((await uno("SELECT account_type FROM users WHERE id=$1", [id])).account_type, "organizer");
+  await db.query("UPDATE users SET account_type='provider' WHERE id=$1", [id]);
+  for (const valor of ["admin", "Provider", ""])
+    assert.equal(await codigoError(() => db.query("UPDATE users SET account_type=$2 WHERE id=$1", [id, valor])), CHECK_VIOLATION, valor);
+  assert.equal(await codigoError(() => db.query("UPDATE users SET account_type=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
+  assert.equal((await uno("SELECT convalidated FROM pg_constraint WHERE conname='users_account_type_check'")).convalidated, true, "la 020 valida la restricción");
+});

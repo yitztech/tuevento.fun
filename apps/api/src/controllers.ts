@@ -27,6 +27,7 @@ import {
   notificationMessage,
   type Locale,
   registerSchema,
+  googleLoginSchema,
   loginSchema,
   eventSchema,
   invitationSchema,
@@ -44,6 +45,8 @@ import {
   AuthService,
   GOOGLE_NONCE_COOKIE,
   SessionGuard,
+  AccountTypeGuard,
+  RequireAccountType,
   userView,
   type AuthedRequest,
 } from "./auth";
@@ -171,16 +174,9 @@ export class PublicController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    const data = parse(
-      z.strictObject({
-        credential: z.string().max(12000),
-        nonce: z.string().min(20).max(100),
-      }),
-      body,
-      req,
-    );
+    const data = parse(googleLoginSchema, body, req);
     return this.auth.session(
-      await this.auth.google(data.credential, data.nonce, req, reply),
+      await this.auth.google(data.credential, data.nonce, req, reply, data.accountType),
       req,
       reply,
     );
@@ -294,7 +290,8 @@ export class PublicController {
   }
 }
 @Controller()
-@UseGuards(SessionGuard)
+@UseGuards(SessionGuard, AccountTypeGuard)
+@RequireAccountType("organizer")
 export class OrganizerController {
   constructor(
     private db: Database,
@@ -487,6 +484,13 @@ export class OrganizerController {
     this.updates.emit(req.user.id);
     return { ok: true };
   }
+}
+
+/** Perfil de la cuenta: igual para quien organiza eventos y para quien ofrece servicios. */
+@Controller()
+@UseGuards(SessionGuard)
+export class AccountController {
+  constructor(private db: Database) {}
   @Patch("profile") async profile(
     @Req() req: AuthedRequest,
     @Body() body: unknown,

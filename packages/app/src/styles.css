@@ -5035,3 +5035,52 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   gap: 0.4rem;
   margin: 0;
 }
+/* Tipo de cuenta en el registro: dos opciones grandes, navegables con el teclado */
+.account-type {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1.2rem;
+  padding: 0;
+  border: 0;
+}
+.account-type legend {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+.account-type-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.account-type-option:has(input:checked) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.account-type-option:has(input:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.account-type-option input {
+  margin-top: 0.2rem;
+  accent-color: var(--primary);
+}
+.account-type-option span {
+  display: grid;
+  gap: 0.15rem;
+}
+.account-type-option small {
+  color: var(--muted);
+}
+.provider-next {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.provider-next svg {
+  flex: none;
+  color: var(--primary);
+}

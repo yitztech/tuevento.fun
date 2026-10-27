@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   accountLimits,
   registerSchema,
+  type AccountType,
   loginSchema,
   profileSchema,
   forgotPasswordSchema,
@@ -113,6 +114,8 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     [error, setError] = useState(""),
     [showPassword, setShowPassword] = useState(false),
     [avatar, setAvatar] = useState("");
+  // ?tipo=proveedor llega desde la sección para proveedores de la portada
+  const initialType: AccountType = new URLSearchParams(search).get("tipo") === "proveedor" ? "provider" : "organizer";
   const form = useForm<RegisterInput>({
     resolver: zodResolver(
       registerMode ? registerSchema : loginSchema,
@@ -120,7 +123,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     ) as unknown as Resolver<RegisterInput>,
     // Solo los campos del esquema de cada modo: los esquemas no admiten campos de más
     defaultValues: registerMode
-      ? { firstName: "", lastName: "", phone: "", email: "", password: "" }
+      ? { firstName: "", lastName: "", phone: "", email: "", password: "", accountType: initialType }
       : { email: "", password: "" },
   });
   const submit = form.handleSubmit(async (data) => {
@@ -159,7 +162,21 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               ? tr("account.createAccountPlanFirst")
               : tr("account.eventsPeopleWaiting")}
           </p>
-          <GoogleLogin onError={setError} />
+          {registerMode && (
+            <fieldset className="account-type">
+              <legend>{tr("account.accountTypeLegend")}</legend>
+              {(["organizer", "provider"] as const).map((type) => (
+                <label key={type} className="account-type-option">
+                  <input type="radio" value={type} {...form.register("accountType")} />
+                  <span>
+                    <strong>{tr(type === "organizer" ? "account.organizerTitle" : "account.providerTitle")}</strong>
+                    <small>{tr(type === "organizer" ? "account.organizerHint" : "account.providerHint")}</small>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
+          <GoogleLogin onError={setError} accountType={registerMode ? form.watch("accountType") : undefined} />
           <div className="or-divider">
             <span>{tr("account.continueEmail")}</span>
           </div>
@@ -448,8 +465,11 @@ export function ResetPasswordPage() {
     </AuthShell>
   );
 }
-function GoogleLogin({ onError }: { onError: (error: string) => void }) {
+function GoogleLogin({ onError, accountType }: { onError: (error: string) => void; accountType?: AccountType }) {
   const postAuthTarget = usePostAuthTarget();
+  // El botón de Google se inicia una vez: el tipo elegido después se lee de aquí al volver
+  const chosenType = useRef(accountType);
+  chosenType.current = accountType;
   const { api, setUser, config, runtime } = useApp(),
     navigate = useNavigate(),
     ref = useRef<HTMLDivElement>(null);
@@ -466,7 +486,7 @@ function GoogleLogin({ onError }: { onError: (error: string) => void }) {
           nonce,
           callback: async ({ credential }: { credential: string }) => {
             try {
-              setUser(await api.google(credential, nonce));
+              setUser(await api.google(credential, nonce, chosenType.current));
               navigate(postAuthTarget);
             } catch (e) {
               onError(errorText(e));

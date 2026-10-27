@@ -11,6 +11,7 @@ import {
   Play,
   Users,
   X,
+  Store,
 } from "lucide-react";
 import { themes, type MessageKey, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
@@ -465,6 +466,20 @@ export function LandingPage() {
             width="1200"
             height="800"
           />
+        </section>
+
+        <section className="landing-container landing-providers" aria-labelledby="landing-providers-title">
+          <div className="landing-newsletter-card">
+            <div className="landing-newsletter-copy">
+              <Store size={28} strokeWidth={1.5} />
+              <h2 id="landing-providers-title">{tr("landing.providersTitle")}</h2>
+              <p>{tr("landing.providersText")}</p>
+            </div>
+            <Link className="button landing-primary" to="/registro?tipo=proveedor">
+              {tr("landing.providersAction")}
+              <ArrowRight size={20} />
+            </Link>
+          </div>
         </section>
 
         <section className="landing-container landing-newsletter">

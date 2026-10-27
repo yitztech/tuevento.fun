@@ -51,7 +51,12 @@
     "startSomethingWonderful": "Start something wonderful.",
     "tueventofunMadeSharedMoments": "TuEventoFun · Made for shared moments.",
     "uploadProfileImage": "Upload profile image",
-    "yourInformation": "Your information"
+    "yourInformation": "Your information",
+    "accountTypeLegend": "How will you use TuEventoFun?",
+    "organizerTitle": "I organize events",
+    "organizerHint": "Weddings, birthdays and get-togethers: guests, RSVPs and designs.",
+    "providerTitle": "I offer event services",
+    "providerHint": "Catering, music, photography, venues… List your business for free."
   },
   "app": {
     "backOverview": "Back to overview",
@@ -277,7 +282,8 @@
     "openInvitationFull": "This link has reached its maximum number of registrations.",
     "eventPasswordIncorrect": "The password is not correct.",
     "geocoderUnavailable": "Map search isn't available right now. Try again in a few minutes or paste a map link.",
-    "mapLinkWithoutCoordinates": "That link doesn't include the location. In your maps app, open the place, tap “Share” and copy that link."
+    "mapLinkWithoutCoordinates": "That link doesn't include the location. In your maps app, open the place, tap “Share” and copy that link.",
+    "wrongAccountType": "This section is for a different type of account."
   },
   "events": {
     "actions": "Actions",
@@ -478,7 +484,10 @@
     "weddingAmongFlowersBirthday": "A wedding among flowers, a birthday full of color or a toast just because. Find the style that feels like you.",
     "wellWriteLanguageUnsubscribe": "We'll write to you in this language. You can unsubscribe at any time.",
     "yesAccountBringsTogether": "Yes. Your account brings together your events, their guest lists and the replies for each celebration.",
-    "yesEditEventInformation": "Yes. You can edit the event information, choose another design and update the people in each invitation from your space."
+    "yesEditEventInformation": "Yes. You can edit the event information, choose another design and update the people in each invitation from your space.",
+    "providersTitle": "Do you offer event services?",
+    "providersText": "List your business for free and reach people planning their celebration.",
+    "providersAction": "Create my provider account"
   },
   "language": {
     "changeLanguage": "Change language",
@@ -772,7 +781,8 @@
     "useLeast3Characters": "Enter at least 3 characters.",
     "maximum2048Characters": "Maximum 2048 characters.",
     "invalidCoordinates": "The coordinates aren't valid.",
-    "mapLinkNotSupported": "Paste an https link from Google Maps, Apple Maps or Waze."
+    "mapLinkNotSupported": "Paste an https link from Google Maps, Apple Maps or Waze.",
+    "invalidAccountType": "Choose whether you organize events or offer services."
   },
   "pricing": {
     "title": "Pricing",
@@ -862,5 +872,13 @@
     "copied": "Address copied",
     "share": "Share location",
     "shareText": "{{place}} — {{url}}"
+  },
+  "provider": {
+    "business": "My business",
+    "workspace": "Your event business",
+    "accountLabel": "Provider",
+    "homeTitle": "Your business, in front of event organizers",
+    "homeIntro": "This is where you'll manage what you offer to people planning an event.",
+    "homeNext": "Soon you'll be able to add your services, photos and public page so people can find you."
   }
 }

@@ -8,6 +8,7 @@ import {
   ExecutionContext,
   Logger,
 } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { randomBytes, randomUUID, createHash } from "node:crypto";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import type { FastifyRequest, FastifyReply } from "fastify";
@@ -21,8 +22,10 @@ import {
   type Locale,
   type RegisterInput,
   type User,
+  type AccountType,
 } from "@tuevento/contracts";
 import { requestLocale } from "./request-locale";
+import { ProblemException } from "./problem";
 import { hashPassword, verifyPassword } from "./password";
 import { ipKey, limits } from "./rate-limit";
 import { MailService } from "./mail";
@@ -48,6 +51,7 @@ export type UserRow = {
   locale: string | null;
   password_hash: string | null;
   public_code: string;
+  account_type: AccountType;
 };
 export const userView = (r: UserRow): User => ({
   id: r.id,
@@ -60,6 +64,7 @@ export const userView = (r: UserRow): User => ({
   isOwner: r.is_owner === true,
   locale: normalizeLocale(r.locale),
   publicCode: r.public_code,
+  accountType: r.account_type,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin
@@ -90,7 +95,7 @@ export class AuthService {
     const passwordHash = await this.passwordHash(data.password);
     try {
       const [r] = await this.db.query<UserRow>(
-        "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale,account_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
         [
           randomUUID(),
           data.firstName,
@@ -99,6 +104,7 @@ export class AuthService {
           data.phone,
           passwordHash,
           locale,
+          data.accountType,
         ],
       );
       return userView(r);
@@ -290,6 +296,7 @@ export class AuthService {
     nonce: string,
     req: FastifyRequest,
     reply: FastifyReply,
+    accountType: AccountType = "organizer",
   ) {
     if (!process.env.GOOGLE_CLIENT_ID)
       throw new ServiceUnavailableException(
@@ -337,7 +344,7 @@ export class AuthService {
     const locale = requestLocale(req);
     try {
       const [r] = await this.db.query<UserRow>(
-        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
         [
           randomUUID(),
           payload.given_name || translate(locale, "common.host"),
@@ -345,6 +352,7 @@ export class AuthService {
           payload.email.toLowerCase(),
           payload.sub,
           locale,
+          accountType,
         ],
       );
       await this.db.query("INSERT INTO activity(id,kind,platform,user_id) VALUES($1,'registration',$2,$3)", [randomUUID(), clientPlatform(req), r.id]);
@@ -365,6 +373,26 @@ export class SessionGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthedRequest>();
     request.user = await this.auth.current(request);
+    return true;
+  }
+}
+
+/** Tipo de cuenta que exige un controlador o un endpoint (`@RequireAccountType("organizer")`). */
+export const RequireAccountType = Reflector.createDecorator<AccountType>();
+
+/**
+ * Cada tipo de cuenta usa solo sus endpoints (AGENTS.md §25): se comprueba aquí, en un solo sitio,
+ * después de SessionGuard. Un tipo equivocado responde 403 `wrong_account_type`.
+ */
+@Injectable()
+export class AccountTypeGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+  canActivate(context: ExecutionContext) {
+    const required = this.reflector.getAllAndOverride(RequireAccountType, [context.getHandler(), context.getClass()]);
+    if (!required) return true;
+    const { user } = context.switchToHttp().getRequest<AuthedRequest>();
+    if (user?.accountType !== required)
+      throw new ProblemException({ status: 403, code: "wrong_account_type", detail: "errors.wrongAccountType" });
     return true;
   }
 }
