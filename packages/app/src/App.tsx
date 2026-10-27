@@ -50,7 +50,8 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
 } from "./account";
-import { landingRoute, localizedPage, passwordResetPaths } from "@tuevento/contracts";
+import { ProviderPage } from "./provider-page";
+import { landingRoute, localizedPage, localizedPath, passwordResetPaths, providerRoute, supportedLocales } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
 import { EventLanding, LegacyEventAddress } from "./public-event";
 import { PostcardEditor } from "./postcard-editor";
@@ -93,6 +94,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       location.pathname.startsWith("/i/") ||
       location.pathname.startsWith("/e/") ||
       landingRoute(location.pathname) !== null ||
+      providerRoute(location.pathname) !== null ||
       legal !== null ||
       pricing,
     isAuth = [
@@ -220,6 +222,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         <Routes>
           <Route path="/i/:token" element={<PublicRsvp />} />
           <Route path="/e/:slug" element={<LegacyEventAddress />} />
+          {supportedLocales.map((locale) => (
+            <Route key={locale} path={`${localizedPath("providers", locale)}/:slug`} element={<ProviderPage />} />
+          ))}
           <Route path="/:code/:slug" element={<EventLanding />} />
         </Routes>
       ) : location.pathname === passwordResetPaths.request ? (

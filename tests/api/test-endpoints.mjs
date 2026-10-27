@@ -568,6 +568,69 @@ try {
     assert.equal((await client().raw(foto.urls[480].replace(/^\/api/, ""))).status, 404);
   });
 
+  await suite("Proveedor: página pública, estado para los buscadores en 5 idiomas y sitemap", async () => {
+    const p = await proveedorNuevo("prov-pagina");
+    const slug = `pagina-${unique}`;
+    const datos = providerData({ businessName: `Salón Ñandú "${unique}" <b>`, headline: "Bodas & XV años", slug, address: "Calle Luna 5", postalCode: "62000" });
+    await p.call("/provider/profile", "PUT", datos);
+    const { images: [foto] } = await p.call("/provider/images", "POST", { dataUrl: pngDataUrl(), alt: "Salón decorado" }, 201);
+    // Borrador: ni página ni estado para los buscadores
+    assert.equal((await client().raw(`/public/providers/${slug}`)).status, 404);
+    assert.equal((await client().raw(`/internal/seo/providers/${slug}`)).status, 403);
+    await p.call("/provider/publish", "POST", {});
+    // Publicada, con la dirección aproximada: sin calle ni código postal y el punto a 2 decimales
+    const pagina = await client().call(`/public/providers/${slug}`);
+    for (const privado of ["id", "userId", "email", "status", "missing", "coverImageId"]) assert.ok(!(privado in pagina), privado);
+    assert.equal(pagina.businessName, datos.businessName);
+    assert.equal(pagina.address, "");
+    assert.equal(pagina.postalCode, "");
+    assert.deepEqual(pagina.geo, { lat: 18.92, lng: -99.23 });
+    assert.equal(pagina.cover.id, foto.id);
+    // Exacta: la dirección y el punto tal cual
+    await p.call("/provider/profile", "PUT", { ...datos, addressVisibility: "exact" });
+    const exacta = await client().call(`/public/providers/${slug}`);
+    assert.equal(exacta.address, "Calle Luna 5");
+    assert.deepEqual(exacta.geo, datos.geo);
+    // Para nginx: título y descripción escapados para HTML y en ASCII, en el idioma de la página
+    for (const [lang, headers] of locales) {
+      const r = await client().raw(`/internal/seo/providers/${slug}`, { headers });
+      assert.equal(r.status, 204, lang);
+      const categoria = translate(lang, "providers.categories.catering");
+      const titulo = translate(lang, "providers.seoTitle", { name: datos.businessName, category: categoria });
+      const html = [...titulo].map((c) => (c.codePointAt(0) > 126 || "&<>\"'".includes(c) ? `&#${c.codePointAt(0)};` : c)).join("");
+      assert.equal(r.headers["x-seo-title"], html, lang);
+      assert.equal(r.headers["x-seo-description"], "Bodas &#38; XV a&#241;os", lang);
+      assert.match(r.headers["x-seo-image"], new RegExp(`/api/public/providers/images/${foto.id}/1600$`));
+    }
+    // La dirección anterior lleva a la nueva, con el prefijo del idioma alojado
+    await p.call("/provider/profile", "PUT", { ...datos, slug: `${slug}-nueva` });
+    const movida = await client().raw(`/internal/seo/providers/${slug}`, { headers: { Host: englishHost, "X-App-Locale": "pt" } });
+    assert.equal(movida.status, 401);
+    assert.equal(movida.headers["x-seo-redirect"], `/pt/fornecedores/${slug}-nueva`);
+    assert.equal((await client().call(`/public/providers/${slug}`)).slug, `${slug}-nueva`);
+    // Dirección desconocida o con formato inválido: 404 (403 para nginx), nunca 500
+    for (const raro of ["no-existe-ninguno", "..%2Fetc", "MAYUSCULAS", "a".repeat(61)]) {
+      assert.equal((await client().raw(`/public/providers/${raro}`)).status, 404, raro);
+      assert.equal((await client().raw(`/internal/seo/providers/${raro}`)).status, 403, raro);
+    }
+    for (const [lang, headers] of locales) {
+      const r = await client().raw("/public/providers/no-existe-ninguno", { headers });
+      assert.equal(r.data.detail, translate(lang, "errors.providerProfileNotFound"), lang);
+    }
+    // Sitemap del dominio: sus idiomas, con hreflang a todos; ningún borrador
+    const es = await client().raw("/public/sitemap/providers.xml", { headers: { Host: spanishHost } });
+    assert.equal(es.status, 200);
+    assert.match(es.headers["content-type"], /^application\/xml/);
+    assert.match(es.text, new RegExp(`<loc>[^<]+/proveedores/${slug}-nueva</loc>`));
+    assert.match(es.text, new RegExp(`hreflang="pt" href="[^"]+/pt/fornecedores/${slug}-nueva"`));
+    assert.doesNotMatch(es.text, new RegExp(`<loc>[^<]+/vendors/${slug}-nueva</loc>`));
+    const en = await client().raw("/public/sitemap/providers.xml", { headers: { Host: englishHost } });
+    for (const ruta of ["/vendors/", "/pt/fornecedores/", "/de/dienstleister/", "/fr/prestataires/"])
+      assert.match(en.text, new RegExp(`<loc>[^<]+${ruta}${slug}-nueva</loc>`), ruta);
+    await p.call("/provider/unpublish", "POST", {});
+    assert.doesNotMatch((await client().raw("/public/sitemap/providers.xml", { headers: { Host: spanishHost } })).text, new RegExp(slug));
+  });
+
   await suite("Ubicación: el punto del mapa se guarda, se quita y llega a la invitación y al .ics", async () => {
     const organizador = client();
     await organizador.call("/auth/register", "POST", account(P, "geo"), 201);

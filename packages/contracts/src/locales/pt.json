@@ -1020,6 +1020,37 @@
       "person": "por pessoa",
       "item": "por unidade",
       "day": "por dia"
-    }
+    },
+    "seoTitle": "{{name}} · {{category}} | TuEventoFun",
+    "seoDescription": "{{name}}: {{category}}. Mande mensagem ou ligue direto pelo TuEventoFun.",
+    "seoDescriptionPlace": "{{name}}: {{category}} em {{place}}. Mande mensagem ou ligue direto pelo TuEventoFun.",
+    "whatsappMessage": "Olá, {{name}}! Encontrei você no TuEventoFun e quero informações para o meu evento."
+  },
+  "providerPage": {
+    "contact": "Contato",
+    "whatsapp": "Enviar mensagem no WhatsApp",
+    "call": "Ligar",
+    "email": "Enviar e-mail",
+    "website": "Site",
+    "onNetwork": "{{name}} no {{network}}",
+    "share": "Compartilhar",
+    "shareText": "{{name}} no TuEventoFun",
+    "linkCopied": "Link copiado",
+    "services": "Serviços",
+    "gallery": "Fotos",
+    "openPhoto": "Ver a foto {{number}} de {{total}}",
+    "viewer": "Foto {{number}} de {{total}}",
+    "previous": "Foto anterior",
+    "next": "Próxima foto",
+    "about": "Sobre o negócio",
+    "location": "Localização",
+    "approximate": "Região aproximada: o endereço exato o negócio passa para você.",
+    "serviceRadius_one": "Atende até {{count}} km de distância",
+    "serviceRadius_other": "Atende até {{count}} km de distância",
+    "onlyAtVenue": "Atende no próprio local",
+    "notFoundTitle": "Esta página não está disponível",
+    "notFoundText": "Talvez o negócio tenha despublicado a página ou o endereço não esteja correto.",
+    "ownBusiness": "Você oferece serviços para eventos?",
+    "ownBusinessLink": "Crie a página do seu negócio"
   }
 }

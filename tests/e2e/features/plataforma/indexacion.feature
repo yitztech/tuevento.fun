@@ -17,6 +17,8 @@ Característica: Cada URL en un solo estado para los buscadores
       | en     | /pt/no-existe     |
       | es     | /images/nada.jpg  |
       | es     | /k7p2x9q/boda-ana |
+      | es     | /api/internal/seo/providers/salon |
+      | es     | /vendors/salon-luna |
 
   @WEB-07
   Esquema del escenario: robots.txt no bloquea nada y lo privado lleva noindex en la cabecera

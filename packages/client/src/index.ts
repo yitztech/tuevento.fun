@@ -20,6 +20,7 @@ import type {
   GeoPoint,
   AccountType,
   ProviderProfile,
+  ProviderPublic,
   ProviderProfileInput,
   ProviderService,
   ProviderServiceInput,
@@ -172,6 +173,8 @@ export class EventApi {
   /** Coordenadas de un enlace de Google Maps, Apple Maps o Waze. */
   parseMapLink = (url: string) => this.request<GeoPoint>("/geo/parse-link", "POST", { url });
   // Panel del proveedor (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, fase 3)
+  /** Página pública de un proveedor; con una dirección anterior, el perfil con la actual. */
+  providerPage = (slug: string) => this.request<ProviderPublic>(`/public/providers/${encodeURIComponent(slug)}`);
   providerProfile = () => this.request<{ profile: ProviderProfile | null }>("/provider/profile");
   saveProviderProfile = (data: ProviderProfileInput) => this.request<ProviderProfile>("/provider/profile", "PUT", data);
   providerSlugAvailable = (slug: string) =>

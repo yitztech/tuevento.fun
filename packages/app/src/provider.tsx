@@ -379,7 +379,7 @@ export function ProviderBusinessPage() {
   );
 }
 
-const priceText = (service: ProviderService) =>
+export const priceText = (service: ProviderService) =>
   service.price
     ? tr("provider.priceFrom", {
         price: new Intl.NumberFormat(formatLocale(), { style: "currency", currency: service.price.currency }).format(

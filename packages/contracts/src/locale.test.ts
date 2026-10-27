@@ -11,6 +11,8 @@ import {
   siteLocale,
   supportedLocales,
   localizedPage,
+  providerPath,
+  providerRoute,
   translatePath,
   parseSiteOrigins,
   siteOriginsFromEnv,
@@ -147,4 +149,18 @@ test("Los idiomas alojados no tienen dominio propio ni en el entorno ni en tueve
     { es: "https://tuevento.fun", en: "https://yourevent.fun" },
   );
   assert.equal(localeForHost("pt.fun", { ...EN, pt: "https://pt.fun" }), "es");
+});
+
+test("Página de un proveedor: la sección cambia con el idioma y la dirección no", () => {
+  assert.equal(providerPath("salon-luna", "es"), "/proveedores/salon-luna");
+  assert.equal(providerPath("salon-luna", "pt"), "/fornecedores/salon-luna");
+  assert.deepEqual(providerRoute("/vendors/salon-luna"), { slug: "salon-luna" });
+  assert.deepEqual(providerRoute("/dienstleister/dj-2"), { slug: "dj-2" });
+  for (const ruta of ["/proveedores", "/proveedores/", "/proveedores/Salon", "/proveedores/a/b", "/eventos/salon", "/proveedores/-x"])
+    assert.equal(providerRoute(ruta), null, ruta);
+  assert.equal(translatePath("/vendors/salon-luna", "es"), "/proveedores/salon-luna");
+  assert.equal(translatePath("/proveedores/salon-luna", "fr"), "/prestataires/salon-luna");
+  assert.equal(localeUrl("pt", "/proveedores/salon-luna", EN), "https://yourevent.fun/pt/fornecedores/salon-luna");
+  // Cada idioma tiene su propia sección, sin repetir la de otro
+  assert.equal(new Set(supportedLocales.map((l) => locales[l].paths.providers)).size, supportedLocales.length);
 });

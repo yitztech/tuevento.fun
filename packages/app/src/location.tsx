@@ -7,12 +7,34 @@ import { errorText, useApp } from "./context";
 /** Estilo de OpenFreeMap: teselas de OpenStreetMap gratis y sin clave (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, D3). */
 const mapStyle = "https://tiles.openfreemap.org/styles/liberty";
 
+/** Polígono de un círculo de `meters` alrededor del punto, para la zona aproximada. */
+function circle(point: GeoPoint, meters: number) {
+  const steps = 48;
+  const dLat = meters / 111_320;
+  const dLng = dLat / Math.cos((point.lat * Math.PI) / 180);
+  const ring = Array.from({ length: steps + 1 }, (_, i) => {
+    const angle = (i / steps) * 2 * Math.PI;
+    return [point.lng + dLng * Math.cos(angle), point.lat + dLat * Math.sin(angle)];
+  });
+  return { type: "Feature" as const, properties: {}, geometry: { type: "Polygon" as const, coordinates: [ring] } };
+}
+
 /**
- * Mapa con un marcador. MapLibre se carga solo cuando hay un mapa que pintar. Es un
+ * Mapa con un marcador, o con un círculo de ~1 km si el punto es aproximado. MapLibre se carga solo cuando hay un mapa que pintar. Es un
  * complemento: si el dispositivo no tiene WebGL o las teselas no cargan, no se muestra y todo
  * sigue funcionando con los botones.
  */
-export function MapView({ point, label, onMove }: { point: GeoPoint; label: string; onMove?: (point: GeoPoint) => void }) {
+export function MapView({
+  point,
+  label,
+  onMove,
+  approximate = false,
+}: {
+  point: GeoPoint;
+  label: string;
+  onMove?: (point: GeoPoint) => void;
+  approximate?: boolean;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<{ remove(): void; jumpTo(o: object): void } | null>(null);
   const marker = useRef<{ setLngLat(p: [number, number]): void } | null>(null);
@@ -30,11 +52,20 @@ export function MapView({ point, label, onMove }: { point: GeoPoint; label: stri
           container: container.current,
           style: mapStyle,
           center: [point.lng, point.lat],
-          zoom: 15,
+          zoom: approximate ? 13 : 15,
           attributionControl: { compact: true },
           cooperativeGestures: true,
         });
         instance.on("error", () => {});
+        if (approximate) {
+          instance.on("load", () => {
+            instance.addSource("area", { type: "geojson", data: circle(point, 1000) });
+            instance.addLayer({ id: "area", type: "fill", source: "area", paint: { "fill-color": "#882d17", "fill-opacity": 0.15 } });
+            instance.addLayer({ id: "area-line", type: "line", source: "area", paint: { "line-color": "#882d17", "line-width": 2 } });
+          });
+          map.current = instance;
+          return;
+        }
         const pin = new maplibre.Marker({ color: "#882d17", draggable: !!moved.current })
           .setLngLat([point.lng, point.lat])
           .addTo(instance);

@@ -1020,6 +1020,37 @@
       "person": "pro Person",
       "item": "pro Stück",
       "day": "pro Tag"
-    }
+    },
+    "seoTitle": "{{name}} · {{category}} | TuEventoFun",
+    "seoDescription": "{{name}}: {{category}}. Schreib oder ruf direkt über TuEventoFun an.",
+    "seoDescriptionPlace": "{{name}}: {{category}} in {{place}}. Schreib oder ruf direkt über TuEventoFun an.",
+    "whatsappMessage": "Hallo {{name}}, ich habe dich auf TuEventoFun gefunden und hätte gern Infos für mein Event."
+  },
+  "providerPage": {
+    "contact": "Kontakt",
+    "whatsapp": "Per WhatsApp schreiben",
+    "call": "Anrufen",
+    "email": "E-Mail senden",
+    "website": "Website",
+    "onNetwork": "{{name}} auf {{network}}",
+    "share": "Teilen",
+    "shareText": "{{name}} auf TuEventoFun",
+    "linkCopied": "Link kopiert",
+    "services": "Leistungen",
+    "gallery": "Fotos",
+    "openPhoto": "Foto {{number}} von {{total}} ansehen",
+    "viewer": "Foto {{number}} von {{total}}",
+    "previous": "Vorheriges Foto",
+    "next": "Nächstes Foto",
+    "about": "Über das Unternehmen",
+    "location": "Standort",
+    "approximate": "Ungefähre Gegend: Die genaue Adresse bekommst du vom Unternehmen.",
+    "serviceRadius_one": "Kommt bis zu {{count}} km weit",
+    "serviceRadius_other": "Kommt bis zu {{count}} km weit",
+    "onlyAtVenue": "Nur vor Ort in den eigenen Räumen",
+    "notFoundTitle": "Diese Seite ist nicht verfügbar",
+    "notFoundText": "Vielleicht hat das Unternehmen sie nicht mehr veröffentlicht, oder die Adresse stimmt nicht.",
+    "ownBusiness": "Bietest du Leistungen für Events an?",
+    "ownBusinessLink": "Erstelle die Seite deines Unternehmens"
   }
 }

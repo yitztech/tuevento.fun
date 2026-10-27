@@ -1020,6 +1020,37 @@
       "person": "par personne",
       "item": "par pièce",
       "day": "par jour"
-    }
+    },
+    "seoTitle": "{{name}} · {{category}} | TuEventoFun",
+    "seoDescription": "{{name}} : {{category}}. Écris-lui ou appelle-le directement depuis TuEventoFun.",
+    "seoDescriptionPlace": "{{name}} : {{category}} à {{place}}. Écris-lui ou appelle-le directement depuis TuEventoFun.",
+    "whatsappMessage": "Bonjour {{name}}, je t’ai trouvé sur TuEventoFun et j’aimerais des informations pour mon événement."
+  },
+  "providerPage": {
+    "contact": "Contact",
+    "whatsapp": "Écrire sur WhatsApp",
+    "call": "Appeler",
+    "email": "Envoyer un e-mail",
+    "website": "Site web",
+    "onNetwork": "{{name}} sur {{network}}",
+    "share": "Partager",
+    "shareText": "{{name}} sur TuEventoFun",
+    "linkCopied": "Lien copié",
+    "services": "Services",
+    "gallery": "Photos",
+    "openPhoto": "Voir la photo {{number}} sur {{total}}",
+    "viewer": "Photo {{number}} sur {{total}}",
+    "previous": "Photo précédente",
+    "next": "Photo suivante",
+    "about": "À propos",
+    "location": "Adresse",
+    "approximate": "Zone approximative : l’entreprise te donnera l’adresse exacte.",
+    "serviceRadius_one": "Se déplace jusqu’à {{count}} km",
+    "serviceRadius_other": "Se déplace jusqu’à {{count}} km",
+    "onlyAtVenue": "Reçoit dans ses propres locaux",
+    "notFoundTitle": "Cette page n’est pas disponible",
+    "notFoundText": "L’entreprise l’a peut-être dépubliée, ou l’adresse n’est pas la bonne.",
+    "ownBusiness": "Tu proposes des services pour les événements ?",
+    "ownBusinessLink": "Crée la page de ton entreprise"
   }
 }

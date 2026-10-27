@@ -7,8 +7,11 @@ import fr from "./locales/fr.json";
 
 /** Estructura de un catálogo: la del idioma principal. Las demás deben tener las mismas claves. */
 export type Catalog = typeof es;
-/** Páginas cuya ruta cambia con el idioma. El resto de rutas es igual en todos los dominios. */
-export type LocalizedPage = "privacy" | "terms" | "pricing";
+/**
+ * Páginas cuya ruta cambia con el idioma. El resto de rutas es igual en todos los dominios.
+ * `providers` es la sección de proveedores: sus perfiles viven en <ruta>/<dirección>.
+ */
+export type LocalizedPage = "privacy" | "terms" | "pricing" | "providers";
 type LocaleConfig = {
   /** Nombre del idioma en ese mismo idioma, para el selector. */
   name: string;
@@ -35,21 +38,21 @@ export const locales = {
     name: "Español",
     intl: "es-MX",
     zod: "es",
-    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/precios" },
+    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/precios", providers: "/proveedores" },
     messages: es,
   },
   en: {
     name: "English",
     intl: "en-US",
     zod: "en",
-    paths: { privacy: "/privacy", terms: "/terms", pricing: "/pricing" },
+    paths: { privacy: "/privacy", terms: "/terms", pricing: "/pricing", providers: "/vendors" },
     messages: en,
   },
   pt: {
     name: "Português",
     intl: "pt-BR",
     zod: "pt",
-    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/precos" },
+    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/precos", providers: "/fornecedores" },
     messages: pt,
     hostedBy: "en",
   },
@@ -57,7 +60,7 @@ export const locales = {
     name: "Deutsch",
     intl: "de-DE",
     zod: "de",
-    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/preise" },
+    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/preise", providers: "/dienstleister" },
     messages: de,
     hostedBy: "en",
   },
@@ -65,7 +68,7 @@ export const locales = {
     name: "Français",
     intl: "fr-FR",
     zod: "fr",
-    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/tarifs" },
+    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/tarifs", providers: "/prestataires" },
     messages: fr,
     hostedBy: "en",
   },
@@ -74,7 +77,8 @@ export type Locale = keyof typeof locales;
 /** Idioma principal: el de un Host desconocido y el fallback de cualquier texto que falte. */
 export const defaultLocale: Locale = "es";
 export const supportedLocales = Object.keys(locales) as Locale[];
-export const localizedPages: readonly LocalizedPage[] = ["privacy", "terms", "pricing"];
+/** Páginas traducidas que se publican (rutas de la SPA y sitemap). La de proveedores solo tiene perfiles por ahora. */
+export const localizedPages = ["privacy", "terms", "pricing"] as const satisfies readonly LocalizedPage[];
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && Object.hasOwn(locales, value);
@@ -250,8 +254,18 @@ export function localizedPage(pathname: string): LocalizedPage | null {
     if (supportedLocales.some((locale) => localizedPath(page, locale) === path)) return page;
   return null;
 }
-/** La misma ruta en el idioma indicado: /privacy → /privacidad para es. */
+/** Página pública de un proveedor en un idioma, sin el prefijo del idioma: /proveedores/salon-luna. */
+export const providerPath = (slug: string, locale: Locale): string => `${localizedPath("providers", locale)}/${slug}`;
+/** Proveedor al que lleva una ruta, en la sección de cualquier idioma (/vendors/salon-luna). */
+export function providerRoute(pathname: string): { slug: string } | null {
+  const match = /^(\/[a-z]+)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(pathname);
+  if (!match || !supportedLocales.some((locale) => localizedPath("providers", locale) === match[1])) return null;
+  return { slug: match[2] };
+}
+/** La misma ruta en el idioma indicado: /privacy → /privacidad y /vendors/x → /proveedores/x para es. */
 export function translatePath(pathname: string, locale: Locale): string {
+  const provider = providerRoute(pathname);
+  if (provider) return providerPath(provider.slug, locale);
   const page = localizedPage(pathname);
   return page ? localizedPath(page, locale) : pathname || "/";
 }
