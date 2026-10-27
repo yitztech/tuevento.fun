@@ -9,8 +9,9 @@ import { ListmonkService } from "./listmonk";
 import { MailService } from "./mail";
 import { NoticeService } from "./notices";
 import { PostcardsService } from "./postcards";
+import { GeoController, GeoService } from "./geo";
 @Module({
-  controllers: [PlatformController, PublicController, OrganizerController],
+  controllers: [PlatformController, PublicController, OrganizerController, GeoController],
   providers: [
     Database,
     AuthService,
@@ -22,6 +23,7 @@ import { PostcardsService } from "./postcards";
     MailService,
     NoticeService,
     PostcardsService,
+    GeoService,
   ],
 })
 export class AppModule {}

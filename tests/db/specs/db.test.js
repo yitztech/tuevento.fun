@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "schema_migrations", "sessions", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -233,4 +233,17 @@ test("Invitación genérica y avisos: tipos válidos, registros enlazados al enl
   await db.query("INSERT INTO event_access(token_hash,event_id,expires_at) VALUES($1,$2,now()+interval '1 day')", ["hash-de-prueba", e.id]);
   await db.query("DELETE FROM events WHERE id=$1", [e.id]);
   assert.equal((await uno("SELECT count(*)::int AS n FROM event_access WHERE event_id=$1", [e.id])).n, 0);
+});
+
+test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; la caché del mapa solo admite sus tipos", async () => {
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme,latitude,longitude) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold',18.921831,-99.234567) RETURNING id, latitude, longitude", [dueno]);
+  assert.deepEqual([e.latitude, e.longitude], [18.921831, -99.234567]);
+  await db.query("UPDATE events SET latitude=NULL, longitude=NULL WHERE id=$1", [e.id]);
+  for (const [lat, lng] of [[18.9, null], [null, -99.2], [90.0001, 0], [-90.0001, 0], [0, 180.0001], [0, -180.0001]])
+    assert.equal(await codigoError(() => db.query("UPDATE events SET latitude=$2, longitude=$3 WHERE id=$1", [e.id, lat, lng])), CHECK_VIOLATION, `${lat},${lng}`);
+  const validada = await uno("SELECT convalidated FROM pg_constraint WHERE conname='events_geo_range'");
+  assert.equal(validada.convalidated, true, "la 018 valida la restricción");
+  await db.query("INSERT INTO geo_cache(kind,key_hash,locale,response) VALUES('search',md5(random()::text),'es','[]')");
+  assert.equal(await codigoError(() => db.query("INSERT INTO geo_cache(kind,key_hash,locale,response) VALUES('otro','x','es','[]')")), CHECK_VIOLATION);
 });

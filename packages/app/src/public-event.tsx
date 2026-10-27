@@ -5,7 +5,7 @@ import { Heart, CalendarDays, MapPin, Lock, LayoutDashboard } from "lucide-react
 import {
   eventLandingPath,
   googleCalendarUrl,
-  mapsSearchUrl,
+  mapLinks,
   type EventLanding as EventLandingView,
   type LandingAddress,
   type PublicEvent,
@@ -13,6 +13,7 @@ import {
 import { ApiError } from "@tuevento/client";
 import { useApp, errorText, dateText } from "./context";
 import { Logo, Avatar, ErrorBox } from "./components";
+import { MapLinks, MapView } from "./location";
 import { PostcardCanvas } from "./postcard-canvas";
 import { CalendarLinks } from "./calendar-links";
 import { PublicRsvp } from "./public-rsvp";
@@ -189,10 +190,12 @@ function EventView({ event, icsHref, ownerEventId }: { event: PublicEvent; icsHr
           </p>
           <p className="rsvp-detail">
             <MapPin size={18} />
-            <a href={mapsSearchUrl(event.location)} target="_blank" rel="noreferrer">
+            <a href={mapLinks({ label: event.location, geo: event.geo }).google} target="_blank" rel="noreferrer">
               {event.location}
             </a>
           </p>
+          {event.geo && <MapView point={event.geo} label={event.location} />}
+          <MapLinks label={event.location} geo={event.geo} />
           {event.description && <p className="rsvp-description">{event.description}</p>}
           <CalendarLinks
             icsHref={icsHref}

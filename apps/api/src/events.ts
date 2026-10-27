@@ -32,6 +32,7 @@ import {
   type EventLanding,
   type Invitation,
   type Event,
+  type GeoPoint,
   type InvitationInput,
   type LandingAddress,
   type Locale,
@@ -63,6 +64,8 @@ type EventRow = {
   date: Date;
   time_zone: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   theme: Event["theme"];
   archived: boolean;
   cancelled: boolean;
@@ -71,6 +74,9 @@ type EventRow = {
   created_at: Date;
 };
 type MemberRow = Pick<Member, "id" | "name" | "kind" | "notes" | "status">;
+/** Punto del lugar guardado en dos columnas, o null si el evento no tiene. */
+const geoView = (r: { latitude: number | null; longitude: number | null }): GeoPoint | null =>
+  r.latitude === null || r.longitude === null ? null : { lat: r.latitude, lng: r.longitude };
 const eventView = (r: EventRow): Event => ({
   id: r.id,
   title: r.title,
@@ -78,6 +84,7 @@ const eventView = (r: EventRow): Event => ({
   date: r.date.toISOString(),
   timeZone: r.time_zone,
   location: r.location,
+  geo: geoView(r),
   theme: r.theme,
   archived: r.archived,
   cancelled: r.cancelled,
@@ -208,10 +215,12 @@ export class EventsService {
       keepPassword || !input.publicPassword
         ? null
         : await hashPassword(input.publicPassword);
+    // Igual con el punto del mapa: undefined (apps anteriores) lo conserva, null lo quita
+    const keepGeo = input.geo === undefined;
     if (id)
       await this.db
         .query(
-          "UPDATE events SET title=$1,description=$2,date=$3,time_zone=$4,location=$5,theme=$6,archived=$7,cancelled=$8,slug=$9,public_password_hash=CASE WHEN $10 THEN public_password_hash ELSE $11 END,public_password_failures=CASE WHEN $10 THEN public_password_failures ELSE 0 END,public_password_locked_until=CASE WHEN $10 THEN public_password_locked_until ELSE NULL END WHERE id=$12 AND user_id=$13",
+          "UPDATE events SET title=$1,description=$2,date=$3,time_zone=$4,location=$5,theme=$6,archived=$7,cancelled=$8,slug=$9,public_password_hash=CASE WHEN $10 THEN public_password_hash ELSE $11 END,public_password_failures=CASE WHEN $10 THEN public_password_failures ELSE 0 END,public_password_locked_until=CASE WHEN $10 THEN public_password_locked_until ELSE NULL END,latitude=CASE WHEN $14 THEN latitude ELSE $15 END,longitude=CASE WHEN $14 THEN longitude ELSE $16 END WHERE id=$12 AND user_id=$13",
           [
             input.title,
             input.description,
@@ -226,13 +235,16 @@ export class EventsService {
             passwordHash,
             id,
             userId,
+            keepGeo,
+            input.geo?.lat ?? null,
+            input.geo?.lng ?? null,
           ],
         )
         .catch(slugConflict);
     else
       await this.db
         .query(
-          "INSERT INTO events(id,user_id,title,description,date,time_zone,location,theme,archived,cancelled,slug,public_password_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
+          "INSERT INTO events(id,user_id,title,description,date,time_zone,location,theme,archived,cancelled,slug,public_password_hash,latitude,longitude) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
           [
             eventId,
             userId,
@@ -246,13 +258,18 @@ export class EventsService {
             input.cancelled,
             slug,
             passwordHash,
+            input.geo?.lat ?? null,
+            input.geo?.lng ?? null,
           ],
         )
         .catch(slugConflict);
     if (before && !input.archived) {
       const date = before.date.getTime() !== new Date(input.date).getTime();
+      const movedPin =
+        !keepGeo &&
+        (before.latitude !== (input.geo?.lat ?? null) || before.longitude !== (input.geo?.lng ?? null));
       const place =
-        before.location !== input.location || before.time_zone !== input.timeZone;
+        before.location !== input.location || before.time_zone !== input.timeZone || movedPin;
       if (input.cancelled && !before.cancelled)
         this.notify(this.notices.eventCancelled(eventId), "Aviso de cancelación");
       else if (!input.cancelled && (date || place))
@@ -414,7 +431,7 @@ export class EventsService {
   }
   async publicInvitation(token: string): Promise<PublicInvitation> {
     const [r] = await this.db.query(
-      "SELECT i.id,i.name,i.kind,e.id AS event_id,e.title,e.description,e.date,e.time_zone,e.location,e.theme,e.cancelled,u.first_name,u.last_name,u.avatar,u.is_demo FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
+      "SELECT i.id,i.name,i.kind,e.id AS event_id,e.title,e.description,e.date,e.time_zone,e.location,e.latitude,e.longitude,e.theme,e.cancelled,u.first_name,u.last_name,u.avatar,u.is_demo FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
       [token],
     );
     if (!r)
@@ -433,6 +450,7 @@ export class EventsService {
         date: r.date.toISOString(),
         timeZone: r.time_zone,
         location: r.location,
+        geo: geoView(r),
         theme: r.theme,
         cancelled: r.cancelled,
       },
@@ -551,6 +569,7 @@ export class EventsService {
       date: r.date.toISOString(),
       timeZone: r.time_zone,
       location: r.location,
+      geo: geoView(r),
       theme: r.theme,
       cancelled: r.cancelled,
       host: { firstName: r.first_name, lastName: r.last_name, avatar: r.avatar },
@@ -685,6 +704,7 @@ export class EventsService {
       description: r.description,
       start: r.date,
       location: r.location,
+      geo: geoView(r),
       url,
       cancelled: r.cancelled,
     });

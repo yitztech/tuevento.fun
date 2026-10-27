@@ -275,7 +275,9 @@
     "eventIsntAvailable": "Este evento no está disponible.",
     "eventCancelled": "Este evento está cancelado.",
     "openInvitationFull": "Este enlace ya tiene el número máximo de registros.",
-    "eventPasswordIncorrect": "La contraseña no es correcta."
+    "eventPasswordIncorrect": "La contraseña no es correcta.",
+    "geocoderUnavailable": "La búsqueda en el mapa no está disponible ahora. Inténtalo en unos minutos o pega un enlace de mapas.",
+    "mapLinkWithoutCoordinates": "Ese enlace no trae la ubicación. En la app de mapas, abre el lugar, pulsa «Compartir» y copia ese enlace."
   },
   "events": {
     "actions": "Acciones",
@@ -654,7 +656,6 @@
     "replySavedShort": "Respuesta guardada",
     "saveReply": "Guardar mi respuesta",
     "savingReply": "Guardando tu respuesta…",
-    "viewLocation": "Ver ubicación",
     "withLove": "Con mucho cariño,",
     "wouldntSameWithout": "Sin ti, no es lo mismo.",
     "yesIllThere": "¡Sí, asistiré!",
@@ -767,7 +768,11 @@
     "maximum60Characters": "Máximo 60 caracteres.",
     "eventSlugFormat": "Usa solo letras minúsculas sin acentos, números y guiones entre palabras, de 3 a 60 caracteres.",
     "openInvitationNoMembers": "Una invitación genérica no lleva personas: cada invitado las añade.",
-    "unknownField": "Este campo no se admite."
+    "unknownField": "Este campo no se admite.",
+    "useLeast3Characters": "Escribe al menos 3 caracteres.",
+    "maximum2048Characters": "Máximo 2048 caracteres.",
+    "invalidCoordinates": "Las coordenadas no son válidas.",
+    "mapLinkNotSupported": "Pega un enlace https de Google Maps, Apple Maps o Waze."
   },
   "pricing": {
     "title": "Precios",
@@ -831,5 +836,31 @@
     "rateLimited": "Demasiadas solicitudes",
     "internalError": "Error interno",
     "serviceUnavailable": "Servicio no disponible"
+  },
+  "location": {
+    "searchOnMap": "Buscar en el mapa",
+    "useMyLocation": "Usar mi ubicación",
+    "pasteLink": "Pegar enlace de mapas",
+    "linkLabel": "Enlace de Google Maps, Apple Maps o Waze",
+    "linkPlaceholder": "Pega aquí el enlace que copiaste",
+    "applyLink": "Usar este enlace",
+    "searching": "Buscando…",
+    "chooseResult": "Elige el lugar correcto:",
+    "noResults": "No encontramos ese lugar. Prueba con otra dirección o pega un enlace de mapas.",
+    "attribution": "Datos de lugares © colaboradores de OpenStreetMap",
+    "pinSet": "El punto exacto está marcado en el mapa.",
+    "removePin": "Quitar el punto",
+    "useAddress": "Usar esta dirección: {{address}}",
+    "hint": "Fija el punto exacto para que nadie se pierda al llegar.",
+    "locationDenied": "No pudimos obtener tu ubicación. Revisa el permiso de ubicación del navegador o del teléfono.",
+    "mapLabel": "Mapa de {{place}}",
+    "openGoogle": "Google Maps",
+    "openApple": "Apple Maps",
+    "openWaze": "Waze",
+    "directions": "Cómo llegar",
+    "copyAddress": "Copiar dirección",
+    "copied": "Dirección copiada",
+    "share": "Compartir ubicación",
+    "shareText": "{{place}} — {{url}}"
   }
 }

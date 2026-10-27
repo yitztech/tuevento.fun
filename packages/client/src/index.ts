@@ -16,6 +16,8 @@ import type {
   Postcard,
   PostcardDesign,
   PostcardVersion,
+  GeoPlace,
+  GeoPoint,
 } from "@tuevento/contracts";
 export class ApiError extends Error {
   constructor(
@@ -154,6 +156,15 @@ export class EventApi {
   };
   registerInvitation = (token: string, data: RegistrationInput) =>
     this.request<{ token: string }>(`/invitations/${token}/register`, "POST", data);
+  /** Lugares que coinciden con un texto (al pulsar «Buscar en el mapa»). */
+  geoSearch = (q: string) =>
+    this.request<GeoPlace[]>(`/geo/search?${new URLSearchParams({ q })}`);
+  geoReverse = (point: GeoPoint) =>
+    this.request<{ place: GeoPlace | null }>(
+      `/geo/reverse?${new URLSearchParams({ lat: String(point.lat), lng: String(point.lng) })}`,
+    );
+  /** Coordenadas de un enlace de Google Maps, Apple Maps o Waze. */
+  parseMapLink = (url: string) => this.request<GeoPoint>("/geo/parse-link", "POST", { url });
   rsvp = (token: string, members: { id: string; status: Status }[]) =>
     this.request<PublicInvitation>(`/invitations/${token}/rsvp`, "POST", {
       members,

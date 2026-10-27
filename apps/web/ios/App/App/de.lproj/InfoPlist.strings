@@ -1,0 +1,2 @@
+/* Permiso de ubicación (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, fase 1) */
+"NSLocationWhenInUseUsageDescription" = "TuEventoFun verwendet deinen Standort nur, wenn du es möchtest, um den Ort deines Events auf der Karte zu markieren.";

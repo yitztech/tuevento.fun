@@ -113,7 +113,7 @@ try {
     const propia = await organizador.call(landing);
     assert.equal(propia.access, "owner");
     assert.equal(propia.eventId, evento.id);
-    assert.deepEqual(Object.keys(propia.event).sort(), ["cancelled", "date", "description", "host", "location", "postcard", "theme", "timeZone", "title"]);
+    assert.deepEqual(Object.keys(propia.event).sort(), ["cancelled", "date", "description", "geo", "host", "location", "postcard", "theme", "timeZone", "title"]);
     assert.deepEqual(Object.keys(propia.event.host).sort(), ["avatar", "firstName", "lastName"]);
     assert.equal(JSON.stringify(propia).includes(invitacion.token), false);
     assert.equal(JSON.stringify(propia).includes(`url-${unique}@example.invalid`), false);
@@ -384,6 +384,71 @@ try {
     await mal(`/invitations/${inv.token}/rsvp`, "POST", { members: [{ id: inv.members[0].id, status: "quizas" }] });
     // Los límites exactos sí se aceptan
     await a.call("/profile", "PATCH", { firstName: largo(50), lastName: largo(50), phone: "+52 (777) 123-45-67" }, 200);
+  });
+
+  await suite("Ubicación: el punto del mapa se guarda, se quita y llega a la invitación y al .ics", async () => {
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "geo"), 201);
+    const punto = { lat: 18.921831, lng: -99.234567 };
+    const evento = await organizador.call("/events", "POST", eventData({ geo: punto }), 201);
+    assert.deepEqual(evento.geo, punto);
+    // Sin el campo, el punto se conserva; con null, se quita
+    assert.deepEqual((await organizador.call(`/events/${evento.id}`, "PATCH", eventData())).geo, punto);
+    const invitacion = await organizador.call(`/events/${evento.id}/invitations`, "POST", invitationData(), 201);
+    assert.deepEqual((await guest.call(`/invitations/${invitacion.token}`)).event.geo, punto);
+    assert.match((await guest.raw(`/invitations/${invitacion.token}/calendar.ics`)).text, /\r\nGEO:18\.921831;-99\.234567\r\n/);
+    assert.equal((await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ geo: null }))).geo, null);
+    assert.equal((await guest.call(`/invitations/${invitacion.token}`)).event.geo, null);
+    // Fuera de rango o con campos de más: 422 con el campo
+    for (const geo of [{ lat: 91, lng: 0 }, { lat: 0, lng: -181 }, { lat: "19", lng: 0 }, { lat: 1, lng: 1, alt: 3 }]) {
+      const r = await organizador.raw(`/events/${evento.id}`, { method: "PATCH", body: eventData({ geo }) });
+      assert.equal(r.status, 422, JSON.stringify(geo));
+      assert.ok(r.data.errors.some((e) => e.field.startsWith("geo")), r.text);
+    }
+    await organizador.call(`/events/${evento.id}`, "DELETE");
+  });
+
+  await suite("Buscar en el mapa: lugares en el idioma de la petición, sin resultados y geocodificador caído", async () => {
+    const lugares = await guest.call(`/geo/search?q=${encodeURIComponent(`Jardín Borda ${unique}`)}`);
+    assert.ok(lugares.length >= 1);
+    assert.deepEqual(Object.keys(lugares[0]).sort(), ["city", "country", "label", "lat", "lng", "region"]);
+    assert.equal(lugares[0].country, "MX");
+    assert.deepEqual(await guest.call(`/geo/search?q=${encodeURIComponent(`sin resultados ${unique}`)}`), []);
+    const caido = await guest.raw(`/geo/search?q=${encodeURIComponent(`falla ${unique}`)}`);
+    assert.equal(caido.status, 503);
+    assert.equal(caido.data.code, "geocoder_unavailable");
+    assert.ok(!/nominatim|geocoder-fake|fallo de prueba/i.test(caido.text), caido.text);
+    const { place } = await guest.call("/geo/reverse?lat=18.9218&lng=-99.2347");
+    assert.equal(place.city, "Cuernavaca");
+    for (const [path, mensaje] of [
+      ["/geo/search?q=ab", "validation.useLeast3Characters"],
+      [`/geo/search?q=${"a".repeat(201)}`, "validation.maximum200Characters"],
+      ["/geo/reverse?lat=100&lng=0", "validation.invalidCoordinates"],
+    ])
+      for (const [locale, headers] of [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]]) {
+        const r = await client().raw(path, { headers });
+        assert.equal(r.status, 400, `${path} → ${r.status}`);
+        assert.ok(JSON.stringify(r.data).includes(translate(locale, mensaje)), `${locale} ${path}: ${r.text}`);
+      }
+    assert.equal((await guest.raw("/geo/search?q=abc&extra=1")).status, 400);
+  });
+
+  await suite("Pegar un enlace de mapas: coordenadas de Google, Apple y Waze; otros enlaces se rechazan", async () => {
+    const punto = { lat: 18.921831, lng: -99.234567 };
+    for (const url of [
+      "https://www.google.com/maps/place/X/@18,-99,17z/data=!3d18.921831!4d-99.234567",
+      "https://maps.apple.com/?ll=18.921831,-99.234567&q=X",
+      "https://waze.com/ul?ll=18.921831,-99.234567&navigate=yes",
+    ])
+      assert.deepEqual(await guest.call("/geo/parse-link", "POST", { url }), punto, url);
+    const sinPunto = await guest.raw("/geo/parse-link", { method: "POST", body: { url: "https://www.google.com/maps/place/Jard%C3%ADn" } });
+    assert.equal(sinPunto.status, 422);
+    assert.equal(sinPunto.data.code, "geo_link_without_coordinates");
+    for (const url of ["https://example.com/?q=18.9,-99.2", "http://maps.google.com/?q=18.9,-99.2", "javascript:alert(1)", `https://maps.google.com/?q=${"1".repeat(2048)}`]) {
+      const r = await guest.raw("/geo/parse-link", { method: "POST", body: { url } });
+      assert.equal(r.status, 422, url);
+      assert.equal(r.data.errors[0].field, "url");
+    }
   });
 
   await suite("Recursos inexistentes o con formato inválido responden 404/400, nunca 500", async () => {

@@ -275,7 +275,9 @@
     "eventIsntAvailable": "Dieses Event ist nicht verfügbar.",
     "eventCancelled": "Dieses Event ist abgesagt.",
     "openInvitationFull": "Dieser Link hat die maximale Anzahl an Anmeldungen erreicht.",
-    "eventPasswordIncorrect": "Das Passwort ist nicht korrekt."
+    "eventPasswordIncorrect": "Das Passwort ist nicht korrekt.",
+    "geocoderUnavailable": "Die Kartensuche ist gerade nicht verfügbar. Versuch es in ein paar Minuten noch einmal oder füge einen Kartenlink ein.",
+    "mapLinkWithoutCoordinates": "Dieser Link enthält keinen Ort. Öffne den Ort in deiner Karten-App, tippe auf „Teilen“ und kopiere diesen Link."
   },
   "events": {
     "actions": "Aktionen",
@@ -654,7 +656,6 @@
     "replySavedShort": "Antwort gespeichert",
     "saveReply": "Meine Antwort speichern",
     "savingReply": "Deine Antwort wird gespeichert…",
-    "viewLocation": "Ort ansehen",
     "withLove": "Herzlich,",
     "wouldntSameWithout": "Ohne dich wäre es nicht dasselbe.",
     "yesIllThere": "Ja, ich komme!",
@@ -767,7 +768,11 @@
     "maximum60Characters": "Höchstens 60 Zeichen.",
     "eventSlugFormat": "Verwende nur Kleinbuchstaben, Ziffern und Bindestriche zwischen Wörtern, 3 bis 60 Zeichen.",
     "openInvitationNoMembers": "Eine offene Einladung hat keine Personen: Jeder Gast fügt seine eigenen hinzu.",
-    "unknownField": "Dieses Feld ist nicht erlaubt."
+    "unknownField": "Dieses Feld ist nicht erlaubt.",
+    "useLeast3Characters": "Gib mindestens 3 Zeichen ein.",
+    "maximum2048Characters": "Höchstens 2048 Zeichen.",
+    "invalidCoordinates": "Die Koordinaten sind ungültig.",
+    "mapLinkNotSupported": "Füge einen https-Link von Google Maps, Apple Karten oder Waze ein."
   },
   "pricing": {
     "title": "Preise",
@@ -831,5 +836,31 @@
     "rateLimited": "Zu viele Anfragen",
     "internalError": "Interner Fehler",
     "serviceUnavailable": "Dienst nicht verfügbar"
+  },
+  "location": {
+    "searchOnMap": "Auf der Karte suchen",
+    "useMyLocation": "Meinen Standort verwenden",
+    "pasteLink": "Kartenlink einfügen",
+    "linkLabel": "Link von Google Maps, Apple Maps oder Waze",
+    "linkPlaceholder": "Füge hier den kopierten Link ein",
+    "applyLink": "Diesen Link verwenden",
+    "searching": "Suche läuft …",
+    "chooseResult": "Wähle den richtigen Ort:",
+    "noResults": "Diesen Ort haben wir nicht gefunden. Versuch eine andere Adresse oder füge einen Kartenlink ein.",
+    "attribution": "Ortsdaten © OpenStreetMap-Mitwirkende",
+    "pinSet": "Der genaue Ort ist auf der Karte markiert.",
+    "removePin": "Markierung entfernen",
+    "useAddress": "Diese Adresse verwenden: {{address}}",
+    "hint": "Markiere den genauen Ort, damit sich niemand verfährt.",
+    "locationDenied": "Wir konnten deinen Standort nicht ermitteln. Prüfe die Standortberechtigung im Browser oder auf dem Handy.",
+    "mapLabel": "Karte von {{place}}",
+    "openGoogle": "Google Maps",
+    "openApple": "Apple Karten",
+    "openWaze": "Waze",
+    "directions": "Route planen",
+    "copyAddress": "Adresse kopieren",
+    "copied": "Adresse kopiert",
+    "share": "Standort teilen",
+    "shareText": "{{place}} — {{url}}"
   }
 }

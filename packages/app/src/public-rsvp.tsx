@@ -10,7 +10,6 @@ import {
   Heart,
   ArrowRight,
   CheckCircle2,
-  ExternalLink,
 } from "lucide-react";
 import {
   eventLandingPath,
@@ -23,7 +22,8 @@ import { Logo, Avatar, ErrorBox } from "./components";
 import { PostcardCanvas } from "./postcard-canvas";
 import { CalendarLinks } from "./calendar-links";
 import { OpenRegistration } from "./open-registration";
-import { googleCalendarUrl, mapsSearchUrl } from "@tuevento/contracts";
+import { googleCalendarUrl } from "@tuevento/contracts";
+import { MapLinks, MapView } from "./location";
 /**
  * Invitación de un invitado: la postal, los datos y su respuesta. Por su enlace personal
  * (/i/:token) primero le da acceso a la landing del evento y lo lleva a ella, que la muestra
@@ -171,17 +171,11 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
               <MapPin size={21} />
               <p>
                 <strong>{event.location}</strong>
-                <a
-                  target="_blank"
-                  rel="noreferrer"
-                  href={mapsSearchUrl(event.location)}
-                >
-                  {tr("rsvp.viewLocation")}
-                  <ExternalLink size={13} />
-                </a>
               </p>
             </div>
           </div>
+          {event.geo && <MapView point={event.geo} label={event.location} />}
+          <MapLinks label={event.location} geo={event.geo} />
           {event.description && (
             <p className="host-message">{event.description}</p>
           )}

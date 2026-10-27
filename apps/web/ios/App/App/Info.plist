@@ -22,6 +22,8 @@
 		<string>de</string>
 		<string>fr</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TuEventoFun uses your location only when you ask, to pin where your event is on the map.</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
