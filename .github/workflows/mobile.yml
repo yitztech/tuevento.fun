@@ -29,6 +29,7 @@ jobs:
     if: inputs.platform == 'android' || inputs.platform == 'both'
     environment: production
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions: {contents: write}
     env:
       APP_VERSION: ${{ inputs.version }}
@@ -38,15 +39,22 @@ jobs:
       MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID || 'com.tueventofun.app' }}
     steps:
       - uses: actions/checkout@v7
+        timeout-minutes: 2
       - uses: actions/setup-node@v7
+        timeout-minutes: 3
         with: {node-version-file: .nvmrc, cache: npm}
       - uses: actions/setup-java@v6
+        timeout-minutes: 3
         with: {distribution: temurin, java-version: '21'}
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        timeout-minutes: 5
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm run test:unit && node scripts/validate-mobile-env.mjs
+        timeout-minutes: 5
       - run: npm run build && npx cap sync android
+        timeout-minutes: 5
         working-directory: apps/web
       - name: Clave de firma
+        timeout-minutes: 1
         env:
           KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
           SIGNING: ${{ secrets.ANDROID_SIGNING_JSON }}
@@ -66,9 +74,11 @@ jobs:
             echo "ANDROID_KEY_PASSWORD=$password"
           } >> "$GITHUB_ENV"
       - name: Build signed APK and Play bundle
+        timeout-minutes: 10
         working-directory: apps/web/android
         run: ./gradlew assembleRelease bundleRelease
       - name: Publish downloadable APK
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -79,6 +89,7 @@ jobs:
           echo "RELEASE_SHA256=$(cut -d ' ' -f1 SHA256SUMS)" >> "$GITHUB_ENV"
           echo "RELEASE_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/app-android-v${APP_VERSION}-${BUILD_NUMBER}/TuEventoFun.apk" >> "$GITHUB_ENV"
       - name: Update website catalog
+        timeout-minutes: 3
         if: inputs.publish_catalog
         env:
           RELEASE_PLATFORM: android
@@ -91,11 +102,13 @@ jobs:
           npm run build -w @tuevento/contracts
           node scripts/publish-release.mjs
       - if: always()
+        timeout-minutes: 2
         run: rm -f "$RUNNER_TEMP/release.keystore"
   ios:
     if: inputs.platform == 'ios' || inputs.platform == 'both'
     runs-on: macos-15
     environment: production
+    timeout-minutes: 45
     env:
       APP_VERSION: ${{ inputs.version }}
       VITE_APP_VERSION: ${{ inputs.version }}
@@ -105,12 +118,17 @@ jobs:
       APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v7
+        timeout-minutes: 2
       - uses: actions/setup-node@v7
+        timeout-minutes: 3
         with: {node-version-file: .nvmrc, cache: npm}
       - run: npm ci && npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run typecheck && npm run test:unit && node scripts/validate-mobile-env.mjs
+        timeout-minutes: 5
       - run: npm run build && npx cap sync ios
+        timeout-minutes: 5
         working-directory: apps/web
       - name: Install distribution identity
+        timeout-minutes: 3
         env:
           IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
@@ -118,12 +136,15 @@ jobs:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: bash scripts/ios-signing.sh
       - name: Resolve App Links host
+        timeout-minutes: 1
         run: echo "APP_LINK_HOST=$(node -p 'new URL(process.env.VITE_PUBLIC_ORIGIN).host')" >> "$GITHUB_ENV"
       - name: Archive and export
+        timeout-minutes: 25
         run: |
           xcodebuild -project apps/web/ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$APPLE_TEAM_ID" APP_LINK_HOST="$APP_LINK_HOST" PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_UUID" CODE_SIGN_IDENTITY='Apple Distribution' PRODUCT_BUNDLE_IDENTIFIER="$MOBILE_APP_ID" MARKETING_VERSION="$APP_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportPath "$RUNNER_TEMP/ipa" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
       - name: Upload to App Store Connect for TestFlight processing
+        timeout-minutes: 10
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -133,10 +154,12 @@ jobs:
           printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           xcrun altool --upload-app -f "$RUNNER_TEMP/ipa/App.ipa" --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
       - uses: actions/upload-artifact@v7
+        timeout-minutes: 5
         with:
           name: ios-distribution
           path: ${{ runner.temp }}/ipa/*.ipa
       - if: always()
+        timeout-minutes: 2
         run: |
           security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
           rm -f "$RUNNER_TEMP/distribution.p12" "$RUNNER_TEMP/profile.mobileprovision"
