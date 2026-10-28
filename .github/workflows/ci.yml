@@ -113,6 +113,8 @@ jobs:
   # WebKit (iphone-safari) tarda unas 3 veces más por escenario que Chromium, y @disenos (7 tamaños
   # de pantalla por proyecto) suma 128 s solo en WebKit. Con --shard=N/3 sobre todo, la última parte
   # se quedaba casi todo iphone-safari (3:56 frente a 1:19; run 40623833862).
+  # Por etiquetas y sin --shard: la parte 1 tardaba 2:30 frente a 1:05 de las mitades de
+  # iphone-safari (run 40724065495); @plataforma pasa a la parte 2 en los tres proyectos.
   # Un escenario nuevo entra solo en su parte: las cuatro cubren la suite entera, sin repetir.
   escenarios-partes:
     name: Escenarios (${{ matrix.parte }}/4)
@@ -120,13 +122,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # La de más escenarios (360) y los más ligeros: 3 workers en los 4 núcleos del runner
+          # Las de más escenarios (238 y 183) y los más ligeros: 3 workers en los 4 núcleos del runner
           - parte: 1
-            filtro: --project=chromium --project=android-chrome --grep-invert @disenos --workers=3
+            filtro: --project=chromium --project=android-chrome --grep-invert "@disenos|@plataforma" --workers=3
           - parte: 2
-            filtro: --project=iphone-safari --grep-invert @disenos --shard=1/2
+            filtro: --grep @plataforma --grep-invert @disenos --workers=3
           - parte: 3
-            filtro: --project=iphone-safari --grep-invert @disenos --shard=2/2
+            filtro: --project=iphone-safari --grep-invert "@disenos|@plataforma"
           - parte: 4
             filtro: --grep @disenos
     runs-on: ubuntu-latest
