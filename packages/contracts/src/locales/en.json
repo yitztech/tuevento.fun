@@ -1124,5 +1124,14 @@
     "invalidSort": "Sort by relevance or by distance.",
     "invalidCursor": "That page of results is no longer valid: search again.",
     "unavailable": "Search isn't available right now. Please try again in a few minutes."
+  },
+  "mcp": {
+    "unauthorized": "Invalid or missing MCP credentials.",
+    "forbidden": "You do not have permission to access this resource or tool.",
+    "invalidToken": "The MCP access token has expired or was revoked.",
+    "confirmationRequired": "This action requires confirmation with the generated token.",
+    "resourceNotFound": "The requested resource does not exist or you do not have access to it.",
+    "scopeRequired": "The token does not have the required scope ({{scope}}).",
+    "previewSummary": "Preview of action '{{tool}}' ready for confirmation."
   }
 }

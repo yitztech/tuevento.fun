@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "invitations", "mail_sends", "mail_suppressions", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "trusted_devices", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "trusted_devices", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -31,7 +31,7 @@ test("El correo electrónico es el identificador: users no tiene nombre de usuar
 });
 
 test("Ni contraseñas ni tokens se guardan en claro: solo hashes", async () => {
-  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"], ["email_verifications", "token_hash"]]) {
+  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"], ["email_verifications", "token_hash"], ["mcp_tokens", "token_hash"]]) {
     const cols = await columnas(tabla);
     assert.ok(cols.includes(hash), `${tabla}.${hash}`);
     assert.ok(!cols.includes("password") && !cols.includes("token") && !cols.includes("code"), `${tabla} guarda un secreto en claro`);
@@ -357,3 +357,26 @@ test("Proveedor: borrar la cuenta borra perfil, servicios y fotos, y sus direcci
   const borradas = (await db.query("SELECT slug FROM provider_deleted_slugs WHERE slug = ANY($1) ORDER BY slug", [[slug, `${slug}-antes`]])).rows.map((r) => r.slug);
   assert.deepEqual(borradas, [slug, `${slug}-antes`].sort());
 });
+
+test("MCP: tokens de acceso con actor_type acotado y borrado en cascada con su usuario o invitación", async () => {
+  const dueno = await usuario(db);
+  const evento = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const inv = await uno("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'I','individual',$2) RETURNING id", [evento.id, crypto.randomUUID().replaceAll("-", "")]);
+
+  // Token para organizador (exige user_id y sin invitation_id)
+  await db.query("INSERT INTO mcp_tokens(token_hash,actor_type,user_id,expires_at) VALUES('hash-org','organizer',$1,now()+interval '1 hour')", [dueno]);
+  // Token para invitado (exige invitation_id y sin user_id)
+  await db.query("INSERT INTO mcp_tokens(token_hash,actor_type,invitation_id,expires_at) VALUES('hash-inv','guest',$1,now()+interval '1 hour')", [inv.id]);
+
+  // Restricciones CHECK
+  assert.equal(await codigoError(() => db.query("INSERT INTO mcp_tokens(token_hash,actor_type,user_id,expires_at) VALUES('bad-1','admin',$1,now()+interval '1 hour')", [dueno])), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("INSERT INTO mcp_tokens(token_hash,actor_type,user_id,invitation_id,expires_at) VALUES('bad-2','guest',$1,$2,now()+interval '1 hour')", [dueno, inv.id])), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("INSERT INTO mcp_tokens(token_hash,actor_type,expires_at) VALUES('bad-3','organizer',now()+interval '1 hour')")), CHECK_VIOLATION);
+
+  // Borrado en cascada: borrar el usuario borra sus tokens MCP
+  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM mcp_tokens WHERE token_hash='hash-org'")).n, 0);
+  // Borrar el usuario borró también el evento y la invitación en cascada, y por ende el token de la invitación
+  assert.equal((await uno("SELECT count(*)::int AS n FROM mcp_tokens WHERE token_hash='hash-inv'")).n, 0);
+});
+

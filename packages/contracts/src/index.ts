@@ -1050,3 +1050,267 @@ export type Postcard = {
   photos: { id: string; url: string }[];
 };
 export type PostcardVersion = { id: string; createdAt: string };
+
+// ── Model Context Protocol (MCP) (docs/PLAN-MCP.md) ─────────────────────────
+
+export const mcpActorTypes = ["organizer", "provider", "guest"] as const;
+export type McpActorType = (typeof mcpActorTypes)[number];
+
+export const mcpScopes = ["mcp:read", "mcp:write"] as const;
+export type McpScope = (typeof mcpScopes)[number];
+
+export const mcpToolNames = [
+  "events_list",
+  "events_get",
+  "events_attendance_summary",
+  "providers_search",
+  "provider_profile_get",
+  "provider_services_list",
+  "invitation_get",
+  "invitation_rsvp_get",
+  "events_create",
+  "events_update",
+  "invitations_create",
+  "invitations_update",
+  "provider_profile_update",
+  "provider_services_update",
+  "invitation_rsvp_update",
+] as const;
+export type McpToolName = (typeof mcpToolNames)[number];
+
+export const mcpActorToolMatrix: Record<McpActorType, readonly McpToolName[]> = {
+  organizer: [
+    "events_list",
+    "events_get",
+    "events_attendance_summary",
+    "providers_search",
+    "events_create",
+    "events_update",
+    "invitations_create",
+    "invitations_update",
+    "invitation_get",
+  ],
+  provider: [
+    "provider_profile_get",
+    "provider_services_list",
+    "provider_profile_update",
+    "provider_services_update",
+  ],
+  guest: [
+    "invitation_get",
+    "invitation_rsvp_get",
+    "invitation_rsvp_update",
+  ],
+};
+
+export const mcpToolScopeMatrix: Record<McpToolName, McpScope> = {
+  events_list: "mcp:read",
+  events_get: "mcp:read",
+  events_attendance_summary: "mcp:read",
+  providers_search: "mcp:read",
+  provider_profile_get: "mcp:read",
+  provider_services_list: "mcp:read",
+  invitation_get: "mcp:read",
+  invitation_rsvp_get: "mcp:read",
+  events_create: "mcp:write",
+  events_update: "mcp:write",
+  invitations_create: "mcp:write",
+  invitations_update: "mcp:write",
+  provider_profile_update: "mcp:write",
+  provider_services_update: "mcp:write",
+  invitation_rsvp_update: "mcp:write",
+};
+
+export const mcpMessages = {
+  unauthorized: "mcp.unauthorized",
+  forbidden: "mcp.forbidden",
+  invalidToken: "mcp.invalidToken",
+  confirmationRequired: "mcp.confirmationRequired",
+  resourceNotFound: "mcp.resourceNotFound",
+  scopeRequired: "mcp.scopeRequired",
+  previewSummary: "mcp.previewSummary",
+} as const;
+
+/** Parámetros comunes de confirmación e idempotencia para herramientas de escritura. */
+const writeConfirmationFields = {
+  preview: z.boolean().optional().default(false),
+  confirmed: z.boolean().optional().default(false),
+  confirmation_token: z.string().max(256).optional(),
+  idempotency_key: z.string().max(128).optional(),
+};
+
+export const mcpEventsListSchema = z.strictObject({
+  status: statusSchema.optional(),
+  limit: z.number().int().min(1).max(100).optional().default(50),
+  offset: z.number().int().min(0).optional().default(0),
+});
+
+export const mcpEventsGetSchema = z.strictObject({
+  id: z.string().min(1).max(accountLimits.eventSlug),
+});
+
+export const mcpAttendanceSummarySchema = z.strictObject({
+  eventId: z.string().min(1).max(accountLimits.eventSlug),
+});
+
+export const mcpProvidersSearchSchema = z.strictObject({
+  query: z.string().max(accountLimits.search).optional(),
+  category: z.enum(providerCategories).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  radiusKm: z.number().min(1).max(providerLimits.serviceRadiusKm).optional(),
+  limit: z.number().int().min(1).max(50).optional().default(20),
+});
+
+export const mcpProviderProfileGetSchema = z.strictObject({});
+export const mcpProviderServicesListSchema = z.strictObject({});
+
+export const mcpInvitationGetSchema = z.strictObject({
+  invitationId: z.string().uuid().optional(),
+});
+
+export const mcpInvitationRsvpGetSchema = z.strictObject({
+  invitationId: z.string().uuid().optional(),
+});
+
+export const mcpEventsCreateSchema = z.strictObject({
+  title: z.string().trim().min(3).max(100),
+  slug: z.string().min(1).max(accountLimits.eventSlug).optional(),
+  date: z.string().datetime(),
+  timeZone: z.string().min(1).max(100),
+  location: z.string().min(1).max(accountLimits.addressLine),
+  theme: z.enum(themeIds),
+  description: z.string().trim().max(2500).optional(),
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpEventsUpdateSchema = z.strictObject({
+  id: z.string().min(1).max(accountLimits.eventSlug),
+  title: z.string().trim().min(3).max(100).optional(),
+  slug: z.string().min(1).max(accountLimits.eventSlug).optional(),
+  date: z.string().datetime().optional(),
+  timeZone: z.string().min(1).max(100).optional(),
+  location: z.string().min(1).max(accountLimits.addressLine).optional(),
+  theme: z.enum(themeIds).optional(),
+  description: z.string().trim().max(2500).optional(),
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .nullable()
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpInvitationsCreateSchema = z.strictObject({
+  eventId: z.string().min(1).max(accountLimits.eventSlug),
+  name: z.string().min(1).max(accountLimits.personName),
+  kind: z.enum(["individual", "family"]),
+  contact: z.string().max(accountLimits.phone).optional(),
+  members: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(accountLimits.personName),
+        kind: z.enum(["adult", "child"]),
+      }),
+    )
+    .min(1)
+    .max(50),
+  ...writeConfirmationFields,
+});
+
+export const mcpInvitationsUpdateSchema = z.strictObject({
+  eventId: z.string().min(1).max(accountLimits.eventSlug),
+  id: z.string().uuid(),
+  name: z.string().min(1).max(accountLimits.personName).optional(),
+  kind: z.enum(["individual", "family"]).optional(),
+  contact: z.string().max(accountLimits.phone).optional(),
+  members: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        name: z.string().min(1).max(accountLimits.personName),
+        kind: z.enum(["adult", "child"]),
+        status: statusSchema.optional(),
+      }),
+    )
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpProviderProfileUpdateSchema = z.strictObject({
+  businessName: z.string().min(1).max(accountLimits.businessName).optional(),
+  slug: z.string().min(1).max(accountLimits.providerSlug).optional(),
+  headline: z.string().max(accountLimits.headline).optional(),
+  description: z.string().max(accountLimits.providerDescription).optional(),
+  categories: z.array(z.enum(providerCategories)).max(providerLimits.categories).optional(),
+  serviceRadiusKm: z.number().int().min(0).max(providerLimits.serviceRadiusKm).optional(),
+  address: z.string().max(accountLimits.addressLine).optional(),
+  city: z.string().max(accountLimits.city).optional(),
+  region: z.string().max(accountLimits.region).optional(),
+  postalCode: z.string().max(accountLimits.postalCode).optional(),
+  phone: z.string().max(accountLimits.phone).optional(),
+  whatsapp: z.string().max(accountLimits.phone).optional(),
+  publicEmail: z.string().email().max(accountLimits.email).optional(),
+  website: z.string().url().max(accountLimits.url).optional(),
+  instagramUrl: z.string().url().max(accountLimits.url).optional(),
+  facebookUrl: z.string().url().max(accountLimits.url).optional(),
+  tiktokUrl: z.string().url().max(accountLimits.url).optional(),
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .nullable()
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpProviderServicesUpdateSchema = z.strictObject({
+  action: z.enum(["create", "update", "delete"]),
+  serviceId: z.string().uuid().optional(),
+  title: z.string().min(1).max(accountLimits.serviceTitle).optional(),
+  description: z.string().max(accountLimits.serviceDescription).optional(),
+  price: providerPriceSchema.nullable().optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpInvitationRsvpUpdateSchema = z.strictObject({
+  invitationId: z.string().uuid().optional(),
+  members: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        status: statusSchema,
+      }),
+    )
+    .min(1),
+  ...writeConfirmationFields,
+});
+
+export const mcpToolSchemas = {
+  events_list: mcpEventsListSchema,
+  events_get: mcpEventsGetSchema,
+  events_attendance_summary: mcpAttendanceSummarySchema,
+  providers_search: mcpProvidersSearchSchema,
+  provider_profile_get: mcpProviderProfileGetSchema,
+  provider_services_list: mcpProviderServicesListSchema,
+  invitation_get: mcpInvitationGetSchema,
+  invitation_rsvp_get: mcpInvitationRsvpGetSchema,
+  events_create: mcpEventsCreateSchema,
+  events_update: mcpEventsUpdateSchema,
+  invitations_create: mcpInvitationsCreateSchema,
+  invitations_update: mcpInvitationsUpdateSchema,
+  provider_profile_update: mcpProviderProfileUpdateSchema,
+  provider_services_update: mcpProviderServicesUpdateSchema,
+  invitation_rsvp_update: mcpInvitationRsvpUpdateSchema,
+} as const;
+
+

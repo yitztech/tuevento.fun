@@ -1124,5 +1124,14 @@
     "invalidSort": "Sortiere nach Relevanz oder nach Entfernung.",
     "invalidCursor": "Diese Ergebnisseite ist nicht mehr gültig: Such bitte noch einmal.",
     "unavailable": "Die Suche ist gerade nicht verfügbar. Versuch es in ein paar Minuten noch einmal."
+  },
+  "mcp": {
+    "unauthorized": "Ungültige oder fehlende MCP-Anmeldeinformationen.",
+    "forbidden": "Du hast keine Berechtigung für den Zugriff auf diese Ressource oder dieses Werkzeug.",
+    "invalidToken": "Das MCP-Zugriffstoken ist abgelaufen oder wurde widerrufen.",
+    "confirmationRequired": "Diese Aktion erfordert eine Bestätigung mit dem generierten Token.",
+    "resourceNotFound": "Die angeforderte Ressource existiert nicht oder du hast keinen Zugriff darauf.",
+    "scopeRequired": "Das Token verfügt nicht über die erforderliche Berechtigung ({{scope}}).",
+    "previewSummary": "Vorschau der Aktion „{{tool}}“ bereit zur Bestätigung."
   }
 }

@@ -567,6 +567,104 @@ try {
       for (const privado of ["id", "userId", "email", "phone", "whatsapp", "address", "postalCode", "status"]) assert.ok(!(privado in item), privado);
   });
 
+  await suite("Model Context Protocol (MCP) Seguridad: autenticación 401, revocación y aislamiento estricto entre actores", async () => {
+    // 1. Sin token o token inventado: 401 con cabecera WWW-Authenticate
+    const unauth = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(unauth.status, 401);
+    assert.match(unauth.headers["www-authenticate"], /Bearer error="unauthorized"/);
+
+    const badToken = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer mcp_inventado_00000000000000000000000000000000" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(badToken.status, 401);
+    assert.match(badToken.headers["www-authenticate"], /Bearer error="invalid_token"/);
+
+    // 2. Revocación de token
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "mcp-sec-org"), 201);
+    const tokenData = await org.call("/mcp/oauth/authorize", "POST", { client_name: "Revoke Test" });
+    const token = tokenData.access_token;
+
+    // Con token válido funciona
+    const okRes = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(okRes.status, 200);
+
+    // Revocar
+    await org.call("/mcp/oauth/revoke", "POST", { token });
+
+    // Ahora responde 401
+    const revokedRes = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(revokedRes.status, 401);
+    assert.match(revokedRes.headers["www-authenticate"], /Bearer error="invalid_token"/);
+
+    // 3. Aislamiento entre cuentas (Organizador A vs Organizador B)
+    const orgA = client();
+    const orgB = client();
+    await orgA.call("/auth/register", "POST", account(P, "mcp-sec-a"), 201);
+    await orgB.call("/auth/register", "POST", account(P, "mcp-sec-b"), 201);
+    const tokenA = (await orgA.call("/mcp/oauth/authorize", "POST", {})).access_token;
+    const tokenB = (await orgB.call("/mcp/oauth/authorize", "POST", {})).access_token;
+
+    const eventoB = await orgB.call("/events", "POST", eventData(), 201);
+
+    // A intenta consultar el evento de B vía events_get
+    const idorGet = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenA}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "events_get", arguments: { id: eventoB.id } } }),
+    });
+    const idorGetData = JSON.parse(idorGet.text);
+    assert.equal(idorGetData.result.isError, true);
+    assert.match(idorGetData.result.content[0].text, /no encontramos|no existe|no tienes acceso|couldntFind/i);
+
+    // 4. Aislamiento de proveedor: no puede llamar herramientas de organizador ni ver invitados
+    const prov = client();
+    await prov.call("/auth/register", "POST", account(P, "mcp-sec-prov", { accountType: "provider" }), 201);
+    const tokenProv = (await prov.call("/mcp/oauth/authorize", "POST", {})).access_token;
+
+    const provCallOrg = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenProv}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "events_list", arguments: {} } }),
+    });
+    const provCallOrgData = JSON.parse(provCallOrg.text);
+    assert.equal(provCallOrgData.result.isError, true);
+    assert.match(provCallOrgData.result.content[0].text, /permiso/i);
+
+    // 5. Restricción de permisos (scopes): token con solo mcp:read no puede escribir
+    const readOnlyToken = (await orgA.call("/mcp/oauth/authorize", "POST", { scopes: ["mcp:read"] })).access_token;
+    const writeAttempt = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${readOnlyToken}` },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "events_create",
+          arguments: { title: "Intento solo lectura", date: "2026-12-01T20:00:00Z", timeZone: "UTC", location: "Lugar", theme: "gold", preview: true },
+        },
+      }),
+    });
+    const writeData = JSON.parse(writeAttempt.text);
+    assert.equal(writeData.result.isError, true);
+    assert.match(writeData.result.content[0].text, /mcp:write/);
+  });
+
   await suite("Errores: Problem Details con requestId y X-Request-ID", async () => {
     const r = await guest.raw("/events");
     assert.equal(r.status, 401);

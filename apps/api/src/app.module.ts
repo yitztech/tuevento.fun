@@ -13,8 +13,9 @@ import { PostcardsService } from "./postcards";
 import { GeoController, GeoService } from "./geo";
 import { ProviderPagesController } from "./provider-pages";
 import { ProviderController, ProviderImagesController, ProvidersService } from "./providers";
+import { McpController, McpService } from "./mcp";
 @Module({
-  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController],
+  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController, McpController],
   providers: [
     Database,
     AuthService,
@@ -30,6 +31,7 @@ import { ProviderController, ProviderImagesController, ProvidersService } from "
     PostcardsService,
     GeoService,
     ProvidersService,
+    McpService,
   ],
 })
 export class AppModule {}

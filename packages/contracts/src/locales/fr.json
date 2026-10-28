@@ -1124,5 +1124,14 @@
     "invalidSort": "Trie par pertinence ou par distance.",
     "invalidCursor": "Cette page de résultats n’est plus valable : relance la recherche.",
     "unavailable": "La recherche n’est pas disponible pour le moment. Réessaie dans quelques minutes."
+  },
+  "mcp": {
+    "unauthorized": "Identifiants MCP non valides ou absents.",
+    "forbidden": "Tu n’as pas la permission d’accéder à cette ressource ou à cet outil.",
+    "invalidToken": "Le jeton d’accès MCP a expiré ou a été révoqué.",
+    "confirmationRequired": "Cette action nécessite une confirmation avec le jeton généré.",
+    "resourceNotFound": "La ressource demandée n’existe pas ou tu n’y as pas accès.",
+    "scopeRequired": "Le jeton ne dispose pas de la portée requise ({{scope}}).",
+    "previewSummary": "Aperçu de l’action « {{tool}} » prêt pour confirmation."
   }
 }

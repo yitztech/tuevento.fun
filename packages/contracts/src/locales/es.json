@@ -1124,5 +1124,14 @@
     "invalidSort": "Ordena por relevancia o por distancia.",
     "invalidCursor": "Esa página de resultados ya no es válida: vuelve a buscar.",
     "unavailable": "La búsqueda no está disponible en este momento. Inténtalo de nuevo en unos minutos."
+  },
+  "mcp": {
+    "unauthorized": "Credenciales de MCP inválidas o ausentes.",
+    "forbidden": "No tienes permiso para acceder a este recurso o herramienta.",
+    "invalidToken": "El token de acceso de MCP ha caducado o fue revocado.",
+    "confirmationRequired": "Esta acción requiere confirmación con el token generado.",
+    "resourceNotFound": "El recurso solicitado no existe o no tienes acceso a él.",
+    "scopeRequired": "El token no cuenta con el permiso necesario ({{scope}}).",
+    "previewSummary": "Vista previa de la acción «{{tool}}» lista para confirmación."
   }
 }
