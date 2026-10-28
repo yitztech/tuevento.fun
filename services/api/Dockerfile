@@ -27,9 +27,9 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/client/package.json packages/client/
 COPY packages/app/package.json packages/app/
 RUN npm ci --no-audit --no-fund
-COPY packages packages
-COPY apps apps
-RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api
+COPY packages/contracts packages/contracts
+COPY apps/api apps/api
+RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/api
 
 # Dependencias de ejecución de la API, sin las de desarrollo ni las de la web
 FROM base AS api-deps

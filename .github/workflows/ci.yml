@@ -65,26 +65,46 @@ jobs:
           go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
+      - name: Entorno de imágenes
+        timeout-minutes: 1
+        run: sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
       - name: Construir imágenes
+        uses: docker/bake-action@v7.5.0
         timeout-minutes: 10
-        run: |
-          set -a; . ./.env.ci; set +a
-          docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
-            --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
+        with:
+          files: |
+            compose.prod.yml
+            compose.ci.yml
+            docker-bake.ci.hcl
+          load: true
+      - name: Clave diaria de Trivy
+        id: trivy-date
+        timeout-minutes: 1
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        timeout-minutes: 2
+        with:
+          path: ~/.cache/trivy
+          key: trivy-${{ runner.os }}-${{ env.TRIVY_IMAGE }}-${{ steps.trivy-date.outputs.day }}
+          restore-keys: trivy-${{ runner.os }}-${{ env.TRIVY_IMAGE }}-
       - name: Trivy sobre las 6 imágenes
         timeout-minutes: 5
         run: |
           set -a; . ./.env.ci; set +a
           for servicio in gateway web api admin search postgres; do
             echo "::group::$servicio"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" "$TRIVY_IMAGE" image \
               --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
               "${IMAGE_PREFIX}-${servicio}:${IMAGE_TAG}"
             echo "::endgroup::"
           done
 
-  escenarios:
-    name: Escenarios
+  escenarios-partes:
+    name: Escenarios (${{ matrix.shard }}/3)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -107,34 +127,57 @@ jobs:
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
+      - name: Entorno de imágenes
+        timeout-minutes: 1
+        run: sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
       - name: Construir imágenes
+        uses: docker/bake-action@v7.5.0
         timeout-minutes: 10
-        run: |
-          set -a; . ./.env.ci; set +a
-          docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
-            --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
+        with:
+          files: |
+            compose.prod.yml
+            compose.ci.yml
+            docker-bake.ci.hcl
+          load: true
+          set: "*.cache-to="
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
         timeout-minutes: 3
       - run: npm run test:api && npm run test:endpoints
         timeout-minutes: 3
-      - run: npm run e2e
+      - run: npm run e2e -- --shard=${{ matrix.shard }}/3
         timeout-minutes: 12
       - run: npm run e2e:summary
         if: always()
         timeout-minutes: 2
-      - run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
+      - if: matrix.shard == 1
+        run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
         timeout-minutes: 3
       - uses: actions/upload-artifact@v7
         if: always()
         timeout-minutes: 3
         with:
-          name: qa-evidence
+          retention-days: 7
+          name: qa-evidence-${{ matrix.shard }}
           path: |
             qa-artifacts/
             tests/e2e/results/
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
         if: always()
         timeout-minutes: 2
+
+  # Conserva el check obligatorio: ninguna parte fallida u omitida puede darlo por bueno.
+  escenarios:
+    name: Escenarios
+    needs: escenarios-partes
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Comprobar todas las partes
+        timeout-minutes: 1
+        env:
+          RESULTADO: ${{ needs.escenarios-partes.result }}
+        run: test "$RESULTADO" = success
 
   base-de-datos:
     name: Base de datos
@@ -255,12 +298,19 @@ jobs:
         timeout-minutes: 5
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
+      - name: Entorno de imágenes
+        timeout-minutes: 1
+        run: sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
       - name: Construir imágenes
+        uses: docker/bake-action@v7.5.0
         timeout-minutes: 10
-        run: |
-          set -a; . ./.env.ci; set +a
-          docker buildx bake -f compose.prod.yml -f compose.ci.yml --load \
-            --set '*.cache-from=type=gha' --set '*.cache-to=type=gha,mode=max'
+        with:
+          files: |
+            compose.prod.yml
+            compose.ci.yml
+            docker-bake.ci.hcl
+          load: true
+          set: "*.cache-to="
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
         timeout-minutes: 3
       - run: npm run test:security

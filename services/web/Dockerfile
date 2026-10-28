@@ -44,8 +44,10 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/client/package.json packages/client/
 COPY packages/app/package.json packages/app/
 RUN npm ci --no-audit --no-fund
-COPY packages packages
-COPY apps apps
+COPY packages/contracts packages/contracts
+COPY packages/client packages/client
+COPY packages/app packages/app
+COPY apps/web apps/web
 COPY services/web/locales-manifest.cjs services/web/
 RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/web \
  && node services/web/locales-manifest.cjs packages/contracts/dist > /app/locales.txt
