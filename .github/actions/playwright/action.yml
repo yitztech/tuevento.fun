@@ -49,13 +49,17 @@ runs:
       shell: bash
       env:
         DIR: ${{ steps.claves.outputs.dir }}
-      # apt-get y no dpkg -i, que no ordena los Pre-Depends (systemd-sysv). Sin --no-download:
-      # con archivos locales apt no descarga nada, y esa opción los rechaza («not absolute»)
+      # apt-get y no dpkg -i, que no ordena los Pre-Depends (systemd-sysv). La carpeta de la caché
+      # hace de caché de apt (Dir::Cache::Archives): con la misma versión en el repositorio, apt
+      # prefiere el repositorio a un .deb pasado como argumento y lo descargaba todo otra vez
+      # (114 MB del mirror de Azure en cada job, de 30 s a más de 2 min). Así no descarga nada.
       run: |
         shopt -s nullglob
         debs=("$DIR"/*.deb)
         if [ "${#debs[@]}" -gt 0 ]; then
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${debs[@]}"
+          sudo mkdir -p "$DIR/partial"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            -o Dir::Cache::Archives="$DIR/" "${debs[@]}"
         fi
     # apt-get descarga directamente en la carpeta de la caché y la conserva. Primero del archivo
     # de Ubuntu y después del mirror de Azure: el 27-oct el de Azure servía a pocos KB/s, sin
