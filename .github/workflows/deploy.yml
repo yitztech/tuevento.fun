@@ -1,7 +1,11 @@
 # Publica las imágenes en GHCR y despliega en Coolify cuando cambia main.
 #
-#   CI (Verificar, Escenarios, Base de datos y Seguridad) → publicar (gateway, web, api, admin y
-#   postgres) → desplegar (webhook de Coolify) → comprobar la versión → prueba de humo
+#   CI (Verificar, Escenarios, Base de datos y Seguridad) ┐
+#                                                         ├→ promover (:main) → desplegar (webhook de
+#   publicar (:<sha> de las 6 imágenes)                   ┘   Coolify) → comprobar la versión → humo
+#
+# Publicar corre en paralelo con el CI, pero solo con la etiqueta del SHA. `:main`, la que usa
+# producción, la mueve `promover` cuando el CI pasa (DEP-14): un commit que falla nunca la toca.
 #
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variables SITE_URL y
 # SITE_URL_EN) lo rellena la plataforma. Mientras no exista, se publican las imágenes
@@ -34,8 +38,7 @@ jobs:
 
   publicar:
     name: Publicar ${{ matrix.name }}
-    needs: ci
-    # La etiqueta :main solo puede salir de main (también con workflow_dispatch)
+    # En paralelo con el CI: solo :<sha>, que producción no usa hasta que `promover` la copia a :main
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -94,17 +97,45 @@ jobs:
           build-args: |
             ${{ matrix.build_args }}
             SECURITY_REFRESH=${{ steps.image.outputs.security_refresh }}
-          tags: |
-            ${{ steps.image.outputs.name }}:main
-            ${{ steps.image.outputs.name }}:${{ github.sha }}
+          tags: ${{ steps.image.outputs.name }}:${{ github.sha }}
           cache-from: type=gha,timeout=2m,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,timeout=2m,ignore-error=true,scope=${{ matrix.name }}
           provenance: true
           sbom: true
 
+  promover:
+    name: Promover a main
+    needs: [ci, publicar]
+    # La etiqueta :main solo puede salir de main (también con workflow_dispatch)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@v4
+        timeout-minutes: 2
+      - uses: docker/login-action@v4
+        timeout-minutes: 2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Copia el manifiesto en el registro, sin reconstruir: :main queda idéntica a :<sha>
+      - name: Mover :main al SHA
+        timeout-minutes: 3
+        env:
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          for name in gateway web api admin search postgres; do
+            image="ghcr.io/${REPOSITORY,,}-${name}"
+            docker buildx imagetools create --tag "${image}:main" "${image}:${SHA}"
+          done
+
   desplegar:
     name: Desplegar en Coolify
-    needs: publicar
+    needs: promover
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 15
@@ -146,18 +177,18 @@ jobs:
           SITE_URL_EN: ${{ vars.SITE_URL_EN }}
           EXPECTED_SHA: ${{ github.sha }}
         run: |
-          for attempt in $(seq 1 60); do
+          for attempt in $(seq 1 120); do
             es=$(curl --fail --silent --max-time 10 "$SITE_URL/version.json" | jq -r '.revision' || true)
             en=$(curl --fail --silent --max-time 10 "$SITE_URL_EN/version.json" | jq -r '.revision' || true)
             if [ "$es" = "$EXPECTED_SHA" ] && [ "$en" = "$EXPECTED_SHA" ]; then
               echo "Desplegado: $EXPECTED_SHA en $SITE_URL y $SITE_URL_EN"
               exit 0
             fi
-            if [ "$attempt" -eq 60 ]; then
+            if [ "$attempt" -eq 120 ]; then
               echo "::error::Coolify no sirvió la revisión esperada en 10 minutos (es: $es, en: $en)."
               exit 1
             fi
-            sleep 10
+            sleep 5
           done
 
       # Prueba de humo con reintentos en los dos dominios y en el panel (DEP-11)
