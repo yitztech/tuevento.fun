@@ -120,8 +120,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # La de más escenarios (360) y los más ligeros: 3 workers en los 4 núcleos del runner
           - parte: 1
-            filtro: --project=chromium --project=android-chrome --grep-invert @disenos
+            filtro: --project=chromium --project=android-chrome --grep-invert @disenos --workers=3
           - parte: 2
             filtro: --project=iphone-safari --grep-invert @disenos --shard=1/2
           - parte: 3
