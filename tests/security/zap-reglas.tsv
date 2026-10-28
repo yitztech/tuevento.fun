@@ -1,0 +1,5 @@
+10027	IGNORE	(Comentarios de las librerías dentro del bundle minificado de Vite; el código propio no los lleva a producción)
+10049	IGNORE	(Páginas públicas y recursos con hash cacheables a propósito; la API lleva no-store)
+10055	IGNORE	(style-src 'unsafe-inline' por Google Identity Services y MapLibre; img-src https: por avatares e imágenes de proveedores)
+10109	IGNORE	(Informativo: la web es una SPA)
+90004	IGNORE	(Sin COEP: bloquearía el popup de Google, las teselas de OpenFreeMap y Umami; no se usa SharedArrayBuffer)
