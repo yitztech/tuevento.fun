@@ -36,11 +36,13 @@ server {
     # robots.txt y sitemap.xml del dominio que se visita
     location = /robots.txt {
         default_type text/plain;
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=3600" always;
         alias /etc/nginx/seo/robots-$site_lang.txt;
     }
     location = /sitemap.xml {
         default_type application/xml;
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=3600" always;
         alias /etc/nginx/seo/sitemap-$site_lang.xml;
     }

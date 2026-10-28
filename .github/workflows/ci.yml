@@ -2,9 +2,10 @@
 #
 #   Verificar      instalación, lint, tipos, unitarias, build, npm audit, Go (vet, pruebas y govulncheck)
 #                  y Trivy sobre las 6 imágenes
-#   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador
+#   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador,
+#                  en cuatro partes en paralelo y un job que las agrega
 #   Base de datos  tests/db contra PostgreSQL 18 (la imagen del proyecto) y Squawk en migraciones nuevas
-#   Seguridad      test:security, CodeQL y ZAP baseline
+#   Seguridad      test:security, CodeQL y ZAP baseline (dos jobs en paralelo y uno que los agrega)
 #
 # Cada job y cada paso tiene su timeout-minutes, holgado sobre lo que tarda cuando va bien
 # (medido en las ejecuciones en verde de oct-2026): si algo se cuelga, falla en minutos.
@@ -15,6 +16,10 @@ name: CI
 on:
   pull_request:
   workflow_call:
+  # Verificación nocturna contra main (AUDITORIA SEG-08): todo el CI, ZAP incluido, sin publicar
+  # (la publicación vive en deploy.yml). Hora escalonada por el tope de jobs de la organización.
+  schedule:
+    - cron: "40 9 * * *"
   workflow_dispatch:
 permissions:
   contents: read
@@ -108,31 +113,35 @@ jobs:
             sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/trivy"
           fi
 
+  # Partes repartidas por duración, no por número de escenarios (docs/DEPLOYMENT-PERFORMANCE.md):
+  # WebKit (iphone-safari) tarda unas 3 veces más por escenario que Chromium, y @disenos (7 tamaños
+  # de pantalla por proyecto) suma 128 s solo en WebKit. Con --shard=N/3 sobre todo, la última parte
+  # se quedaba casi todo iphone-safari (3:56 frente a 1:19; run 40623833862).
+  # Por etiquetas y sin --shard: la parte 1 tardaba 2:30 frente a 1:05 de las mitades de
+  # iphone-safari (run 40724065495); @plataforma pasa a la parte 2 en los tres proyectos.
+  # Un escenario nuevo entra solo en su parte: las cuatro cubren la suite entera, sin repetir.
   escenarios-partes:
-    name: Escenarios (${{ matrix.shard }}/3)
+    name: Escenarios (${{ matrix.parte }}/4)
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        include:
+          # Las de más escenarios (238 y 183) y los más ligeros: 3 workers en los 4 núcleos del runner
+          - parte: 1
+            filtro: --project=chromium --project=android-chrome --grep-invert "@disenos|@plataforma" --workers=3
+          - parte: 2
+            filtro: --grep @plataforma --grep-invert @disenos --workers=3
+          - parte: 3
+            filtro: --project=iphone-safari --grep-invert "@disenos|@plataforma"
+          - parte: 4
+            filtro: --grep @disenos
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         timeout-minutes: 2
-      - uses: actions/setup-node@v7
-        timeout-minutes: 3
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-        timeout-minutes: 3
-      - run: npm run build
-        timeout-minutes: 3
-      # Navegadores y librerías del sistema desde la caché, sin depender del mirror de apt
-      - uses: ./.github/actions/playwright
-        timeout-minutes: 3
-        with:
-          browsers: chromium webkit
+      # Primero las imágenes y el arranque del entorno, sin esperar a los healthchecks: los
+      # contenedores arrancan mientras se instalan Node, las dependencias y los navegadores.
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
@@ -151,16 +160,35 @@ jobs:
             docker-bake.ci.hcl
           load: true
           set: "*.cache-to="
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
+      - name: Arrancar el entorno
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build
+        timeout-minutes: 2
+      - uses: actions/setup-node@v7
+        timeout-minutes: 3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npm run build
+        timeout-minutes: 3
+      # Navegadores y librerías del sistema desde la caché, sin depender del mirror de apt
+      - uses: ./.github/actions/playwright
+        timeout-minutes: 3
+        with:
+          browsers: chromium webkit
+      - name: Esperar a que el entorno esté sano
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
         timeout-minutes: 3
       - run: npm run test:api && npm run test:endpoints
         timeout-minutes: 3
-      - run: npm run e2e -- --shard=${{ matrix.shard }}/3
+      - run: npm run e2e -- ${{ matrix.filtro }}
         timeout-minutes: 12
       - run: npm run e2e:summary
         if: always()
         timeout-minutes: 2
-      - if: matrix.shard == 1
+      # En la parte más ligera
+      - if: matrix.parte == 4
         run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
         timeout-minutes: 3
       - uses: actions/upload-artifact@v7
@@ -168,13 +196,11 @@ jobs:
         timeout-minutes: 3
         with:
           retention-days: 7
-          name: qa-evidence-${{ matrix.shard }}
+          name: qa-evidence-${{ matrix.parte }}
           path: |
             qa-artifacts/
             tests/e2e/results/
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
-        if: always()
-        timeout-minutes: 2
+      # Sin `docker compose down`: el runner se descarta al terminar el job
 
   # Conserva el check obligatorio: ninguna parte fallida u omitida puede darlo por bueno.
   escenarios:
@@ -280,10 +306,12 @@ jobs:
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         timeout-minutes: 5
 
-  seguridad:
-    name: Seguridad
+  # CodeQL (JS/TS y Actions) y ZAP van en paralelo: juntos, CodeQL retrasaba 1:40 la construcción
+  # y ZAP, y Seguridad era la ruta crítica una vez equilibrados los escenarios.
+  seguridad-codeql:
+    name: Seguridad · CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     permissions:
       contents: read
       actions: read
@@ -307,6 +335,15 @@ jobs:
           build-mode: none
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         timeout-minutes: 5
+
+  seguridad-zap:
+    name: Seguridad · API y ZAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        timeout-minutes: 2
+      # Como en Escenarios: el entorno arranca mientras se instalan Node y las dependencias
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       - name: Entorno de imágenes
@@ -324,18 +361,46 @@ jobs:
             docker-bake.ci.hcl
           load: true
           set: "*.cache-to="
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
+      - name: Arrancar el entorno
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build
+        timeout-minutes: 2
+      - uses: actions/setup-node@v7
+        timeout-minutes: 3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npm run build
+        timeout-minutes: 3
+      - name: Esperar a que el entorno esté sano
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
         timeout-minutes: 3
       - run: npm run test:security
         timeout-minutes: 3
-      # Falla con las reglas en FAIL; los avisos quedan en el informe (artefacto zap_scan)
+      # Falla con cualquier aviso nuevo (AUDITORIA SEG-08); las excepciones, con su motivo, en
+      # tests/security/zap-reglas.tsv. El informe queda en el artefacto zap_scan
       - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         timeout-minutes: 5
         with:
           target: http://localhost:5187
-          cmd_options: -I
+          docker_name: ghcr.io/zaproxy/zaproxy:2.17.0
+          rules_file_name: tests/security/zap-reglas.tsv
           allow_issue_writing: false
           fail_action: true
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
-        if: always()
-        timeout-minutes: 2
+      # Sin `docker compose down`: el runner se descarta al terminar el job
+
+  # Conserva el check obligatorio `Seguridad`, como `Escenarios` con sus partes.
+  seguridad:
+    name: Seguridad
+    needs: [seguridad-codeql, seguridad-zap]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Comprobar CodeQL y ZAP
+        timeout-minutes: 1
+        env:
+          CODEQL: ${{ needs.seguridad-codeql.result }}
+          ZAP: ${{ needs.seguridad-zap.result }}
+        run: test "$CODEQL" = success && test "$ZAP" = success
