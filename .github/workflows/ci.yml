@@ -2,7 +2,8 @@
 #
 #   Verificar      instalación, lint, tipos, unitarias, build, npm audit, Go (vet, pruebas y govulncheck)
 #                  y Trivy sobre las 6 imágenes
-#   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador
+#   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador,
+#                  en cuatro partes en paralelo y un job que las agrega
 #   Base de datos  tests/db contra PostgreSQL 18 (la imagen del proyecto) y Squawk en migraciones nuevas
 #   Seguridad      test:security, CodeQL y ZAP baseline (dos jobs en paralelo y uno que los agrega)
 #
@@ -108,22 +109,25 @@ jobs:
             sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/trivy"
           fi
 
-  # Tres partes repartidas por duración, no por número de escenarios: WebKit (iphone-safari) tarda
-  # unas 3 veces más por escenario que Chromium. Con --shard=N/3 sobre todo, la parte 3 se quedaba
-  # casi todo iphone-safari (430 s de pruebas frente a 152 y 130; run 40623833862). La primera mitad
-  # de iphone-safari lleva @disenos (128 s en WebKit), así que las pruebas auxiliares van en la segunda.
+  # Partes repartidas por duración, no por número de escenarios (docs/DEPLOYMENT-PERFORMANCE.md):
+  # WebKit (iphone-safari) tarda unas 3 veces más por escenario que Chromium, y @disenos (7 tamaños
+  # de pantalla por proyecto) suma 128 s solo en WebKit. Con --shard=N/3 sobre todo, la última parte
+  # se quedaba casi todo iphone-safari (3:56 frente a 1:19; run 40623833862).
+  # Un escenario nuevo entra solo en su parte: las cuatro cubren la suite entera, sin repetir.
   escenarios-partes:
-    name: Escenarios (${{ matrix.parte }}/3)
+    name: Escenarios (${{ matrix.parte }}/4)
     strategy:
       fail-fast: false
       matrix:
         include:
           - parte: 1
-            proyectos: --project=chromium --project=android-chrome
+            filtro: --project=chromium --project=android-chrome --grep-invert @disenos
           - parte: 2
-            proyectos: --project=iphone-safari --shard=1/2
+            filtro: --project=iphone-safari --grep-invert @disenos --shard=1/2
           - parte: 3
-            proyectos: --project=iphone-safari --shard=2/2
+            filtro: --project=iphone-safari --grep-invert @disenos --shard=2/2
+          - parte: 4
+            filtro: --grep @disenos
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -171,13 +175,13 @@ jobs:
         timeout-minutes: 3
       - run: npm run test:api && npm run test:endpoints
         timeout-minutes: 3
-      - run: npm run e2e -- ${{ matrix.proyectos }}
+      - run: npm run e2e -- ${{ matrix.filtro }}
         timeout-minutes: 12
       - run: npm run e2e:summary
         if: always()
         timeout-minutes: 2
-      # En la parte más ligera (la segunda mitad de iphone-safari)
-      - if: matrix.parte == 3
+      # En la parte más ligera
+      - if: matrix.parte == 4
         run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
         timeout-minutes: 3
       - uses: actions/upload-artifact@v7
