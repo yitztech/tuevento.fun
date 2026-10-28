@@ -24,7 +24,7 @@ try {
       ["GET", `/events/${evento.id}/invitations`], ["POST", `/events/${evento.id}/invitations`],
       ["PUT", `/events/${evento.id}/invitations/${invitacion.id}`], ["DELETE", `/events/${evento.id}/invitations/${invitacion.id}`],
       ["GET", "/notifications"], ["POST", "/notifications/read"], ["PATCH", "/profile"], ["PUT", "/profile/avatar"],
-      ["GET", "/owner/metrics"],
+      ["GET", "/owner/metrics"], ["POST", `/events/${evento.id}/checkout`],
     ];
     for (const [method, path] of protegidos) {
       const r = await guest.raw(path, { method, body: method === "GET" || method === "DELETE" ? undefined : {} });
@@ -269,6 +269,25 @@ try {
     assert.equal((await guest.raw("/auth/email/resend", { method: "POST", body: {} })).status, 401);
     // Un enlace de confirmación inventado no confirma nada
     assert.equal((await guest.raw("/auth/email/verify", { method: "POST", body: { token: "c".repeat(43) } })).status, 400);
+  });
+
+  await suite("Pagos: el webhook exige la firma de Stripe y una cuenta no paga ni ve el pago de otra", async () => {
+    const t = Math.floor(Date.now() / 1000);
+    const pago = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_test_x", client_reference_id: UUID, payment_status: "paid", amount_total: 500, currency: "usd" } } });
+    // Llega sin cabecera propia ni Origin (como Stripe), pero sin firma válida no se acepta
+    for (const firma of [undefined, "", `t=${t},v1=${"0".repeat(64)}`, `t=${t - 3600},v1=${"0".repeat(64)}`, "' OR 1=1 --"]) {
+      const r = await guest.raw("/payments/webhook", { method: "POST", body: pago, json: false, csrf: false, headers: { "Content-Type": "application/json", ...(firma === undefined ? {} : { "Stripe-Signature": firma }) } });
+      assert.equal(r.status, 400, `firma ${firma} → ${r.status}`);
+    }
+    // IDOR: otra cuenta no abre el pago del evento ajeno (404, no 403)
+    assert.equal((await b.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0 } })).status, 404);
+    // El tramo pagado no se puede fijar desde el cuerpo del evento
+    await a.call(`/events/${evento.id}`, "PATCH", { ...eventData(), paidTier: 3 });
+    assert.equal((await a.call(`/events/${evento.id}`)).paidTier, null);
+    // Campos de más en el pago se rechazan (lista blanca)
+    assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0, amount: 1 } })).status, 422);
+    // Sin la cabecera propia, abrir un pago es una escritura más: 403
+    assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0 }, csrf: false })).status, 403);
   });
 
   await suite("Sin enumeración de cuentas: misma respuesta exista o no el correo", async () => {

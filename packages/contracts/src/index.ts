@@ -342,6 +342,10 @@ export const unsubscribeSchema = z.strictObject({
   h: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
   s: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
 });
+/** Pago de un evento: el tramo de invitados que se compra (posición en `guestTiers`). */
+export const checkoutSchema = z.strictObject({
+  tier: z.number().int().min(0, "errors.paymentTierInvalid").max(3, "errors.paymentTierInvalid"),
+});
 /** Minutos de validez del enlace para restablecer la contraseña. */
 export const PASSWORD_RESET_MINUTES = 60;
 export const forgotPasswordSchema = z.strictObject({ email });
@@ -495,6 +499,8 @@ export type Event = Omit<EventInput, "publicPassword" | "geo"> & {
   hasPublicPassword: boolean;
   /** Intentos fallidos con esa contraseña desde el último acierto o el último cambio. */
   passwordFailures: number;
+  /** Tramo de invitados pagado (posición en `guestTiers`), o null si el evento es gratuito. */
+  paidTier: 0 | 1 | 2 | 3 | null;
 };
 /** Evento visto desde su landing: sin invitados ni respuestas. */
 export type PublicEvent = {

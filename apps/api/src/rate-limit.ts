@@ -123,6 +123,8 @@ export const limits = {
   register: new RateLimit(perIp(10), minutes(60)),
   /** Reenvíos del correo para confirmar la cuenta, por cuenta. */
   verifyEmail: new RateLimit(3, minutes(60)),
+  /** Abrir pagos por organizador: cada intento crea una sesión en Stripe. */
+  checkout: new RateLimit(20, minutes(15)),
   /** Recuperación de contraseña: por IP y por correo (este último sin revelar si la cuenta existe). */
   resetIp: new RateLimit(Number(process.env.RESET_MAX_PER_IP) || perIp(10), minutes(15)),
   resetAccount: new RateLimit(3, minutes(15)),

@@ -18,10 +18,13 @@ import { NoticeService } from "./notices";
 import { hashPassword, verifyPassword } from "./password";
 import { siteUrl } from "./locale-env";
 import { limits } from "./rate-limit";
+import { paidTierSql, paymentsEnabled } from "./payment-config";
 import { newInvitationToken, openToken, tokenLookup } from "./tokens";
 import {
   accountLimits,
   calendarFile,
+  canAddGuests,
+  guestTiers,
   countMetrics,
   defaultLocale,
   eventLandingPath,
@@ -82,6 +85,8 @@ type EventRow = {
   public_password_failures: number;
   slug: string | null;
   created_at: Date;
+  /** Calculado con paidTierSql: no es una columna de events. */
+  paid_tier: number | null;
 };
 type MemberRow = Pick<Member, "id" | "name" | "kind" | "notes" | "status">;
 /** Punto del lugar guardado en dos columnas, o null si el evento no tiene. */
@@ -103,6 +108,7 @@ const eventView = (r: EventRow): Event => ({
   slug: r.slug ?? "",
   createdAt: r.created_at.toISOString(),
   metrics: countMetrics([]),
+  paidTier: (r.paid_tier ?? null) as Event["paidTier"],
 });
 /** Dos eventos no pueden compartir dirección: el índice único lo impide y aquí se avisa claro. */
 const slugConflict = (e: unknown): never => {
@@ -147,7 +153,7 @@ export class EventsService {
   }
   async owned(userId: string, id: string) {
     const [r] = await this.db.query(
-      "SELECT * FROM events WHERE id=$1 AND user_id=$2",
+      `SELECT e.*, ${paidTierSql} AS paid_tier FROM events e WHERE e.id=$1 AND e.user_id=$2`,
       [id, userId],
     );
     if (!r) throw new NotFoundException("errors.couldntFindEvent");
@@ -184,7 +190,7 @@ export class EventsService {
   }
   async list(userId: string): Promise<Event[]> {
     const events = await this.db.query(
-      "SELECT * FROM events WHERE user_id=$1 ORDER BY date",
+      `SELECT e.*, ${paidTierSql} AS paid_tier FROM events e WHERE e.user_id=$1 ORDER BY e.date`,
       [userId],
     );
     if (!events.length) return [];
@@ -411,6 +417,7 @@ export class EventsService {
             link.sealed,
           ],
         );
+      await this.assertGuestLimit(c, eventId, invitationId, data.members.length);
       const retained = data.members.map((m) => m.id).filter(Boolean);
       await c.query(
         "DELETE FROM members WHERE invitation_id=$1 AND NOT (id=ANY($2::uuid[]))",
@@ -433,6 +440,28 @@ export class EventsService {
     return (await this.invitations(userId, eventId)).find(
       (i) => i.id === invitationId,
     )!;
+  }
+  /**
+   * Con los pagos activos, un evento que pagó un tramo no pasa de su máximo de invitados (para
+   * más, se paga la diferencia). Uno gratuito no tiene tope: solo no envía correos a invitados.
+   */
+  private async assertGuestLimit(
+    c: PoolClient,
+    eventId: string,
+    invitationId: string,
+    members: number,
+    error: "errors.guestLimitReached" | "errors.openInvitationFull" = "errors.guestLimitReached",
+  ) {
+    if (!paymentsEnabled()) return;
+    const { rows: [r] } = await c.query(
+      `SELECT ${paidTierSql} AS paid_tier,
+         (SELECT count(*) FROM members m JOIN invitations i ON i.id=m.invitation_id WHERE i.event_id=e.id AND i.id<>$2)::int AS others
+       FROM events e WHERE e.id=$1 FOR UPDATE`,
+      [eventId, invitationId],
+    );
+    if (r?.paid_tier === null || r?.paid_tier === undefined) return;
+    if (!canAddGuests(r.others, members, guestTiers[r.paid_tier as number]))
+      throw new ConflictException(error);
   }
   async removeInvitation(userId: string, eventId: string, id: string) {
     await this.owned(userId, eventId);
@@ -547,6 +576,8 @@ export class EventsService {
       // El bloqueo de la fila padre serializa los registros: el límite no se puede saltar en paralelo
       if ((await this.registrationCount(r.id)) >= openInvitationLimits.registrations)
         throw new ConflictException("errors.openInvitationFull");
+      // Quien se registra no ve el tramo del evento: para él, la invitación abierta está llena
+      await this.assertGuestLimit(c, r.event_id, childId, data.members.length, "errors.openInvitationFull");
       const name = data.name || data.email || data.phone;
       await c.query(
         "INSERT INTO invitations(id,event_id,name,email,phone,notes,kind,token,token_hash,token_sealed,parent_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",

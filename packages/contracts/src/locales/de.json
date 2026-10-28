@@ -309,7 +309,15 @@
     "providerSuspended": "Deine Seite ist gesperrt. Schreib uns, damit wir sie prüfen.",
     "eventAlreadyHappened": "Diese Veranstaltung ist schon vorbei. Antworten lassen sich nicht mehr ändern.",
     "emailVerificationLinkInvalid": "Dieser Bestätigungslink ist ungültig oder abgelaufen. Fordere in der App einen neuen an.",
-    "unsubscribeLinkInvalid": "Dieser Abmeldelink ist ungültig. Nimm den aus der letzten E-Mail, die du bekommen hast."
+    "unsubscribeLinkInvalid": "Dieser Abmeldelink ist ungültig. Nimm den aus der letzten E-Mail, die du bekommen hast.",
+    "paymentsUnavailable": "Zahlungen sind noch nicht verfügbar.",
+    "paymentTierAlreadyPaid": "Diese Stufe ist schon bezahlt. Wähle eine größere.",
+    "paymentTierTooSmall": "Deine Veranstaltung hat mehr Gäste, als diese Stufe abdeckt. Wähle eine größere.",
+    "paymentTierInvalid": "Wähle eine der Stufen aus der Liste.",
+    "paymentProviderUnavailable": "Wir konnten die Zahlungsseite nicht öffnen. Versuch es in ein paar Minuten noch einmal.",
+    "paymentSignatureInvalid": "Die Signatur der Zahlungsbenachrichtigung ist ungültig.",
+    "paymentDemo": "Für Veranstaltungen der Demo wird nicht bezahlt. Erstelle dein Konto, um deine Veranstaltung zu bezahlen.",
+    "guestLimitReached": "Deine Veranstaltung hat die Gästegrenze ihrer Stufe erreicht. Wechsle zu einer größeren Stufe, um mehr hinzuzufügen."
   },
   "events": {
     "actions": "Aktionen",
@@ -857,7 +865,25 @@
     "payService": "Service bezahlen",
     "paymentPending": "Die Zahlung ist noch nicht angebunden. Sobald sie verfügbar ist, kannst du deine Veranstaltung hier bezahlen.",
     "back": "Zurück zu den Preisen",
-    "buy": "Kaufen"
+    "buy": "Kaufen",
+    "chooseEvent": "Wähle die Veranstaltung, die du bezahlen möchtest",
+    "noEvents": "Du hast noch keine Veranstaltungen. Erstelle eine und komm hierher zurück, um sie zu bezahlen.",
+    "freePlan": "Kostenloser Plan: alles inklusive außer den E-Mail-Benachrichtigungen an deine Gäste.",
+    "paidUpTo": "Bezahlt: bis zu {{guests}} Gäste, mit E-Mail-Benachrichtigungen.",
+    "paidMoreThan": "Bezahlt: mehr als {{guests}} Gäste, mit E-Mail-Benachrichtigungen.",
+    "guestsNow_one": "Deine Veranstaltung hat {{count}} Gast.",
+    "guestsNow_other": "Deine Veranstaltung hat {{count}} Gäste.",
+    "payTier": "{{price}} bezahlen",
+    "upgradeNote": "Du hast schon eine Stufe bezahlt: Für eine größere zahlst du nur die Differenz.",
+    "tierTooSmall": "Reicht nicht für deine Gäste",
+    "tierIncluded": "In deiner Zahlung enthalten",
+    "paymentReceived": "Zahlung erhalten. Deine Gäste bekommen jetzt E-Mail-Benachrichtigungen.",
+    "confirming": "Wir bestätigen deine Zahlung …",
+    "topTier": "Deine Veranstaltung hat schon die höchste Stufe.",
+    "payThisEvent": "Diese Veranstaltung bezahlen",
+    "upgrade": "Zu einer größeren Stufe wechseln",
+    "goingToCheckout": "Wir bringen dich zur Zahlungsseite …",
+    "tiersLabel": "Gästestufen"
   },
   "publicEvent": {
     "opening": "Event wird geöffnet…",

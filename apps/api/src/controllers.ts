@@ -41,6 +41,9 @@ import {
   registrationSchema,
   unsubscribeSchema,
   verifyEmailSchema,
+  checkoutSchema,
+  localePrefix,
+  type TierIndex,
   eventSlugPattern,
   accountLimits,
 } from "@tuevento/contracts";
@@ -58,7 +61,10 @@ import { DemoService } from "./demo";
 import { EventsService, Updates } from "./events";
 import { ListmonkService } from "./listmonk";
 import { NoticeService } from "./notices";
+import { PaymentsService } from "./payments";
+import { paymentsEnabled } from "./payment-config";
 import { PostcardsService } from "./postcards";
+import { siteUrl } from "./locale-env";
 import { requestLocale } from "./request-locale";
 import { parse } from "./problem";
 import { ipKey, limits } from "./rate-limit";
@@ -72,6 +78,7 @@ export class PublicController {
     private listmonk: ListmonkService,
     private postcards: PostcardsService,
     private notices: NoticeService,
+    private payments: PaymentsService,
   ) {}
   @Post("newsletter/subscribe") async subscribeNewsletter(
     @Body() body: unknown,
@@ -106,6 +113,7 @@ export class PublicController {
     return {
       googleClientId: process.env.GOOGLE_CLIENT_ID || "",
       demoEnabled: process.env.DEMO_ENABLED === "true",
+      paymentsEnabled: paymentsEnabled(),
     };
   }
   @Post("auth/register") async register(
@@ -213,6 +221,11 @@ export class PublicController {
     const { h, s } = parse(unsubscribeSchema, input, req);
     if (!(await this.notices.unsubscribe(h, s))) throw new BadRequestException("errors.unsubscribeLinkInvalid");
     return { ok: true };
+  }
+  /** Webhook de Stripe (sin sesión ni Origin): solo cuenta si la firma es válida. */
+  @Post("payments/webhook") @HttpCode(200) paymentWebhook(@Req() req: FastifyRequest & { rawBody?: Buffer }) {
+    const signature = req.headers["stripe-signature"];
+    return this.payments.webhook(req.rawBody?.toString("utf8"), typeof signature === "string" ? signature : undefined);
   }
   @Post("auth/logout") logout(
     @Req() req: FastifyRequest,
@@ -328,6 +341,7 @@ export class OrganizerController {
     private events: EventsService,
     private updates: Updates,
     private postcards: PostcardsService,
+    private payments: PaymentsService,
   ) {}
   @Sse("stream") stream(@Req() req: AuthedRequest) {
     return this.updates.stream(req.user.id);
@@ -370,6 +384,16 @@ export class OrganizerController {
       parse(eventSchema, withoutEventOutput(body), req),
       id,
     );
+  }
+  @Post("events/:id/checkout") @HttpCode(200) checkout(
+    @Req() req: AuthedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+  ) {
+    limits.checkout.hit(req.user.id);
+    const { tier } = parse(checkoutSchema, body, req);
+    const locale = requestLocale(req);
+    return this.payments.checkout(req.user.id, id, tier as TierIndex, locale, returnSite(req, locale));
   }
   @Delete("events/:id") remove(
     @Req() req: AuthedRequest,
@@ -606,6 +630,18 @@ function calendarResponse(reply: FastifyReply, ics: string) {
  * campos de solo lectura que devuelve la API. Se quitan esos (y solo esos) antes de validar; el
  * resto de campos desconocidos se rechaza.
  */
+/**
+ * Sitio al que vuelve el navegador desde Stripe: el origen desde el que se abrió el pago si es uno
+ * de los permitidos (ALLOWED_ORIGINS, el mismo control que el CSRF), para conservar su sesión; si
+ * no, el SITE_URL del idioma (§20). Con el prefijo del idioma (/pt…) en los dos casos.
+ */
+function returnSite(req: FastifyRequest, locale: Locale) {
+  const site = siteUrl(locale);
+  const origin = req.headers.origin;
+  const allowed = (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean);
+  if (typeof origin !== "string" || !allowed.includes(origin)) return site;
+  return `${origin}${localePrefix(locale)}`;
+}
 function withoutEventOutput(body: unknown) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
   const {
@@ -614,6 +650,7 @@ function withoutEventOutput(body: unknown) {
     metrics: _metrics,
     hasPublicPassword: _hasPublicPassword,
     passwordFailures: _passwordFailures,
+    paidTier: _paidTier,
     ...input
   } = body as Record<string, unknown>;
   return input;

@@ -309,7 +309,15 @@
     "providerSuspended": "Tu página está suspendida. Escríbenos para revisarla.",
     "eventAlreadyHappened": "Este evento ya pasó: ya no se pueden cambiar las respuestas.",
     "emailVerificationLinkInvalid": "Este enlace para confirmar el correo no es válido o ya caducó. Pide uno nuevo desde la app.",
-    "unsubscribeLinkInvalid": "Este enlace para darse de baja no es válido. Usa el del último correo que recibiste."
+    "unsubscribeLinkInvalid": "Este enlace para darse de baja no es válido. Usa el del último correo que recibiste.",
+    "paymentsUnavailable": "Los pagos todavía no están disponibles.",
+    "paymentTierAlreadyPaid": "Ese tramo ya está pagado. Elige uno mayor.",
+    "paymentTierTooSmall": "Tu evento tiene más invitados de los que cubre ese tramo. Elige uno mayor.",
+    "paymentTierInvalid": "Elige uno de los tramos de la lista.",
+    "paymentProviderUnavailable": "No pudimos abrir la página de pago. Inténtalo de nuevo en unos minutos.",
+    "paymentSignatureInvalid": "La firma del aviso de pago no es válida.",
+    "paymentDemo": "Los eventos de la demostración no se pagan. Crea tu cuenta para pagar tu evento.",
+    "guestLimitReached": "Tu evento llegó al máximo de invitados de su tramo. Pasa a un tramo mayor para añadir más."
   },
   "events": {
     "actions": "Acciones",
@@ -857,7 +865,25 @@
     "payService": "Pagar el servicio",
     "paymentPending": "El cobro todavía no está conectado. Cuando esté disponible, aquí podrás pagar tu evento.",
     "back": "Volver a los precios",
-    "buy": "Comprar"
+    "buy": "Comprar",
+    "chooseEvent": "Elige el evento que quieres pagar",
+    "noEvents": "Todavía no tienes eventos. Crea uno y vuelve aquí para pagarlo.",
+    "freePlan": "Plan gratuito: todo incluido salvo los avisos por correo a tus invitados.",
+    "paidUpTo": "Pagado: hasta {{guests}} invitados, con avisos por correo.",
+    "paidMoreThan": "Pagado: más de {{guests}} invitados, con avisos por correo.",
+    "guestsNow_one": "Tu evento tiene {{count}} invitado.",
+    "guestsNow_other": "Tu evento tiene {{count}} invitados.",
+    "payTier": "Pagar {{price}}",
+    "upgradeNote": "Ya pagaste un tramo: al pasar a uno mayor solo pagas la diferencia.",
+    "tierTooSmall": "No cubre a tus invitados",
+    "tierIncluded": "Incluido en tu pago",
+    "paymentReceived": "Pago recibido. Tus invitados ya reciben los avisos por correo.",
+    "confirming": "Estamos confirmando tu pago…",
+    "topTier": "Tu evento ya tiene el tramo más alto.",
+    "payThisEvent": "Pagar este evento",
+    "upgrade": "Pasar a un tramo mayor",
+    "goingToCheckout": "Te llevamos a la página de pago…",
+    "tiersLabel": "Tramos de invitados"
   },
   "publicEvent": {
     "opening": "Abriendo el evento…",

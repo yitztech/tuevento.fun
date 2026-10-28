@@ -309,7 +309,15 @@
     "providerSuspended": "Sua página está suspensa. Fale com a gente para revisá-la.",
     "eventAlreadyHappened": "Este evento já aconteceu: não dá mais para mudar as respostas.",
     "emailVerificationLinkInvalid": "Este link para confirmar o e-mail não é válido ou já expirou. Peça um novo pelo app.",
-    "unsubscribeLinkInvalid": "Este link para cancelar a inscrição não é válido. Use o do último e-mail que você recebeu."
+    "unsubscribeLinkInvalid": "Este link para cancelar a inscrição não é válido. Use o do último e-mail que você recebeu.",
+    "paymentsUnavailable": "Os pagamentos ainda não estão disponíveis.",
+    "paymentTierAlreadyPaid": "Essa faixa já está paga. Escolha uma maior.",
+    "paymentTierTooSmall": "Seu evento tem mais convidados do que essa faixa cobre. Escolha uma maior.",
+    "paymentTierInvalid": "Escolha uma das faixas da lista.",
+    "paymentProviderUnavailable": "Não conseguimos abrir a página de pagamento. Tente de novo em alguns minutos.",
+    "paymentSignatureInvalid": "A assinatura do aviso de pagamento não é válida.",
+    "paymentDemo": "Os eventos da demonstração não são pagos. Crie sua conta para pagar seu evento.",
+    "guestLimitReached": "Seu evento chegou ao máximo de convidados da faixa. Passe para uma faixa maior para adicionar mais."
   },
   "events": {
     "actions": "Ações",
@@ -857,7 +865,25 @@
     "payService": "Pagar pelo serviço",
     "paymentPending": "A cobrança ainda não está conectada. Quando estiver, você poderá pagar pelo seu evento aqui.",
     "back": "Voltar aos preços",
-    "buy": "Comprar"
+    "buy": "Comprar",
+    "chooseEvent": "Escolha o evento que você quer pagar",
+    "noEvents": "Você ainda não tem eventos. Crie um e volte aqui para pagá-lo.",
+    "freePlan": "Plano gratuito: tudo incluído, menos os avisos por e-mail aos seus convidados.",
+    "paidUpTo": "Pago: até {{guests}} convidados, com avisos por e-mail.",
+    "paidMoreThan": "Pago: mais de {{guests}} convidados, com avisos por e-mail.",
+    "guestsNow_one": "Seu evento tem {{count}} convidado.",
+    "guestsNow_other": "Seu evento tem {{count}} convidados.",
+    "payTier": "Pagar {{price}}",
+    "upgradeNote": "Você já pagou uma faixa: ao passar para uma maior, paga só a diferença.",
+    "tierTooSmall": "Não cobre seus convidados",
+    "tierIncluded": "Incluído no seu pagamento",
+    "paymentReceived": "Pagamento recebido. Seus convidados já recebem os avisos por e-mail.",
+    "confirming": "Estamos confirmando seu pagamento…",
+    "topTier": "Seu evento já tem a faixa mais alta.",
+    "payThisEvent": "Pagar este evento",
+    "upgrade": "Passar para uma faixa maior",
+    "goingToCheckout": "Levando você à página de pagamento…",
+    "tiersLabel": "Faixas de convidados"
   },
   "publicEvent": {
     "opening": "Abrindo o evento…",

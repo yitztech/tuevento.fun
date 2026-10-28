@@ -19,6 +19,7 @@ import {
 } from "./mail-templates";
 import { localeEnv, siteUrl } from "./locale-env";
 import { emailHash, openToken, signLink } from "./tokens";
+import { paidTierSql, paymentsEnabled } from "./payment-config";
 
 /** Fecha y hora del evento en el idioma de quien la lee y en la zona del evento. */
 export function eventDateText(date: Date, timeZone: string, locale: Locale) {
@@ -74,7 +75,7 @@ export class NoticeService implements OnModuleInit, OnModuleDestroy {
   /** Datos del evento, su organizador y el idioma en el que se le escribe a todos. */
   private async eventFor(eventId: string) {
     const [r] = await this.db.query(
-      "SELECT e.id,e.title,e.location,e.date,e.time_zone,e.slug,e.user_id,u.email AS owner_email,u.first_name AS owner_name,u.locale,u.email_verified_at IS NOT NULL AS owner_verified FROM events e JOIN users u ON u.id=e.user_id WHERE e.id=$1",
+      `SELECT e.id,e.title,e.location,e.date,e.time_zone,e.slug,e.user_id,u.email AS owner_email,u.first_name AS owner_name,u.locale,u.email_verified_at IS NOT NULL AS owner_verified, ${paidTierSql} IS NOT NULL AS paid FROM events e JOIN users u ON u.id=e.user_id WHERE e.id=$1`,
       [eventId],
     );
     if (!r) return null;
@@ -99,7 +100,8 @@ export class NoticeService implements OnModuleInit, OnModuleDestroy {
     email: string,
     build: (unsubscribe: Unsubscribe) => MailMessage,
   ) {
-    if (!event.owner_verified) return;
+    // Correo confirmado y, con los pagos activos, evento pagado: el plan gratuito no escribe a invitados
+    if (!event.owner_verified || (paymentsEnabled() && !event.paid)) return;
     const recipient = emailHash(email);
     const [r] = await this.db.query(
       `SELECT
@@ -144,11 +146,12 @@ export class NoticeService implements OnModuleInit, OnModuleDestroy {
       `INSERT INTO event_change_notices(event_id,date_changed,place_changed,due_at)
        SELECT $1,$2,$3,greatest(now(), (SELECT max(sent_at) FROM event_notice_batches WHERE event_id=$1) + make_interval(mins => $4))
        -- Sin el correo del organizador confirmado no se avisa: el cambio no gasta turno
-       WHERE EXISTS (SELECT 1 FROM events e JOIN users u ON u.id=e.user_id WHERE e.id=$1 AND u.email_verified_at IS NOT NULL)
+       WHERE EXISTS (SELECT 1 FROM events e JOIN users u ON u.id=e.user_id WHERE e.id=$1 AND u.email_verified_at IS NOT NULL
+         AND (NOT $5::boolean OR ${paidTierSql} IS NOT NULL))
        ON CONFLICT (event_id) DO UPDATE SET
          date_changed = event_change_notices.date_changed OR EXCLUDED.date_changed,
          place_changed = event_change_notices.place_changed OR EXCLUDED.place_changed`,
-      [eventId, changes.date, changes.place, CHANGE_GAP_MINUTES],
+      [eventId, changes.date, changes.place, CHANGE_GAP_MINUTES, paymentsEnabled()],
     );
     await this.flushChanges();
   }

@@ -8,6 +8,7 @@ import { PublicController, OrganizerController, AccountController } from "./cont
 import { ListmonkService } from "./listmonk";
 import { MailService } from "./mail";
 import { NoticeService } from "./notices";
+import { PaymentsService } from "./payments";
 import { PostcardsService } from "./postcards";
 import { GeoController, GeoService } from "./geo";
 import { ProviderPagesController } from "./provider-pages";
@@ -20,6 +21,7 @@ import { ProviderController, ProviderImagesController, ProvidersService } from "
     SessionGuard,
     AccountTypeGuard,
     EventsService,
+    PaymentsService,
     Updates,
     DemoService,
     ListmonkService,

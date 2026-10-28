@@ -309,7 +309,15 @@
     "providerSuspended": "Ta page est suspendue. Écris-nous pour qu'on la vérifie.",
     "eventAlreadyHappened": "Cet événement est déjà passé : on ne peut plus modifier les réponses.",
     "emailVerificationLinkInvalid": "Ce lien de confirmation n’est pas valide ou a expiré. Demandes-en un nouveau dans l’application.",
-    "unsubscribeLinkInvalid": "Ce lien de désabonnement n’est pas valide. Utilise celui du dernier e-mail que tu as reçu."
+    "unsubscribeLinkInvalid": "Ce lien de désabonnement n’est pas valide. Utilise celui du dernier e-mail que tu as reçu.",
+    "paymentsUnavailable": "Les paiements ne sont pas encore disponibles.",
+    "paymentTierAlreadyPaid": "Cette formule est déjà payée. Choisis-en une plus grande.",
+    "paymentTierTooSmall": "Ton événement a plus d’invités que cette formule n’en couvre. Choisis-en une plus grande.",
+    "paymentTierInvalid": "Choisis l’une des formules de la liste.",
+    "paymentProviderUnavailable": "Nous n’avons pas pu ouvrir la page de paiement. Réessaie dans quelques minutes.",
+    "paymentSignatureInvalid": "La signature de la notification de paiement n’est pas valide.",
+    "paymentDemo": "Les événements de la démonstration ne se paient pas. Crée ton compte pour payer ton événement.",
+    "guestLimitReached": "Ton événement a atteint le maximum d’invités de sa formule. Passe à une formule plus grande pour en ajouter."
   },
   "events": {
     "actions": "Actions",
@@ -857,7 +865,25 @@
     "payService": "Payer le service",
     "paymentPending": "Le paiement n’est pas encore disponible. Une fois en place, tu pourras payer ton événement ici.",
     "back": "Retour aux tarifs",
-    "buy": "Acheter"
+    "buy": "Acheter",
+    "chooseEvent": "Choisis l’événement que tu veux payer",
+    "noEvents": "Tu n’as pas encore d’événement. Crée-en un et reviens ici pour le payer.",
+    "freePlan": "Formule gratuite : tout est inclus sauf les e-mails envoyés à tes invités.",
+    "paidUpTo": "Payé : jusqu’à {{guests}} invités, avec les e-mails.",
+    "paidMoreThan": "Payé : plus de {{guests}} invités, avec les e-mails.",
+    "guestsNow_one": "Ton événement a {{count}} invité.",
+    "guestsNow_other": "Ton événement a {{count}} invités.",
+    "payTier": "Payer {{price}}",
+    "upgradeNote": "Tu as déjà payé une formule : pour passer à une plus grande, tu ne paies que la différence.",
+    "tierTooSmall": "Ne couvre pas tes invités",
+    "tierIncluded": "Inclus dans ton paiement",
+    "paymentReceived": "Paiement reçu. Tes invités reçoivent désormais les e-mails.",
+    "confirming": "Nous confirmons ton paiement…",
+    "topTier": "Ton événement a déjà la formule la plus élevée.",
+    "payThisEvent": "Payer cet événement",
+    "upgrade": "Passer à une formule plus grande",
+    "goingToCheckout": "Nous t’emmenons vers la page de paiement…",
+    "tiersLabel": "Formules par nombre d’invités"
   },
   "publicEvent": {
     "opening": "Ouverture de l’événement…",

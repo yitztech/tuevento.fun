@@ -114,6 +114,9 @@ services:
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:?Define RELEASE_PUBLISH_TOKEN}
       # Clave de los enlaces de invitación cifrados y de los enlaces firmados de los correos
       APP_SECRET: ${APP_SECRET:?Define APP_SECRET}
+      # Pagos con Stripe Checkout: vacías = pagos apagados (sin cobro ni límites por plan)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       COOKIE_SECURE: "true"
       DEMO_ENABLED: "false"
       RELEASE_DOWNLOAD_HOSTS: github.com,apps.apple.com,testflight.apple.com,play.google.com

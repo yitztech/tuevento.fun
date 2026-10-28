@@ -17,7 +17,7 @@ for (const servicio of soloPruebas) {
 }
 
 // Servicios que solo añade compose.ci.yml (el entorno de pruebas sobre el de producción)
-const soloPruebasCi = ["mailpit", "geocoder-fake"];
+const soloPruebasCi = ["mailpit", "geocoder-fake", "payments-fake"];
 const composeCi = readFileSync("compose.ci.yml", "utf8");
 for (const servicio of soloPruebasCi) {
   const bloque = composeCi.match(new RegExp(`^  ${servicio}:\\n((?:    .*\\n|\\n)+)`, "m"))?.[1];

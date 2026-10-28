@@ -87,7 +87,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [menu, setMenu] = useState(false),
-    [config, setConfig] = useState({ googleClientId: "", demoEnabled: false });
+    [config, setConfig] = useState({ googleClientId: "", demoEnabled: false, paymentsEnabled: false });
   const location = useLocation(),
     navigate = useNavigate(),
     timer = useRef<ReturnType<typeof setTimeout>>(undefined);

@@ -87,7 +87,7 @@ export class EventApi {
     );
   }
   config = () =>
-    this.request<{ googleClientId: string; demoEnabled: boolean }>("/config");
+    this.request<{ googleClientId: string; demoEnabled: boolean; paymentsEnabled: boolean }>("/config");
   me = () => this.request<User>("/auth/me");
   demo = () => this.request<User>("/auth/demo", "POST", {});
   register = (data: RegisterInput) =>
@@ -126,6 +126,9 @@ export class EventApi {
       data,
     );
   deleteEvent = (id: string) => this.request(`/events/${id}`, "DELETE");
+  /** Abre el pago del tramo de invitados `tier` de un evento: devuelve la URL de Stripe. */
+  checkout = (eventId: string, tier: number) =>
+    this.request<{ url: string }>(`/events/${eventId}/checkout`, "POST", { tier });
   invitations = (id: string) =>
     this.request<Invitation[]>(`/events/${id}/invitations`);
   saveInvitation = (eventId: string, data: InvitationInput, id?: string) =>

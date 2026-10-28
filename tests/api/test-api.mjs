@@ -96,6 +96,22 @@ const account = (n) => ({
   phone: "+527770000000",
   password,
 });
+/**
+ * Paga un tramo de un evento en el doble de Stripe (compose.ci.yml), como lo haría el organizador:
+ * abre el pago, ve la página y pulsa «Pagar». El doble manda el webhook firmado antes de volver.
+ */
+async function payEvent(owner, eventId, tier) {
+  const { url } = await owner.call(`/events/${eventId}/checkout`, "POST", { tier });
+  const page = await send(url);
+  assert.equal(page.status, 200, page.text);
+  const paid = await send(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "action=pay",
+  });
+  assert.equal(paid.status, 303, paid.text);
+  return { url, page: page.text, back: paid.headers.location };
+}
 /** Evento siempre futuro: un día después de su fecha queda en solo lectura. */
 const eventPayload = (extra = {}) => ({
   title: "QA · Avisos",
@@ -605,7 +621,11 @@ try {
       assert.equal((await guest.call("/auth/email/verify", "POST", { token })).emailVerified, true);
       await guest.call("/auth/email/verify", "POST", { token }, 400);
       assert.equal((await owner.call("/auth/me")).emailVerified, true);
-      // Confirmado: el primer cambio sale al momento, con baja en un clic
+      // Confirmado pero sin pagar: el plan gratuito no escribe a los invitados
+      await owner.call(`/events/${evento.id}`, "PATCH", eventPayload({ location: "Jardín gratuito" }));
+      assert.equal((await mailsTo(invitado, /^Hay cambios en /)).length, 0);
+      await payEvent(owner, evento.id, 0);
+      // Confirmado y pagado: el primer cambio sale al momento, con baja en un clic
       await owner.call(`/events/${evento.id}`, "PATCH", eventPayload({ location: "Jardín nuevo" }));
       const [cambio] = await mailsTo(invitado, /^Hay cambios en /);
       assert.ok(cambio, "falta el aviso de cambios");
@@ -643,6 +663,7 @@ try {
     await guest.call("/auth/email/verify", "POST", { token });
     const invitado = `qa-${unique}-invitado-cupo@example.invalid`;
     const evento = await owner.call("/events", "POST", eventPayload(), 201);
+    await payEvent(owner, evento.id, 0);
     await owner.call(`/events/${evento.id}/invitations`, "POST", {
       name: "Invitado", email: invitado, phone: "", notes: "", kind: "individual",
       members: [{ name: "Invitado", kind: "adult", notes: "" }],
@@ -652,6 +673,50 @@ try {
       await owner.call(`/events/${evento.id}`, "PATCH", eventPayload({ cancelled: false }));
     }
     assert.equal((await mailsTo(invitado, /^Cancelado: /)).length, 5);
+  });
+
+  await suite("Pagos: un pago por evento según los invitados, confirmado por el webhook firmado", async () => {
+    const owner = client(),
+      data = account("pagos");
+    users.push((await owner.call("/auth/register", "POST", data, 201)).id);
+    const evento = await owner.call("/events", "POST", eventPayload({ title: "QA · Pagos" }), 201);
+    assert.equal(evento.paidTier, null);
+    // Cancelar en la página de pago vuelve sin pagar
+    const abierto = await owner.call(`/events/${evento.id}/checkout`, "POST", { tier: 0 });
+    const cancelado = await send(abierto.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "action=cancel",
+    });
+    assert.match(cancelado.headers.location, new RegExp(`/pago\\?evento=${evento.id}$`));
+    assert.equal((await owner.call(`/events/${evento.id}`)).paidTier, null);
+    // Pagar: la página muestra el evento y el precio; la vuelta lleva a la confirmación
+    const primero = await payEvent(owner, evento.id, 0);
+    assert.match(primero.page, /QA · Pagos/);
+    assert.match(primero.page, /\$5\.00 USD/);
+    assert.match(primero.back, new RegExp(`^http://tuevento\\.localhost:5187/pago\\?evento=${evento.id}&pagado=1$`));
+    assert.equal((await owner.call(`/events/${evento.id}`)).paidTier, 0);
+    // Pasar a un tramo mayor cobra solo la diferencia (10 − 5)
+    const segundo = await payEvent(owner, evento.id, 1);
+    assert.match(segundo.page, /\$5\.00 USD/);
+    assert.equal((await owner.call("/events")).find((e) => e.id === evento.id).paidTier, 1);
+    // Un webhook sin la firma de Stripe no confirma nada
+    const falso = await send(`${base}/payments/webhook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Stripe-Signature": `t=${Math.floor(Date.now() / 1000)},v1=${"0".repeat(64)}` },
+      body: JSON.stringify({ type: "checkout.session.completed", data: { object: { payment_status: "paid" } } }),
+    });
+    assert.equal(falso.status, 400, falso.text);
+    // Con un tramo pagado, el evento no pasa de su máximo de invitados
+    const lleno = await owner.call("/events", "POST", eventPayload({ title: "QA · Tope" }), 201);
+    await payEvent(owner, lleno.id, 0);
+    const people = (n) => Array.from({ length: n }, () => ({ name: "Invitado", kind: "adult", notes: "" }));
+    const familia = { name: "Familia", email: "", phone: "", notes: "", kind: "family" };
+    await owner.call(`/events/${lleno.id}/invitations`, "POST", { ...familia, members: people(50) }, 201);
+    const extra = await owner.call(`/events/${lleno.id}/invitations`, "POST", { ...familia, members: people(1) }, 409);
+    assert.match(extra.message, /máximo de invitados/);
+    await payEvent(owner, lleno.id, 1);
+    await owner.call(`/events/${lleno.id}/invitations`, "POST", { ...familia, members: people(1) }, 201);
   });
 
   await suite("Newsletter responde en el idioma del dominio", async () => {

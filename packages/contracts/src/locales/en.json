@@ -309,7 +309,15 @@
     "providerSuspended": "Your page is suspended. Contact us to review it.",
     "eventAlreadyHappened": "This event has already happened, so replies can't be changed anymore.",
     "emailVerificationLinkInvalid": "This email confirmation link isn't valid or has expired. Ask for a new one in the app.",
-    "unsubscribeLinkInvalid": "This unsubscribe link isn't valid. Use the one in the latest email you got."
+    "unsubscribeLinkInvalid": "This unsubscribe link isn't valid. Use the one in the latest email you got.",
+    "paymentsUnavailable": "Payments aren't available yet.",
+    "paymentTierAlreadyPaid": "That tier is already paid. Choose a bigger one.",
+    "paymentTierTooSmall": "Your event has more guests than that tier covers. Choose a bigger one.",
+    "paymentTierInvalid": "Choose one of the tiers on the list.",
+    "paymentProviderUnavailable": "We couldn't open the payment page. Try again in a few minutes.",
+    "paymentSignatureInvalid": "The payment notification signature is invalid.",
+    "paymentDemo": "Demo events can't be paid for. Create your account to pay for your event.",
+    "guestLimitReached": "Your event reached its tier's guest limit. Move to a bigger tier to add more."
   },
   "events": {
     "actions": "Actions",
@@ -857,7 +865,25 @@
     "payService": "Pay for the service",
     "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
     "back": "Back to pricing",
-    "buy": "Buy"
+    "buy": "Buy",
+    "chooseEvent": "Choose the event you want to pay for",
+    "noEvents": "You don't have any events yet. Create one and come back here to pay for it.",
+    "freePlan": "Free plan: everything included except email notices to your guests.",
+    "paidUpTo": "Paid: up to {{guests}} guests, with email notices.",
+    "paidMoreThan": "Paid: more than {{guests}} guests, with email notices.",
+    "guestsNow_one": "Your event has {{count}} guest.",
+    "guestsNow_other": "Your event has {{count}} guests.",
+    "payTier": "Pay {{price}}",
+    "upgradeNote": "You already paid for a tier: moving to a bigger one only costs the difference.",
+    "tierTooSmall": "Doesn't cover your guests",
+    "tierIncluded": "Included in your payment",
+    "paymentReceived": "Payment received. Your guests now get email notices.",
+    "confirming": "We're confirming your payment…",
+    "topTier": "Your event already has the highest tier.",
+    "payThisEvent": "Pay for this event",
+    "upgrade": "Move to a bigger tier",
+    "goingToCheckout": "Taking you to the payment page…",
+    "tiersLabel": "Guest tiers"
   },
   "publicEvent": {
     "opening": "Opening the event…",

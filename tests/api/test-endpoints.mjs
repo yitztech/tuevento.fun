@@ -12,8 +12,11 @@ try {
 
   await suite("GET /config expone solo lo público", async () => {
     const config = await guest.call("/config");
-    assert.deepEqual(Object.keys(config).sort(), ["demoEnabled", "googleClientId"]);
+    assert.deepEqual(Object.keys(config).sort(), ["demoEnabled", "googleClientId", "paymentsEnabled"]);
     assert.equal(typeof config.demoEnabled, "boolean");
+    // compose.ci.yml conecta los pagos al doble de Stripe; las claves nunca salen en la configuración
+    assert.equal(config.paymentsEnabled, true);
+    assert.doesNotMatch(JSON.stringify(config), /sk_test|whsec/);
     assert.equal(typeof config.googleClientId, "string");
   });
 
@@ -841,6 +844,50 @@ try {
     const cuarto = await nueva.raw("/auth/email/resend", { method: "POST", body: {} });
     assert.equal(cuarto.status, 429);
     assert.ok(Number(cuarto.headers["retry-after"]) > 0);
+  });
+
+  await suite("Pagar un evento: tramo inválido, ya pagado o demasiado pequeño, con errores en 5 idiomas", async () => {
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    const owner = client();
+    await owner.call("/auth/register", "POST", account(P, "pago"), 201);
+    const event = await owner.call("/events", "POST", eventData(), 201);
+    assert.equal(event.paidTier, null);
+    // 51 personas: el tramo de 50 ya no las cubre
+    const people = (n) => Array.from({ length: n }, () => ({ name: "Invitado", kind: "adult", notes: "" }));
+    await owner.call(`/events/${event.id}/invitations`, "POST", { ...invitationData(), members: people(50) }, 201);
+    await owner.call(`/events/${event.id}/invitations`, "POST", { ...invitationData(), members: people(1) }, 201);
+    for (const [locale, headers] of locales) {
+      const invalido = await owner.raw(`/events/${event.id}/checkout`, { method: "POST", headers, body: { tier: 9 } });
+      assert.equal(invalido.status, 422, locale);
+      assert.equal(invalido.data.errors[0].field, "tier");
+      assert.equal(invalido.data.errors[0].message, translate(locale, "errors.paymentTierInvalid"), locale);
+      const pequeno = await owner.raw(`/events/${event.id}/checkout`, { method: "POST", headers, body: { tier: 0 } });
+      assert.equal(pequeno.status, 409, locale);
+      assert.equal(pequeno.data.detail, translate(locale, "errors.paymentTierTooSmall"), locale);
+    }
+    const { url } = await owner.call(`/events/${event.id}/checkout`, "POST", { tier: 1 });
+    assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/pay\/cs_test_/);
+    await send(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "action=pay" });
+    assert.equal((await owner.call(`/events/${event.id}`)).paidTier, 1);
+    for (const [locale, headers] of locales) {
+      const pagado = await owner.raw(`/events/${event.id}/checkout`, { method: "POST", headers, body: { tier: 1 } });
+      assert.equal(pagado.status, 409, locale);
+      assert.equal(pagado.data.detail, translate(locale, "errors.paymentTierAlreadyPaid"), locale);
+    }
+    // La demostración no se cobra
+    const demo = client();
+    await demo.call("/auth/register", "POST", account(P, "pago-demo"), 201);
+    await demo.call("/auth/demo", "POST", {}, 201);
+    const [demoEvent] = await demo.call("/events");
+    const r = await demo.raw(`/events/${demoEvent.id}/checkout`, { method: "POST", body: { tier: 3 } });
+    assert.equal(r.status, 409);
+    assert.equal(r.data.detail, translate("es", "errors.paymentDemo"));
   });
 
   await suite("Recursos inexistentes o con formato inválido responden 404/400, nunca 500", async () => {

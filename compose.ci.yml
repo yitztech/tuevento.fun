@@ -58,6 +58,10 @@ services:
       # Búsqueda en el mapa contra el doble, sin la espera de 1 s entre llamadas de Nominatim
       GEOCODER_URL: http://geocoder-fake:8080
       GEOCODER_MIN_INTERVAL_MS: "0"
+      # Pagos contra el doble de Stripe Checkout (claves de mentira, solo de pruebas)
+      STRIPE_SECRET_KEY: sk_test_ci
+      STRIPE_WEBHOOK_SECRET: whsec_ci
+      STRIPE_API_URL: http://payments-fake:8080
 
   admin:
     build:
@@ -106,6 +110,27 @@ services:
       dockerfile: services/geocoder-fake/Dockerfile
     labels:
       tuevento.solo-pruebas: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      retries: 10
+    networks: [frontend]
+  # Doble de Stripe Checkout: sesiones, página de pago de mentira y webhook firmado
+  payments-fake:
+    image: tueventofun-payments-fake:ci
+    build:
+      context: .
+      dockerfile: services/payments-fake/Dockerfile
+    labels:
+      tuevento.solo-pruebas: "true"
+    environment:
+      SECRET_KEY: sk_test_ci
+      WEBHOOK_SECRET: whsec_ci
+      WEBHOOK_URL: http://api:3087/api/payments/webhook
+      # El navegador de las pruebas abre la página de pago desde el host
+      PUBLIC_URL: http://127.0.0.1:${PAYMENTS_FAKE_PORT:-8099}
+    ports:
+      - "127.0.0.1:${PAYMENTS_FAKE_PORT:-8099}:8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 5s

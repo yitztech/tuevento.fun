@@ -1,4 +1,5 @@
-import { accountLimits, eventInput, eventLandingPath, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
+import { accountLimits, eventInput, eventLandingPath, guestTiers, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
+import { paymentPath, planText } from "./pricing";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { LocationPicker, MapLinks, MapView } from "./location";
 import { useState, useEffect } from "react";
@@ -381,7 +382,7 @@ export function EventEditor() {
 }
 export function EventDetail() {
   const { id } = useParams(),
-    { api, events, reload, toast, runtime, user } = useApp(),
+    { api, events, reload, toast, runtime, user, config } = useApp(),
     navigate = useNavigate();
   const event = events.find((e) => e.id === id),
     [invitations, setInvitations] = useState<Invitation[]>([]),
@@ -687,6 +688,16 @@ export function EventDetail() {
           {tr("common.invitationsCount", { count: event.metrics.invitations })}
         </span>
       </div>
+      {config.paymentsEnabled && !user?.isDemo && (
+        <div className="event-plan">
+          <span>{planText(event)}</span>
+          {event.paidTier !== guestTiers.length - 1 && (
+            <Link to={paymentPath(event.id)} className="button secondary">
+              {event.paidTier === null ? tr("pricing.payThisEvent") : tr("pricing.upgrade")}
+            </Link>
+          )}
+        </div>
+      )}
       <details className="event-options">
         <summary>{tr("events.moreEventOptions")}</summary>
         <div>

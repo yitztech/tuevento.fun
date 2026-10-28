@@ -15,7 +15,8 @@ Característica: Precios del servicio
     Entonces veo el botón destacado "Pagar el servicio"
     Cuando pulso el botón destacado "Pagar el servicio"
     Entonces estoy en la página de pago
-    Y veo el aviso "El cobro todavía no está conectado."
+    # Con los pagos conectados (el doble de Stripe en las pruebas) la página lista los eventos para pagar
+    Y veo el aviso "Elige el evento que quieres pagar"
 
   @solo-lectura
   Escenario: Cada tramo muestra su precio con signo de dólar y dos decimales

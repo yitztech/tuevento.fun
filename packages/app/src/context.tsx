@@ -29,6 +29,8 @@ export type AppState = {
   config: {
     googleClientId: string;
     demoEnabled: boolean;
+    /** Si el servidor cobra los eventos (Stripe configurado). */
+    paymentsEnabled: boolean;
   };
 };
 export const AppContext = createContext<AppState>(null!);
