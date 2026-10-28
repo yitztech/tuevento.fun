@@ -56,7 +56,19 @@
     "organizerTitle": "Organizo eventos",
     "organizerHint": "Bodas, cumpleaños y reuniones: invitados, respuestas y diseños.",
     "providerTitle": "Ofrezco servicios para eventos",
-    "providerHint": "Banquetes, música, fotografía, salones… Publica tu negocio gratis."
+    "providerHint": "Banquetes, música, fotografía, salones… Publica tu negocio gratis.",
+    "confirmEmailTitle": "Confirma tu correo",
+    "emailConfirmed": "¡Correo confirmado!",
+    "emailConfirmedDetail": "Desde ahora tus invitados recibirán por correo los avisos de tus eventos.",
+    "goToMySpace": "Ir a mi espacio",
+    "unsubscribeTitle": "Dejar de recibir avisos",
+    "unsubscribeIntro": "No volverás a recibir avisos de eventos de TuEventoFun en este correo: ni cambios, ni cancelaciones, ni confirmaciones de tus respuestas. Tus invitaciones seguirán abriendo con su enlace.",
+    "unsubscribeButton": "Darme de baja",
+    "unsubscribed": "Listo, te diste de baja",
+    "unsubscribedDetail": "No te enviaremos más avisos de eventos a este correo.",
+    "verifyEmailBanner": "Confirma tu correo ({{email}}) con el enlace que te enviamos. Hasta entonces, tus invitados no recibirán avisos por correo.",
+    "verificationSent": "Te enviamos un enlace nuevo a {{email}}. Revisa también la carpeta de spam.",
+    "resendVerification": "Enviar el enlace otra vez"
   },
   "app": {
     "backOverview": "Volver al resumen",
@@ -295,7 +307,9 @@
     "providerNotComplete": "Aún falta información para publicar tu página.",
     "providerOrderMismatch": "La lista cambió mientras la ordenabas. Recarga la página e inténtalo de nuevo.",
     "providerSuspended": "Tu página está suspendida. Escríbenos para revisarla.",
-    "eventAlreadyHappened": "Este evento ya pasó: ya no se pueden cambiar las respuestas."
+    "eventAlreadyHappened": "Este evento ya pasó: ya no se pueden cambiar las respuestas.",
+    "emailVerificationLinkInvalid": "Este enlace para confirmar el correo no es válido o ya caducó. Pide uno nuevo desde la app.",
+    "unsubscribeLinkInvalid": "Este enlace para darse de baja no es válido. Usa el del último correo que recibiste."
   },
   "events": {
     "actions": "Acciones",
@@ -619,6 +633,15 @@
       "footer": "Aviso de seguridad sobre tu cuenta.",
       "intro": "Hubo muchos intentos fallidos de entrar en tu cuenta, así que la cerramos un rato a quien no entre desde un dispositivo conocido.",
       "subject": "Cerramos el acceso a tu cuenta de TuEventoFun por un rato"
+    },
+    "unsubscribe": "Dejar de recibir estos avisos",
+    "verifyEmail": {
+      "action": "Confirmar mi correo",
+      "expiry": "El enlace vale {{hours}} horas.",
+      "footer": "Recibes este correo porque se creó una cuenta con esta dirección.",
+      "ignore": "Si no creaste una cuenta en TuEventoFun, ignora este correo.",
+      "intro": "Confirma que este correo es tuyo para que tus invitados reciban los avisos de tus eventos.",
+      "subject": "Confirma tu correo en TuEventoFun"
     }
   },
   "mobileConnect": {

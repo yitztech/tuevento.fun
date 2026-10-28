@@ -21,6 +21,11 @@ import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 const BODY_LIMIT = 1024 * 1024;
 const UPLOAD_BODY_LIMIT = 3 * 1024 * 1024;
 const uploadRoutes = new Set(["/api/profile/avatar", "/api/events/:id/postcard/images", "/api/provider/images"]);
+/**
+ * Baja en un clic desde el gestor de correo (RFC 8058): llega como formulario, sin la cabecera
+ * propia ni Origin. Es segura sin ellos: solo da de baja la dirección del enlace firmado.
+ */
+const ONE_CLICK_UNSUBSCRIBE = "/api/mail/unsubscribe";
 /** `X-Request-ID` del cliente o del gateway si es razonable; si no, uno nuevo. */
 const requestIdPattern = /^[A-Za-z0-9._-]{8,128}$/;
 
@@ -83,7 +88,7 @@ async function bootstrap() {
       reply.header("Cache-Control", "no-store");
       reply.header("Content-Language", requestLocale(req));
     }
-    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && req.url.split("?")[0] !== ONE_CLICK_UNSUBSCRIBE) {
       if (
         req.headers["x-tuevento-client"] !== "1" ||
         (req.headers.origin && !origins.includes(req.headers.origin))

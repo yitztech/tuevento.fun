@@ -16,6 +16,8 @@ import { clientPlatform } from "./client-platform";
 import { Database } from "./database";
 import {
   passwordResetPaths,
+  mailPaths,
+  EMAIL_VERIFICATION_HOURS,
   PASSWORD_RESET_MINUTES,
   normalizeLocale,
   translate,
@@ -29,7 +31,7 @@ import { ProblemException } from "./problem";
 import { hashPassword, verifyPassword } from "./password";
 import { ipKey, limits } from "./rate-limit";
 import { MailService } from "./mail";
-import { loginLockedMail, passwordChangedMail, passwordResetMail } from "./mail-templates";
+import { loginLockedMail, passwordChangedMail, passwordResetMail, verifyEmailMail } from "./mail-templates";
 import { siteUrl } from "./locale-env";
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -52,6 +54,7 @@ export type UserRow = {
   password_hash: string | null;
   public_code: string;
   account_type: AccountType;
+  email_verified_at: Date | null;
 };
 export const userView = (r: UserRow): User => ({
   id: r.id,
@@ -65,6 +68,7 @@ export const userView = (r: UserRow): User => ({
   locale: normalizeLocale(r.locale),
   publicCode: r.public_code,
   accountType: r.account_type,
+  emailVerified: r.email_verified_at !== null,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin
@@ -291,6 +295,49 @@ export class AuthService {
       message: translate(locale, "account.resetLinkSent"),
     };
   }
+  /**
+   * Enlace para confirmar el correo de la cuenta. Solo vale el último y caduca; hasta confirmarlo,
+   * la plataforma no escribe a los invitados de la cuenta (NoticeService).
+   */
+  async sendEmailVerification(user: User, locale: Locale) {
+    if (user.isDemo || user.emailVerified) return;
+    const token = randomBytes(32).toString("base64url");
+    await this.db.query("DELETE FROM email_verifications WHERE user_id=$1", [user.id]);
+    await this.db.query(
+      "INSERT INTO email_verifications(token_hash,user_id,expires_at) VALUES($1,$2,now()+make_interval(hours => $3))",
+      [hash(token), user.id, EMAIL_VERIFICATION_HOURS],
+    );
+    const site = siteUrl(locale);
+    void this.mail
+      .send(
+        locale,
+        verifyEmailMail(locale, {
+          to: user.email,
+          name: user.firstName,
+          url: `${site}${mailPaths.verify}?token=${token}`,
+          site,
+          hours: EMAIL_VERIFICATION_HOURS,
+        }),
+      )
+      .catch((e: Error) => this.logger.error(`No se pudo enviar el correo de confirmación: ${e.message}`));
+  }
+  /** Reenvío desde la app: pocos por hora y cuenta. */
+  async resendEmailVerification(user: User, req: FastifyRequest) {
+    limits.verifyEmail.hit(`verify:account:${user.id}`);
+    await this.sendEmailVerification(user, requestLocale(req));
+    return { ok: true };
+  }
+  /** Confirma el correo con el enlace; un enlace caducado, usado o inventado da 400. */
+  async verifyEmail(token: string) {
+    const [r] = await this.db.query<UserRow>(
+      `WITH used AS (DELETE FROM email_verifications WHERE token_hash=$1 RETURNING user_id, expires_at > now() AS valid)
+       UPDATE users SET email_verified_at=coalesce(email_verified_at, now())
+       WHERE id=(SELECT user_id FROM used WHERE valid) RETURNING *`,
+      [hash(token)],
+    );
+    if (!r) throw new BadRequestException("errors.emailVerificationLinkInvalid");
+    return userView(r);
+  }
   /** Cambia la contraseña con un enlace válido, cierra todas las sesiones y avisa por correo. */
   async resetPassword(token: string, password: string) {
     const passwordHash = await this.passwordHash(password);
@@ -412,7 +459,8 @@ export class AuthService {
     const locale = requestLocale(req);
     try {
       const [r] = await this.db.query<UserRow>(
-        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        // Google confirma el correo (email_verified): la cuenta nace confirmada
+        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type,email_verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,now()) RETURNING *",
         [
           randomUUID(),
           payload.given_name || translate(locale, "common.host"),

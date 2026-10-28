@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "trusted_devices", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "events", "geo_cache", "invitations", "mail_sends", "mail_suppressions", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "trusted_devices", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -31,7 +31,7 @@ test("El correo electrónico es el identificador: users no tiene nombre de usuar
 });
 
 test("Ni contraseñas ni tokens se guardan en claro: solo hashes", async () => {
-  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"]]) {
+  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"], ["email_verifications", "token_hash"]]) {
     const cols = await columnas(tabla);
     assert.ok(cols.includes(hash), `${tabla}.${hash}`);
     assert.ok(!cols.includes("password") && !cols.includes("token") && !cols.includes("code"), `${tabla} guarda un secreto en claro`);
@@ -125,10 +125,12 @@ test("Borrar una cuenta borra todo lo suyo, salvo la actividad anónima que se c
   await db.query("INSERT INTO password_resets(token_hash,user_id,locale,expires_at) VALUES($1,$2,'es', now() + interval '1 hour')", [`p-${id}`, id]);
   await db.query("INSERT INTO mobile_auth_codes(code_hash,challenge,user_id,expires_at) VALUES($1,'c',$2, now() + interval '1 minute')", [`m-${id}`, id]);
   await db.query("INSERT INTO trusted_devices(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '180 days')", [`d-${id}`, id]);
+  await db.query("INSERT INTO email_verifications(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '2 days')", [`v-${id}`, id]);
+  await db.query("INSERT INTO mail_sends(id,owner_id,recipient_hash,kind) VALUES(gen_random_uuid(),$1,'r','guest_reply')", [id]);
   const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [id]);
   const act = await uno("INSERT INTO activity(id,kind,platform,user_id) VALUES(gen_random_uuid(),'registration','web',$1) RETURNING id", [id]);
   await db.query("DELETE FROM users WHERE id=$1", [id]);
-  for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["trusted_devices", "user_id"], ["events", "user_id"]])
+  for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["trusted_devices", "user_id"], ["email_verifications", "user_id"], ["mail_sends", "owner_id"], ["events", "user_id"]])
     assert.equal((await uno(`SELECT count(*)::int n FROM ${tabla} WHERE ${col}=$1`, [id])).n, 0, tabla);
   assert.equal((await uno("SELECT count(*)::int n FROM events WHERE id=$1", [e.id])).n, 0);
   const fila = await uno("SELECT user_id FROM activity WHERE id=$1", [act.id]);
@@ -244,6 +246,25 @@ test("Invitaciones: el enlace se busca por su hash, único, y se guarda cifrado 
   const fila = "INSERT INTO invitations(id,event_id,name,kind,token,token_hash,token_sealed) VALUES(gen_random_uuid(),$1,'A','individual',gen_random_uuid()::text,$2,'cifrado')";
   await db.query(fila, [e.id, `h-${e.id}`]);
   assert.equal(await codigoError(() => db.query(fila, [e.id, `h-${e.id}`])), UNIQUE_VIOLATION);
+});
+
+test("Correos: confirmación por cuenta, cupos sin direcciones en claro y avisos que caen con su evento (025)", async () => {
+  assert.ok((await columnas("users")).includes("email_verified_at"));
+  for (const tabla of ["mail_sends", "mail_suppressions"])
+    assert.ok(!(await columnas(tabla)).includes("email"), `${tabla} no guarda direcciones`);
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  assert.equal(await codigoError(() => db.query("INSERT INTO mail_sends(id,owner_id,event_id,recipient_hash,kind) VALUES(gen_random_uuid(),$1,$2,'r','spam')", [dueno, e.id])), CHECK_VIOLATION);
+  const envio = await uno("INSERT INTO mail_sends(id,owner_id,event_id,recipient_hash,kind) VALUES(gen_random_uuid(),$1,$2,'r','event_changed') RETURNING id", [dueno, e.id]);
+  await db.query("INSERT INTO event_change_notices(event_id,date_changed,due_at) VALUES($1,true,now())", [e.id]);
+  await db.query("INSERT INTO event_notice_batches(event_id) VALUES($1)", [e.id]);
+  await db.query("INSERT INTO mail_suppressions(email_hash) VALUES('baja')");
+  assert.equal(await codigoError(() => db.query("INSERT INTO mail_suppressions(email_hash) VALUES('baja')")), UNIQUE_VIOLATION);
+  await db.query("DELETE FROM events WHERE id=$1", [e.id]);
+  for (const tabla of ["event_change_notices", "event_notice_batches"])
+    assert.equal((await uno(`SELECT count(*)::int n FROM ${tabla} WHERE event_id=$1`, [e.id])).n, 0, tabla);
+  // El envío se sigue contando en el cupo aunque se borre el evento
+  assert.equal((await uno("SELECT event_id FROM mail_sends WHERE id=$1", [envio.id])).event_id, null);
 });
 
 test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; la caché del mapa solo admite sus tipos", async () => {

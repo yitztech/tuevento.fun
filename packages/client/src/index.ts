@@ -105,6 +105,11 @@ export class EventApi {
     );
   resetPassword = (token: string, password: string) =>
     this.request<User>("/auth/password/reset", "POST", { token, password });
+  /** Confirmar el correo de la cuenta con el enlace del correo, y volver a pedir ese correo. */
+  verifyEmail = (token: string) => this.request<User>("/auth/email/verify", "POST", { token });
+  resendVerification = () => this.request<{ ok: boolean }>("/auth/email/resend", "POST", {});
+  /** Baja de los avisos a invitados desde el enlace firmado de un correo. */
+  unsubscribe = (h: string, s: string) => this.request<{ ok: boolean }>("/mail/unsubscribe", "POST", { h, s });
   googleNonce = () =>
     this.request<{ nonce: string }>("/auth/google/nonce", "POST", {});
   logout = () => this.request("/auth/logout", "POST", {});

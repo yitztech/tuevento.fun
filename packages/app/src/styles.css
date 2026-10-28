@@ -5445,3 +5445,20 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
     align-items: center;
   }
 }
+
+/* Aviso hasta confirmar el correo de la cuenta */
+.verify-email-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 9px;
+  background: #fff7e8;
+  color: #6b4a12;
+  line-height: 1.5;
+}
+.verify-email-banner > svg {flex: none;}
+.verify-email-banner p {flex: 1 1 260px; margin: 0;}
+.verify-email-banner .error-box {flex-basis: 100%; margin: 0;}

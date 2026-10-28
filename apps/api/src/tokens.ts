@@ -49,6 +49,10 @@ export function openToken(sealed: string) {
 export const signLink = (purpose: string, value: string) =>
   createHmac("sha256", derived().links).update(`${purpose}:${value}`).digest("base64url");
 
+/** Identificador estable de un correo para los cupos y las bajas, sin guardar la dirección. */
+export const emailHash = (email: string) =>
+  createHmac("sha256", derived().links).update(`email:${email.trim().toLowerCase()}`).digest("base64url");
+
 /** Token nuevo de invitación con las tres formas que se guardan durante la transición. */
 export function newInvitationToken() {
   const token = randomBytes(24).toString("base64url");

@@ -8,6 +8,7 @@ export type MailMessage = {
   subject: string;
   text: string;
   html: string;
+  headers?: Record<string, string>;
 };
 type Sender = {
   locale: Locale;
@@ -63,7 +64,7 @@ export class MailService implements OnModuleInit {
       subject: message.subject,
       text: message.text,
       html: message.html,
-      headers: { "Content-Language": locale },
+      headers: { "Content-Language": locale, ...message.headers },
     });
     return true;
   }

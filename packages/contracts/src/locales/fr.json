@@ -56,7 +56,19 @@
     "organizerTitle": "J'organise des événements",
     "organizerHint": "Mariages, anniversaires et réunions : invités, réponses et designs.",
     "providerTitle": "Je propose des services pour les événements",
-    "providerHint": "Traiteur, musique, photo, salles… Publie ton activité gratuitement."
+    "providerHint": "Traiteur, musique, photo, salles… Publie ton activité gratuitement.",
+    "confirmEmailTitle": "Confirme ton adresse e-mail",
+    "emailConfirmed": "Adresse e-mail confirmée !",
+    "emailConfirmedDetail": "Désormais, tes invités recevront par e-mail les avis concernant tes événements.",
+    "goToMySpace": "Aller à mon espace",
+    "unsubscribeTitle": "Ne plus recevoir d’avis",
+    "unsubscribeIntro": "Tu ne recevras plus d’avis d’événements TuEventoFun à cette adresse : ni changements, ni annulations, ni confirmations de tes réponses. Tes invitations s’ouvriront toujours avec leur lien.",
+    "unsubscribeButton": "Me désabonner",
+    "unsubscribed": "C’est fait, ton désabonnement est enregistré",
+    "unsubscribedDetail": "Nous n’enverrons plus d’avis d’événements à cette adresse.",
+    "verifyEmailBanner": "Confirme ton adresse e-mail ({{email}}) avec le lien que nous t’avons envoyé. D’ici là, tes invités ne recevront pas d’avis par e-mail.",
+    "verificationSent": "Nous avons envoyé un nouveau lien à {{email}}. Regarde aussi dans tes spams.",
+    "resendVerification": "Renvoyer le lien"
   },
   "app": {
     "backOverview": "Retour à l’aperçu",
@@ -295,7 +307,9 @@
     "providerNotComplete": "Il manque encore des informations pour publier ta page.",
     "providerOrderMismatch": "La liste a changé pendant que tu la triais. Recharge la page et réessaie.",
     "providerSuspended": "Ta page est suspendue. Écris-nous pour qu'on la vérifie.",
-    "eventAlreadyHappened": "Cet événement est déjà passé : on ne peut plus modifier les réponses."
+    "eventAlreadyHappened": "Cet événement est déjà passé : on ne peut plus modifier les réponses.",
+    "emailVerificationLinkInvalid": "Ce lien de confirmation n’est pas valide ou a expiré. Demandes-en un nouveau dans l’application.",
+    "unsubscribeLinkInvalid": "Ce lien de désabonnement n’est pas valide. Utilise celui du dernier e-mail que tu as reçu."
   },
   "events": {
     "actions": "Actions",
@@ -619,6 +633,15 @@
       "footer": "Alerte de sécurité concernant ton compte.",
       "intro": "Il y a eu de nombreuses tentatives de connexion échouées sur ton compte : nous bloquons donc un moment les connexions depuis des appareils inconnus.",
       "subject": "Nous avons suspendu un moment les connexions à ton compte TuEventoFun"
+    },
+    "unsubscribe": "Ne plus recevoir ces avis",
+    "verifyEmail": {
+      "action": "Confirmer mon adresse",
+      "expiry": "Le lien est valable {{hours}} heures.",
+      "footer": "Tu reçois cet e-mail parce qu’un compte a été créé avec cette adresse.",
+      "ignore": "Si tu n’as pas créé de compte TuEventoFun, ignore cet e-mail.",
+      "intro": "Confirme que cette adresse est bien la tienne pour que tes invités reçoivent les avis concernant tes événements.",
+      "subject": "Confirme ton adresse e-mail sur TuEventoFun"
     }
   },
   "mobileConnect": {

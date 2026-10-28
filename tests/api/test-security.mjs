@@ -255,6 +255,22 @@ try {
     assert.equal((await propio.raw("/auth/login", { method: "POST", body: { email: otra.email, password: "mala-otra-clave" } })).status, 429);
   });
 
+  await suite("Baja de avisos: sin firma válida no da de baja a nadie; solo esa ruta acepta la baja en un clic", async () => {
+    const h = "a".repeat(43), s = "b".repeat(43);
+    // Firma inventada: 400, también en un clic
+    assert.equal((await guest.raw("/mail/unsubscribe", { method: "POST", body: { h, s } })).status, 400);
+    const unClic = await guest.raw(`/mail/unsubscribe?h=${h}&s=${s}`, { method: "POST", body: "List-Unsubscribe=One-Click", json: false, csrf: false, headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+    assert.equal(unClic.status, 400);
+    // Formato inválido: 422, nunca 500
+    assert.equal((await guest.raw("/mail/unsubscribe", { method: "POST", body: { h: "' OR 1=1 --", s } })).status, 422);
+    // El resto de escrituras sigue exigiendo la cabecera propia
+    assert.equal((await guest.raw("/auth/email/verify", { method: "POST", body: { token: "c".repeat(43) }, csrf: false })).status, 403);
+    // Reenviar la confirmación exige sesión
+    assert.equal((await guest.raw("/auth/email/resend", { method: "POST", body: {} })).status, 401);
+    // Un enlace de confirmación inventado no confirma nada
+    assert.equal((await guest.raw("/auth/email/verify", { method: "POST", body: { token: "c".repeat(43) } })).status, 400);
+  });
+
   await suite("Sin enumeración de cuentas: misma respuesta exista o no el correo", async () => {
     const existe = await client().raw("/auth/login", { method: "POST", body: { email: account(P, "a").email, password: "incorrecta-123" } });
     const noExiste = await client().raw("/auth/login", { method: "POST", body: { email: `nadie-${Date.now()}@example.invalid`, password: "incorrecta-123" } });

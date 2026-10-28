@@ -56,7 +56,19 @@
     "organizerTitle": "Organizo eventos",
     "organizerHint": "Casamentos, aniversários e encontros: convidados, respostas e designs.",
     "providerTitle": "Ofereço serviços para eventos",
-    "providerHint": "Bufê, música, fotografia, salões… Divulgue seu negócio de graça."
+    "providerHint": "Bufê, música, fotografia, salões… Divulgue seu negócio de graça.",
+    "confirmEmailTitle": "Confirme seu e-mail",
+    "emailConfirmed": "E-mail confirmado!",
+    "emailConfirmedDetail": "A partir de agora, seus convidados vão receber por e-mail os avisos dos seus eventos.",
+    "goToMySpace": "Ir para o meu espaço",
+    "unsubscribeTitle": "Parar de receber avisos",
+    "unsubscribeIntro": "Você não vai mais receber avisos de eventos do TuEventoFun neste e-mail: nem mudanças, nem cancelamentos, nem confirmações das suas respostas. Seus convites continuam abrindo pelo link.",
+    "unsubscribeButton": "Cancelar inscrição",
+    "unsubscribed": "Pronto, sua inscrição foi cancelada",
+    "unsubscribedDetail": "Não vamos mais enviar avisos de eventos para este e-mail.",
+    "verifyEmailBanner": "Confirme seu e-mail ({{email}}) pelo link que enviamos. Até lá, seus convidados não vão receber avisos por e-mail.",
+    "verificationSent": "Enviamos um link novo para {{email}}. Confira também a pasta de spam.",
+    "resendVerification": "Enviar o link de novo"
   },
   "app": {
     "backOverview": "Voltar ao resumo",
@@ -295,7 +307,9 @@
     "providerNotComplete": "Ainda faltam informações para publicar sua página.",
     "providerOrderMismatch": "A lista mudou enquanto você a ordenava. Recarregue a página e tente de novo.",
     "providerSuspended": "Sua página está suspensa. Fale com a gente para revisá-la.",
-    "eventAlreadyHappened": "Este evento já aconteceu: não dá mais para mudar as respostas."
+    "eventAlreadyHappened": "Este evento já aconteceu: não dá mais para mudar as respostas.",
+    "emailVerificationLinkInvalid": "Este link para confirmar o e-mail não é válido ou já expirou. Peça um novo pelo app.",
+    "unsubscribeLinkInvalid": "Este link para cancelar a inscrição não é válido. Use o do último e-mail que você recebeu."
   },
   "events": {
     "actions": "Ações",
@@ -619,6 +633,15 @@
       "footer": "Aviso de segurança sobre a sua conta.",
       "intro": "Houve muitas tentativas sem sucesso de entrar na sua conta, então bloqueamos por um tempo o acesso de dispositivos desconhecidos.",
       "subject": "Pausamos o acesso à sua conta do TuEventoFun por um tempo"
+    },
+    "unsubscribe": "Parar de receber estes avisos",
+    "verifyEmail": {
+      "action": "Confirmar meu e-mail",
+      "expiry": "O link vale por {{hours}} horas.",
+      "footer": "Você recebeu este e-mail porque uma conta foi criada com este endereço.",
+      "ignore": "Se você não criou uma conta no TuEventoFun, ignore este e-mail.",
+      "intro": "Confirme que este e-mail é seu para que seus convidados recebam os avisos dos seus eventos.",
+      "subject": "Confirme seu e-mail no TuEventoFun"
     }
   },
   "mobileConnect": {

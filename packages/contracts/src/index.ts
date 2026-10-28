@@ -330,6 +330,18 @@ export const passwordResetPaths = {
   request: "/recuperar-contrasena",
   reset: "/nueva-contrasena",
 } as const;
+/** Páginas de los enlaces de los correos: confirmar el correo de la cuenta y darse de baja de los avisos. */
+export const mailPaths = {
+  verify: "/confirmar-correo",
+  unsubscribe: "/baja-de-avisos",
+} as const;
+/** Horas de validez del enlace para confirmar el correo de la cuenta. */
+export const EMAIL_VERIFICATION_HOURS = 48;
+export const verifyEmailSchema = z.strictObject({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.emailVerificationLinkInvalid") });
+export const unsubscribeSchema = z.strictObject({
+  h: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
+  s: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
+});
 /** Minutos de validez del enlace para restablecer la contraseña. */
 export const PASSWORD_RESET_MINUTES = 60;
 export const forgotPasswordSchema = z.strictObject({ email });
@@ -462,6 +474,8 @@ export type User = {
   /** Código público de la cuenta, primera parte de la URL de sus landings. */
   publicCode: string;
   accountType: AccountType;
+  /** Si confirmó su correo: hasta entonces la plataforma no escribe a sus invitados. */
+  emailVerified: boolean;
 };
 export type Metrics = {
   invitations: number;

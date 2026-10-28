@@ -56,7 +56,19 @@
     "organizerTitle": "Ich organisiere Events",
     "organizerHint": "Hochzeiten, Geburtstage und Treffen: Gäste, Antworten und Designs.",
     "providerTitle": "Ich biete Services für Events an",
-    "providerHint": "Catering, Musik, Fotografie, Locations … Präsentiere dein Business kostenlos."
+    "providerHint": "Catering, Musik, Fotografie, Locations … Präsentiere dein Business kostenlos.",
+    "confirmEmailTitle": "Bestätige deine E-Mail-Adresse",
+    "emailConfirmed": "E-Mail-Adresse bestätigt!",
+    "emailConfirmedDetail": "Ab jetzt bekommen deine Gäste die Hinweise zu deinen Veranstaltungen per E-Mail.",
+    "goToMySpace": "Zu meinem Bereich",
+    "unsubscribeTitle": "Keine Hinweise mehr bekommen",
+    "unsubscribeIntro": "Du bekommst an diese Adresse keine Veranstaltungshinweise von TuEventoFun mehr: keine Änderungen, Absagen oder Bestätigungen deiner Antworten. Deine Einladungen lassen sich weiter über ihren Link öffnen.",
+    "unsubscribeButton": "Abmelden",
+    "unsubscribed": "Fertig, du bist abgemeldet",
+    "unsubscribedDetail": "Wir schicken keine Veranstaltungshinweise mehr an diese Adresse.",
+    "verifyEmailBanner": "Bestätige deine E-Mail-Adresse ({{email}}) über den Link, den wir dir geschickt haben. Bis dahin bekommen deine Gäste keine Hinweise per E-Mail.",
+    "verificationSent": "Wir haben einen neuen Link an {{email}} geschickt. Schau auch im Spam-Ordner nach.",
+    "resendVerification": "Link noch einmal senden"
   },
   "app": {
     "backOverview": "Zurück zur Übersicht",
@@ -295,7 +307,9 @@
     "providerNotComplete": "Es fehlen noch Angaben, bevor du deine Seite veröffentlichen kannst.",
     "providerOrderMismatch": "Die Liste hat sich beim Sortieren geändert. Lade die Seite neu und versuch es noch einmal.",
     "providerSuspended": "Deine Seite ist gesperrt. Schreib uns, damit wir sie prüfen.",
-    "eventAlreadyHappened": "Diese Veranstaltung ist schon vorbei. Antworten lassen sich nicht mehr ändern."
+    "eventAlreadyHappened": "Diese Veranstaltung ist schon vorbei. Antworten lassen sich nicht mehr ändern.",
+    "emailVerificationLinkInvalid": "Dieser Bestätigungslink ist ungültig oder abgelaufen. Fordere in der App einen neuen an.",
+    "unsubscribeLinkInvalid": "Dieser Abmeldelink ist ungültig. Nimm den aus der letzten E-Mail, die du bekommen hast."
   },
   "events": {
     "actions": "Aktionen",
@@ -619,6 +633,15 @@
       "footer": "Sicherheitshinweis zu deinem Konto.",
       "intro": "Es gab viele fehlgeschlagene Anmeldeversuche bei deinem Konto. Deshalb sperren wir Anmeldungen von unbekannten Geräten für eine Weile.",
       "subject": "Anmeldungen bei deinem TuEventoFun-Konto sind vorübergehend gesperrt"
+    },
+    "unsubscribe": "Diese Hinweise abbestellen",
+    "verifyEmail": {
+      "action": "E-Mail-Adresse bestätigen",
+      "expiry": "Der Link gilt {{hours}} Stunden.",
+      "footer": "Du bekommst diese E-Mail, weil mit dieser Adresse ein Konto erstellt wurde.",
+      "ignore": "Wenn du kein Konto bei TuEventoFun erstellt hast, ignoriere diese E-Mail.",
+      "intro": "Bestätige, dass diese E-Mail-Adresse dir gehört, damit deine Gäste die Hinweise zu deinen Veranstaltungen bekommen.",
+      "subject": "Bestätige deine E-Mail-Adresse bei TuEventoFun"
     }
   },
   "mobileConnect": {

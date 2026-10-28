@@ -56,7 +56,19 @@
     "organizerTitle": "I organize events",
     "organizerHint": "Weddings, birthdays and get-togethers: guests, RSVPs and designs.",
     "providerTitle": "I offer event services",
-    "providerHint": "Catering, music, photography, venues… List your business for free."
+    "providerHint": "Catering, music, photography, venues… List your business for free.",
+    "confirmEmailTitle": "Confirm your email",
+    "emailConfirmed": "Email confirmed!",
+    "emailConfirmedDetail": "From now on, your guests will get email updates about your events.",
+    "goToMySpace": "Go to my space",
+    "unsubscribeTitle": "Stop getting updates",
+    "unsubscribeIntro": "You won't get any more TuEventoFun event updates at this email: no changes, cancellations or confirmations of your replies. Your invitations will still open with their link.",
+    "unsubscribeButton": "Unsubscribe",
+    "unsubscribed": "Done, you're unsubscribed",
+    "unsubscribedDetail": "We won't send any more event updates to this email.",
+    "verifyEmailBanner": "Confirm your email ({{email}}) with the link we sent you. Until then, your guests won't get email updates.",
+    "verificationSent": "We sent a new link to {{email}}. Check your spam folder too.",
+    "resendVerification": "Send the link again"
   },
   "app": {
     "backOverview": "Back to overview",
@@ -295,7 +307,9 @@
     "providerNotComplete": "Some information is still missing before you can publish your page.",
     "providerOrderMismatch": "The list changed while you were sorting it. Reload the page and try again.",
     "providerSuspended": "Your page is suspended. Contact us to review it.",
-    "eventAlreadyHappened": "This event has already happened, so replies can't be changed anymore."
+    "eventAlreadyHappened": "This event has already happened, so replies can't be changed anymore.",
+    "emailVerificationLinkInvalid": "This email confirmation link isn't valid or has expired. Ask for a new one in the app.",
+    "unsubscribeLinkInvalid": "This unsubscribe link isn't valid. Use the one in the latest email you got."
   },
   "events": {
     "actions": "Actions",
@@ -619,6 +633,15 @@
       "footer": "Security notice about your account.",
       "intro": "There were many failed attempts to sign in to your account, so we've blocked sign-ins from unknown devices for a while.",
       "subject": "We've paused sign-ins to your TuEventoFun account for a while"
+    },
+    "unsubscribe": "Stop getting these updates",
+    "verifyEmail": {
+      "action": "Confirm my email",
+      "expiry": "The link is valid for {{hours}} hours.",
+      "footer": "You got this email because an account was created with this address.",
+      "ignore": "If you didn't create a TuEventoFun account, ignore this email.",
+      "intro": "Confirm this email is yours so your guests get updates about your events.",
+      "subject": "Confirm your email on TuEventoFun"
     }
   },
   "mobileConnect": {

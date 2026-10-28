@@ -13,6 +13,7 @@ import {
   Query,
   UseGuards,
   ParseUUIDPipe,
+  BadRequestException,
   ForbiddenException,
   UnprocessableEntityException,
   Sse,
@@ -38,6 +39,8 @@ import {
   resetPasswordSchema,
   postcardSchema,
   registrationSchema,
+  unsubscribeSchema,
+  verifyEmailSchema,
   eventSlugPattern,
   accountLimits,
 } from "@tuevento/contracts";
@@ -54,6 +57,7 @@ import { Database } from "./database";
 import { DemoService } from "./demo";
 import { EventsService, Updates } from "./events";
 import { ListmonkService } from "./listmonk";
+import { NoticeService } from "./notices";
 import { PostcardsService } from "./postcards";
 import { requestLocale } from "./request-locale";
 import { parse } from "./problem";
@@ -67,6 +71,7 @@ export class PublicController {
     private events: EventsService,
     private listmonk: ListmonkService,
     private postcards: PostcardsService,
+    private notices: NoticeService,
   ) {}
   @Post("newsletter/subscribe") async subscribeNewsletter(
     @Body() body: unknown,
@@ -110,12 +115,14 @@ export class PublicController {
   ) {
     const data = parse(registerSchema, body, req);
     limits.register.hit(ipKey("register", req));
-    return this.auth.session(
+    const user = await this.auth.session(
       await this.auth.register(data, requestLocale(req)),
       req,
       reply,
       "registration",
     );
+    await this.auth.sendEmailVerification(user, requestLocale(req));
+    return user;
   }
   @Post("auth/login") async login(
     @Body() body: unknown,
@@ -183,6 +190,29 @@ export class PublicController {
   }
   @Get("auth/me") me(@Req() req: FastifyRequest) {
     return this.auth.current(req);
+  }
+  /** Confirmar el correo desde el enlace del correo; no hace falta tener la sesión abierta. */
+  @Post("auth/email/verify") @HttpCode(200) verifyEmail(@Body() body: unknown, @Req() req: FastifyRequest) {
+    limits.publicForm.hit(ipKey("public-form", req));
+    return this.auth.verifyEmail(parse(verifyEmailSchema, body, req).token);
+  }
+  @Post("auth/email/resend") @HttpCode(200) async resendVerification(@Req() req: FastifyRequest) {
+    return this.auth.resendEmailVerification(await this.auth.current(req), req);
+  }
+  /**
+   * Baja de los avisos a invitados. Llega desde la página del enlace (JSON) o, en un clic, desde
+   * el gestor de correo (RFC 8058: POST con `List-Unsubscribe=One-Click` y los datos en la URL).
+   */
+  @Post("mail/unsubscribe") @HttpCode(200) async unsubscribe(
+    @Req() req: FastifyRequest,
+    @Query() query: Record<string, unknown>,
+    @Body() body: unknown,
+  ) {
+    limits.publicForm.hit(ipKey("public-form", req));
+    const input = body && typeof body === "object" && "h" in body ? body : { h: query.h, s: query.s };
+    const { h, s } = parse(unsubscribeSchema, input, req);
+    if (!(await this.notices.unsubscribe(h, s))) throw new BadRequestException("errors.unsubscribeLinkInvalid");
+    return { ok: true };
   }
   @Post("auth/logout") logout(
     @Req() req: FastifyRequest,

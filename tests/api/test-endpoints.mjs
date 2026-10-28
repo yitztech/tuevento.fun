@@ -815,6 +815,34 @@ try {
     assert.ok(maxFuturo <= 180 * 86400 && maxFuturo > 86400, `Max-Age ${maxFuturo}`);
   });
 
+  await suite("Confirmar el correo y darse de baja: errores traducidos en 5 idiomas", async () => {
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    for (const [locale, headers] of locales) {
+      const caducado = await guest.raw("/auth/email/verify", { method: "POST", headers, body: { token: "x".repeat(43) } });
+      assert.equal(caducado.status, 400, locale);
+      assert.equal(caducado.data.detail, translate(locale, "errors.emailVerificationLinkInvalid"), locale);
+      const malFormado = await guest.raw("/auth/email/verify", { method: "POST", headers, body: { token: "corto" } });
+      assert.equal(malFormado.status, 422, locale);
+      assert.equal(malFormado.data.errors[0].field, "token");
+      const baja = await guest.raw("/mail/unsubscribe", { method: "POST", headers, body: { h: "x".repeat(43), s: "y".repeat(43) } });
+      assert.equal(baja.status, 400, locale);
+      assert.equal(baja.data.detail, translate(locale, "errors.unsubscribeLinkInvalid"), locale);
+    }
+    // Una cuenta nueva empieza sin confirmar; el reenvío tiene límite por cuenta
+    const nueva = client();
+    assert.equal((await nueva.call("/auth/register", "POST", account(P, "confirmar"), 201)).emailVerified, false);
+    for (let i = 0; i < 3; i++) await nueva.call("/auth/email/resend", "POST", {}, 200);
+    const cuarto = await nueva.raw("/auth/email/resend", { method: "POST", body: {} });
+    assert.equal(cuarto.status, 429);
+    assert.ok(Number(cuarto.headers["retry-after"]) > 0);
+  });
+
   await suite("Recursos inexistentes o con formato inválido responden 404/400, nunca 500", async () => {
     const a = client();
     await a.call("/auth/register", "POST", account(P, "404"), 201);
