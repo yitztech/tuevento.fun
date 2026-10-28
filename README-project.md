@@ -241,9 +241,12 @@ extensiones, la migración falla y la API no arranca):
 
 1. Definir en Coolify `SEARCH_DB_PASSWORD` (aleatoria, p. ej. `openssl rand -hex 24`).
 2. Crear las extensiones `pg_trgm` y `unaccent` y el rol `search_ro`, como el dueño de la base. Se puede repetir
-   (también para cambiar la contraseña):
+   (también para cambiar la contraseña). La contraseña no está en el shell del servidor: `read -rs` la pide sin
+   mostrarla ni dejarla en el historial, y el script no la imprime:
 ```bash
+read -rs SEARCH_DB_PASSWORD
 docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventofun -v search_pw="$SEARCH_DB_PASSWORD" -v db=tueventofun < services/postgres/sql/search-bootstrap.sql
+unset SEARCH_DB_PASSWORD
 ```
    Un volumen nuevo lo hace solo al arrancar (`services/postgres/initdb/02-search.sh`).
 3. Desplegar. Comprobar `https://tuevento.fun/api/search/providers?limit=1`: 200 con `items`.

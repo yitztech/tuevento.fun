@@ -21,6 +21,7 @@ async function bootstrap() {
   const sql = readFileSync(sqlArchivo, "utf8")
     .replaceAll(":'search_pw'", `'${PASSWORD}'`)
     .replaceAll(':"db"', `"${base.nombre}"`)
+    .replaceAll(" \\gset", ";")
     .replaceAll("search_ro", rol);
   const dueno = admin(base.nombre);
   try {
