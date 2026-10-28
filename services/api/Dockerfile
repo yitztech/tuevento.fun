@@ -27,9 +27,9 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/client/package.json packages/client/
 COPY packages/app/package.json packages/app/
 RUN npm ci --no-audit --no-fund
-COPY packages packages
-COPY apps apps
-RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/api
+COPY packages/contracts packages/contracts
+COPY apps/api apps/api
+RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/api
 
 # Dependencias de ejecución de la API, sin las de desarrollo ni las de la web
 FROM base AS api-deps
@@ -52,6 +52,8 @@ ENV NODE_ENV=production \
     APPLE_TEAM_ID=${APPLE_TEAM_ID} \
     MOBILE_APP_ID=${MOBILE_APP_ID}
 # Sin npm, npx ni corepack en ejecución: no se usan y traen sus propias dependencias (Trivy)
+# Renueva los parches de Alpine cada día sin invalidar la compilación.
+ARG SECURITY_REFRESH=manual
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
  && apk upgrade --no-cache
 WORKDIR /app

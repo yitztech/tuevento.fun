@@ -82,19 +82,23 @@ jobs:
         timeout-minutes: 1
         env:
           REPOSITORY: ${{ github.repository }}
-        run: echo "name=ghcr.io/${REPOSITORY,,}-${{ matrix.name }}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "name=ghcr.io/${REPOSITORY,,}-${{ matrix.name }}" >> "$GITHUB_OUTPUT"
+          echo "security_refresh=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v7
         timeout-minutes: 12
         with:
           context: .
           file: services/${{ matrix.name }}/Dockerfile
           push: true
-          build-args: ${{ matrix.build_args }}
+          build-args: |
+            ${{ matrix.build_args }}
+            SECURITY_REFRESH=${{ steps.image.outputs.security_refresh }}
           tags: |
             ${{ steps.image.outputs.name }}:main
             ${{ steps.image.outputs.name }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          cache-from: type=gha,timeout=2m,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,timeout=2m,ignore-error=true,scope=${{ matrix.name }}
           provenance: true
           sbom: true
 

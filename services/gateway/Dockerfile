@@ -12,6 +12,8 @@ COPY services/gateway/default.conf.template /etc/nginx/templates/default.conf.te
 # (net.ipv4.ip_unprivileged_port_start=0). PID en /tmp; /tmp, /var/cache/nginx y
 # /etc/nginx/conf.d son tmpfs en compose.prod.yml (sistema de archivos de solo lectura).
 # Paquetes de Alpine con los arreglos publicados después de la imagen base (Trivy)
+# Renueva los parches de Alpine cada día sin invalidar la compilación.
+ARG SECURITY_REFRESH=manual
 RUN apk upgrade --no-cache
 RUN sed -i -e '/^user /d' -e 's#^pid .*#pid /tmp/nginx.pid;#' /etc/nginx/nginx.conf \
  && chown -R 101:101 /var/cache/nginx /etc/nginx/conf.d

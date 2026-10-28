@@ -5,6 +5,8 @@ FROM postgres:18.6-alpine3.24
 # El entrypoint baja de root a postgres con gosu, un binario de Go 1.24 con CVE abiertos en
 # la imagen oficial. su-exec (C, de Alpine) hace lo mismo con los mismos argumentos; gosu
 # se borra (no basta con sobrescribirlo: Trivy seguiría viéndolo en la capa de abajo).
+# Renueva los parches de Alpine cada día sin invalidar la compilación.
+ARG SECURITY_REFRESH=manual
 RUN apk upgrade --no-cache && apk add --no-cache su-exec \
  && rm /usr/local/bin/gosu \
  && sed -i 's/exec gosu postgres /exec su-exec postgres /' /usr/local/bin/docker-entrypoint.sh \
