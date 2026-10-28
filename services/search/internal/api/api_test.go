@@ -240,3 +240,22 @@ func TestHandler(t *testing.T) {
 		t.Errorf("healthz: %d", w.Code)
 	}
 }
+
+func TestReportOnStoreFailure(t *testing.T) {
+	var reported []string
+	h := New(Config{
+		Origins:   Origins{"es": "https://tuevento.fun", "en": "https://yourevent.fun"},
+		RateLimit: 3, RateWindow: time.Minute, Log: slog.New(slog.NewJSONHandler(io.Discard, nil)),
+		SearchStore: fake{err: errors.New("timeout")},
+		Report:      func(err error, requestID string) { reported = append(reported, err.Error()+" "+requestID) },
+	})
+	get(h, "/api/search/providers", map[string]string{"X-Request-ID": "prueba-1234"})
+	if len(reported) != 1 || reported[0] != "timeout prueba-1234" {
+		t.Errorf("el fallo de la base de datos va a Bugsink con su requestId: %v", reported)
+	}
+	// Una petición inválida (4xx) no se reporta
+	get(h, "/api/search/providers?limit=0", nil)
+	if len(reported) != 1 {
+		t.Errorf("los 4xx no se reportan: %v", reported)
+	}
+}

@@ -1,3 +1,4 @@
+import "./errors";
 import "@tuevento/app/styles.css";
 import ReactDOM from "react-dom/client";
 import type { ReactNode } from "react";

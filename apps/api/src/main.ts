@@ -1,4 +1,6 @@
 import "reflect-metadata";
+// Primero: Sentry se inicializa antes de cargar el resto de módulos
+import "./sentry";
 import { randomUUID } from "node:crypto";
 import { NestFactory } from "@nestjs/core";
 import {

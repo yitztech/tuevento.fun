@@ -20,7 +20,11 @@ COPY --from=contracts /app/services/search/internal/catalog/shared.json internal
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/search ./cmd/search
 
 # Binario estático sobre scratch: sin shell ni paquetes. El healthcheck es el mismo binario.
+# Los certificados raíz, para enviar errores por https a Bugsink de la plataforma (INT-07).
 FROM scratch
+ARG RELEASE_SHA=local
+ENV RELEASE_SHA=$RELEASE_SHA
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /out/search /search
 USER 65532:65532
 EXPOSE 3089

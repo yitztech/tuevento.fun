@@ -2,7 +2,7 @@
 # Las variables ${...} las sustituye el entrypoint de nginx al arrancar (solo RELEASE_SHA,
 # ver NGINX_ENVSUBST_FILTER). $site_lang y $seo_links (canonical, hreflang de cada idioma
 # y tuevento:sites) los define 17-sites.sh a partir de packages/contracts;
-# $analytics_src, 16-analytics.sh.
+# $analytics_src y $errores_src, 16-analytics.sh.
 server_tokens off;
 
 # La API, para el estado de las páginas de proveedores (providers.locations, de 17-sites.sh).
