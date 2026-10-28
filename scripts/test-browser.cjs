@@ -322,7 +322,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page
       .getByRole("button", { name: "Copiar enlace", exact: true })
       .click();
-    await expect(page.getByRole("status")).toContainText("Enlace copiado.");
+    await expect(page.locator(".toast")).toContainText("Enlace copiado.");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       link,
     );
