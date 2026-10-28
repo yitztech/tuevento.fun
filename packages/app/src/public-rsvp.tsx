@@ -22,7 +22,7 @@ import { Logo, Avatar, ErrorBox } from "./components";
 import { PostcardCanvas } from "./postcard-canvas";
 import { CalendarLinks } from "./calendar-links";
 import { OpenRegistration } from "./open-registration";
-import { googleCalendarUrl } from "@tuevento/contracts";
+import { eventIsPast, googleCalendarUrl } from "@tuevento/contracts";
 import { MapLinks, MapView } from "./location";
 /**
  * Invitación de un invitado: la postal, los datos y su respuesta. Por su enlace personal
@@ -191,6 +191,10 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
           {event.cancelled ? (
             <p className="event-cancelled-notice" role="status">
               {tr("rsvp.eventCancelled")}
+            </p>
+          ) : eventIsPast(event.date) ? (
+            <p className="event-cancelled-notice" role="status">
+              {tr("rsvp.eventPast")}
             </p>
           ) : invitation.kind === "open" ? (
             invitation.registrationsFull ? (

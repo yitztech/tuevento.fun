@@ -56,7 +56,19 @@
     "organizerTitle": "Ich organisiere Events",
     "organizerHint": "Hochzeiten, Geburtstage und Treffen: Gäste, Antworten und Designs.",
     "providerTitle": "Ich biete Services für Events an",
-    "providerHint": "Catering, Musik, Fotografie, Locations … Präsentiere dein Business kostenlos."
+    "providerHint": "Catering, Musik, Fotografie, Locations … Präsentiere dein Business kostenlos.",
+    "confirmEmailTitle": "Bestätige deine E-Mail-Adresse",
+    "emailConfirmed": "E-Mail-Adresse bestätigt!",
+    "emailConfirmedDetail": "Ab jetzt bekommen deine Gäste die Hinweise zu deinen Veranstaltungen per E-Mail.",
+    "goToMySpace": "Zu meinem Bereich",
+    "unsubscribeTitle": "Keine Hinweise mehr bekommen",
+    "unsubscribeIntro": "Du bekommst an diese Adresse keine Veranstaltungshinweise von TuEventoFun mehr: keine Änderungen, Absagen oder Bestätigungen deiner Antworten. Deine Einladungen lassen sich weiter über ihren Link öffnen.",
+    "unsubscribeButton": "Abmelden",
+    "unsubscribed": "Fertig, du bist abgemeldet",
+    "unsubscribedDetail": "Wir schicken keine Veranstaltungshinweise mehr an diese Adresse.",
+    "verifyEmailBanner": "Bestätige deine E-Mail-Adresse ({{email}}) über den Link, den wir dir geschickt haben. Bis dahin bekommen deine Gäste keine Hinweise per E-Mail.",
+    "verificationSent": "Wir haben einen neuen Link an {{email}} geschickt. Schau auch im Spam-Ordner nach.",
+    "resendVerification": "Link noch einmal senden"
   },
   "app": {
     "backOverview": "Zurück zur Übersicht",
@@ -282,6 +294,7 @@
     "openInvitationFull": "Dieser Link hat die maximale Anzahl an Anmeldungen erreicht.",
     "eventPasswordIncorrect": "Das Passwort ist nicht korrekt.",
     "geocoderUnavailable": "Die Kartensuche ist gerade nicht verfügbar. Versuch es in ein paar Minuten noch einmal oder füge einen Kartenlink ein.",
+    "geocoderBusy": "Gerade suchen sehr viele auf der Karte. Versuch es in ein paar Sekunden noch einmal.",
     "mapLinkWithoutCoordinates": "Dieser Link enthält keinen Ort. Öffne den Ort in deiner Karten-App, tippe auf „Teilen“ und kopiere diesen Link.",
     "wrongAccountType": "Dieser Bereich ist für eine andere Kontoart.",
     "providerProfileNotFound": "Speichere zuerst die Daten deines Business.",
@@ -293,7 +306,18 @@
     "providerImagesPerServiceLimit": "Dieser Service hat schon 10 Fotos, das Maximum.",
     "providerNotComplete": "Es fehlen noch Angaben, bevor du deine Seite veröffentlichen kannst.",
     "providerOrderMismatch": "Die Liste hat sich beim Sortieren geändert. Lade die Seite neu und versuch es noch einmal.",
-    "providerSuspended": "Deine Seite ist gesperrt. Schreib uns, damit wir sie prüfen."
+    "providerSuspended": "Deine Seite ist gesperrt. Schreib uns, damit wir sie prüfen.",
+    "eventAlreadyHappened": "Diese Veranstaltung ist schon vorbei. Antworten lassen sich nicht mehr ändern.",
+    "emailVerificationLinkInvalid": "Dieser Bestätigungslink ist ungültig oder abgelaufen. Fordere in der App einen neuen an.",
+    "unsubscribeLinkInvalid": "Dieser Abmeldelink ist ungültig. Nimm den aus der letzten E-Mail, die du bekommen hast.",
+    "paymentsUnavailable": "Zahlungen sind noch nicht verfügbar.",
+    "paymentTierAlreadyPaid": "Diese Stufe ist schon bezahlt. Wähle eine größere.",
+    "paymentTierTooSmall": "Deine Veranstaltung hat mehr Gäste, als diese Stufe abdeckt. Wähle eine größere.",
+    "paymentTierInvalid": "Wähle eine der Stufen aus der Liste.",
+    "paymentProviderUnavailable": "Wir konnten die Zahlungsseite nicht öffnen. Versuch es in ein paar Minuten noch einmal.",
+    "paymentSignatureInvalid": "Die Signatur der Zahlungsbenachrichtigung ist ungültig.",
+    "paymentDemo": "Für Veranstaltungen der Demo wird nicht bezahlt. Erstelle dein Konto, um deine Veranstaltung zu bezahlen.",
+    "guestLimitReached": "Deine Veranstaltung hat die Gästegrenze ihrer Stufe erreicht. Wechsle zu einer größeren Stufe, um mehr hinzuzufügen."
   },
   "events": {
     "actions": "Aktionen",
@@ -425,6 +449,8 @@
     "publicAddressTaken": "Du hast bereits ein anderes Event mit dieser Adresse.",
     "publicPassword": "Passwort für die Event-Seite (optional)",
     "publicPasswordHint": "Damit kommen auch Personen ohne persönlichen Link hinein. Lass es leer, damit nur deine Gäste hineinkommen.",
+    "publicPasswordFailures_one": "Jemand hat seit dem letzten erfolgreichen Zugriff {{count}}-mal ein falsches Passwort eingegeben. Wenn das weder du noch deine Gäste waren, ändere es.",
+    "publicPasswordFailures_other": "Jemand hat seit dem letzten erfolgreichen Zugriff {{count}}-mal ein falsches Passwort eingegeben. Wenn das weder du noch deine Gäste waren, ändere es.",
     "publicPasswordKept": "Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.",
     "removePublicPassword": "Passwort der öffentlichen Seite entfernen",
     "viaOpenLink": "über offenen Link"
@@ -607,6 +633,23 @@
       "counts": "Zugesagt: {{accepted}}. Absagen: {{declined}}. Warteliste: {{pending}}.",
       "intro": "{{guest}} hat auf {{event}} geantwortet.",
       "subject": "{{guest}} hat auf {{event}} geantwortet"
+    },
+    "loginLocked": {
+      "action": "Passwort zurücksetzen",
+      "advice": "Wenn du das nicht warst, probiert jemand Passwörter mit deiner E-Mail-Adresse aus. Dein Passwort ist unverändert; wenn du willst, wähl ein neues.",
+      "device": "In einem Browser, in dem du dich schon einmal angemeldet hast, kannst du dich ganz normal weiter anmelden. In jedem anderen wartest du eine Stunde oder setzt dein Passwort zurück.",
+      "footer": "Sicherheitshinweis zu deinem Konto.",
+      "intro": "Es gab viele fehlgeschlagene Anmeldeversuche bei deinem Konto. Deshalb sperren wir Anmeldungen von unbekannten Geräten für eine Weile.",
+      "subject": "Anmeldungen bei deinem TuEventoFun-Konto sind vorübergehend gesperrt"
+    },
+    "unsubscribe": "Diese Hinweise abbestellen",
+    "verifyEmail": {
+      "action": "E-Mail-Adresse bestätigen",
+      "expiry": "Der Link gilt {{hours}} Stunden.",
+      "footer": "Du bekommst diese E-Mail, weil mit dieser Adresse ein Konto erstellt wurde.",
+      "ignore": "Wenn du kein Konto bei TuEventoFun erstellt hast, ignoriere diese E-Mail.",
+      "intro": "Bestätige, dass diese E-Mail-Adresse dir gehört, damit deine Gäste die Hinweise zu deinen Veranstaltungen bekommen.",
+      "subject": "Bestätige deine E-Mail-Adresse bei TuEventoFun"
     }
   },
   "mobileConnect": {
@@ -678,7 +721,8 @@
     "withLove": "Herzlich,",
     "wouldntSameWithout": "Ohne dich wäre es nicht dasselbe.",
     "yesIllThere": "Ja, ich komme!",
-    "eventCancelled": "Dieses Event wurde abgesagt; Antworten sind nicht mehr möglich."
+    "eventCancelled": "Dieses Event wurde abgesagt; Antworten sind nicht mehr möglich.",
+    "eventPast": "Diese Veranstaltung ist schon vorbei. Die Antworten bleiben, wie sie waren."
   },
   "status": {
     "accepted": "Zugesagt",
@@ -821,7 +865,25 @@
     "payService": "Service bezahlen",
     "paymentPending": "Die Zahlung ist noch nicht angebunden. Sobald sie verfügbar ist, kannst du deine Veranstaltung hier bezahlen.",
     "back": "Zurück zu den Preisen",
-    "buy": "Kaufen"
+    "buy": "Kaufen",
+    "chooseEvent": "Wähle die Veranstaltung, die du bezahlen möchtest",
+    "noEvents": "Du hast noch keine Veranstaltungen. Erstelle eine und komm hierher zurück, um sie zu bezahlen.",
+    "freePlan": "Kostenloser Plan: alles inklusive außer den E-Mail-Benachrichtigungen an deine Gäste.",
+    "paidUpTo": "Bezahlt: bis zu {{guests}} Gäste, mit E-Mail-Benachrichtigungen.",
+    "paidMoreThan": "Bezahlt: mehr als {{guests}} Gäste, mit E-Mail-Benachrichtigungen.",
+    "guestsNow_one": "Deine Veranstaltung hat {{count}} Gast.",
+    "guestsNow_other": "Deine Veranstaltung hat {{count}} Gäste.",
+    "payTier": "{{price}} bezahlen",
+    "upgradeNote": "Du hast schon eine Stufe bezahlt: Für eine größere zahlst du nur die Differenz.",
+    "tierTooSmall": "Reicht nicht für deine Gäste",
+    "tierIncluded": "In deiner Zahlung enthalten",
+    "paymentReceived": "Zahlung erhalten. Deine Gäste bekommen jetzt E-Mail-Benachrichtigungen.",
+    "confirming": "Wir bestätigen deine Zahlung …",
+    "topTier": "Deine Veranstaltung hat schon die höchste Stufe.",
+    "payThisEvent": "Diese Veranstaltung bezahlen",
+    "upgrade": "Zu einer größeren Stufe wechseln",
+    "goingToCheckout": "Wir bringen dich zur Zahlungsseite …",
+    "tiersLabel": "Gästestufen"
   },
   "publicEvent": {
     "opening": "Event wird geöffnet…",
@@ -1062,5 +1124,14 @@
     "invalidSort": "Sortiere nach Relevanz oder nach Entfernung.",
     "invalidCursor": "Diese Ergebnisseite ist nicht mehr gültig: Such bitte noch einmal.",
     "unavailable": "Die Suche ist gerade nicht verfügbar. Versuch es in ein paar Minuten noch einmal."
+  },
+  "mcp": {
+    "unauthorized": "Ungültige oder fehlende MCP-Anmeldeinformationen.",
+    "forbidden": "Du hast keine Berechtigung für den Zugriff auf diese Ressource oder dieses Werkzeug.",
+    "invalidToken": "Das MCP-Zugriffstoken ist abgelaufen oder wurde widerrufen.",
+    "confirmationRequired": "Diese Aktion erfordert eine Bestätigung mit dem generierten Token.",
+    "resourceNotFound": "Die angeforderte Ressource existiert nicht oder du hast keinen Zugriff darauf.",
+    "scopeRequired": "Das Token verfügt nicht über die erforderliche Berechtigung ({{scope}}).",
+    "previewSummary": "Vorschau der Aktion „{{tool}}“ bereit zur Bestätigung."
   }
 }

@@ -63,7 +63,8 @@ export default defineConfig({
               ...devices["iPhone 15"],
               // Sin --host-resolver-rules, que es de Chromium: WebKit no arranca con él en Linux
               launchOptions: { slowMo },
-              ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: new URL(baseURL).hostname } } : {}),
+              // 127.0.0.1 va directo: ahí escucha el doble de Stripe (payments-fake), que no es del gateway
+              ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: `${new URL(baseURL).hostname},127.0.0.1` } } : {}),
             },
             grepInvert: /@admin/,
           },

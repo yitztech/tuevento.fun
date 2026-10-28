@@ -87,7 +87,7 @@ export class EventApi {
     );
   }
   config = () =>
-    this.request<{ googleClientId: string; demoEnabled: boolean }>("/config");
+    this.request<{ googleClientId: string; demoEnabled: boolean; paymentsEnabled: boolean }>("/config");
   me = () => this.request<User>("/auth/me");
   demo = () => this.request<User>("/auth/demo", "POST", {});
   register = (data: RegisterInput) =>
@@ -105,6 +105,11 @@ export class EventApi {
     );
   resetPassword = (token: string, password: string) =>
     this.request<User>("/auth/password/reset", "POST", { token, password });
+  /** Confirmar el correo de la cuenta con el enlace del correo, y volver a pedir ese correo. */
+  verifyEmail = (token: string) => this.request<User>("/auth/email/verify", "POST", { token });
+  resendVerification = () => this.request<{ ok: boolean }>("/auth/email/resend", "POST", {});
+  /** Baja de los avisos a invitados desde el enlace firmado de un correo. */
+  unsubscribe = (h: string, s: string) => this.request<{ ok: boolean }>("/mail/unsubscribe", "POST", { h, s });
   googleNonce = () =>
     this.request<{ nonce: string }>("/auth/google/nonce", "POST", {});
   logout = () => this.request("/auth/logout", "POST", {});
@@ -121,6 +126,9 @@ export class EventApi {
       data,
     );
   deleteEvent = (id: string) => this.request(`/events/${id}`, "DELETE");
+  /** Abre el pago del tramo de invitados `tier` de un evento: devuelve la URL de Stripe. */
+  checkout = (eventId: string, tier: number) =>
+    this.request<{ url: string }>(`/events/${eventId}/checkout`, "POST", { tier });
   invitations = (id: string) =>
     this.request<Invitation[]>(`/events/${id}/invitations`);
   saveInvitation = (eventId: string, data: InvitationInput, id?: string) =>

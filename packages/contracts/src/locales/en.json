@@ -56,7 +56,19 @@
     "organizerTitle": "I organize events",
     "organizerHint": "Weddings, birthdays and get-togethers: guests, RSVPs and designs.",
     "providerTitle": "I offer event services",
-    "providerHint": "Catering, music, photography, venues… List your business for free."
+    "providerHint": "Catering, music, photography, venues… List your business for free.",
+    "confirmEmailTitle": "Confirm your email",
+    "emailConfirmed": "Email confirmed!",
+    "emailConfirmedDetail": "From now on, your guests will get email updates about your events.",
+    "goToMySpace": "Go to my space",
+    "unsubscribeTitle": "Stop getting updates",
+    "unsubscribeIntro": "You won't get any more TuEventoFun event updates at this email: no changes, cancellations or confirmations of your replies. Your invitations will still open with their link.",
+    "unsubscribeButton": "Unsubscribe",
+    "unsubscribed": "Done, you're unsubscribed",
+    "unsubscribedDetail": "We won't send any more event updates to this email.",
+    "verifyEmailBanner": "Confirm your email ({{email}}) with the link we sent you. Until then, your guests won't get email updates.",
+    "verificationSent": "We sent a new link to {{email}}. Check your spam folder too.",
+    "resendVerification": "Send the link again"
   },
   "app": {
     "backOverview": "Back to overview",
@@ -282,6 +294,7 @@
     "openInvitationFull": "This link has reached its maximum number of registrations.",
     "eventPasswordIncorrect": "The password is not correct.",
     "geocoderUnavailable": "Map search isn't available right now. Try again in a few minutes or paste a map link.",
+    "geocoderBusy": "Lots of people are searching the map right now. Try again in a few seconds.",
     "mapLinkWithoutCoordinates": "That link doesn't include the location. In your maps app, open the place, tap “Share” and copy that link.",
     "wrongAccountType": "This section is for a different type of account.",
     "providerProfileNotFound": "Save your business details first.",
@@ -293,7 +306,18 @@
     "providerImagesPerServiceLimit": "That service already has 10 photos, the maximum.",
     "providerNotComplete": "Some information is still missing before you can publish your page.",
     "providerOrderMismatch": "The list changed while you were sorting it. Reload the page and try again.",
-    "providerSuspended": "Your page is suspended. Contact us to review it."
+    "providerSuspended": "Your page is suspended. Contact us to review it.",
+    "eventAlreadyHappened": "This event has already happened, so replies can't be changed anymore.",
+    "emailVerificationLinkInvalid": "This email confirmation link isn't valid or has expired. Ask for a new one in the app.",
+    "unsubscribeLinkInvalid": "This unsubscribe link isn't valid. Use the one in the latest email you got.",
+    "paymentsUnavailable": "Payments aren't available yet.",
+    "paymentTierAlreadyPaid": "That tier is already paid. Choose a bigger one.",
+    "paymentTierTooSmall": "Your event has more guests than that tier covers. Choose a bigger one.",
+    "paymentTierInvalid": "Choose one of the tiers on the list.",
+    "paymentProviderUnavailable": "We couldn't open the payment page. Try again in a few minutes.",
+    "paymentSignatureInvalid": "The payment notification signature is invalid.",
+    "paymentDemo": "Demo events can't be paid for. Create your account to pay for your event.",
+    "guestLimitReached": "Your event reached its tier's guest limit. Move to a bigger tier to add more."
   },
   "events": {
     "actions": "Actions",
@@ -425,6 +449,8 @@
     "publicAddressTaken": "You already have another event with that address.",
     "publicPassword": "Event page password (optional)",
     "publicPasswordHint": "With it, people without a personal link can also get in. Leave it empty so only your guests can.",
+    "publicPasswordFailures_one": "Someone tried a wrong password {{count}} time since the last successful access. If it wasn't you or your guests, change it.",
+    "publicPasswordFailures_other": "Someone tried wrong passwords {{count}} times since the last successful access. If it wasn't you or your guests, change it.",
     "publicPasswordKept": "A password is saved. Leave empty to keep it.",
     "removePublicPassword": "Remove the public page password",
     "viaOpenLink": "via open link"
@@ -607,6 +633,23 @@
       "counts": "Confirmed: {{accepted}}. Not attending: {{declined}}. Waiting: {{pending}}.",
       "intro": "{{guest}} replied to {{event}}.",
       "subject": "{{guest}} replied to {{event}}"
+    },
+    "loginLocked": {
+      "action": "Reset my password",
+      "advice": "If it wasn't you, someone is trying passwords with your email. Your password hasn't changed; if you like, switch to a new one.",
+      "device": "You can keep signing in as usual from a browser you've used before. From any other, wait an hour or reset your password.",
+      "footer": "Security notice about your account.",
+      "intro": "There were many failed attempts to sign in to your account, so we've blocked sign-ins from unknown devices for a while.",
+      "subject": "We've paused sign-ins to your TuEventoFun account for a while"
+    },
+    "unsubscribe": "Stop getting these updates",
+    "verifyEmail": {
+      "action": "Confirm my email",
+      "expiry": "The link is valid for {{hours}} hours.",
+      "footer": "You got this email because an account was created with this address.",
+      "ignore": "If you didn't create a TuEventoFun account, ignore this email.",
+      "intro": "Confirm this email is yours so your guests get updates about your events.",
+      "subject": "Confirm your email on TuEventoFun"
     }
   },
   "mobileConnect": {
@@ -678,7 +721,8 @@
     "withLove": "With love,",
     "wouldntSameWithout": "It wouldn't be the same without you.",
     "yesIllThere": "Yes, I'll be there!",
-    "eventCancelled": "This event has been cancelled; replies are closed."
+    "eventCancelled": "This event has been cancelled; replies are closed.",
+    "eventPast": "This event has already happened. Replies stay as they were."
   },
   "status": {
     "accepted": "Attending",
@@ -821,7 +865,25 @@
     "payService": "Pay for the service",
     "paymentPending": "Payment isn't connected yet. Once it is, you'll be able to pay for your event here.",
     "back": "Back to pricing",
-    "buy": "Buy"
+    "buy": "Buy",
+    "chooseEvent": "Choose the event you want to pay for",
+    "noEvents": "You don't have any events yet. Create one and come back here to pay for it.",
+    "freePlan": "Free plan: everything included except email notices to your guests.",
+    "paidUpTo": "Paid: up to {{guests}} guests, with email notices.",
+    "paidMoreThan": "Paid: more than {{guests}} guests, with email notices.",
+    "guestsNow_one": "Your event has {{count}} guest.",
+    "guestsNow_other": "Your event has {{count}} guests.",
+    "payTier": "Pay {{price}}",
+    "upgradeNote": "You already paid for a tier: moving to a bigger one only costs the difference.",
+    "tierTooSmall": "Doesn't cover your guests",
+    "tierIncluded": "Included in your payment",
+    "paymentReceived": "Payment received. Your guests now get email notices.",
+    "confirming": "We're confirming your payment…",
+    "topTier": "Your event already has the highest tier.",
+    "payThisEvent": "Pay for this event",
+    "upgrade": "Move to a bigger tier",
+    "goingToCheckout": "Taking you to the payment page…",
+    "tiersLabel": "Guest tiers"
   },
   "publicEvent": {
     "opening": "Opening the event…",
@@ -1062,5 +1124,14 @@
     "invalidSort": "Sort by relevance or by distance.",
     "invalidCursor": "That page of results is no longer valid: search again.",
     "unavailable": "Search isn't available right now. Please try again in a few minutes."
+  },
+  "mcp": {
+    "unauthorized": "Invalid or missing MCP credentials.",
+    "forbidden": "You do not have permission to access this resource or tool.",
+    "invalidToken": "The MCP access token has expired or was revoked.",
+    "confirmationRequired": "This action requires confirmation with the generated token.",
+    "resourceNotFound": "The requested resource does not exist or you do not have access to it.",
+    "scopeRequired": "The token does not have the required scope ({{scope}}).",
+    "previewSummary": "Preview of action '{{tool}}' ready for confirmation."
   }
 }

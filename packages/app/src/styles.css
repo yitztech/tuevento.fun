@@ -4661,6 +4661,22 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .pricing-cta {
   margin-top: 8px;
 }
+.pricing-page h2 {
+  margin-top: 28px;
+}
+/* Plan del evento en su detalle: gratuito o el tramo pagado, con el enlace para pagar */
+.event-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  border: 1px solid #dfe1e5;
+  border-radius: 10px;
+  background: #fff;
+}
 /* La regla de enlaces de las páginas legales pondría el texto azul sobre el botón azul */
 .legal-page a:not(.language-switcher):not(.logo).pricing-cta,
 .legal-page a:not(.language-switcher):not(.logo).pricing-cta:hover {
@@ -5445,3 +5461,20 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
     align-items: center;
   }
 }
+
+/* Aviso hasta confirmar el correo de la cuenta */
+.verify-email-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 9px;
+  background: #fff7e8;
+  color: #6b4a12;
+  line-height: 1.5;
+}
+.verify-email-banner > svg {flex: none;}
+.verify-email-banner p {flex: 1 1 260px; margin: 0;}
+.verify-email-banner .error-box {flex-basis: 100%; margin: 0;}

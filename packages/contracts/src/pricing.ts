@@ -34,3 +34,15 @@ export function canAddGuests(current: number, toAdd: number, paid: GuestTier): b
   const limit = guestLimitFor(paid);
   return limit === null || current + toAdd <= limit;
 }
+
+/** Posición de un tramo en `guestTiers` (0 = hasta 50…): es lo que guarda y envía la API. */
+export type TierIndex = 0 | 1 | 2 | 3;
+
+/**
+ * Centavos de dólar que cuesta pasar al tramo `tier` desde el ya pagado (`paid`, o null si el
+ * evento no ha pagado): solo la diferencia. 0 si el tramo no es mayor que el pagado.
+ */
+export function upgradeCents(paid: TierIndex | null, tier: TierIndex): number {
+  const already = paid === null ? 0 : guestTiers[paid].usd;
+  return Math.max(0, (guestTiers[tier].usd - already) * 100);
+}

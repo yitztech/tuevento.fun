@@ -13,6 +13,9 @@ const escapeHtml = (value: string) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
 
+/** Enlaces para darse de baja de los avisos: la página (en el pie) y la baja en un clic (RFC 8058). */
+export type Unsubscribe = { page: string; oneClick: string };
+
 /** Estructura común: texto plano y HTML sencillo con estilos en línea (colores de DESIGN.md). */
 function layout(options: {
   to: string;
@@ -21,6 +24,7 @@ function layout(options: {
   paragraphs: string[];
   action?: { label: string; url: string };
   footer: string;
+  unsubscribe?: Unsubscribe & { label: string };
 }): MailMessage {
   const host = new URL(options.site).host;
   const text = [
@@ -29,7 +33,11 @@ function layout(options: {
     "—",
     options.footer,
     options.site,
+    ...(options.unsubscribe ? [`${options.unsubscribe.label}: ${options.unsubscribe.page}`] : []),
   ].join("\n\n");
+  const unsubscribe = options.unsubscribe
+    ? ` · <a href="${escapeHtml(options.unsubscribe.page)}" style="color:#6e5f5a">${escapeHtml(options.unsubscribe.label)}</a>`
+    : "";
   const button = options.action
     ? `<p style="margin:28px 0"><a href="${escapeHtml(options.action.url)}" style="background:#882d17;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escapeHtml(options.action.label)}</a></p>
 <p style="font-size:13px;color:#6e5f5a;word-break:break-all">${escapeHtml(options.action.url)}</p>`
@@ -42,9 +50,22 @@ function layout(options: {
 ${options.paragraphs.map((p) => `<p style="margin:0 0 14px">${escapeHtml(p)}</p>`).join("\n")}
 ${button}
 </div>
-<p style="font-size:12px;color:#6e5f5a;margin:20px 4px">${escapeHtml(options.footer)} · <a href="${escapeHtml(options.site)}" style="color:#6e5f5a">${escapeHtml(host)}</a></p>
+<p style="font-size:12px;color:#6e5f5a;margin:20px 4px">${escapeHtml(options.footer)} · <a href="${escapeHtml(options.site)}" style="color:#6e5f5a">${escapeHtml(host)}</a>${unsubscribe}</p>
 </div></body></html>`;
-  return { to: options.to, subject: options.subject, text, html };
+  return {
+    to: options.to,
+    subject: options.subject,
+    text,
+    html,
+    ...(options.unsubscribe
+      ? {
+          headers: {
+            "List-Unsubscribe": `<${options.unsubscribe.oneClick}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
+        }
+      : {}),
+  };
 }
 
 export function passwordResetMail(
@@ -86,6 +107,47 @@ export function passwordChangedMail(
   });
 }
 
+export function verifyEmailMail(
+  locale: Locale,
+  data: { to: string; name: string; url: string; site: string; hours: number },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.verifyEmail.subject"),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.verifyEmail.intro"),
+      t("mail.verifyEmail.expiry", { hours: data.hours }),
+      t("mail.verifyEmail.ignore"),
+    ],
+    action: { label: t("mail.verifyEmail.action"), url: data.url },
+    footer: t("mail.verifyEmail.footer"),
+  });
+}
+
+/** Aviso al dueño: su cuenta se cerró un rato por demasiados intentos fallidos. */
+export function loginLockedMail(
+  locale: Locale,
+  data: { to: string; name: string; site: string; resetUrl: string },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.loginLocked.subject"),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.loginLocked.intro"),
+      t("mail.loginLocked.device"),
+      t("mail.loginLocked.advice"),
+    ],
+    action: { label: t("mail.loginLocked.action"), url: data.resetUrl },
+    footer: t("mail.loginLocked.footer"),
+  });
+}
+
 /** Resumen en el correo del invitado tras guardar su respuesta. */
 export function guestReplyMail(
   locale: Locale,
@@ -96,6 +158,7 @@ export function guestReplyMail(
     members: { name: string; status: string }[];
     url: string;
     site: string;
+    unsubscribe: Unsubscribe;
   },
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
@@ -111,6 +174,7 @@ export function guestReplyMail(
     ],
     action: { label: t("mail.openInvitation"), url: data.url },
     footer: t("mail.footer"),
+    unsubscribe: { ...data.unsubscribe, label: t("mail.unsubscribe") },
   });
 }
 
@@ -152,6 +216,7 @@ export function eventChangedMail(
     changes: string[];
     url: string;
     site: string;
+    unsubscribe: Unsubscribe;
   },
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
@@ -165,13 +230,14 @@ export function eventChangedMail(
     ],
     action: { label: t("mail.openInvitation"), url: data.url },
     footer: t("mail.footer"),
+    unsubscribe: { ...data.unsubscribe, label: t("mail.unsubscribe") },
   });
 }
 
 /** Aviso a un invitado cuando el organizador cancela el evento. */
 export function eventCancelledMail(
   locale: Locale,
-  data: { to: string; name: string; event: string; url: string; site: string },
+  data: { to: string; name: string; event: string; url: string; site: string; unsubscribe: Unsubscribe },
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
@@ -184,5 +250,6 @@ export function eventCancelledMail(
     ],
     action: { label: t("mail.openInvitation"), url: data.url },
     footer: t("mail.footer"),
+    unsubscribe: { ...data.unsubscribe, label: t("mail.unsubscribe") },
   });
 }

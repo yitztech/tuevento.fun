@@ -43,3 +43,8 @@ target "geocoder-fake" {
   cache-from = ["type=gha,timeout=2m,scope=geocoder-fake"]
   cache-to   = ["type=gha,mode=max,timeout=2m,ignore-error=true,scope=geocoder-fake"]
 }
+
+target "payments-fake" {
+  cache-from = ["type=gha,timeout=2m,scope=payments-fake"]
+  cache-to   = ["type=gha,mode=max,timeout=2m,ignore-error=true,scope=payments-fake"]
+}

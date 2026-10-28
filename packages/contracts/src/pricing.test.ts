@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAddGuests, guestTiers, tierForGuests } from "./pricing";
+import { canAddGuests, guestTiers, tierForGuests, upgradeCents } from "./pricing";
 
 const usd = (guests: number) => tierForGuests(guests).usd;
 
@@ -51,4 +51,12 @@ test("Añadir cero invitados nunca supera el límite", () => {
 test("Invitados a añadir inválidos: se rechazan", () => {
   for (const value of [-1, 0.5])
     assert.throws(() => canAddGuests(1, value, tierForGuests(1)), RangeError, String(value));
+});
+
+test("Pasar a un tramo mayor cobra solo la diferencia, en centavos", () => {
+  assert.equal(upgradeCents(null, 0), 500);
+  assert.equal(upgradeCents(null, 3), 3000);
+  assert.equal(upgradeCents(0, 2), 1500);
+  assert.equal(upgradeCents(2, 3), 1000);
+  assert.equal(upgradeCents(2, 1), 0, "un tramo menor que el pagado no cuesta nada");
 });

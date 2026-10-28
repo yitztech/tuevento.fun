@@ -12,8 +12,11 @@ try {
 
   await suite("GET /config expone solo lo público", async () => {
     const config = await guest.call("/config");
-    assert.deepEqual(Object.keys(config).sort(), ["demoEnabled", "googleClientId"]);
+    assert.deepEqual(Object.keys(config).sort(), ["demoEnabled", "googleClientId", "paymentsEnabled"]);
     assert.equal(typeof config.demoEnabled, "boolean");
+    // compose.ci.yml conecta los pagos al doble de Stripe; las claves nunca salen en la configuración
+    assert.equal(config.paymentsEnabled, true);
+    assert.doesNotMatch(JSON.stringify(config), /sk_test|whsec/);
     assert.equal(typeof config.googleClientId, "string");
   });
 
@@ -219,6 +222,9 @@ try {
     const intentos = client();
     for (let i = 0; i < 10; i++) await intentos.call(`${landing}/unlock`, "POST", { password: "mal" }, 401);
     await intentos.call(`${landing}/unlock`, "POST", { password: "clave-de-prueba" }, 429);
+    // El organizador ve los fallos desde el último acierto; los invitados con enlace no se ven afectados
+    assert.equal((await organizador.call(`/events/${evento.id}`)).passwordFailures, 10);
+    assert.equal((await conEnlace.call(landing)).access, "guest");
     // Sin contraseña, la landing vuelve a ser solo para invitados y organizador
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, publicPassword: "" }));
     assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, false);
@@ -775,6 +781,396 @@ try {
       assert.equal(r.status, 422, url);
       assert.equal(r.data.errors[0].field, "url");
     }
+  });
+
+  await suite("Evento pasado: la invitación se abre en solo lectura y el acceso a la landing caduca un mes después", async () => {
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "pasado"), 201);
+    const haceTres = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    const pasado = await organizador.call("/events", "POST", eventData({ date: haceTres }), 201);
+    const inv = await organizador.call(`/events/${pasado.id}/invitations`, "POST", invitationData(), 201);
+    const abierta = await organizador.call(`/events/${pasado.id}/invitations`, "POST", { ...invitationData(), kind: "open", members: [] }, 201);
+    const invitado = await guest.call(`/invitations/${inv.token}`);
+    assert.equal(invitado.event.date, pasado.date);
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    for (const [locale, headers] of locales) {
+      const r = await guest.raw(`/invitations/${inv.token}/rsvp`, { method: "POST", headers, body: { members: invitado.members.map((m) => ({ id: m.id, status: "accepted" })) } });
+      assert.equal(r.status, 409, locale);
+      assert.equal(r.data.detail, translate(locale, "errors.eventAlreadyHappened"), locale);
+    }
+    const registro = await guest.raw(`/invitations/${abierta.token}/register`, { method: "POST", body: { name: "Tarde", email: "", phone: "", notes: "", kind: "individual", members: [{ name: "Tarde", kind: "adult", notes: "", status: "accepted" }] } });
+    assert.equal(registro.status, 409);
+    // El acceso a la landing desde el enlace dura hasta un mes después del evento (aquí, 27 días)
+    const acceso = await client().raw(`/invitations/${inv.token}/access`, { method: "POST", body: {} });
+    const maxAge = Number(/Max-Age=(\d+)/i.exec(acceso.setCookie.find((c) => c.startsWith(`landing_${pasado.id}=`)))[1]);
+    assert.ok(Math.abs(maxAge - 27 * 86400) < 120, `Max-Age ${maxAge}`);
+    // Con el evento por delante, el acceso dura como mucho 180 días
+    const futuro = await organizador.call("/events", "POST", eventData(), 201);
+    const invFuturo = await organizador.call(`/events/${futuro.id}/invitations`, "POST", invitationData(), 201);
+    const accesoFuturo = await client().raw(`/invitations/${invFuturo.token}/access`, { method: "POST", body: {} });
+    const maxFuturo = Number(/Max-Age=(\d+)/i.exec(accesoFuturo.setCookie.find((c) => c.startsWith(`landing_${futuro.id}=`)))[1]);
+    assert.ok(maxFuturo <= 180 * 86400 && maxFuturo > 86400, `Max-Age ${maxFuturo}`);
+  });
+
+  await suite("Confirmar el correo y darse de baja: errores traducidos en 5 idiomas", async () => {
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    for (const [locale, headers] of locales) {
+      const caducado = await guest.raw("/auth/email/verify", { method: "POST", headers, body: { token: "x".repeat(43) } });
+      assert.equal(caducado.status, 400, locale);
+      assert.equal(caducado.data.detail, translate(locale, "errors.emailVerificationLinkInvalid"), locale);
+      const malFormado = await guest.raw("/auth/email/verify", { method: "POST", headers, body: { token: "corto" } });
+      assert.equal(malFormado.status, 422, locale);
+      assert.equal(malFormado.data.errors[0].field, "token");
+      const baja = await guest.raw("/mail/unsubscribe", { method: "POST", headers, body: { h: "x".repeat(43), s: "y".repeat(43) } });
+      assert.equal(baja.status, 400, locale);
+      assert.equal(baja.data.detail, translate(locale, "errors.unsubscribeLinkInvalid"), locale);
+    }
+    // Una cuenta nueva empieza sin confirmar; el reenvío tiene límite por cuenta
+    const nueva = client();
+    assert.equal((await nueva.call("/auth/register", "POST", account(P, "confirmar"), 201)).emailVerified, false);
+    for (let i = 0; i < 3; i++) await nueva.call("/auth/email/resend", "POST", {}, 200);
+    const cuarto = await nueva.raw("/auth/email/resend", { method: "POST", body: {} });
+    assert.equal(cuarto.status, 429);
+    assert.ok(Number(cuarto.headers["retry-after"]) > 0);
+  });
+
+  await suite("Pagar un evento: tramo inválido, ya pagado o demasiado pequeño, con errores en 5 idiomas", async () => {
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    const owner = client();
+    await owner.call("/auth/register", "POST", account(P, "pago"), 201);
+    const event = await owner.call("/events", "POST", eventData(), 201);
+    assert.equal(event.paidTier, null);
+    // 51 personas: el tramo de 50 ya no las cubre
+    const people = (n) => Array.from({ length: n }, () => ({ name: "Invitado", kind: "adult", notes: "" }));
+    await owner.call(`/events/${event.id}/invitations`, "POST", { ...invitationData(), members: people(50) }, 201);
+    await owner.call(`/events/${event.id}/invitations`, "POST", { ...invitationData(), members: people(1) }, 201);
+    for (const [locale, headers] of locales) {
+      const invalido = await owner.raw(`/events/${event.id}/checkout`, { method: "POST", headers, body: { tier: 9 } });
+      assert.equal(invalido.status, 422, locale);
+      assert.equal(invalido.data.errors[0].field, "tier");
+      assert.equal(invalido.data.errors[0].message, translate(locale, "errors.paymentTierInvalid"), locale);
+      const pequeno = await owner.raw(`/events/${event.id}/checkout`, { method: "POST", headers, body: { tier: 0 } });
+      assert.equal(pequeno.status, 409, locale);
+      assert.equal(pequeno.data.detail, translate(locale, "errors.paymentTierTooSmall"), locale);
+    }
+    const { url } = await owner.call(`/events/${event.id}/checkout`, "POST", { tier: 1 });
+    assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/pay\/cs_test_/);
+    await send(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "action=pay" });
+    assert.equal((await owner.call(`/events/${event.id}`)).paidTier, 1);
+    for (const [locale, headers] of locales) {
+      const pagado = await owner.raw(`/events/${event.id}/checkout`, { method: "POST", headers, body: { tier: 1 } });
+      assert.equal(pagado.status, 409, locale);
+      assert.equal(pagado.data.detail, translate(locale, "errors.paymentTierAlreadyPaid"), locale);
+    }
+    // La demostración no se cobra
+    const demo = client();
+    await demo.call("/auth/register", "POST", account(P, "pago-demo"), 201);
+    await demo.call("/auth/demo", "POST", {}, 201);
+    const [demoEvent] = await demo.call("/events");
+    const r = await demo.raw(`/events/${demoEvent.id}/checkout`, { method: "POST", body: { tier: 3 } });
+    assert.equal(r.status, 409);
+    assert.equal(r.data.detail, translate("es", "errors.paymentDemo"));
+  });
+
+  await suite("Model Context Protocol (MCP): Streamable HTTP, initialize, catálogo de herramientas y ejecución con confirmación", async () => {
+    // 1. Estado y metadatos RFC 8414
+    const status = await guest.call("/mcp");
+    assert.equal(status.status, "ok");
+    assert.equal(status.service, "tuevento-mcp");
+    assert.equal(status.protocolVersion, "2024-11-05");
+
+    const metadata = await guest.call("/mcp/oauth/metadata");
+    assert.match(metadata.authorization_endpoint, /\/api\/mcp\/oauth\/authorize$/);
+    assert.match(metadata.token_endpoint, /\/api\/mcp\/oauth\/token$/);
+    assert.deepEqual(metadata.scopes_supported, ["mcp:read", "mcp:write"]);
+
+    // 2. Organizador: emitir token MCP
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "mcp-org"), 201);
+    const orgAuth = await org.call("/mcp/oauth/authorize", "POST", { client_name: "Claude Test", scopes: ["mcp:read", "mcp:write"] });
+    assert.match(orgAuth.access_token, /^mcp_/);
+    assert.equal(orgAuth.actor_type, "organizer");
+    assert.equal(orgAuth.token_type, "Bearer");
+
+    const mcpOrg = async (method, params, extraHeaders = {}) => {
+      const res = await send(`${base}/mcp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${orgAuth.access_token}`,
+          ...extraHeaders,
+        },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+      });
+      return { status: res.status, headers: res.headers, body: JSON.parse(res.text) };
+    };
+
+    // 3. Negociación: initialize y ping
+    const initRes = await mcpOrg("initialize");
+    assert.equal(initRes.status, 200);
+    assert.equal(initRes.body.result.protocolVersion, "2024-11-05");
+    assert.equal(initRes.body.result.serverInfo.name, "tuevento-mcp");
+
+    const pingRes = await mcpOrg("ping");
+    assert.equal(pingRes.status, 200);
+    assert.deepEqual(pingRes.body.result, {});
+
+    // 4. Catálogo de herramientas para organizador
+    const toolsRes = await mcpOrg("tools/list");
+    const toolNames = toolsRes.body.result.tools.map((t) => t.name);
+    assert.ok(toolNames.includes("events_list"));
+    assert.ok(toolNames.includes("events_create"));
+    assert.ok(toolNames.includes("invitations_create"));
+    assert.ok(toolNames.includes("providers_search"));
+    assert.ok(!toolNames.includes("provider_profile_get"));
+
+    // 5. Creación de evento con vista previa y confirmación
+    const eventParams = {
+      title: "Boda MCP Elegante",
+      date: "2026-12-15T19:00:00Z",
+      timeZone: "America/Mexico_City",
+      location: "Jardín Los Encinos",
+      theme: "gold",
+    };
+    // Llamada con preview: true devuelve vista previa y token de confirmación
+    const previewRes = await mcpOrg("tools/call", {
+      name: "events_create",
+      arguments: { ...eventParams, preview: true },
+    });
+    const previewData = JSON.parse(previewRes.body.result.content[0].text);
+    assert.equal(previewData.preview, true);
+    assert.equal(previewData.requiresConfirmation, true);
+    assert.ok(previewData.confirmationToken);
+
+    // Confirmación con el token generado
+    const confirmRes = await mcpOrg("tools/call", {
+      name: "events_create",
+      arguments: {
+        ...eventParams,
+        confirmed: true,
+        confirmation_token: previewData.confirmationToken,
+      },
+    });
+    const createdEventData = JSON.parse(confirmRes.body.result.content[0].text);
+    assert.equal(createdEventData.success, true);
+    assert.equal(createdEventData.event.title, "Boda MCP Elegante");
+    const mcpEventId = createdEventData.event.id;
+
+    // events_list refleja el nuevo evento
+    const listRes = await mcpOrg("tools/call", { name: "events_list", arguments: {} });
+    const listData = JSON.parse(listRes.body.result.content[0].text);
+    assert.ok(listData.events.some((e) => e.id === mcpEventId));
+
+    // events_get devuelve los detalles
+    const getRes = await mcpOrg("tools/call", { name: "events_get", arguments: { id: mcpEventId } });
+    const getData = JSON.parse(getRes.body.result.content[0].text);
+    assert.equal(getData.event.id, mcpEventId);
+
+    // Crear invitación mediante MCP
+    const invPreview = await mcpOrg("tools/call", {
+      name: "invitations_create",
+      arguments: {
+        eventId: mcpEventId,
+        name: "Familia Gómez",
+        kind: "family",
+        contact: "5512345678",
+        members: [{ name: "Roberto", kind: "adult" }, { name: "Sofía", kind: "child" }],
+        preview: true,
+      },
+    });
+    const invPreviewData = JSON.parse(invPreview.body.result.content[0].text);
+    assert.ok(invPreviewData.confirmationToken);
+
+    const invConfirm = await mcpOrg("tools/call", {
+      name: "invitations_create",
+      arguments: {
+        eventId: mcpEventId,
+        name: "Familia Gómez",
+        kind: "family",
+        contact: "5512345678",
+        members: [{ name: "Roberto", kind: "adult" }, { name: "Sofía", kind: "child" }],
+        confirmed: true,
+        confirmation_token: invPreviewData.confirmationToken,
+      },
+    });
+    const invData = JSON.parse(invConfirm.body.result.content[0].text);
+    assert.equal(invData.success, true);
+    const mcpInvId = invData.invitation.id;
+    const invToken = invData.invitation.token;
+
+    // Resumen de asistencia
+    const summaryRes = await mcpOrg("tools/call", {
+      name: "events_attendance_summary",
+      arguments: { eventId: mcpEventId },
+    });
+    const summaryData = JSON.parse(summaryRes.body.result.content[0].text);
+    assert.equal(summaryData.totalGuests, 2);
+    assert.equal(summaryData.pending, 2);
+
+    // 6. Flujo de Invitado con token breve
+    const guestTokenRes = await guest.call("/mcp/guest-token", "POST", { invitation_token: invToken });
+    assert.match(guestTokenRes.access_token, /^mcp_/);
+    assert.equal(guestTokenRes.actor_type, "guest");
+
+    const mcpGuest = async (method, params) => {
+      const res = await send(`${base}/mcp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${guestTokenRes.access_token}`,
+        },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 2, method, params }),
+      });
+      return { status: res.status, body: JSON.parse(res.text) };
+    };
+
+    // Herramientas del invitado: solo 3
+    const guestToolsRes = await mcpGuest("tools/list");
+    const guestToolNames = guestToolsRes.body.result.tools.map((t) => t.name);
+    assert.deepEqual(guestToolNames.sort(), ["invitation_get", "invitation_rsvp_get", "invitation_rsvp_update"]);
+
+    // invitation_get obtiene solo su invitación
+    const gGetRes = await mcpGuest("tools/call", { name: "invitation_get", arguments: {} });
+    const gGetData = JSON.parse(gGetRes.body.result.content[0].text);
+    assert.equal(gGetData.invitation.id, mcpInvId);
+    assert.equal(gGetData.invitation.members.length, 2);
+    const memberId = gGetData.invitation.members[0].id;
+
+    // Responder RSVP con confirmación
+    const rsvpPreview = await mcpGuest("tools/call", {
+      name: "invitation_rsvp_update",
+      arguments: {
+        members: [{ id: memberId, status: "accepted" }],
+        preview: true,
+      },
+    });
+    const rsvpPreviewData = JSON.parse(rsvpPreview.body.result.content[0].text);
+    assert.ok(rsvpPreviewData.confirmationToken);
+
+    const rsvpConfirm = await mcpGuest("tools/call", {
+      name: "invitation_rsvp_update",
+      arguments: {
+        members: [{ id: memberId, status: "accepted" }],
+        confirmed: true,
+        confirmation_token: rsvpPreviewData.confirmationToken,
+      },
+    });
+    const rsvpData = JSON.parse(rsvpConfirm.body.result.content[0].text);
+    assert.equal(rsvpData.success, true);
+    assert.equal(rsvpData.members.find((m) => m.id === memberId).status, "accepted");
+
+    // 7. Flujo de Proveedor: perfil y servicios
+    const prov = client();
+    await prov.call("/auth/register", "POST", account(P, "mcp-prov", { accountType: "provider" }), 201);
+    const provAuth = await prov.call("/mcp/oauth/authorize", "POST", { client_name: "Claude Provider" });
+    const mcpProv = async (method, params) => {
+      const res = await send(`${base}/mcp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${provAuth.access_token}`,
+        },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 3, method, params }),
+      });
+      return { status: res.status, body: JSON.parse(res.text) };
+    };
+
+    const provToolsRes = await mcpProv("tools/list");
+    const provToolNames = provToolsRes.body.result.tools.map((t) => t.name);
+    assert.deepEqual(provToolNames.sort(), [
+      "provider_profile_get",
+      "provider_profile_update",
+      "provider_services_list",
+      "provider_services_update",
+    ]);
+
+    // Actualizar perfil de proveedor con confirmación
+    const profPreview = await mcpProv("tools/call", {
+      name: "provider_profile_update",
+      arguments: {
+        businessName: "Estudio Creativo MCP",
+        headline: "Fotografía y video profesional",
+        categories: ["photo-video"],
+        preview: true,
+      },
+    });
+    const profPreviewData = JSON.parse(profPreview.body.result.content[0].text);
+    assert.ok(profPreviewData.confirmationToken);
+
+    const profConfirm = await mcpProv("tools/call", {
+      name: "provider_profile_update",
+      arguments: {
+        businessName: "Estudio Creativo MCP",
+        headline: "Fotografía y video profesional",
+        categories: ["photo-video"],
+        confirmed: true,
+        confirmation_token: profPreviewData.confirmationToken,
+      },
+    });
+    const profData = JSON.parse(profConfirm.body.result.content[0].text);
+    assert.equal(profData.success, true);
+    assert.equal(profData.profile.businessName, "Estudio Creativo MCP");
+
+    // Crear servicio de proveedor con confirmación
+    const servPreview = await mcpProv("tools/call", {
+      name: "provider_services_update",
+      arguments: {
+        action: "create",
+        title: "Fotografía y Video 4K",
+        description: "Cobertura completa",
+        price: { fromCents: 1200000, currency: "MXN", unit: "event" },
+        preview: true,
+      },
+    });
+    const servPreviewData = JSON.parse(servPreview.body.result.content[0].text);
+    assert.ok(servPreviewData.confirmationToken);
+
+    const servConfirm = await mcpProv("tools/call", {
+      name: "provider_services_update",
+      arguments: {
+        action: "create",
+        title: "Fotografía y Video 4K",
+        description: "Cobertura completa",
+        price: { fromCents: 1200000, currency: "MXN", unit: "event" },
+        confirmed: true,
+        confirmation_token: servPreviewData.confirmationToken,
+      },
+    });
+    const servData = JSON.parse(servConfirm.body.result.content[0].text);
+    assert.equal(servData.success, true);
+    assert.equal(servData.service.title, "Fotografía y Video 4K");
+
+    // 8. Streamable HTTP (SSE)
+    const sseRes = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        Authorization: `Bearer ${orgAuth.access_token}`,
+      },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 99, method: "ping" }),
+    });
+    assert.equal(sseRes.status, 200);
+    assert.match(sseRes.headers["content-type"], /^text\/event-stream/);
+    assert.match(sseRes.text, /event: message\ndata: \{"jsonrpc":"2.0","id":99,"result":\{\}\}/);
   });
 
   await suite("Recursos inexistentes o con formato inválido responden 404/400, nunca 500", async () => {

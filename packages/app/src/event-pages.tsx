@@ -1,4 +1,5 @@
-import { accountLimits, eventInput, eventLandingPath, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
+import { accountLimits, eventInput, eventLandingPath, guestTiers, invitationInput, slugify, validationOptions } from "@tuevento/contracts";
+import { paymentPath, planText } from "./pricing";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { LocationPicker, MapLinks, MapView } from "./location";
 import { useState, useEffect } from "react";
@@ -104,6 +105,7 @@ export function EventEditor() {
   const [slugTouched, setSlugTouched] = useState(!!id),
     [slugFree, setSlugFree] = useState<boolean | null>(null),
     [hasPassword, setHasPassword] = useState(false),
+    [passwordFailures, setPasswordFailures] = useState(0),
     [removePassword, setRemovePassword] = useState(false);
   const form = useForm<EventInput>({
     resolver: zodResolver(
@@ -131,6 +133,7 @@ export function EventEditor() {
       .event(id)
       .then((e) => {
         setHasPassword(e.hasPublicPassword);
+        setPasswordFailures(e.passwordFailures ?? 0);
         form.reset({
           ...eventInput(e),
           date: formatInTimeZone(e.date, e.timeZone, "yyyy-MM-dd'T'HH:mm"),
@@ -317,6 +320,11 @@ export function EventEditor() {
               <span>{tr("events.removePublicPassword")}</span>
             </label>
           )}
+          {hasPassword && passwordFailures > 0 && (
+            <p className="field-hint" role="status">
+              {tr("events.publicPasswordFailures", { count: passwordFailures })}
+            </p>
+          )}
           <div className="form-section-heading">
             <h2>{tr("events.chooseInvitationStyle")}</h2>
             <p>{tr("events.changeWheneverLike")}</p>
@@ -374,7 +382,7 @@ export function EventEditor() {
 }
 export function EventDetail() {
   const { id } = useParams(),
-    { api, events, reload, toast, runtime, user } = useApp(),
+    { api, events, reload, toast, runtime, user, config } = useApp(),
     navigate = useNavigate();
   const event = events.find((e) => e.id === id),
     [invitations, setInvitations] = useState<Invitation[]>([]),
@@ -680,6 +688,16 @@ export function EventDetail() {
           {tr("common.invitationsCount", { count: event.metrics.invitations })}
         </span>
       </div>
+      {config.paymentsEnabled && !user?.isDemo && (
+        <div className="event-plan">
+          <span>{planText(event)}</span>
+          {event.paidTier !== guestTiers.length - 1 && (
+            <Link to={paymentPath(event.id)} className="button secondary">
+              {event.paidTier === null ? tr("pricing.payThisEvent") : tr("pricing.upgrade")}
+            </Link>
+          )}
+        </div>
+      )}
       <details className="event-options">
         <summary>{tr("events.moreEventOptions")}</summary>
         <div>

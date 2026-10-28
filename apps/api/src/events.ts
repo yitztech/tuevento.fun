@@ -17,9 +17,14 @@ import { PostcardsService } from "./postcards";
 import { NoticeService } from "./notices";
 import { hashPassword, verifyPassword } from "./password";
 import { siteUrl } from "./locale-env";
+import { limits } from "./rate-limit";
+import { paidTierSql, paymentsEnabled } from "./payment-config";
+import { newInvitationToken, openToken, tokenLookup } from "./tokens";
 import {
   accountLimits,
   calendarFile,
+  canAddGuests,
+  guestTiers,
   countMetrics,
   defaultLocale,
   eventLandingPath,
@@ -43,11 +48,18 @@ import {
   type Status,
 } from "@tuevento/contracts";
 
-/** Cuántos intentos fallidos bloquean la contraseña de una página pública, y por cuánto tiempo. */
-const EVENT_PASSWORD_MAX_FAILURES = 10;
-const EVENT_PASSWORD_LOCK_MINUTES = 15;
-/** Lo que dura el acceso de un invitado a la landing desde su enlace personal. */
-const GUEST_ACCESS_DAYS = 180;
+/**
+ * Fallos con la contraseña de una página pública a partir de los cuales cada intento, desde
+ * cualquier IP, espera cada vez más (2 s, 4 s… hasta un minuto). Desde una misma IP, el límite
+ * estricto está en `limits.unlockEventIp`. Los invitados con enlace personal no la necesitan.
+ */
+const EVENT_PASSWORD_FREE_FAILURES = 10;
+const EVENT_PASSWORD_MAX_DELAY_SECONDS = 60;
+/** Lo que dura el acceso de un invitado a la landing desde su enlace personal: hasta un mes después del evento, con tope. */
+const GUEST_ACCESS_MAX_DAYS = 180;
+const GUEST_ACCESS_AFTER_EVENT_DAYS = 30;
+/** Un día después del evento, las respuestas quedan como estaban: el enlace sigue abriendo, en solo lectura. */
+const eventPast = () => new ConflictException("errors.eventAlreadyHappened");
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 type Counts = { accepted: number; declined: number; pending: number };
 const countStatuses = (members: { status: Status }[]): Counts => {
@@ -70,8 +82,11 @@ type EventRow = {
   archived: boolean;
   cancelled: boolean;
   public_password_hash: string | null;
+  public_password_failures: number;
   slug: string | null;
   created_at: Date;
+  /** Calculado con paidTierSql: no es una columna de events. */
+  paid_tier: number | null;
 };
 type MemberRow = Pick<Member, "id" | "name" | "kind" | "notes" | "status">;
 /** Punto del lugar guardado en dos columnas, o null si el evento no tiene. */
@@ -89,9 +104,11 @@ const eventView = (r: EventRow): Event => ({
   archived: r.archived,
   cancelled: r.cancelled,
   hasPublicPassword: !!r.public_password_hash,
+  passwordFailures: r.public_password_hash ? r.public_password_failures : 0,
   slug: r.slug ?? "",
   createdAt: r.created_at.toISOString(),
   metrics: countMetrics([]),
+  paidTier: (r.paid_tier ?? null) as Event["paidTier"],
 });
 /** Dos eventos no pueden compartir dirección: el índice único lo impide y aquí se avisa claro. */
 const slugConflict = (e: unknown): never => {
@@ -136,7 +153,7 @@ export class EventsService {
   }
   async owned(userId: string, id: string) {
     const [r] = await this.db.query(
-      "SELECT * FROM events WHERE id=$1 AND user_id=$2",
+      `SELECT e.*, ${paidTierSql} AS paid_tier FROM events e WHERE e.id=$1 AND e.user_id=$2`,
       [id, userId],
     );
     if (!r) throw new NotFoundException("errors.couldntFindEvent");
@@ -160,7 +177,7 @@ export class EventsService {
       phone: r.phone,
       notes: r.notes,
       kind: r.kind,
-      token: r.token,
+      token: openToken(r.token_sealed),
       parentId: r.parent_id ?? null,
       createdAt: r.created_at.toISOString(),
       members: members.filter((m) => m.invitation_id === r.id).map(memberView),
@@ -173,7 +190,7 @@ export class EventsService {
   }
   async list(userId: string): Promise<Event[]> {
     const events = await this.db.query(
-      "SELECT * FROM events WHERE user_id=$1 ORDER BY date",
+      `SELECT e.*, ${paidTierSql} AS paid_tier FROM events e WHERE e.user_id=$1 ORDER BY e.date`,
       [userId],
     );
     if (!events.length) return [];
@@ -350,6 +367,7 @@ export class EventsService {
   ) {
     await this.owned(userId, eventId);
     const invitationId = id || randomUUID();
+    const link = newInvitationToken();
     await this.db.transaction(async (c) => {
       const prior = id
         ? (
@@ -384,7 +402,7 @@ export class EventsService {
         );
       else
         await c.query(
-          "INSERT INTO invitations(id,event_id,name,email,phone,notes,kind,token) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
+          "INSERT INTO invitations(id,event_id,name,email,phone,notes,kind,token,token_hash,token_sealed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
           [
             invitationId,
             eventId,
@@ -393,9 +411,13 @@ export class EventsService {
             data.phone,
             data.notes,
             data.kind,
-            randomBytes(24).toString("base64url"),
+            // `token` en claro solo mientras la versión anterior de la API pueda volver (migración 024)
+            link.token,
+            link.hash,
+            link.sealed,
           ],
         );
+      await this.assertGuestLimit(c, eventId, invitationId, data.members.length);
       const retained = data.members.map((m) => m.id).filter(Boolean);
       await c.query(
         "DELETE FROM members WHERE invitation_id=$1 AND NOT (id=ANY($2::uuid[]))",
@@ -419,6 +441,28 @@ export class EventsService {
       (i) => i.id === invitationId,
     )!;
   }
+  /**
+   * Con los pagos activos, un evento que pagó un tramo no pasa de su máximo de invitados (para
+   * más, se paga la diferencia). Uno gratuito no tiene tope: solo no envía correos a invitados.
+   */
+  private async assertGuestLimit(
+    c: PoolClient,
+    eventId: string,
+    invitationId: string,
+    members: number,
+    error: "errors.guestLimitReached" | "errors.openInvitationFull" = "errors.guestLimitReached",
+  ) {
+    if (!paymentsEnabled()) return;
+    const { rows: [r] } = await c.query(
+      `SELECT ${paidTierSql} AS paid_tier,
+         (SELECT count(*) FROM members m JOIN invitations i ON i.id=m.invitation_id WHERE i.event_id=e.id AND i.id<>$2)::int AS others
+       FROM events e WHERE e.id=$1 FOR UPDATE`,
+      [eventId, invitationId],
+    );
+    if (r?.paid_tier === null || r?.paid_tier === undefined) return;
+    if (!canAddGuests(r.others, members, guestTiers[r.paid_tier as number]))
+      throw new ConflictException(error);
+  }
   async removeInvitation(userId: string, eventId: string, id: string) {
     await this.owned(userId, eventId);
     const rows = await this.db.query(
@@ -431,8 +475,8 @@ export class EventsService {
   }
   async publicInvitation(token: string): Promise<PublicInvitation> {
     const [r] = await this.db.query(
-      "SELECT i.id,i.name,i.kind,e.id AS event_id,e.title,e.description,e.date,e.time_zone,e.location,e.latitude,e.longitude,e.theme,e.cancelled,u.first_name,u.last_name,u.avatar,u.is_demo FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
-      [token],
+      "SELECT i.id,i.name,i.kind,e.id AS event_id,e.title,e.description,e.date,e.time_zone,e.location,e.latitude,e.longitude,e.theme,e.cancelled,u.first_name,u.last_name,u.avatar,u.is_demo FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token_hash=$1 AND e.archived=false",
+      [tokenLookup(token)],
     );
     if (!r)
       throw new NotFoundException("errors.invitationIsntAvailablePlease");
@@ -471,13 +515,14 @@ export class EventsService {
     await this.db.transaction(async (c) => {
       const r = (
         await c.query(
-          "SELECT i.*, e.user_id, e.cancelled FROM invitations i JOIN events e ON e.id=i.event_id WHERE i.token=$1 AND e.archived=false FOR UPDATE OF i",
-          [token],
+          "SELECT i.*, e.user_id, e.cancelled, e.date < now() - interval '1 day' AS past FROM invitations i JOIN events e ON e.id=i.event_id WHERE i.token_hash=$1 AND e.archived=false FOR UPDATE OF i",
+          [tokenLookup(token)],
         )
       ).rows[0];
       if (!r)
         throw new NotFoundException("errors.invitationIsntAvailable");
       if (r.cancelled) throw new BadRequestException("errors.eventCancelled");
+      if (r.past) throw eventPast();
       const existing = (
         await c.query(
           "SELECT id,status,name FROM members WHERE invitation_id=$1 ORDER BY position",
@@ -516,24 +561,27 @@ export class EventsService {
   /** Invitado de una invitación genérica: se crea su propia invitación ya respondida. */
   async register(token: string, data: RegistrationInput): Promise<{ token: string }> {
     const childId = randomUUID();
-    const childToken = randomBytes(24).toString("base64url");
+    const child = newInvitationToken();
     const sent: { owner: string; eventId: string; name: string; counts: Counts }[] = [];
     await this.db.transaction(async (c) => {
       const r = (
         await c.query(
-          "SELECT i.id,i.event_id,e.user_id,e.cancelled FROM invitations i JOIN events e ON e.id=i.event_id WHERE i.token=$1 AND i.kind='open' AND e.archived=false FOR UPDATE OF i",
-          [token],
+          "SELECT i.id,i.event_id,e.user_id,e.cancelled,e.date < now() - interval '1 day' AS past FROM invitations i JOIN events e ON e.id=i.event_id WHERE i.token_hash=$1 AND i.kind='open' AND e.archived=false FOR UPDATE OF i",
+          [tokenLookup(token)],
         )
       ).rows[0];
       if (!r) throw new NotFoundException("errors.invitationIsntAvailable");
       if (r.cancelled) throw new BadRequestException("errors.eventCancelled");
+      if (r.past) throw eventPast();
       // El bloqueo de la fila padre serializa los registros: el límite no se puede saltar en paralelo
       if ((await this.registrationCount(r.id)) >= openInvitationLimits.registrations)
         throw new ConflictException("errors.openInvitationFull");
+      // Quien se registra no ve el tramo del evento: para él, la invitación abierta está llena
+      await this.assertGuestLimit(c, r.event_id, childId, data.members.length, "errors.openInvitationFull");
       const name = data.name || data.email || data.phone;
       await c.query(
-        "INSERT INTO invitations(id,event_id,name,email,phone,notes,kind,token,parent_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
-        [childId, r.event_id, name, data.email, data.phone, data.notes, data.kind, childToken, r.id],
+        "INSERT INTO invitations(id,event_id,name,email,phone,notes,kind,token,token_hash,token_sealed,parent_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+        [childId, r.event_id, name, data.email, data.phone, data.notes, data.kind, child.token, child.hash, child.sealed, r.id],
       );
       for (const [i, m] of data.members.entries())
         await c.query(
@@ -549,7 +597,7 @@ export class EventsService {
       this.notify(this.notices.guestReply(childId), "Confirmación al invitado");
       this.notify(this.notices.ownerReply(s.eventId, s.name, s.counts), "Aviso al organizador");
     }
-    return { token: childToken };
+    return { token: child.token };
   }
   /** Evento por el código de su cuenta y su dirección; los archivados solo los ve su dueño. */
   private async eventByAddress(code: string, slug: string) {
@@ -580,10 +628,12 @@ export class EventsService {
   private async grantedAccess(eventId: string, token?: string) {
     if (!token) return null;
     const [r] = await this.db.query(
-      "SELECT a.invitation_id,i.token FROM event_access a LEFT JOIN invitations i ON i.id=a.invitation_id WHERE a.token_hash=$1 AND a.event_id=$2 AND a.expires_at>now()",
+      "SELECT a.invitation_id,i.token_sealed FROM event_access a LEFT JOIN invitations i ON i.id=a.invitation_id WHERE a.token_hash=$1 AND a.event_id=$2 AND a.expires_at>now()",
       [digest(token), eventId],
     );
-    return r ? { invitationToken: (r.token as string | null) ?? null, guest: r.invitation_id !== null } : null;
+    return r
+      ? { invitationToken: r.token_sealed ? openToken(r.token_sealed) : null, guest: r.invitation_id !== null }
+      : null;
   }
   /**
    * Landing según quién la abre: el organizador; un invitado que entró con su enlace personal; o
@@ -611,19 +661,25 @@ export class EventsService {
     throw new NotFoundException("errors.eventIsntAvailable");
   }
   /** Enlace personal: crea el acceso del invitado a la landing (solo se guarda su hash). */
-  async invitationAccess(token: string): Promise<LandingAddress & { eventId: string; access: string }> {
+  async invitationAccess(
+    token: string,
+  ): Promise<LandingAddress & { eventId: string; access: string; seconds: number }> {
     const [r] = await this.db.query(
-      "SELECT i.id,i.event_id,e.slug,u.public_code FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
-      [token],
+      "SELECT i.id,i.event_id,e.slug,u.public_code FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token_hash=$1 AND e.archived=false",
+      [tokenLookup(token)],
     );
     if (!r) throw new NotFoundException("errors.invitationIsntAvailablePlease");
     await this.db.query("DELETE FROM event_access WHERE expires_at<now()");
     const access = randomBytes(32).toString("base64url");
-    await this.db.query(
-      "INSERT INTO event_access(token_hash,event_id,invitation_id,expires_at) VALUES($1,$2,$3,now()+make_interval(days => $4))",
-      [digest(access), r.event_id, r.id, GUEST_ACCESS_DAYS],
+    // Hasta un mes después del evento (como mucho 180 días), y al menos un día para verlo
+    const [{ seconds }] = await this.db.query(
+      `INSERT INTO event_access(token_hash,event_id,invitation_id,expires_at)
+       SELECT $1,$2,$3,greatest(now()+interval '1 day', least(now()+make_interval(days => $4), e.date+make_interval(days => $5)))
+       FROM events e WHERE e.id=$2
+       RETURNING ceil(extract(epoch FROM expires_at-now()))::int AS seconds`,
+      [digest(access), r.event_id, r.id, GUEST_ACCESS_MAX_DAYS, GUEST_ACCESS_AFTER_EVENT_DAYS],
     );
-    return { code: r.public_code, slug: r.slug, eventId: r.event_id, access };
+    return { code: r.public_code, slug: r.slug, eventId: r.event_id, access, seconds };
   }
   /** Las direcciones /e/<dirección> de antes de la landing: a cuál llevan, si solo hay una. */
   async legacyAddress(slug: string): Promise<LandingAddress> {
@@ -640,20 +696,29 @@ export class EventsService {
    * Contraseña del evento. Devuelve el token de acceso (solo se guarda su hash) y el evento,
    * o null si no tiene contraseña. Tras varios fallos, bloquea un rato.
    */
-  async unlockLanding(code: string, slug: string, password: string): Promise<{ token: string; eventId: string } | null> {
+  async unlockLanding(
+    code: string,
+    slug: string,
+    password: string,
+    ip: string,
+  ): Promise<{ token: string; eventId: string } | null> {
     const r = await this.eventByAddress(code, slug);
     if (r.archived) throw new NotFoundException("errors.eventIsntAvailable");
     if (!r.public_password_hash) return null;
+    const ipKey = `unlock:event-ip:${r.id}:${ip}`;
+    limits.unlockEventIp.check(ipKey);
     if (r.public_password_locked_until && new Date(r.public_password_locked_until) > new Date())
       throw new HttpException("errors.tooManyAttemptsPlease", HttpStatus.TOO_MANY_REQUESTS);
     const { valid, rehash } = await verifyPassword(password, r.public_password_hash);
     if (!valid) {
+      limits.unlockEventIp.allow(ipKey);
       await this.db.query(
-        "UPDATE events SET public_password_failures=public_password_failures+1, public_password_locked_until=CASE WHEN public_password_failures+1>=$2 THEN now()+make_interval(mins => $3) ELSE public_password_locked_until END WHERE id=$1",
-        [r.id, EVENT_PASSWORD_MAX_FAILURES, EVENT_PASSWORD_LOCK_MINUTES],
+        "UPDATE events SET public_password_failures=public_password_failures+1, public_password_locked_until=CASE WHEN public_password_failures+1>=$2 THEN now()+make_interval(secs => least($3, power(2, public_password_failures+2-$2))) ELSE public_password_locked_until END WHERE id=$1",
+        [r.id, EVENT_PASSWORD_FREE_FAILURES, EVENT_PASSWORD_MAX_DELAY_SECONDS],
       );
       throw new UnauthorizedException("errors.eventPasswordIncorrect");
     }
+    limits.unlockEventIp.reset(ipKey);
     await this.db.query(
       "UPDATE events SET public_password_failures=0, public_password_locked_until=NULL WHERE id=$1",
       [r.id],
@@ -688,8 +753,8 @@ export class EventsService {
   }
   async calendarForInvitation(token: string, locale: Locale): Promise<string> {
     const [r] = await this.db.query(
-      "SELECT e.*,u.public_code FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token=$1 AND e.archived=false",
-      [token],
+      "SELECT e.*,u.public_code FROM invitations i JOIN events e ON e.id=i.event_id JOIN users u ON u.id=e.user_id WHERE i.token_hash=$1 AND e.archived=false",
+      [tokenLookup(token)],
     );
     if (!r) throw new NotFoundException("errors.invitationIsntAvailablePlease");
     return this.calendar(r, this.landingUrl(r.public_code, r.slug, locale));

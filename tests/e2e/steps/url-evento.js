@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -18,7 +18,7 @@ Given("que otra cuenta ya usa una dirección pública", async ({ page, ctx }) =>
     data: {
       title: "Evento de otra cuenta",
       description: "",
-      date: "2027-06-12T18:00:00Z",
+      date: fechaFutura,
       timeZone: "America/Mexico_City",
       location: "Jardín de pruebas",
       theme: "floral",
@@ -35,7 +35,7 @@ Given("que otro de mis eventos ya usa una dirección", async ({ page, ctx }) => 
     data: {
       title: "Otro evento mío",
       description: "",
-      date: "2027-06-12T18:00:00Z",
+      date: fechaFutura,
       timeZone: "America/Mexico_City",
       location: "Jardín de pruebas",
       theme: "floral",

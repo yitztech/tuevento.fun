@@ -16,6 +16,8 @@ import { clientPlatform } from "./client-platform";
 import { Database } from "./database";
 import {
   passwordResetPaths,
+  mailPaths,
+  EMAIL_VERIFICATION_HOURS,
   PASSWORD_RESET_MINUTES,
   normalizeLocale,
   translate,
@@ -29,7 +31,7 @@ import { ProblemException } from "./problem";
 import { hashPassword, verifyPassword } from "./password";
 import { ipKey, limits } from "./rate-limit";
 import { MailService } from "./mail";
-import { passwordChangedMail, passwordResetMail } from "./mail-templates";
+import { loginLockedMail, passwordChangedMail, passwordResetMail, verifyEmailMail } from "./mail-templates";
 import { siteUrl } from "./locale-env";
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -52,6 +54,7 @@ export type UserRow = {
   password_hash: string | null;
   public_code: string;
   account_type: AccountType;
+  email_verified_at: Date | null;
 };
 export const userView = (r: UserRow): User => ({
   id: r.id,
@@ -65,6 +68,7 @@ export const userView = (r: UserRow): User => ({
   locale: normalizeLocale(r.locale),
   publicCode: r.public_code,
   accountType: r.account_type,
+  emailVerified: r.email_verified_at !== null,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin
@@ -75,6 +79,13 @@ const secureCookies = process.env.COOKIE_SECURE === "true";
 export const cookieName = (name: string) => (secureCookies ? `__Host-${name}` : name);
 export const SESSION_COOKIE = cookieName("session");
 export const GOOGLE_NONCE_COOKIE = cookieName("google_nonce");
+/**
+ * Dispositivo de confianza (OWASP, «device cookies»): el navegador desde el que alguien ya entró
+ * bien. Desde él no se aplica el freno de la cuenta, así que un ataque contra tu correo no te deja
+ * fuera. El token es aleatorio y la base de datos solo guarda su hash.
+ */
+export const DEVICE_COOKIE = cookieName("device");
+const DEVICE_DAYS = 180;
 /** Cookie de sesión anterior (`session`, Path=/api): se lee mientras caduca y se borra al renovar. */
 const LEGACY_SESSION_COOKIE = "session";
 const legacyCookieOptions = { path: "/api", httpOnly: true, sameSite: "lax" as const, secure: secureCookies };
@@ -117,25 +128,39 @@ export class AuthService {
     }
   }
   /**
-   * Límites (§24): intentos por IP y fallos por cuenta. La cuenta se bloquea por cuenta y no solo
-   * por IP, para frenar el adivinado contra un correo desde muchas IP.
+   * Límites (§24): intentos por IP; fallos por cuenta desde cada IP; y, por cuenta desde cualquier
+   * IP, un freno progresivo que solo cierra del todo como emergencia (y avisa al dueño). Desde un
+   * dispositivo de confianza solo cuentan sus propios fallos.
    */
   async login(email: string, password: string, req: FastifyRequest) {
-    const key = `login:account:${email.toLowerCase()}`;
+    const accountKey = `login:account:${email}`;
+    const accountIpKey = `login:account-ip:${email}:${req.ip}`;
     limits.loginIp.hit(ipKey("login", req));
-    limits.loginAccount.check(key);
     const [r] = await this.db.query<UserRow>(
       "SELECT * FROM users WHERE email=$1 AND is_demo=false",
       [email],
     );
+    const device = r ? await this.trustedDevice(req, r.id) : null;
+    const deviceKey = `login:device:${device}`;
+    if (device) limits.loginDevice.check(deviceKey);
+    else {
+      limits.loginAccountIp.check(accountIpKey);
+      limits.loginAccount.check(accountKey);
+    }
     const { valid, rehash } = await verifyPassword(password, r?.password_hash);
     if (!r || !valid) {
-      limits.loginAccount.allow(key);
+      if (device) limits.loginDevice.allow(deviceKey);
+      else {
+        limits.loginAccountIp.allow(accountIpKey);
+        if (limits.loginAccount.fail(accountKey) && r) this.warnLocked(r);
+      }
       throw new UnauthorizedException(
         "errors.emailAddressPasswordIncorrect",
       );
     }
-    limits.loginAccount.reset(key);
+    limits.loginAccountIp.reset(accountIpKey);
+    limits.loginAccount.reset(accountKey);
+    if (device) limits.loginDevice.reset(deviceKey);
     // Los hashes scrypt anteriores pasan a Argon2id al entrar
     if (rehash)
       await this.db.query("UPDATE users SET password_hash=$1 WHERE id=$2", [
@@ -143,6 +168,34 @@ export class AuthService {
         r.id,
       ]);
     return userView(r);
+  }
+  /** Hash del dispositivo de confianza de la petición si es de esa cuenta y sigue vigente. */
+  private async trustedDevice(req: FastifyRequest, userId: string) {
+    const token = req.cookies[DEVICE_COOKIE];
+    if (!token) return null;
+    const [row] = await this.db.query(
+      "SELECT token_hash FROM trusted_devices WHERE token_hash=$1 AND user_id=$2 AND expires_at>now()",
+      [hash(token), userId],
+    );
+    return (row?.token_hash as string | undefined) ?? null;
+  }
+  /** Aviso al dueño cuando su cuenta se cierra por demasiados intentos. */
+  private warnLocked(r: UserRow) {
+    const locale = normalizeLocale(r.locale);
+    const site = siteUrl(locale);
+    void this.mail
+      .send(
+        locale,
+        loginLockedMail(locale, {
+          to: r.email,
+          name: r.first_name,
+          site,
+          resetUrl: `${site}${passwordResetPaths.request}`,
+        }),
+      )
+      .catch((e: Error) =>
+        this.logger.error(`No se pudo enviar el aviso de cuenta cerrada: ${e.message}`),
+      );
   }
   cookieOptions() {
     return {
@@ -179,7 +232,23 @@ export class AuthService {
       ...this.cookieOptions(),
       maxAge: 7 * 86400,
     });
+    if (!user.isDemo) await this.trustDevice(user.id, req, reply);
     return user;
+  }
+  /** Marca el navegador como dispositivo de confianza de la cuenta (o renueva el que ya era). */
+  private async trustDevice(userId: string, req: FastifyRequest, reply: FastifyReply) {
+    const previous = req.cookies[DEVICE_COOKIE];
+    if (previous)
+      await this.db.query("DELETE FROM trusted_devices WHERE token_hash=$1", [hash(previous)]);
+    const device = randomBytes(32).toString("base64url");
+    await this.db.query(
+      "INSERT INTO trusted_devices(token_hash,user_id,expires_at) VALUES($1,$2,now()+make_interval(days => $3))",
+      [hash(device), userId, DEVICE_DAYS],
+    );
+    reply.setCookie(DEVICE_COOKIE, device, {
+      ...this.cookieOptions(),
+      maxAge: DEVICE_DAYS * 86400,
+    });
   }
   /**
    * Envía un enlace para elegir contraseña nueva, en el idioma del dominio por el que
@@ -226,6 +295,49 @@ export class AuthService {
       message: translate(locale, "account.resetLinkSent"),
     };
   }
+  /**
+   * Enlace para confirmar el correo de la cuenta. Solo vale el último y caduca; hasta confirmarlo,
+   * la plataforma no escribe a los invitados de la cuenta (NoticeService).
+   */
+  async sendEmailVerification(user: User, locale: Locale) {
+    if (user.isDemo || user.emailVerified) return;
+    const token = randomBytes(32).toString("base64url");
+    await this.db.query("DELETE FROM email_verifications WHERE user_id=$1", [user.id]);
+    await this.db.query(
+      "INSERT INTO email_verifications(token_hash,user_id,expires_at) VALUES($1,$2,now()+make_interval(hours => $3))",
+      [hash(token), user.id, EMAIL_VERIFICATION_HOURS],
+    );
+    const site = siteUrl(locale);
+    void this.mail
+      .send(
+        locale,
+        verifyEmailMail(locale, {
+          to: user.email,
+          name: user.firstName,
+          url: `${site}${mailPaths.verify}?token=${token}`,
+          site,
+          hours: EMAIL_VERIFICATION_HOURS,
+        }),
+      )
+      .catch((e: Error) => this.logger.error(`No se pudo enviar el correo de confirmación: ${e.message}`));
+  }
+  /** Reenvío desde la app: pocos por hora y cuenta. */
+  async resendEmailVerification(user: User, req: FastifyRequest) {
+    limits.verifyEmail.hit(`verify:account:${user.id}`);
+    await this.sendEmailVerification(user, requestLocale(req));
+    return { ok: true };
+  }
+  /** Confirma el correo con el enlace; un enlace caducado, usado o inventado da 400. */
+  async verifyEmail(token: string) {
+    const [r] = await this.db.query<UserRow>(
+      `WITH used AS (DELETE FROM email_verifications WHERE token_hash=$1 RETURNING user_id, expires_at > now() AS valid)
+       UPDATE users SET email_verified_at=coalesce(email_verified_at, now())
+       WHERE id=(SELECT user_id FROM used WHERE valid) RETURNING *`,
+      [hash(token)],
+    );
+    if (!r) throw new BadRequestException("errors.emailVerificationLinkInvalid");
+    return userView(r);
+  }
   /** Cambia la contraseña con un enlace válido, cierra todas las sesiones y avisa por correo. */
   async resetPassword(token: string, password: string) {
     const passwordHash = await this.passwordHash(password);
@@ -246,9 +358,12 @@ export class AuthService {
       if (!user) return null;
       await c.query("DELETE FROM password_resets WHERE user_id=$1", [user.id]);
       await c.query("DELETE FROM sessions WHERE user_id=$1", [user.id]);
+      // Contraseña nueva: los dispositivos de confianza vuelven a ganárselo
+      await c.query("DELETE FROM trusted_devices WHERE user_id=$1", [user.id]);
       return { user, locale: normalizeLocale(reset.locale) };
     });
     if (!result) throw new BadRequestException(INVALID_RESET_LINK);
+    // Quien recupera su cuenta vuelve a entrar aunque estuviera cerrada por intentos ajenos
     limits.loginAccount.reset(`login:account:${result.user.email}`);
     const site = siteUrl(result.locale);
     void this.mail
@@ -344,7 +459,8 @@ export class AuthService {
     const locale = requestLocale(req);
     try {
       const [r] = await this.db.query<UserRow>(
-        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        // Google confirma el correo (email_verified): la cuenta nace confirmada
+        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type,email_verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,now()) RETURNING *",
         [
           randomUUID(),
           payload.given_name || translate(locale, "common.host"),

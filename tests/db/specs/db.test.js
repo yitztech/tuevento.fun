@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "trusted_devices", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -31,7 +31,7 @@ test("El correo electrónico es el identificador: users no tiene nombre de usuar
 });
 
 test("Ni contraseñas ni tokens se guardan en claro: solo hashes", async () => {
-  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"]]) {
+  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"], ["email_verifications", "token_hash"], ["mcp_tokens", "token_hash"]]) {
     const cols = await columnas(tabla);
     assert.ok(cols.includes(hash), `${tabla}.${hash}`);
     assert.ok(!cols.includes("password") && !cols.includes("token") && !cols.includes("code"), `${tabla} guarda un secreto en claro`);
@@ -124,10 +124,13 @@ test("Borrar una cuenta borra todo lo suyo, salvo la actividad anónima que se c
   await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '1 day')", [`s-${id}`, id]);
   await db.query("INSERT INTO password_resets(token_hash,user_id,locale,expires_at) VALUES($1,$2,'es', now() + interval '1 hour')", [`p-${id}`, id]);
   await db.query("INSERT INTO mobile_auth_codes(code_hash,challenge,user_id,expires_at) VALUES($1,'c',$2, now() + interval '1 minute')", [`m-${id}`, id]);
+  await db.query("INSERT INTO trusted_devices(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '180 days')", [`d-${id}`, id]);
+  await db.query("INSERT INTO email_verifications(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '2 days')", [`v-${id}`, id]);
+  await db.query("INSERT INTO mail_sends(id,owner_id,recipient_hash,kind) VALUES(gen_random_uuid(),$1,'r','guest_reply')", [id]);
   const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [id]);
   const act = await uno("INSERT INTO activity(id,kind,platform,user_id) VALUES(gen_random_uuid(),'registration','web',$1) RETURNING id", [id]);
   await db.query("DELETE FROM users WHERE id=$1", [id]);
-  for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["events", "user_id"]])
+  for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["trusted_devices", "user_id"], ["email_verifications", "user_id"], ["mail_sends", "owner_id"], ["events", "user_id"]])
     assert.equal((await uno(`SELECT count(*)::int n FROM ${tabla} WHERE ${col}=$1`, [id])).n, 0, tabla);
   assert.equal((await uno("SELECT count(*)::int n FROM events WHERE id=$1", [e.id])).n, 0);
   const fila = await uno("SELECT user_id FROM activity WHERE id=$1", [act.id]);
@@ -235,6 +238,51 @@ test("Invitación genérica y avisos: tipos válidos, registros enlazados al enl
   assert.equal((await uno("SELECT count(*)::int AS n FROM event_access WHERE event_id=$1", [e.id])).n, 0);
 });
 
+test("Invitaciones: el enlace se busca por su hash, único, y se guarda cifrado (024)", async () => {
+  const cols = await columnas("invitations");
+  assert.ok(cols.includes("token_hash") && cols.includes("token_sealed"));
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const fila = "INSERT INTO invitations(id,event_id,name,kind,token,token_hash,token_sealed) VALUES(gen_random_uuid(),$1,'A','individual',gen_random_uuid()::text,$2,'cifrado')";
+  await db.query(fila, [e.id, `h-${e.id}`]);
+  assert.equal(await codigoError(() => db.query(fila, [e.id, `h-${e.id}`])), UNIQUE_VIOLATION);
+});
+
+test("Correos: confirmación por cuenta, cupos sin direcciones en claro y avisos que caen con su evento (025)", async () => {
+  assert.ok((await columnas("users")).includes("email_verified_at"));
+  for (const tabla of ["mail_sends", "mail_suppressions"])
+    assert.ok(!(await columnas(tabla)).includes("email"), `${tabla} no guarda direcciones`);
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  assert.equal(await codigoError(() => db.query("INSERT INTO mail_sends(id,owner_id,event_id,recipient_hash,kind) VALUES(gen_random_uuid(),$1,$2,'r','spam')", [dueno, e.id])), CHECK_VIOLATION);
+  const envio = await uno("INSERT INTO mail_sends(id,owner_id,event_id,recipient_hash,kind) VALUES(gen_random_uuid(),$1,$2,'r','event_changed') RETURNING id", [dueno, e.id]);
+  await db.query("INSERT INTO event_change_notices(event_id,date_changed,due_at) VALUES($1,true,now())", [e.id]);
+  await db.query("INSERT INTO event_notice_batches(event_id) VALUES($1)", [e.id]);
+  await db.query("INSERT INTO mail_suppressions(email_hash) VALUES('baja')");
+  assert.equal(await codigoError(() => db.query("INSERT INTO mail_suppressions(email_hash) VALUES('baja')")), UNIQUE_VIOLATION);
+  await db.query("DELETE FROM events WHERE id=$1", [e.id]);
+  for (const tabla of ["event_change_notices", "event_notice_batches"])
+    assert.equal((await uno(`SELECT count(*)::int n FROM ${tabla} WHERE event_id=$1`, [e.id])).n, 0, tabla);
+  // El envío se sigue contando en el cupo aunque se borre el evento
+  assert.equal((await uno("SELECT event_id FROM mail_sends WHERE id=$1", [envio.id])).event_id, null);
+});
+
+test("Pagos: tramo, importe, moneda y estado acotados; borrar el evento o la cuenta conserva el pago sin vínculo (026)", async () => {
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const pago = (tier, cents, currency = "usd", status = "pending", checkout = null) =>
+    db.query("INSERT INTO event_payments(id,event_id,user_id,tier,amount_cents,currency,status,checkout_id) VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7) RETURNING id", [e.id, dueno, tier, cents, currency, status, checkout]);
+  for (const [tier, cents, currency, status] of [[4, 500, "usd", "pending"], [-1, 500, "usd", "pending"], [0, 0, "usd", "pending"], [0, 500, "mxn", "pending"], [0, 500, "usd", "refunded"]])
+    assert.equal(await codigoError(() => pago(tier, cents, currency, status)), CHECK_VIOLATION, `${tier} ${cents} ${currency} ${status}`);
+  assert.equal(await codigoError(() => pago(0, 500, "usd", "pending", "x".repeat(256))), CHECK_VIOLATION, "checkout_id ≤ 255");
+  const { rows: [p] } = await pago(0, 500, "usd", "paid", "cs_test_1");
+  assert.equal(await codigoError(() => pago(1, 500, "usd", "pending", "cs_test_1")), UNIQUE_VIOLATION, "una sesión de Stripe, un pago");
+  await db.query("DELETE FROM events WHERE id=$1", [e.id]);
+  assert.equal((await uno("SELECT event_id FROM event_payments WHERE id=$1", [p.id])).event_id, null);
+  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
+  assert.equal((await uno("SELECT user_id FROM event_payments WHERE id=$1", [p.id])).user_id, null);
+});
+
 test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; la caché del mapa solo admite sus tipos", async () => {
   const dueno = await usuario(db);
   const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme,latitude,longitude) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold',18.921831,-99.234567) RETURNING id, latitude, longitude", [dueno]);
@@ -309,3 +357,26 @@ test("Proveedor: borrar la cuenta borra perfil, servicios y fotos, y sus direcci
   const borradas = (await db.query("SELECT slug FROM provider_deleted_slugs WHERE slug = ANY($1) ORDER BY slug", [[slug, `${slug}-antes`]])).rows.map((r) => r.slug);
   assert.deepEqual(borradas, [slug, `${slug}-antes`].sort());
 });
+
+test("MCP: tokens de acceso con actor_type acotado y borrado en cascada con su usuario o invitación", async () => {
+  const dueno = await usuario(db);
+  const evento = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const inv = await uno("INSERT INTO invitations(id,event_id,name,kind,token) VALUES(gen_random_uuid(),$1,'I','individual',$2) RETURNING id", [evento.id, crypto.randomUUID().replaceAll("-", "")]);
+
+  // Token para organizador (exige user_id y sin invitation_id)
+  await db.query("INSERT INTO mcp_tokens(token_hash,actor_type,user_id,expires_at) VALUES('hash-org','organizer',$1,now()+interval '1 hour')", [dueno]);
+  // Token para invitado (exige invitation_id y sin user_id)
+  await db.query("INSERT INTO mcp_tokens(token_hash,actor_type,invitation_id,expires_at) VALUES('hash-inv','guest',$1,now()+interval '1 hour')", [inv.id]);
+
+  // Restricciones CHECK
+  assert.equal(await codigoError(() => db.query("INSERT INTO mcp_tokens(token_hash,actor_type,user_id,expires_at) VALUES('bad-1','admin',$1,now()+interval '1 hour')", [dueno])), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("INSERT INTO mcp_tokens(token_hash,actor_type,user_id,invitation_id,expires_at) VALUES('bad-2','guest',$1,$2,now()+interval '1 hour')", [dueno, inv.id])), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => db.query("INSERT INTO mcp_tokens(token_hash,actor_type,expires_at) VALUES('bad-3','organizer',now()+interval '1 hour')")), CHECK_VIOLATION);
+
+  // Borrado en cascada: borrar el usuario borra sus tokens MCP
+  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM mcp_tokens WHERE token_hash='hash-org'")).n, 0);
+  // Borrar el usuario borró también el evento y la invitación en cascada, y por ende el token de la invitación
+  assert.equal((await uno("SELECT count(*)::int AS n FROM mcp_tokens WHERE token_hash='hash-inv'")).n, 0);
+});
+

@@ -144,6 +144,9 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `ADMIN_USER`, `ADMIN_PASSWORD_HASH` | admin | Usuario del panel y hash scrypt de su contraseña (ver [Panel de administración](#panel-de-administración)) |
 | `ADMIN_HOST` | gateway | Subdominio del panel (por defecto `admin.tuevento.fun`) |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
+| `APP_SECRET` | api | 32+ caracteres aleatorios (`openssl rand -base64 48`). Cifra los enlaces de invitación guardados y firma los enlaces de los correos; sin ella la API no arranca. Si cambia, los enlaces de invitación existentes dejan de abrir |
+| `STRIPE_SECRET_KEY` | api | Opcional. Clave secreta de Stripe (`sk_live_…`; `sk_test_…` en pruebas). Vacía, los pagos están apagados: no se cobra y el plan gratuito no limita nada |
+| `STRIPE_WEBHOOK_SECRET` | api | Obligatoria con `STRIPE_SECRET_KEY` (`whsec_…`): firma del webhook `https://<dominio>/api/payments/webhook` (eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`). Sin ella la API no arranca |
 | `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | api | Servidor SMTP común a los dos idiomas |
 | `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | api | Remitente en español (`no-reply@tuevento.fun`) |

@@ -18,6 +18,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   passwordResetPaths,
+  mailPaths,
   themeIds,
   type RegisterInput,
   type ProfileInput,
@@ -677,5 +678,132 @@ export function ProfilePage() {
         </form>
       </div>
     </>
+  );
+}
+
+/** Enlace del correo para confirmar la cuenta: se confirma al abrirlo, con o sin sesión. */
+export function ConfirmEmailPage() {
+  const { api, user, setUser } = useApp(),
+    [query] = useSearchParams(),
+    [state, setState] = useState<"working" | "done" | "error">("working"),
+    [error, setError] = useState("");
+  // El token se lee una vez y se quita de la barra de direcciones y del historial
+  const [token] = useState(() => query.get("token") || "");
+  useEffect(() => {
+    if (query.has("token")) window.history.replaceState(window.history.state, "", mailPaths.verify);
+    api
+      .verifyEmail(token)
+      .then((verified) => {
+        if (user?.id === verified.id) setUser(verified);
+        setState("done");
+      })
+      .catch((e) => {
+        setError(errorText(e));
+        setState("error");
+      });
+  }, []);
+  return (
+    <AuthShell>
+      <h2>{tr("account.confirmEmailTitle")}</h2>
+      {state === "working" ? (
+        <p role="status">{tr("account.justMoment")}</p>
+      ) : state === "done" ? (
+        <div className="success-box" role="status">
+          <MailCheck size={22} />
+          <div>
+            <strong>{tr("account.emailConfirmed")}</strong>
+            <span>{tr("account.emailConfirmedDetail")}</span>
+          </div>
+        </div>
+      ) : (
+        <ErrorBox message={error} />
+      )}
+      {state !== "working" && (
+        <Link className="button full" to={user ? "/app" : "/acceso"}>
+          {user ? tr("account.goToMySpace") : tr("account.signIn")}
+          <ArrowRight size={18} />
+        </Link>
+      )}
+    </AuthShell>
+  );
+}
+
+/** Baja de los avisos a invitados: el enlace del pie de esos correos lleva aquí. */
+export function UnsubscribePage() {
+  const { api } = useApp(),
+    [query] = useSearchParams(),
+    [done, setDone] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  const confirm = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await api.unsubscribe(query.get("h") || "", query.get("s") || "");
+      setDone(true);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <AuthShell>
+      <h2>{tr("account.unsubscribeTitle")}</h2>
+      {done ? (
+        <div className="success-box" role="status">
+          <MailCheck size={22} />
+          <div>
+            <strong>{tr("account.unsubscribed")}</strong>
+            <span>{tr("account.unsubscribedDetail")}</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p>{tr("account.unsubscribeIntro")}</p>
+          {error && <ErrorBox message={error} />}
+          <button className="button full" disabled={busy} onClick={() => void confirm()}>
+            {busy ? tr("account.justMoment") : tr("account.unsubscribeButton")}
+          </button>
+        </>
+      )}
+    </AuthShell>
+  );
+}
+
+/** Aviso en la app hasta que el organizador confirme su correo: sin él no se escribe a sus invitados. */
+export function VerifyEmailBanner() {
+  const { api, user } = useApp(),
+    [sent, setSent] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  if (!user || user.isDemo || user.emailVerified) return null;
+  const resend = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await api.resendVerification();
+      setSent(true);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="verify-email-banner" role="status">
+      <MailCheck size={20} aria-hidden="true" />
+      <p>
+        {sent
+          ? tr("account.verificationSent", { email: user.email })
+          : tr("account.verifyEmailBanner", { email: user.email })}
+      </p>
+      {!sent && (
+        <button className="button secondary" disabled={busy} onClick={() => void resend()}>
+          {tr("account.resendVerification")}
+        </button>
+      )}
+      {error && <ErrorBox message={error} />}
+    </div>
   );
 }

@@ -12,10 +12,12 @@ import {
   type GeoPoint,
   type Locale,
 } from "@tuevento/contracts";
+import { AuthService } from "./auth";
 import { Database } from "./database";
 import { parse, ProblemException } from "./problem";
 import { ipKey, limits } from "./rate-limit";
 import { requestLocale } from "./request-locale";
+import { type Lane, QueueFull, TurnQueue } from "./turn-queue";
 
 /** Nominatim (OpenStreetMap) por defecto; GEOCODER_URL apunta a uno propio o al doble de pruebas. */
 const geocoderUrl = () => (process.env.GEOCODER_URL || "https://nominatim.openstreetmap.org").replace(/\/+$/, "");
@@ -23,6 +25,11 @@ const userAgent = `TuEventoFun/${process.env.RELEASE_SHA || "dev"} (contacto@tue
 /** Política de Nominatim: como mucho una petición por segundo, para toda la API. */
 const minIntervalMs = Number(process.env.GEOCODER_MIN_INTERVAL_MS ?? 1100);
 const timeoutMs = 10_000;
+/**
+ * Peticiones que pueden esperar turno: quien tiene sesión (organizadores y proveedores eligiendo
+ * su lugar) pasa antes y tiene más hueco; la búsqueda pública, poco. Lleno, 503 al momento.
+ */
+const maxPending: Record<Lane, number> = { priority: 10, normal: 3 };
 /** Redirecciones que se siguen en un enlace corto (maps.app.goo.gl), comprobando el host en cada una. */
 const maxRedirects = 3;
 
@@ -35,6 +42,8 @@ type NominatimPlace = {
 
 const unavailable = () =>
   new ProblemException({ status: 503, code: "geocoder_unavailable", detail: "errors.geocoderUnavailable" });
+const busy = () =>
+  new ProblemException({ status: 503, code: "geocoder_busy", detail: "errors.geocoderBusy", retryAfter: 5 });
 
 function placeView(p: NominatimPlace): GeoPlace {
   const a = p.address ?? {};
@@ -51,26 +60,25 @@ function placeView(p: NominatimPlace): GeoPlace {
 @Injectable()
 export class GeoService {
   private readonly logger = new Logger(GeoService.name);
-  /** Cola de llamadas a Nominatim: cada una espera a que pase el intervalo desde la anterior. */
-  private queue: Promise<unknown> = Promise.resolve();
-  private last = 0;
+  /** Turnos de Nominatim: cada llamada espera a que pase el intervalo desde la anterior. */
+  private readonly queue = new TurnQueue(minIntervalMs, maxPending);
   constructor(private db: Database) {}
 
-  async search(q: string, locale: Locale): Promise<GeoPlace[]> {
+  async search(q: string, locale: Locale, lane: Lane = "normal"): Promise<GeoPlace[]> {
     const key = q.toLowerCase().replace(/\s+/g, " ").trim();
     return this.cached("search", key, locale, async () => {
       const params = new URLSearchParams({ q: key, format: "jsonv2", addressdetails: "1", limit: "5", "accept-language": locale });
-      const rows = await this.nominatim<NominatimPlace[]>(`/search?${params}`);
+      const rows = await this.nominatim<NominatimPlace[]>(`/search?${params}`, lane);
       return Array.isArray(rows) ? rows.map(placeView) : [];
     });
   }
 
-  async reverse(point: GeoPoint, locale: Locale): Promise<GeoPlace | null> {
+  async reverse(point: GeoPoint, locale: Locale, lane: Lane = "normal"): Promise<GeoPlace | null> {
     // Cinco decimales (~1 m): puntos casi iguales comparten caché
     const lat = point.lat.toFixed(5), lng = point.lng.toFixed(5);
     return this.cached("reverse", `${lat},${lng}`, locale, async () => {
       const params = new URLSearchParams({ lat, lon: lng, format: "jsonv2", addressdetails: "1", "accept-language": locale });
-      const row = await this.nominatim<NominatimPlace & { error?: string }>(`/reverse?${params}`);
+      const row = await this.nominatim<NominatimPlace & { error?: string }>(`/reverse?${params}`, lane);
       return row && !row.error && row.lat ? placeView(row) : null;
     });
   }
@@ -117,47 +125,60 @@ export class GeoService {
     return value;
   }
 
-  private nominatim<T>(path: string): Promise<T> {
-    const run = async () => {
-      const wait = this.last + minIntervalMs - Date.now();
-      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-      this.last = Date.now();
-      try {
-        const res = await fetch(`${geocoderUrl()}${path}`, {
-          headers: { "User-Agent": userAgent, Accept: "application/json" },
-          signal: AbortSignal.timeout(timeoutMs),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()) as T;
-      } catch (e) {
-        // El error de terceros no se reenvía: se registra y se responde uno propio (§22)
-        this.logger.warn(`Geocodificador no disponible: ${(e as Error).message}`);
-        throw unavailable();
-      }
-    };
-    const result = this.queue.then(run, run);
-    this.queue = result.catch(() => {});
-    return result;
+  private nominatim<T>(path: string, lane: Lane): Promise<T> {
+    return this.queue
+      .run(lane, async () => {
+        try {
+          const res = await fetch(`${geocoderUrl()}${path}`, {
+            headers: { "User-Agent": userAgent, Accept: "application/json" },
+            signal: AbortSignal.timeout(timeoutMs),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return (await res.json()) as T;
+        } catch (e) {
+          // El error de terceros no se reenvía: se registra y se responde uno propio (§22)
+          this.logger.warn(`Geocodificador no disponible: ${(e as Error).message}`);
+          throw unavailable();
+        }
+      })
+      .catch((e) => {
+        if (e instanceof QueueFull) throw busy();
+        throw e;
+      });
   }
 }
 
-/** Búsqueda en el mapa. Sin sesión: la usa también la búsqueda pública de proveedores. */
+/**
+ * Búsqueda en el mapa. Sin sesión: la usa también la búsqueda pública de proveedores, con menos
+ * búsquedas por minuto y detrás de quien tiene sesión en la cola de Nominatim.
+ */
 @Controller("geo")
 export class GeoController {
-  constructor(private geo: GeoService) {}
+  constructor(
+    private geo: GeoService,
+    private auth: AuthService,
+  ) {}
   @Get("search") async search(@Req() req: FastifyRequest, @Query() query: unknown) {
     const { q } = parse(geoSearchSchema, query, req, 400);
-    limits.geoIp.hit(ipKey("geo", req));
-    return this.geo.search(q, requestLocale(req));
+    return this.geo.search(q, requestLocale(req), await this.lane(req));
   }
   @Get("reverse") async reverse(@Req() req: FastifyRequest, @Query() query: unknown) {
     const point = parse(geoReverseSchema, query, req, 400);
-    limits.geoIp.hit(ipKey("geo", req));
-    return { place: await this.geo.reverse(point, requestLocale(req)) };
+    return { place: await this.geo.reverse(point, requestLocale(req), await this.lane(req)) };
   }
   @Post("parse-link") @HttpCode(200) async parseLink(@Req() req: FastifyRequest, @Body() body: unknown) {
     const { url } = parse(geoLinkSchema, body, req);
     limits.geoLinkIp.hit(ipKey("geo-link", req));
     return this.geo.parseLink(url);
+  }
+  /** Cuenta la búsqueda en el límite que toca y dice en qué carril de la cola espera. */
+  private async lane(req: FastifyRequest): Promise<Lane> {
+    const signedIn = await this.auth.current(req).then(
+      () => true,
+      () => false,
+    );
+    if (signedIn) limits.geoIp.hit(ipKey("geo", req));
+    else limits.geoAnonymousIp.hit(ipKey("geo-anonymous", req));
+    return signedIn ? "priority" : "normal";
   }
 }

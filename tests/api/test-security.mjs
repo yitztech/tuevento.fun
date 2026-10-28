@@ -24,7 +24,7 @@ try {
       ["GET", `/events/${evento.id}/invitations`], ["POST", `/events/${evento.id}/invitations`],
       ["PUT", `/events/${evento.id}/invitations/${invitacion.id}`], ["DELETE", `/events/${evento.id}/invitations/${invitacion.id}`],
       ["GET", "/notifications"], ["POST", "/notifications/read"], ["PATCH", "/profile"], ["PUT", "/profile/avatar"],
-      ["GET", "/owner/metrics"],
+      ["GET", "/owner/metrics"], ["POST", `/events/${evento.id}/checkout`],
     ];
     for (const [method, path] of protegidos) {
       const r = await guest.raw(path, { method, body: method === "GET" || method === "DELETE" ? undefined : {} });
@@ -233,6 +233,61 @@ try {
     assert.ok(Number(bloqueada.headers["retry-after"]) > 0, "falta Retry-After");
     // El bloqueo es de esa cuenta: otra puede entrar
     await client().call("/auth/login", "POST", { email: account(P, "a").email, password }, 201);
+  });
+
+  await suite("Dispositivo de confianza: un ataque contra tu correo no te deja fuera del navegador donde ya entraste", async () => {
+    const victima = account(P, "disp");
+    const propio = client();
+    const alta = await propio.raw("/auth/register", { method: "POST", body: victima });
+    assert.equal(alta.status, 201);
+    const dispositivo = alta.setCookie.find((c) => /^(__Host-)?device=/.test(c));
+    assert.ok(dispositivo && /HttpOnly/i.test(dispositivo) && /SameSite=Lax/i.test(dispositivo) && /Path=\//.test(dispositivo), "cookie del dispositivo");
+    await propio.call("/auth/logout", "POST", {}, 201);
+    const atacante = client();
+    for (let i = 0; i < 6; i++) await atacante.raw("/auth/login", { method: "POST", body: { email: victima.email, password: `mala-${i}-clave` } });
+    assert.equal((await atacante.raw("/auth/login", { method: "POST", body: { email: victima.email, password } })).status, 429);
+    // Desde su navegador, la víctima entra con su contraseña
+    assert.equal((await propio.call("/auth/login", "POST", { email: victima.email, password }, 201)).email, victima.email);
+    // El dispositivo es de esa cuenta: no libra del freno a otra
+    const otra = account(P, "disp-otra");
+    await client().call("/auth/register", "POST", otra, 201);
+    for (let i = 0; i < 6; i++) await atacante.raw("/auth/login", { method: "POST", body: { email: otra.email, password: `mala-${i}-clave` } });
+    assert.equal((await propio.raw("/auth/login", { method: "POST", body: { email: otra.email, password: "mala-otra-clave" } })).status, 429);
+  });
+
+  await suite("Baja de avisos: sin firma válida no da de baja a nadie; solo esa ruta acepta la baja en un clic", async () => {
+    const h = "a".repeat(43), s = "b".repeat(43);
+    // Firma inventada: 400, también en un clic
+    assert.equal((await guest.raw("/mail/unsubscribe", { method: "POST", body: { h, s } })).status, 400);
+    const unClic = await guest.raw(`/mail/unsubscribe?h=${h}&s=${s}`, { method: "POST", body: "List-Unsubscribe=One-Click", json: false, csrf: false, headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+    assert.equal(unClic.status, 400);
+    // Formato inválido: 422, nunca 500
+    assert.equal((await guest.raw("/mail/unsubscribe", { method: "POST", body: { h: "' OR 1=1 --", s } })).status, 422);
+    // El resto de escrituras sigue exigiendo la cabecera propia
+    assert.equal((await guest.raw("/auth/email/verify", { method: "POST", body: { token: "c".repeat(43) }, csrf: false })).status, 403);
+    // Reenviar la confirmación exige sesión
+    assert.equal((await guest.raw("/auth/email/resend", { method: "POST", body: {} })).status, 401);
+    // Un enlace de confirmación inventado no confirma nada
+    assert.equal((await guest.raw("/auth/email/verify", { method: "POST", body: { token: "c".repeat(43) } })).status, 400);
+  });
+
+  await suite("Pagos: el webhook exige la firma de Stripe y una cuenta no paga ni ve el pago de otra", async () => {
+    const t = Math.floor(Date.now() / 1000);
+    const pago = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_test_x", client_reference_id: UUID, payment_status: "paid", amount_total: 500, currency: "usd" } } });
+    // Llega sin cabecera propia ni Origin (como Stripe), pero sin firma válida no se acepta
+    for (const firma of [undefined, "", `t=${t},v1=${"0".repeat(64)}`, `t=${t - 3600},v1=${"0".repeat(64)}`, "' OR 1=1 --"]) {
+      const r = await guest.raw("/payments/webhook", { method: "POST", body: pago, json: false, csrf: false, headers: { "Content-Type": "application/json", ...(firma === undefined ? {} : { "Stripe-Signature": firma }) } });
+      assert.equal(r.status, 400, `firma ${firma} → ${r.status}`);
+    }
+    // IDOR: otra cuenta no abre el pago del evento ajeno (404, no 403)
+    assert.equal((await b.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0 } })).status, 404);
+    // El tramo pagado no se puede fijar desde el cuerpo del evento
+    await a.call(`/events/${evento.id}`, "PATCH", { ...eventData(), paidTier: 3 });
+    assert.equal((await a.call(`/events/${evento.id}`)).paidTier, null);
+    // Campos de más en el pago se rechazan (lista blanca)
+    assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0, amount: 1 } })).status, 422);
+    // Sin la cabecera propia, abrir un pago es una escritura más: 403
+    assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0 }, csrf: false })).status, 403);
   });
 
   await suite("Sin enumeración de cuentas: misma respuesta exista o no el correo", async () => {
@@ -510,6 +565,104 @@ try {
     const r = await buscar("limit=50");
     for (const item of JSON.parse(r.text).items)
       for (const privado of ["id", "userId", "email", "phone", "whatsapp", "address", "postalCode", "status"]) assert.ok(!(privado in item), privado);
+  });
+
+  await suite("Model Context Protocol (MCP) Seguridad: autenticación 401, revocación y aislamiento estricto entre actores", async () => {
+    // 1. Sin token o token inventado: 401 con cabecera WWW-Authenticate
+    const unauth = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(unauth.status, 401);
+    assert.match(unauth.headers["www-authenticate"], /Bearer error="unauthorized"/);
+
+    const badToken = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer mcp_inventado_00000000000000000000000000000000" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(badToken.status, 401);
+    assert.match(badToken.headers["www-authenticate"], /Bearer error="invalid_token"/);
+
+    // 2. Revocación de token
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "mcp-sec-org"), 201);
+    const tokenData = await org.call("/mcp/oauth/authorize", "POST", { client_name: "Revoke Test" });
+    const token = tokenData.access_token;
+
+    // Con token válido funciona
+    const okRes = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(okRes.status, 200);
+
+    // Revocar
+    await org.call("/mcp/oauth/revoke", "POST", { token });
+
+    // Ahora responde 401
+    const revokedRes = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
+    });
+    assert.equal(revokedRes.status, 401);
+    assert.match(revokedRes.headers["www-authenticate"], /Bearer error="invalid_token"/);
+
+    // 3. Aislamiento entre cuentas (Organizador A vs Organizador B)
+    const orgA = client();
+    const orgB = client();
+    await orgA.call("/auth/register", "POST", account(P, "mcp-sec-a"), 201);
+    await orgB.call("/auth/register", "POST", account(P, "mcp-sec-b"), 201);
+    const tokenA = (await orgA.call("/mcp/oauth/authorize", "POST", {})).access_token;
+    const tokenB = (await orgB.call("/mcp/oauth/authorize", "POST", {})).access_token;
+
+    const eventoB = await orgB.call("/events", "POST", eventData(), 201);
+
+    // A intenta consultar el evento de B vía events_get
+    const idorGet = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenA}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "events_get", arguments: { id: eventoB.id } } }),
+    });
+    const idorGetData = JSON.parse(idorGet.text);
+    assert.equal(idorGetData.result.isError, true);
+    assert.match(idorGetData.result.content[0].text, /no encontramos|no existe|no tienes acceso|couldntFind/i);
+
+    // 4. Aislamiento de proveedor: no puede llamar herramientas de organizador ni ver invitados
+    const prov = client();
+    await prov.call("/auth/register", "POST", account(P, "mcp-sec-prov", { accountType: "provider" }), 201);
+    const tokenProv = (await prov.call("/mcp/oauth/authorize", "POST", {})).access_token;
+
+    const provCallOrg = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenProv}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "events_list", arguments: {} } }),
+    });
+    const provCallOrgData = JSON.parse(provCallOrg.text);
+    assert.equal(provCallOrgData.result.isError, true);
+    assert.match(provCallOrgData.result.content[0].text, /permiso/i);
+
+    // 5. Restricción de permisos (scopes): token con solo mcp:read no puede escribir
+    const readOnlyToken = (await orgA.call("/mcp/oauth/authorize", "POST", { scopes: ["mcp:read"] })).access_token;
+    const writeAttempt = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${readOnlyToken}` },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "events_create",
+          arguments: { title: "Intento solo lectura", date: "2026-12-01T20:00:00Z", timeZone: "UTC", location: "Lugar", theme: "gold", preview: true },
+        },
+      }),
+    });
+    const writeData = JSON.parse(writeAttempt.text);
+    assert.equal(writeData.result.isError, true);
+    assert.match(writeData.result.content[0].text, /mcp:write/);
   });
 
   await suite("Errores: Problem Details con requestId y X-Request-ID", async () => {

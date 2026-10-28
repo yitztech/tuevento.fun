@@ -56,7 +56,19 @@
     "organizerTitle": "Organizo eventos",
     "organizerHint": "Casamentos, aniversários e encontros: convidados, respostas e designs.",
     "providerTitle": "Ofereço serviços para eventos",
-    "providerHint": "Bufê, música, fotografia, salões… Divulgue seu negócio de graça."
+    "providerHint": "Bufê, música, fotografia, salões… Divulgue seu negócio de graça.",
+    "confirmEmailTitle": "Confirme seu e-mail",
+    "emailConfirmed": "E-mail confirmado!",
+    "emailConfirmedDetail": "A partir de agora, seus convidados vão receber por e-mail os avisos dos seus eventos.",
+    "goToMySpace": "Ir para o meu espaço",
+    "unsubscribeTitle": "Parar de receber avisos",
+    "unsubscribeIntro": "Você não vai mais receber avisos de eventos do TuEventoFun neste e-mail: nem mudanças, nem cancelamentos, nem confirmações das suas respostas. Seus convites continuam abrindo pelo link.",
+    "unsubscribeButton": "Cancelar inscrição",
+    "unsubscribed": "Pronto, sua inscrição foi cancelada",
+    "unsubscribedDetail": "Não vamos mais enviar avisos de eventos para este e-mail.",
+    "verifyEmailBanner": "Confirme seu e-mail ({{email}}) pelo link que enviamos. Até lá, seus convidados não vão receber avisos por e-mail.",
+    "verificationSent": "Enviamos um link novo para {{email}}. Confira também a pasta de spam.",
+    "resendVerification": "Enviar o link de novo"
   },
   "app": {
     "backOverview": "Voltar ao resumo",
@@ -282,6 +294,7 @@
     "openInvitationFull": "Este link já atingiu o número máximo de registros.",
     "eventPasswordIncorrect": "A senha não está correta.",
     "geocoderUnavailable": "A busca no mapa não está disponível agora. Tente em alguns minutos ou cole um link do mapa.",
+    "geocoderBusy": "Tem muita gente buscando no mapa agora. Tente de novo em alguns segundos.",
     "mapLinkWithoutCoordinates": "Esse link não traz a localização. No app de mapas, abra o lugar, toque em “Compartilhar” e copie esse link.",
     "wrongAccountType": "Esta parte é para outro tipo de conta.",
     "providerProfileNotFound": "Primeiro salve os dados do seu negócio.",
@@ -293,7 +306,18 @@
     "providerImagesPerServiceLimit": "Esse serviço já tem 10 fotos, o máximo.",
     "providerNotComplete": "Ainda faltam informações para publicar sua página.",
     "providerOrderMismatch": "A lista mudou enquanto você a ordenava. Recarregue a página e tente de novo.",
-    "providerSuspended": "Sua página está suspensa. Fale com a gente para revisá-la."
+    "providerSuspended": "Sua página está suspensa. Fale com a gente para revisá-la.",
+    "eventAlreadyHappened": "Este evento já aconteceu: não dá mais para mudar as respostas.",
+    "emailVerificationLinkInvalid": "Este link para confirmar o e-mail não é válido ou já expirou. Peça um novo pelo app.",
+    "unsubscribeLinkInvalid": "Este link para cancelar a inscrição não é válido. Use o do último e-mail que você recebeu.",
+    "paymentsUnavailable": "Os pagamentos ainda não estão disponíveis.",
+    "paymentTierAlreadyPaid": "Essa faixa já está paga. Escolha uma maior.",
+    "paymentTierTooSmall": "Seu evento tem mais convidados do que essa faixa cobre. Escolha uma maior.",
+    "paymentTierInvalid": "Escolha uma das faixas da lista.",
+    "paymentProviderUnavailable": "Não conseguimos abrir a página de pagamento. Tente de novo em alguns minutos.",
+    "paymentSignatureInvalid": "A assinatura do aviso de pagamento não é válida.",
+    "paymentDemo": "Os eventos da demonstração não são pagos. Crie sua conta para pagar seu evento.",
+    "guestLimitReached": "Seu evento chegou ao máximo de convidados da faixa. Passe para uma faixa maior para adicionar mais."
   },
   "events": {
     "actions": "Ações",
@@ -425,6 +449,8 @@
     "publicAddressTaken": "Você já tem outro evento com esse endereço.",
     "publicPassword": "Senha da página do evento (opcional)",
     "publicPasswordHint": "Com ela, quem não tem link pessoal também poderá entrar. Deixe em branco para que só os seus convidados entrem.",
+    "publicPasswordFailures_one": "Alguém tentou uma senha errada {{count}} vez desde o último acesso certo. Se não foi você nem seus convidados, troque a senha.",
+    "publicPasswordFailures_other": "Alguém tentou senhas erradas {{count}} vezes desde o último acesso certo. Se não foram você nem seus convidados, troque a senha.",
     "publicPasswordKept": "Há uma senha salva. Deixe em branco para mantê-la.",
     "removePublicPassword": "Remover a senha da página pública",
     "viaOpenLink": "pelo link genérico"
@@ -607,6 +633,23 @@
       "counts": "Confirmados: {{accepted}}. Não vão: {{declined}}. Em espera: {{pending}}.",
       "intro": "{{guest}} respondeu a {{event}}.",
       "subject": "{{guest}} respondeu a {{event}}"
+    },
+    "loginLocked": {
+      "action": "Redefinir minha senha",
+      "advice": "Se não foi você, alguém está testando senhas com o seu e-mail. Sua senha continua a mesma; se quiser, troque por uma nova.",
+      "device": "Você continua entrando normalmente pelo navegador em que já entrou antes. Por outro, espere uma hora ou redefina sua senha.",
+      "footer": "Aviso de segurança sobre a sua conta.",
+      "intro": "Houve muitas tentativas sem sucesso de entrar na sua conta, então bloqueamos por um tempo o acesso de dispositivos desconhecidos.",
+      "subject": "Pausamos o acesso à sua conta do TuEventoFun por um tempo"
+    },
+    "unsubscribe": "Parar de receber estes avisos",
+    "verifyEmail": {
+      "action": "Confirmar meu e-mail",
+      "expiry": "O link vale por {{hours}} horas.",
+      "footer": "Você recebeu este e-mail porque uma conta foi criada com este endereço.",
+      "ignore": "Se você não criou uma conta no TuEventoFun, ignore este e-mail.",
+      "intro": "Confirme que este e-mail é seu para que seus convidados recebam os avisos dos seus eventos.",
+      "subject": "Confirme seu e-mail no TuEventoFun"
     }
   },
   "mobileConnect": {
@@ -678,7 +721,8 @@
     "withLove": "Com muito carinho,",
     "wouldntSameWithout": "Sem você, não seria a mesma coisa.",
     "yesIllThere": "Sim, eu vou!",
-    "eventCancelled": "Este evento foi cancelado; não é possível enviar respostas."
+    "eventCancelled": "Este evento foi cancelado; não é possível enviar respostas.",
+    "eventPast": "Este evento já aconteceu. As respostas ficam como estavam."
   },
   "status": {
     "accepted": "Confirmados",
@@ -821,7 +865,25 @@
     "payService": "Pagar pelo serviço",
     "paymentPending": "A cobrança ainda não está conectada. Quando estiver, você poderá pagar pelo seu evento aqui.",
     "back": "Voltar aos preços",
-    "buy": "Comprar"
+    "buy": "Comprar",
+    "chooseEvent": "Escolha o evento que você quer pagar",
+    "noEvents": "Você ainda não tem eventos. Crie um e volte aqui para pagá-lo.",
+    "freePlan": "Plano gratuito: tudo incluído, menos os avisos por e-mail aos seus convidados.",
+    "paidUpTo": "Pago: até {{guests}} convidados, com avisos por e-mail.",
+    "paidMoreThan": "Pago: mais de {{guests}} convidados, com avisos por e-mail.",
+    "guestsNow_one": "Seu evento tem {{count}} convidado.",
+    "guestsNow_other": "Seu evento tem {{count}} convidados.",
+    "payTier": "Pagar {{price}}",
+    "upgradeNote": "Você já pagou uma faixa: ao passar para uma maior, paga só a diferença.",
+    "tierTooSmall": "Não cobre seus convidados",
+    "tierIncluded": "Incluído no seu pagamento",
+    "paymentReceived": "Pagamento recebido. Seus convidados já recebem os avisos por e-mail.",
+    "confirming": "Estamos confirmando seu pagamento…",
+    "topTier": "Seu evento já tem a faixa mais alta.",
+    "payThisEvent": "Pagar este evento",
+    "upgrade": "Passar para uma faixa maior",
+    "goingToCheckout": "Levando você à página de pagamento…",
+    "tiersLabel": "Faixas de convidados"
   },
   "publicEvent": {
     "opening": "Abrindo o evento…",
@@ -1062,5 +1124,14 @@
     "invalidSort": "Ordene por relevância ou por distância.",
     "invalidCursor": "Essa página de resultados não é mais válida: faça a busca de novo.",
     "unavailable": "A busca não está disponível agora. Tente de novo em alguns minutos."
+  },
+  "mcp": {
+    "unauthorized": "Credenciais MCP inválidas ou ausentes.",
+    "forbidden": "Você não tem permissão para acessar este recurso ou ferramenta.",
+    "invalidToken": "O token de acesso MCP expirou ou foi revogado.",
+    "confirmationRequired": "Esta ação requer confirmação com o token gerado.",
+    "resourceNotFound": "O recurso solicitado não existe ou você não tem acesso a ele.",
+    "scopeRequired": "O token não possui o escopo necessário ({{scope}}).",
+    "previewSummary": "Prévia da ação «{{tool}}» pronta para confirmação."
   }
 }

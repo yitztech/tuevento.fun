@@ -228,6 +228,11 @@ export const geoLinkSchema = z.strictObject({
 export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 /** Código público de una cuenta, primera parte de la URL de sus landings (users.public_code). */
 export const publicCodePattern = /^[a-z0-9]{8}$/;
+/**
+ * Un día después de su fecha, el evento ya pasó: las respuestas quedan como estaban (la API
+ * responde 409 `errors.eventAlreadyHappened`) y la invitación se ve en solo lectura.
+ */
+export const eventIsPast = (date: string, now = Date.now()) => new Date(date).getTime() < now - 86_400_000;
 /** Landing de un evento: /<código de la cuenta>/<dirección>, detrás del prefijo del idioma. */
 export const eventLandingPath = (code: string, slug: string) => `/${code}/${slug}`;
 /** Reconoce una ruta de landing y devuelve sus dos partes. */
@@ -325,6 +330,22 @@ export const passwordResetPaths = {
   request: "/recuperar-contrasena",
   reset: "/nueva-contrasena",
 } as const;
+/** Páginas de los enlaces de los correos: confirmar el correo de la cuenta y darse de baja de los avisos. */
+export const mailPaths = {
+  verify: "/confirmar-correo",
+  unsubscribe: "/baja-de-avisos",
+} as const;
+/** Horas de validez del enlace para confirmar el correo de la cuenta. */
+export const EMAIL_VERIFICATION_HOURS = 48;
+export const verifyEmailSchema = z.strictObject({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.emailVerificationLinkInvalid") });
+export const unsubscribeSchema = z.strictObject({
+  h: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
+  s: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
+});
+/** Pago de un evento: el tramo de invitados que se compra (posición en `guestTiers`). */
+export const checkoutSchema = z.strictObject({
+  tier: z.number().int().min(0, "errors.paymentTierInvalid").max(3, "errors.paymentTierInvalid"),
+});
 /** Minutos de validez del enlace para restablecer la contraseña. */
 export const PASSWORD_RESET_MINUTES = 60;
 export const forgotPasswordSchema = z.strictObject({ email });
@@ -457,6 +478,8 @@ export type User = {
   /** Código público de la cuenta, primera parte de la URL de sus landings. */
   publicCode: string;
   accountType: AccountType;
+  /** Si confirmó su correo: hasta entonces la plataforma no escribe a sus invitados. */
+  emailVerified: boolean;
 };
 export type Metrics = {
   invitations: number;
@@ -474,6 +497,10 @@ export type Event = Omit<EventInput, "publicPassword" | "geo"> & {
   metrics: Metrics;
   /** Si la página pública pide contraseña (la contraseña nunca se devuelve). */
   hasPublicPassword: boolean;
+  /** Intentos fallidos con esa contraseña desde el último acierto o el último cambio. */
+  passwordFailures: number;
+  /** Tramo de invitados pagado (posición en `guestTiers`), o null si el evento es gratuito. */
+  paidTier: 0 | 1 | 2 | 3 | null;
 };
 /** Evento visto desde su landing: sin invitados ni respuestas. */
 export type PublicEvent = {
@@ -1023,3 +1050,267 @@ export type Postcard = {
   photos: { id: string; url: string }[];
 };
 export type PostcardVersion = { id: string; createdAt: string };
+
+// ── Model Context Protocol (MCP) (docs/PLAN-MCP.md) ─────────────────────────
+
+export const mcpActorTypes = ["organizer", "provider", "guest"] as const;
+export type McpActorType = (typeof mcpActorTypes)[number];
+
+export const mcpScopes = ["mcp:read", "mcp:write"] as const;
+export type McpScope = (typeof mcpScopes)[number];
+
+export const mcpToolNames = [
+  "events_list",
+  "events_get",
+  "events_attendance_summary",
+  "providers_search",
+  "provider_profile_get",
+  "provider_services_list",
+  "invitation_get",
+  "invitation_rsvp_get",
+  "events_create",
+  "events_update",
+  "invitations_create",
+  "invitations_update",
+  "provider_profile_update",
+  "provider_services_update",
+  "invitation_rsvp_update",
+] as const;
+export type McpToolName = (typeof mcpToolNames)[number];
+
+export const mcpActorToolMatrix: Record<McpActorType, readonly McpToolName[]> = {
+  organizer: [
+    "events_list",
+    "events_get",
+    "events_attendance_summary",
+    "providers_search",
+    "events_create",
+    "events_update",
+    "invitations_create",
+    "invitations_update",
+    "invitation_get",
+  ],
+  provider: [
+    "provider_profile_get",
+    "provider_services_list",
+    "provider_profile_update",
+    "provider_services_update",
+  ],
+  guest: [
+    "invitation_get",
+    "invitation_rsvp_get",
+    "invitation_rsvp_update",
+  ],
+};
+
+export const mcpToolScopeMatrix: Record<McpToolName, McpScope> = {
+  events_list: "mcp:read",
+  events_get: "mcp:read",
+  events_attendance_summary: "mcp:read",
+  providers_search: "mcp:read",
+  provider_profile_get: "mcp:read",
+  provider_services_list: "mcp:read",
+  invitation_get: "mcp:read",
+  invitation_rsvp_get: "mcp:read",
+  events_create: "mcp:write",
+  events_update: "mcp:write",
+  invitations_create: "mcp:write",
+  invitations_update: "mcp:write",
+  provider_profile_update: "mcp:write",
+  provider_services_update: "mcp:write",
+  invitation_rsvp_update: "mcp:write",
+};
+
+export const mcpMessages = {
+  unauthorized: "mcp.unauthorized",
+  forbidden: "mcp.forbidden",
+  invalidToken: "mcp.invalidToken",
+  confirmationRequired: "mcp.confirmationRequired",
+  resourceNotFound: "mcp.resourceNotFound",
+  scopeRequired: "mcp.scopeRequired",
+  previewSummary: "mcp.previewSummary",
+} as const;
+
+/** Parámetros comunes de confirmación e idempotencia para herramientas de escritura. */
+const writeConfirmationFields = {
+  preview: z.boolean().optional().default(false),
+  confirmed: z.boolean().optional().default(false),
+  confirmation_token: z.string().max(256).optional(),
+  idempotency_key: z.string().max(128).optional(),
+};
+
+export const mcpEventsListSchema = z.strictObject({
+  status: statusSchema.optional(),
+  limit: z.number().int().min(1).max(100).optional().default(50),
+  offset: z.number().int().min(0).optional().default(0),
+});
+
+export const mcpEventsGetSchema = z.strictObject({
+  id: z.string().min(1).max(accountLimits.eventSlug),
+});
+
+export const mcpAttendanceSummarySchema = z.strictObject({
+  eventId: z.string().min(1).max(accountLimits.eventSlug),
+});
+
+export const mcpProvidersSearchSchema = z.strictObject({
+  query: z.string().max(accountLimits.search).optional(),
+  category: z.enum(providerCategories).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  radiusKm: z.number().min(1).max(providerLimits.serviceRadiusKm).optional(),
+  limit: z.number().int().min(1).max(50).optional().default(20),
+});
+
+export const mcpProviderProfileGetSchema = z.strictObject({});
+export const mcpProviderServicesListSchema = z.strictObject({});
+
+export const mcpInvitationGetSchema = z.strictObject({
+  invitationId: z.string().uuid().optional(),
+});
+
+export const mcpInvitationRsvpGetSchema = z.strictObject({
+  invitationId: z.string().uuid().optional(),
+});
+
+export const mcpEventsCreateSchema = z.strictObject({
+  title: z.string().trim().min(3).max(100),
+  slug: z.string().min(1).max(accountLimits.eventSlug).optional(),
+  date: z.string().datetime(),
+  timeZone: z.string().min(1).max(100),
+  location: z.string().min(1).max(accountLimits.addressLine),
+  theme: z.enum(themeIds),
+  description: z.string().trim().max(2500).optional(),
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpEventsUpdateSchema = z.strictObject({
+  id: z.string().min(1).max(accountLimits.eventSlug),
+  title: z.string().trim().min(3).max(100).optional(),
+  slug: z.string().min(1).max(accountLimits.eventSlug).optional(),
+  date: z.string().datetime().optional(),
+  timeZone: z.string().min(1).max(100).optional(),
+  location: z.string().min(1).max(accountLimits.addressLine).optional(),
+  theme: z.enum(themeIds).optional(),
+  description: z.string().trim().max(2500).optional(),
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .nullable()
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpInvitationsCreateSchema = z.strictObject({
+  eventId: z.string().min(1).max(accountLimits.eventSlug),
+  name: z.string().min(1).max(accountLimits.personName),
+  kind: z.enum(["individual", "family"]),
+  contact: z.string().max(accountLimits.phone).optional(),
+  members: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(accountLimits.personName),
+        kind: z.enum(["adult", "child"]),
+      }),
+    )
+    .min(1)
+    .max(50),
+  ...writeConfirmationFields,
+});
+
+export const mcpInvitationsUpdateSchema = z.strictObject({
+  eventId: z.string().min(1).max(accountLimits.eventSlug),
+  id: z.string().uuid(),
+  name: z.string().min(1).max(accountLimits.personName).optional(),
+  kind: z.enum(["individual", "family"]).optional(),
+  contact: z.string().max(accountLimits.phone).optional(),
+  members: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        name: z.string().min(1).max(accountLimits.personName),
+        kind: z.enum(["adult", "child"]),
+        status: statusSchema.optional(),
+      }),
+    )
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpProviderProfileUpdateSchema = z.strictObject({
+  businessName: z.string().min(1).max(accountLimits.businessName).optional(),
+  slug: z.string().min(1).max(accountLimits.providerSlug).optional(),
+  headline: z.string().max(accountLimits.headline).optional(),
+  description: z.string().max(accountLimits.providerDescription).optional(),
+  categories: z.array(z.enum(providerCategories)).max(providerLimits.categories).optional(),
+  serviceRadiusKm: z.number().int().min(0).max(providerLimits.serviceRadiusKm).optional(),
+  address: z.string().max(accountLimits.addressLine).optional(),
+  city: z.string().max(accountLimits.city).optional(),
+  region: z.string().max(accountLimits.region).optional(),
+  postalCode: z.string().max(accountLimits.postalCode).optional(),
+  phone: z.string().max(accountLimits.phone).optional(),
+  whatsapp: z.string().max(accountLimits.phone).optional(),
+  publicEmail: z.string().email().max(accountLimits.email).optional(),
+  website: z.string().url().max(accountLimits.url).optional(),
+  instagramUrl: z.string().url().max(accountLimits.url).optional(),
+  facebookUrl: z.string().url().max(accountLimits.url).optional(),
+  tiktokUrl: z.string().url().max(accountLimits.url).optional(),
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .nullable()
+    .optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpProviderServicesUpdateSchema = z.strictObject({
+  action: z.enum(["create", "update", "delete"]),
+  serviceId: z.string().uuid().optional(),
+  title: z.string().min(1).max(accountLimits.serviceTitle).optional(),
+  description: z.string().max(accountLimits.serviceDescription).optional(),
+  price: providerPriceSchema.nullable().optional(),
+  ...writeConfirmationFields,
+});
+
+export const mcpInvitationRsvpUpdateSchema = z.strictObject({
+  invitationId: z.string().uuid().optional(),
+  members: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        status: statusSchema,
+      }),
+    )
+    .min(1),
+  ...writeConfirmationFields,
+});
+
+export const mcpToolSchemas = {
+  events_list: mcpEventsListSchema,
+  events_get: mcpEventsGetSchema,
+  events_attendance_summary: mcpAttendanceSummarySchema,
+  providers_search: mcpProvidersSearchSchema,
+  provider_profile_get: mcpProviderProfileGetSchema,
+  provider_services_list: mcpProviderServicesListSchema,
+  invitation_get: mcpInvitationGetSchema,
+  invitation_rsvp_get: mcpInvitationRsvpGetSchema,
+  events_create: mcpEventsCreateSchema,
+  events_update: mcpEventsUpdateSchema,
+  invitations_create: mcpInvitationsCreateSchema,
+  invitations_update: mcpInvitationsUpdateSchema,
+  provider_profile_update: mcpProviderProfileUpdateSchema,
+  provider_services_update: mcpProviderServicesUpdateSchema,
+  invitation_rsvp_update: mcpInvitationRsvpUpdateSchema,
+} as const;
+
+

@@ -16,17 +16,30 @@ import { LocaleExceptionFilter } from "./locale.filter";
 import { JsonLogger, loggerOptions } from "./logger";
 import { sendProblem } from "./problem";
 import { requestLocale } from "./request-locale";
+import { assertAppSecret } from "./tokens";
+import { assertPaymentsConfig } from "./payment-config";
 import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 
 /** Cuerpo JSON de 1 MB como máximo (§23); las subidas de imágenes declaran el suyo. */
 const BODY_LIMIT = 1024 * 1024;
 const UPLOAD_BODY_LIMIT = 3 * 1024 * 1024;
 const uploadRoutes = new Set(["/api/profile/avatar", "/api/events/:id/postcard/images", "/api/provider/images"]);
+/**
+ * Baja en un clic desde el gestor de correo (RFC 8058): llega como formulario, sin la cabecera
+ * propia ni Origin. Es segura sin ellos: solo da de baja la dirección del enlace firmado.
+ */
+const ONE_CLICK_UNSUBSCRIBE = "/api/mail/unsubscribe";
+/** Webhook de Stripe: llega de su servidor, sin Origin ni cabecera propia; lo protege su firma. */
+const PAYMENT_WEBHOOK = "/api/payments/webhook";
+/** Protocolo MCP (Streamable HTTP y tokens de cliente MCP): lo autentica el token Bearer o sesión. */
+const isMcpRoute = (url: string) => url.startsWith("/api/mcp");
 /** `X-Request-ID` del cliente o del gateway si es razonable; si no, uno nuevo. */
 const requestIdPattern = /^[A-Za-z0-9._-]{8,128}$/;
 
 async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
+  assertAppSecret();
+  assertPaymentsConfig();
   await startTrustedProxyRefresh();
   const adapter = new FastifyAdapter({
     bodyLimit: UPLOAD_BODY_LIMIT,
@@ -49,6 +62,8 @@ async function bootstrap() {
   });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     logger: new JsonLogger(fastify.log),
+    // El webhook de Stripe se firma sobre el cuerpo exacto (req.rawBody)
+    rawBody: true,
   });
   app.setGlobalPrefix("api");
   // También pasan por aquí los errores de Fastify (cuerpo demasiado grande, JSON mal formado,
@@ -83,7 +98,12 @@ async function bootstrap() {
       reply.header("Cache-Control", "no-store");
       reply.header("Content-Language", requestLocale(req));
     }
-    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    const pathWithoutQuery = req.url.split("?")[0];
+    if (
+      !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+      ![ONE_CLICK_UNSUBSCRIBE, PAYMENT_WEBHOOK].includes(pathWithoutQuery) &&
+      !isMcpRoute(pathWithoutQuery)
+    ) {
       if (
         req.headers["x-tuevento-client"] !== "1" ||
         (req.headers.origin && !origins.includes(req.headers.origin))
@@ -93,6 +113,13 @@ async function bootstrap() {
           code: "origin_not_allowed",
           detail: "errors.requestOriginNotAllowed",
         });
+    }
+    if (isMcpRoute(pathWithoutQuery) && req.headers.origin && !origins.includes(req.headers.origin)) {
+      return sendProblem(req, reply, {
+        status: 403,
+        code: "origin_not_allowed",
+        detail: "errors.requestOriginNotAllowed",
+      });
     }
   });
   // Una línea por petición (§30). La ruta va como patrón (/api/invitations/:token): así los

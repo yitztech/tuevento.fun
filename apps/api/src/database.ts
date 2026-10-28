@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { Pool, PoolClient, QueryResultRow } from "pg";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { newInvitationToken, sealToken, tokenLookup } from "./tokens";
 @Injectable()
 export class Database implements OnModuleInit, OnModuleDestroy {
   readonly pool = new Pool({
@@ -40,6 +41,7 @@ export class Database implements OnModuleInit, OnModuleDestroy {
         await c.query("INSERT INTO schema_migrations(name) VALUES($1)", [name]);
       }
     });
+    await this.sealInvitationTokens();
     await this.cleanup();
     // Repetir la purga mientras el servicio vive, no solo al arrancar: sesiones y
     // códigos caducados, actividad antigua y cuentas demo no se acumulan entre
@@ -51,12 +53,35 @@ export class Database implements OnModuleInit, OnModuleDestroy {
     }, 60 * 60 * 1000);
     this.sweepTimer.unref?.();
   }
+  /**
+   * Migración 024: las invitaciones anteriores reciben su hash y su copia cifrada. Hace falta
+   * APP_SECRET, por eso no cabe en el SQL. Por lotes, y solo las que aún no la tienen.
+   */
+  private async sealInvitationTokens() {
+    for (;;) {
+      const { rows } = await this.pool.query<{ id: string; token: string }>(
+        "SELECT id, token FROM invitations WHERE token_hash IS NULL LIMIT 500",
+      );
+      if (!rows.length) return;
+      for (const { id, token } of rows) {
+        // Una fila sin token (no debería haberla) recibe uno nuevo en vez de quedarse sin enlace
+        const value = token || newInvitationToken().token;
+        await this.pool.query("UPDATE invitations SET token=$2, token_hash=$3, token_sealed=$4 WHERE id=$1", [
+          id,
+          value,
+          tokenLookup(value),
+          sealToken(value),
+        ]);
+      }
+    }
+  }
   private async cleanup() {
     await this.pool.query(
       "DELETE FROM activity WHERE created_at < now() - interval '90 days'",
     );
     await this.pool.query("DELETE FROM mobile_auth_codes WHERE expires_at < now()");
     await this.pool.query("DELETE FROM sessions WHERE expires_at < now()");
+    await this.pool.query("DELETE FROM trusted_devices WHERE expires_at < now()");
     await this.pool.query("DELETE FROM password_resets WHERE expires_at < now()");
     await this.pool.query("DELETE FROM geo_cache WHERE created_at < now() - interval '30 days'");
     await this.pool.query(

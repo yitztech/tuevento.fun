@@ -49,9 +49,12 @@ import {
   ProfilePage,
   ForgotPasswordPage,
   ResetPasswordPage,
+  ConfirmEmailPage,
+  UnsubscribePage,
+  VerifyEmailBanner,
 } from "./account";
 import { ProviderPage } from "./provider-page";
-import { landingRoute, localizedPage, localizedPath, passwordResetPaths, providerRoute, supportedLocales } from "@tuevento/contracts";
+import { landingRoute, localizedPage, localizedPath, mailPaths, passwordResetPaths, providerRoute, supportedLocales } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
 import { EventLanding, LegacyEventAddress } from "./public-event";
 import { PostcardEditor } from "./postcard-editor";
@@ -84,7 +87,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [menu, setMenu] = useState(false),
-    [config, setConfig] = useState({ googleClientId: "", demoEnabled: false });
+    [config, setConfig] = useState({ googleClientId: "", demoEnabled: false, paymentsEnabled: false });
   const location = useLocation(),
     navigate = useNavigate(),
     timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -102,6 +105,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       "/acceso",
       passwordResetPaths.request,
       passwordResetPaths.reset,
+      mailPaths.verify,
+      mailPaths.unsubscribe,
     ].includes(location.pathname);
   const toast = useCallback((text: string) => {
     setMessage(text);
@@ -231,6 +236,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         <ForgotPasswordPage />
       ) : location.pathname === passwordResetPaths.reset ? (
         <ResetPasswordPage />
+      ) : location.pathname === mailPaths.verify ? (
+        <ConfirmEmailPage />
+      ) : location.pathname === mailPaths.unsubscribe ? (
+        <UnsubscribePage />
       ) : isAuth ? (
         <AuthPage
           key={location.pathname}
@@ -391,6 +400,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               </div>
             </header>
             <main id="main" className="main-content">
+              <VerifyEmailBanner />
               {provider ? (
                 <Routes>
                   <Route path="/negocio" element={<ProviderBusinessPage />} />
