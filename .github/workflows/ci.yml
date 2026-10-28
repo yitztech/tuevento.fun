@@ -110,7 +110,8 @@ jobs:
 
   # Tres partes repartidas por duración, no por número de escenarios: WebKit (iphone-safari) tarda
   # unas 3 veces más por escenario que Chromium. Con --shard=N/3 sobre todo, la parte 3 se quedaba
-  # casi todo iphone-safari (430 s de pruebas frente a 152 y 130; run 40623833862).
+  # casi todo iphone-safari (430 s de pruebas frente a 152 y 130; run 40623833862). La primera mitad
+  # de iphone-safari lleva @disenos (128 s en WebKit), así que las pruebas auxiliares van en la segunda.
   escenarios-partes:
     name: Escenarios (${{ matrix.parte }}/3)
     strategy:
@@ -128,20 +129,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         timeout-minutes: 2
-      - uses: actions/setup-node@v7
-        timeout-minutes: 3
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-        timeout-minutes: 3
-      - run: npm run build
-        timeout-minutes: 3
-      # Navegadores y librerías del sistema desde la caché, sin depender del mirror de apt
-      - uses: ./.github/actions/playwright
-        timeout-minutes: 3
-        with:
-          browsers: chromium webkit
+      # Primero las imágenes y el arranque del entorno, sin esperar a los healthchecks: los
+      # contenedores arrancan mientras se instalan Node, las dependencias y los navegadores.
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
@@ -160,7 +149,25 @@ jobs:
             docker-bake.ci.hcl
           load: true
           set: "*.cache-to="
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
+      - name: Arrancar el entorno
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build
+        timeout-minutes: 2
+      - uses: actions/setup-node@v7
+        timeout-minutes: 3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npm run build
+        timeout-minutes: 3
+      # Navegadores y librerías del sistema desde la caché, sin depender del mirror de apt
+      - uses: ./.github/actions/playwright
+        timeout-minutes: 3
+        with:
+          browsers: chromium webkit
+      - name: Esperar a que el entorno esté sano
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
         timeout-minutes: 3
       - run: npm run test:api && npm run test:endpoints
         timeout-minutes: 3
@@ -169,8 +176,8 @@ jobs:
       - run: npm run e2e:summary
         if: always()
         timeout-minutes: 2
-      # En una parte de WebKit, que termina antes que la de Chromium y Android
-      - if: matrix.parte == 2
+      # En la parte más ligera (la segunda mitad de iphone-safari)
+      - if: matrix.parte == 3
         run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
         timeout-minutes: 3
       - uses: actions/upload-artifact@v7
@@ -182,9 +189,7 @@ jobs:
           path: |
             qa-artifacts/
             tests/e2e/results/
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
-        if: always()
-        timeout-minutes: 2
+      # Sin `docker compose down`: el runner se descarta al terminar el job
 
   # Conserva el check obligatorio: ninguna parte fallida u omitida puede darlo por bueno.
   escenarios:
