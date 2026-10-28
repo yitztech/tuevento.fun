@@ -100,4 +100,4 @@ PR https://github.com/yitztech/tuevento.fun/pull/43. Punto de partida: el primer
 
 ### Resultado
 
-CI del PR: de 6:48 a **4:41** (run 40645296717). Con promover (~0:35) y el despliegue en Coolify (~1:40), el despliegue completo debería quedar en unos 7 minutos frente a 9:32; se mide en el primer despliegue tras fusionar. Jobs simultáneos: 9 del CI + 6 de publicar = 15, por debajo del tope de 20 de la organización (plan Free).
+CI del PR: de 6:48 a entre **4:41 y 5:54** (runs 40645296717 y 40645883531). La preparación de cada parte ya es estable (unos 2:10); la diferencia entre runs es la velocidad del runner, que en el segundo hizo las pruebas un 30 % más lentas en todas las partes (parte 1: 141 s frente a 185 s, sin reintentos ni escenarios inestables en ninguno). Con promover (~0:35) y el despliegue en Coolify (~1:40), el despliegue completo debería quedar en unos 7 minutos frente a 9:32; se mide en el primer despliegue tras fusionar. Jobs simultáneos: 9 del CI + 6 de publicar = 15, por debajo del tope de 20 de la organización (plan Free).
