@@ -57,8 +57,8 @@ test("accountLimits coincide con las restricciones CHECK de la base de datos", (
 test("Todo límite de accountLimits está en la base de datos o declarado sin columna", () => {
   // La contraseña se guarda como hash; el texto de la postal vive dentro del JSON del diseño,
   // que la base de datos acota en tamaño ('postcards_design_size') y la API valida por texto.
-  // geoQuery es una entrada que no se guarda (búsqueda en el mapa).
-  const withoutColumn = ["password", "postcardText", "geoQuery"];
+  // geoQuery y search son entradas que no se guardan (búsqueda en el mapa y de proveedores).
+  const withoutColumn = ["password", "postcardText", "geoQuery", "search"];
   for (const key of Object.keys(accountLimits)) {
     assert.ok(
       key in columns || withoutColumn.includes(key),

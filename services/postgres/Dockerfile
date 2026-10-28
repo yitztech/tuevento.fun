@@ -15,6 +15,8 @@ COPY services/postgres/postgresql.conf /etc/postgresql/postgresql.conf
 # SQL del rol de solo lectura del panel (lo aplica 01-admin-role.sh; no va en initdb/ porque
 # el entrypoint ejecutaría los .sql sin variables)
 COPY services/postgres/sql/admin-role.sql /etc/postgresql/admin-role.sql
+# Extensiones y rol de la búsqueda de proveedores (lo aplica 02-search.sh)
+COPY services/postgres/sql/search-bootstrap.sql /etc/postgresql/search-bootstrap.sql
 COPY --chmod=755 services/postgres/initdb/ /docker-entrypoint-initdb.d/
 
 CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]

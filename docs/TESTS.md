@@ -14,6 +14,7 @@ npm test -- --lista           # qué suites hay y su comando
 | Suite | Qué comprueba | Comando propio | GitHub Actions |
 |---|---|---|---|
 | `unit` | Esquemas Zod, límites de longitud (también contra las migraciones), versiones de dependencias, servicios solo de pruebas | `npm run test:unit` | sí |
+| `go` | Servicio de búsqueda en Go (`services/search`): parámetros, cursor, mensajes en los 5 idiomas, idioma por dominio (los mismos casos que contracts, `locale-cases.json`), límite por IP, CORS y cabeceras | `npm run test:go` | sí (en «Verificar», con `gofmt`, `go vet` y `govulncheck`) |
 | `api` | Flujos completos de la API: eventos, invitaciones, RSVP, sesión, idioma por dominio, recuperar contraseña… | `npm run test:api` | sí |
 | `endpoints` | Endpoints restantes (`/config`, demo, Google, App Links), **idiomas es/en/pt/de/fr** y validación de entradas | `npm run test:endpoints` | sí |
 | `security` | Autenticación, CSRF/origen/CORS, aislamiento entre cuentas (IDOR), escalada de privilegios, sesión, fuerza bruta, enumeración, fugas, inyección, cabeceras y límites | `npm run test:security` | sí |
@@ -28,8 +29,8 @@ ahí rompe a todos. Las pruebas de móviles se quedan en local por ahora, y se p
 se decida, después de validarlas aquí (regla de `CLAUDE.md`).
 
 **Checks del CI** (`.github/workflows/ci.yml`, en cada PR y antes de publicar, con los nombres comunes
-de la plataforma): `Verificar` (instalación, lint, tipos, unitarias, build, `npm run check:audit` y Trivy
-sobre las 5 imágenes), `Escenarios` (`test:api`, `test:endpoints`, `e2e` y los recorridos de navegador),
+de la plataforma): `Verificar` (instalación, lint, tipos, unitarias, build, `npm run check:audit`, Go y Trivy
+sobre las 6 imágenes), `Escenarios` (`test:api`, `test:endpoints`, `e2e` y los recorridos de navegador),
 `Base de datos` (`test:db` contra la imagen de PostgreSQL 18 y Squawk sobre las migraciones nuevas) y
 `Seguridad` (`test:security`, CodeQL y ZAP baseline). `deploy.yml` llama a este workflow y solo publica
 si los cuatro pasan. Cada lunes, `semanal.yml` repite los escenarios en Firefox, CodeQL, Trivy de

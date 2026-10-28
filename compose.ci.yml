@@ -72,6 +72,18 @@ services:
     ports:
       - "127.0.0.1:${ADMIN_PORT:-8188}:3088"
 
+  search:
+    build:
+      context: .
+      dockerfile: services/search/Dockerfile
+    environment:
+      SITE_URL_ES: ${SITE_URL_ES:-http://tuevento.localhost:5187}
+      SITE_URL_EN: ${SITE_URL_EN:-http://yourevent.localhost:5187}
+      SEARCH_RATE_LIMIT: "100000"
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5187,http://127.0.0.1:5187,http://tuevento.localhost:5187,http://yourevent.localhost:5187}
+    ports:
+      - "127.0.0.1:${SEARCH_PORT:-3089}:3089"
+
   # Buzón de pruebas: la API le entrega los correos; su API REST queda en 127.0.0.1:8026
   mailpit:
     image: axllent/mailpit:v1.31.5

@@ -1,0 +1,158 @@
+{
+  "origins": {
+    "es": "https://tuevento.fun",
+    "en": "https://yourevent.fun"
+  },
+  "cases": [
+    {
+      "host": "yourevent.fun",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "www.yourevent.fun",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "YOUREVENT.FUN",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "yourevent.fun:443",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "yourevent.fun.",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "tuevento.fun",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "www.tuevento.fun",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "otro.example",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": null,
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "[::1]:3087",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "evil-yourevent.fun",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "yourevent.fun.evil.example",
+      "appLocale": null,
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "pt",
+      "mobile": false,
+      "expected": "pt"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "de",
+      "mobile": false,
+      "expected": "de"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "fr",
+      "mobile": false,
+      "expected": "fr"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "es",
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "xx",
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "tuevento.fun",
+      "appLocale": "pt",
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "tuevento.fun",
+      "appLocale": "en",
+      "mobile": false,
+      "expected": "es"
+    },
+    {
+      "host": "tuevento.fun",
+      "appLocale": "pt",
+      "mobile": true,
+      "expected": "pt"
+    },
+    {
+      "host": "tuevento.fun",
+      "appLocale": "en",
+      "mobile": true,
+      "expected": "en"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "es",
+      "mobile": true,
+      "expected": "en"
+    },
+    {
+      "host": "yourevent.fun",
+      "appLocale": "__proto__",
+      "mobile": false,
+      "expected": "en"
+    },
+    {
+      "host": "tuevento.fun",
+      "appLocale": "constructor",
+      "mobile": true,
+      "expected": "es"
+    }
+  ]
+}

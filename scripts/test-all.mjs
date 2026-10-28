@@ -1,5 +1,5 @@
 // npm test → todas las pruebas, una tras otra, con un resumen al final.
-//   npm test                      unit, api, endpoints, security, db, browser, landing y e2e (web)
+//   npm test                      unit, go, api, endpoints, security, db, browser, landing y e2e (web)
 //   npm test -- security db       solo esas suites
 //   npm test -- movil             Android e iOS, uno tras otro (solo local; no entra por defecto)
 //   npm test -- --lista           muestra las suites
@@ -9,6 +9,7 @@ import { spawnSync } from "node:child_process";
 
 const suites = {
   unit: { desc: "Esquemas Zod, límites, versiones y aislamiento de servicios de prueba", cmd: "npm run test:unit", stack: false },
+  go: { desc: "Búsqueda (Go): parámetros, cursor, idiomas compartidos y cabeceras", cmd: "npm run test:go", stack: false },
   api: { desc: "API: flujos completos (eventos, invitaciones, RSVP, sesión, idiomas…)", cmd: "npm run test:api", stack: true },
   endpoints: { desc: "API: endpoints restantes, idiomas es/en/pt/de/fr y validación de entradas", cmd: "npm run test:endpoints", stack: true },
   security: { desc: "API: seguridad (auth, CSRF, IDOR, privilegios, sesión, fuerza bruta, fugas, inyección)", cmd: "npm run test:security", stack: true },

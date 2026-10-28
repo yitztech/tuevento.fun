@@ -17,6 +17,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "node scripts/test-all.mjs",
     "test:unit": "node scripts/check-versions.mjs && node scripts/check-test-only.mjs && tsx --test packages/contracts/src/*.test.ts && npm run test -w @tuevento/admin",
+    "test:go": "npm run build -w @tuevento/contracts && cd services/search && go vet ./... && go test ./...",
     "test:api": "node tests/api/test-api.mjs",
     "test:endpoints": "node tests/api/test-endpoints.mjs",
     "test:security": "node tests/api/test-security.mjs",

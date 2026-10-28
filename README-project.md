@@ -140,6 +140,7 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
 | `ADMIN_DB_PASSWORD` | admin, postgres | Contraseña del rol de solo lectura `admin_ro` del panel |
+| `SEARCH_DB_PASSWORD` | search, postgres | Contraseña del rol `search_ro` del servicio de búsqueda (solo lee `provider_search`) |
 | `ADMIN_USER`, `ADMIN_PASSWORD_HASH` | admin | Usuario del panel y hash scrypt de su contraseña (ver [Panel de administración](#panel-de-administración)) |
 | `ADMIN_HOST` | gateway | Subdominio del panel (por defecto `admin.tuevento.fun`) |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
@@ -222,6 +223,35 @@ docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventof
 4. Comprobar `https://admin.tuevento.fun/api/health`: 200 `{"status":"ok"}` si el rol entra y tiene sus permisos; 503 `{"status":"error"}` si no (rol sin crear, contraseña distinta o migración 014 sin aplicar). Es la ruta que puede vigilar Uptime Kuma. `/healthz`, la del `healthcheck` de Docker, solo dice que el proceso vive, como pide el contrato de la plataforma.
 
 En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
+
+## Búsqueda de proveedores
+
+`services/search`: servicio en Go (binario estático sobre `scratch`, sin root, 64 MB) que responde
+`GET /api/search/providers` a través del gateway. Lee solo la tabla `provider_search`, que la migración
+022 mantiene con triggers en la misma transacción que cada cambio de un perfil, con el rol `search_ro`.
+Idiomas, límites, categorías y textos salen de `packages/contracts` (`dist/shared.json`, embebido al compilar).
+
+Parámetros: `q` (100 caracteres), `categories` (separadas por comas), `lat`, `lng` y `radiusKm` (30 por
+defecto, 200 como máximo), `sort` (`relevance` o `distance`, que pide `lat` y `lng`), `limit` (20; 50 como máximo) y `cursor`
+(el `nextCursor` de la página anterior). Un parámetro desconocido o fuera de rango responde 400 en Problem
+Details con el campo. 30 peticiones por IP cada 10 s (`SEARCH_RATE_LIMIT`).
+
+Puesta en marcha en producción, **antes** de desplegar la versión que trae la migración 022 (sin las
+extensiones, la migración falla y la API no arranca):
+
+1. Definir en Coolify `SEARCH_DB_PASSWORD` (aleatoria, p. ej. `openssl rand -hex 24`).
+2. Crear las extensiones `pg_trgm` y `unaccent` y el rol `search_ro`, como el dueño de la base. Se puede repetir
+   (también para cambiar la contraseña). La contraseña no está en el shell del servidor: `read -rs` la pide sin
+   mostrarla ni dejarla en el historial, y el script no la imprime:
+```bash
+read -rs SEARCH_DB_PASSWORD
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventofun -v search_pw="$SEARCH_DB_PASSWORD" -v db=tueventofun < services/postgres/sql/search-bootstrap.sql
+unset SEARCH_DB_PASSWORD
+```
+   Un volumen nuevo lo hace solo al arrancar (`services/postgres/initdb/02-search.sh`).
+3. Desplegar. Comprobar `https://tuevento.fun/api/search/providers?limit=1`: 200 con `items`.
+
+En local: `docker compose up -d --build search` (en `http://127.0.0.1:3089` directo) y `npm run test:go`.
 
 ## Apps Android/iOS, administración y releases
 

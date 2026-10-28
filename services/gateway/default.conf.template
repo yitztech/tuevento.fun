@@ -12,6 +12,7 @@ resolver 127.0.0.11 valid=10s ipv6=off;
 upstream api_upstream { zone api_upstream 64k; server api:3087 resolve; keepalive 16; }
 upstream web_upstream { zone web_upstream 64k; server web:8080 resolve; keepalive 16; }
 upstream admin_upstream { zone admin_upstream 64k; server admin:3088 resolve; keepalive 4; }
+upstream search_upstream { zone search_upstream 64k; server search:3089 resolve; keepalive 8; }
 
 # ── IP real del cliente ─────────────────────────────────────────────
 # Solo se confía en X-Forwarded-For si llega de la red donde está Traefik
@@ -90,6 +91,15 @@ server {
     location = /sitemap-providers.xml {
         include /etc/nginx/snippets/proxy-headers.conf;
         proxy_pass http://api_upstream/api/public/sitemap/providers.xml;
+    }
+
+    # Búsqueda de proveedores: el servicio en Go (services/search), solo lectura y solo GET
+    location /api/search/ {
+        add_header X-Robots-Tag "noindex" always;
+        limit_except GET OPTIONS { deny all; }
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_read_timeout 10s;
+        proxy_pass http://search_upstream;
     }
 
     # API y avisos en tiempo real (SSE): sin buffer y con conexiones largas

@@ -1052,5 +1052,15 @@
     "notFoundText": "Talvez o negócio tenha despublicado a página ou o endereço não esteja correto.",
     "ownBusiness": "Você oferece serviços para eventos?",
     "ownBusinessLink": "Crie a página do seu negócio"
+  },
+  "search": {
+    "unknownParameter": "A busca não aceita o parâmetro “{{name}}”.",
+    "tooLong": "Escreva no máximo {{max}} caracteres.",
+    "invalidLimit": "Peça entre 1 e {{max}} resultados.",
+    "invalidRadius": "A distância vai de 1 a {{max}} km.",
+    "needsPoint": "Para buscar ou ordenar por distância, informe também a latitude e a longitude.",
+    "invalidSort": "Ordene por relevância ou por distância.",
+    "invalidCursor": "Essa página de resultados não é mais válida: faça a busca de novo.",
+    "unavailable": "A busca não está disponível agora. Tente de novo em alguns minutos."
   }
 }
