@@ -6,7 +6,8 @@ FROM node:24.22.0-alpine3.24 AS contracts
 WORKDIR /app
 COPY package*.json tsconfig.base.json ./
 COPY packages/contracts/package.json packages/contracts/
-RUN npm ci --workspace @tuevento/contracts --no-audit --no-fund
+# typescript es de la raíz: declararlo en contracts lo metería en la imagen de la API (--omit=dev no lo excluye)
+RUN npm ci --workspace @tuevento/contracts --include-workspace-root --no-audit --no-fund
 COPY packages/contracts packages/contracts
 RUN npm run build -w @tuevento/contracts
 
