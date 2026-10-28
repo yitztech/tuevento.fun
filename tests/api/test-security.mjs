@@ -235,6 +235,26 @@ try {
     await client().call("/auth/login", "POST", { email: account(P, "a").email, password }, 201);
   });
 
+  await suite("Dispositivo de confianza: un ataque contra tu correo no te deja fuera del navegador donde ya entraste", async () => {
+    const victima = account(P, "disp");
+    const propio = client();
+    const alta = await propio.raw("/auth/register", { method: "POST", body: victima });
+    assert.equal(alta.status, 201);
+    const dispositivo = alta.setCookie.find((c) => /^(__Host-)?device=/.test(c));
+    assert.ok(dispositivo && /HttpOnly/i.test(dispositivo) && /SameSite=Lax/i.test(dispositivo) && /Path=\//.test(dispositivo), "cookie del dispositivo");
+    await propio.call("/auth/logout", "POST", {}, 201);
+    const atacante = client();
+    for (let i = 0; i < 6; i++) await atacante.raw("/auth/login", { method: "POST", body: { email: victima.email, password: `mala-${i}-clave` } });
+    assert.equal((await atacante.raw("/auth/login", { method: "POST", body: { email: victima.email, password } })).status, 429);
+    // Desde su navegador, la víctima entra con su contraseña
+    assert.equal((await propio.call("/auth/login", "POST", { email: victima.email, password }, 201)).email, victima.email);
+    // El dispositivo es de esa cuenta: no libra del freno a otra
+    const otra = account(P, "disp-otra");
+    await client().call("/auth/register", "POST", otra, 201);
+    for (let i = 0; i < 6; i++) await atacante.raw("/auth/login", { method: "POST", body: { email: otra.email, password: `mala-${i}-clave` } });
+    assert.equal((await propio.raw("/auth/login", { method: "POST", body: { email: otra.email, password: "mala-otra-clave" } })).status, 429);
+  });
+
   await suite("Sin enumeración de cuentas: misma respuesta exista o no el correo", async () => {
     const existe = await client().raw("/auth/login", { method: "POST", body: { email: account(P, "a").email, password: "incorrecta-123" } });
     const noExiste = await client().raw("/auth/login", { method: "POST", body: { email: `nadie-${Date.now()}@example.invalid`, password: "incorrecta-123" } });

@@ -86,6 +86,27 @@ export function passwordChangedMail(
   });
 }
 
+/** Aviso al dueño: su cuenta se cerró un rato por demasiados intentos fallidos. */
+export function loginLockedMail(
+  locale: Locale,
+  data: { to: string; name: string; site: string; resetUrl: string },
+): MailMessage {
+  const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
+  return layout({
+    to: data.to,
+    site: data.site,
+    subject: t("mail.loginLocked.subject"),
+    paragraphs: [
+      t("mail.greeting", { name: data.name }),
+      t("mail.loginLocked.intro"),
+      t("mail.loginLocked.device"),
+      t("mail.loginLocked.advice"),
+    ],
+    action: { label: t("mail.loginLocked.action"), url: data.resetUrl },
+    footer: t("mail.loginLocked.footer"),
+  });
+}
+
 /** Resumen en el correo del invitado tras guardar su respuesta. */
 export function guestReplyMail(
   locale: Locale,

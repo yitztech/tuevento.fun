@@ -14,6 +14,13 @@ Característica: Landing protegida por contraseña y dirección sugerida
     Y pulso "Ver el evento"
     Entonces veo el encabezado con el título del evento
 
+  @validacion
+  Escenario: El organizador ve que alguien prueba contraseñas en su página protegida
+    Dado que tengo un evento con dirección pública y contraseña "clave-de-prueba"
+    Y que alguien prueba 3 contraseñas equivocadas en la página del evento
+    Cuando abro la edición del evento
+    Entonces veo el aviso "Alguien probó contraseñas equivocadas 3 veces desde el último acceso correcto. Si no fueron tú ni tus invitados, cámbiala."
+
   Escenario: La página pública del evento pide no indexarse
     Dado que tengo un evento con dirección pública
     Cuando abro la página pública del evento

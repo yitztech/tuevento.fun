@@ -474,6 +474,8 @@ export type Event = Omit<EventInput, "publicPassword" | "geo"> & {
   metrics: Metrics;
   /** Si la página pública pide contraseña (la contraseña nunca se devuelve). */
   hasPublicPassword: boolean;
+  /** Intentos fallidos con esa contraseña desde el último acierto o el último cambio. */
+  passwordFailures: number;
 };
 /** Evento visto desde su landing: sin invitados ni respuestas. */
 export type PublicEvent = {

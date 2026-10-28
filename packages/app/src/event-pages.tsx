@@ -104,6 +104,7 @@ export function EventEditor() {
   const [slugTouched, setSlugTouched] = useState(!!id),
     [slugFree, setSlugFree] = useState<boolean | null>(null),
     [hasPassword, setHasPassword] = useState(false),
+    [passwordFailures, setPasswordFailures] = useState(0),
     [removePassword, setRemovePassword] = useState(false);
   const form = useForm<EventInput>({
     resolver: zodResolver(
@@ -131,6 +132,7 @@ export function EventEditor() {
       .event(id)
       .then((e) => {
         setHasPassword(e.hasPublicPassword);
+        setPasswordFailures(e.passwordFailures ?? 0);
         form.reset({
           ...eventInput(e),
           date: formatInTimeZone(e.date, e.timeZone, "yyyy-MM-dd'T'HH:mm"),
@@ -316,6 +318,11 @@ export function EventEditor() {
               <input type="checkbox" checked={removePassword} onChange={(e) => setRemovePassword(e.target.checked)} />
               <span>{tr("events.removePublicPassword")}</span>
             </label>
+          )}
+          {hasPassword && passwordFailures > 0 && (
+            <p className="field-hint" role="status">
+              {tr("events.publicPasswordFailures", { count: passwordFailures })}
+            </p>
           )}
           <div className="form-section-heading">
             <h2>{tr("events.chooseInvitationStyle")}</h2>

@@ -282,6 +282,7 @@
     "openInvitationFull": "Este link já atingiu o número máximo de registros.",
     "eventPasswordIncorrect": "A senha não está correta.",
     "geocoderUnavailable": "A busca no mapa não está disponível agora. Tente em alguns minutos ou cole um link do mapa.",
+    "geocoderBusy": "Tem muita gente buscando no mapa agora. Tente de novo em alguns segundos.",
     "mapLinkWithoutCoordinates": "Esse link não traz a localização. No app de mapas, abra o lugar, toque em “Compartilhar” e copie esse link.",
     "wrongAccountType": "Esta parte é para outro tipo de conta.",
     "providerProfileNotFound": "Primeiro salve os dados do seu negócio.",
@@ -425,6 +426,8 @@
     "publicAddressTaken": "Você já tem outro evento com esse endereço.",
     "publicPassword": "Senha da página do evento (opcional)",
     "publicPasswordHint": "Com ela, quem não tem link pessoal também poderá entrar. Deixe em branco para que só os seus convidados entrem.",
+    "publicPasswordFailures_one": "Alguém tentou uma senha errada {{count}} vez desde o último acesso certo. Se não foi você nem seus convidados, troque a senha.",
+    "publicPasswordFailures_other": "Alguém tentou senhas erradas {{count}} vezes desde o último acesso certo. Se não foram você nem seus convidados, troque a senha.",
     "publicPasswordKept": "Há uma senha salva. Deixe em branco para mantê-la.",
     "removePublicPassword": "Remover a senha da página pública",
     "viaOpenLink": "pelo link genérico"
@@ -607,6 +610,14 @@
       "counts": "Confirmados: {{accepted}}. Não vão: {{declined}}. Em espera: {{pending}}.",
       "intro": "{{guest}} respondeu a {{event}}.",
       "subject": "{{guest}} respondeu a {{event}}"
+    },
+    "loginLocked": {
+      "action": "Redefinir minha senha",
+      "advice": "Se não foi você, alguém está testando senhas com o seu e-mail. Sua senha continua a mesma; se quiser, troque por uma nova.",
+      "device": "Você continua entrando normalmente pelo navegador em que já entrou antes. Por outro, espere uma hora ou redefina sua senha.",
+      "footer": "Aviso de segurança sobre a sua conta.",
+      "intro": "Houve muitas tentativas sem sucesso de entrar na sua conta, então bloqueamos por um tempo o acesso de dispositivos desconhecidos.",
+      "subject": "Pausamos o acesso à sua conta do TuEventoFun por um tempo"
     }
   },
   "mobileConnect": {

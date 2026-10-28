@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "users"]);
+  assert.deepEqual(tablas, ["activity", "app_releases", "event_access", "events", "geo_cache", "invitations", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "trusted_devices", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -31,7 +31,7 @@ test("El correo electrónico es el identificador: users no tiene nombre de usuar
 });
 
 test("Ni contraseñas ni tokens se guardan en claro: solo hashes", async () => {
-  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"]]) {
+  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"]]) {
     const cols = await columnas(tabla);
     assert.ok(cols.includes(hash), `${tabla}.${hash}`);
     assert.ok(!cols.includes("password") && !cols.includes("token") && !cols.includes("code"), `${tabla} guarda un secreto en claro`);
@@ -124,10 +124,11 @@ test("Borrar una cuenta borra todo lo suyo, salvo la actividad anónima que se c
   await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '1 day')", [`s-${id}`, id]);
   await db.query("INSERT INTO password_resets(token_hash,user_id,locale,expires_at) VALUES($1,$2,'es', now() + interval '1 hour')", [`p-${id}`, id]);
   await db.query("INSERT INTO mobile_auth_codes(code_hash,challenge,user_id,expires_at) VALUES($1,'c',$2, now() + interval '1 minute')", [`m-${id}`, id]);
+  await db.query("INSERT INTO trusted_devices(token_hash,user_id,expires_at) VALUES($1,$2, now() + interval '180 days')", [`d-${id}`, id]);
   const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [id]);
   const act = await uno("INSERT INTO activity(id,kind,platform,user_id) VALUES(gen_random_uuid(),'registration','web',$1) RETURNING id", [id]);
   await db.query("DELETE FROM users WHERE id=$1", [id]);
-  for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["events", "user_id"]])
+  for (const [tabla, col] of [["sessions", "user_id"], ["password_resets", "user_id"], ["mobile_auth_codes", "user_id"], ["trusted_devices", "user_id"], ["events", "user_id"]])
     assert.equal((await uno(`SELECT count(*)::int n FROM ${tabla} WHERE ${col}=$1`, [id])).n, 0, tabla);
   assert.equal((await uno("SELECT count(*)::int n FROM events WHERE id=$1", [e.id])).n, 0);
   const fila = await uno("SELECT user_id FROM activity WHERE id=$1", [act.id]);

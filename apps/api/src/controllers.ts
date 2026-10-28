@@ -237,7 +237,7 @@ export class PublicController {
       req,
     );
     limits.unlockIp.hit(ipKey("unlock", req));
-    const granted = await this.events.unlockLanding(code, slug, password);
+    const granted = await this.events.unlockLanding(code, slug, password, req.ip);
     if (granted) setLandingAccess(reply, granted.eventId, granted.token, 86400);
     return { ok: true };
   }
@@ -580,7 +580,13 @@ function calendarResponse(reply: FastifyReply, ics: string) {
  */
 function withoutEventOutput(body: unknown) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
-  const { id: _id, createdAt: _createdAt, metrics: _metrics, hasPublicPassword: _hasPublicPassword, ...input } =
-    body as Record<string, unknown>;
+  const {
+    id: _id,
+    createdAt: _createdAt,
+    metrics: _metrics,
+    hasPublicPassword: _hasPublicPassword,
+    passwordFailures: _passwordFailures,
+    ...input
+  } = body as Record<string, unknown>;
   return input;
 }

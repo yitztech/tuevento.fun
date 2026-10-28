@@ -282,6 +282,7 @@
     "openInvitationFull": "Dieser Link hat die maximale Anzahl an Anmeldungen erreicht.",
     "eventPasswordIncorrect": "Das Passwort ist nicht korrekt.",
     "geocoderUnavailable": "Die Kartensuche ist gerade nicht verfügbar. Versuch es in ein paar Minuten noch einmal oder füge einen Kartenlink ein.",
+    "geocoderBusy": "Gerade suchen sehr viele auf der Karte. Versuch es in ein paar Sekunden noch einmal.",
     "mapLinkWithoutCoordinates": "Dieser Link enthält keinen Ort. Öffne den Ort in deiner Karten-App, tippe auf „Teilen“ und kopiere diesen Link.",
     "wrongAccountType": "Dieser Bereich ist für eine andere Kontoart.",
     "providerProfileNotFound": "Speichere zuerst die Daten deines Business.",
@@ -425,6 +426,8 @@
     "publicAddressTaken": "Du hast bereits ein anderes Event mit dieser Adresse.",
     "publicPassword": "Passwort für die Event-Seite (optional)",
     "publicPasswordHint": "Damit kommen auch Personen ohne persönlichen Link hinein. Lass es leer, damit nur deine Gäste hineinkommen.",
+    "publicPasswordFailures_one": "Jemand hat seit dem letzten erfolgreichen Zugriff {{count}}-mal ein falsches Passwort eingegeben. Wenn das weder du noch deine Gäste waren, ändere es.",
+    "publicPasswordFailures_other": "Jemand hat seit dem letzten erfolgreichen Zugriff {{count}}-mal ein falsches Passwort eingegeben. Wenn das weder du noch deine Gäste waren, ändere es.",
     "publicPasswordKept": "Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.",
     "removePublicPassword": "Passwort der öffentlichen Seite entfernen",
     "viaOpenLink": "über offenen Link"
@@ -607,6 +610,14 @@
       "counts": "Zugesagt: {{accepted}}. Absagen: {{declined}}. Warteliste: {{pending}}.",
       "intro": "{{guest}} hat auf {{event}} geantwortet.",
       "subject": "{{guest}} hat auf {{event}} geantwortet"
+    },
+    "loginLocked": {
+      "action": "Passwort zurücksetzen",
+      "advice": "Wenn du das nicht warst, probiert jemand Passwörter mit deiner E-Mail-Adresse aus. Dein Passwort ist unverändert; wenn du willst, wähl ein neues.",
+      "device": "In einem Browser, in dem du dich schon einmal angemeldet hast, kannst du dich ganz normal weiter anmelden. In jedem anderen wartest du eine Stunde oder setzt dein Passwort zurück.",
+      "footer": "Sicherheitshinweis zu deinem Konto.",
+      "intro": "Es gab viele fehlgeschlagene Anmeldeversuche bei deinem Konto. Deshalb sperren wir Anmeldungen von unbekannten Geräten für eine Weile.",
+      "subject": "Anmeldungen bei deinem TuEventoFun-Konto sind vorübergehend gesperrt"
     }
   },
   "mobileConnect": {

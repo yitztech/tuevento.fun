@@ -282,6 +282,7 @@
     "openInvitationFull": "Este enlace ya tiene el número máximo de registros.",
     "eventPasswordIncorrect": "La contraseña no es correcta.",
     "geocoderUnavailable": "La búsqueda en el mapa no está disponible ahora. Inténtalo en unos minutos o pega un enlace de mapas.",
+    "geocoderBusy": "Hay muchas búsquedas en el mapa ahora mismo. Inténtalo de nuevo en unos segundos.",
     "mapLinkWithoutCoordinates": "Ese enlace no trae la ubicación. En la app de mapas, abre el lugar, pulsa «Compartir» y copia ese enlace.",
     "wrongAccountType": "Esta parte es para otro tipo de cuenta.",
     "providerProfileNotFound": "Primero guarda los datos de tu negocio.",
@@ -425,6 +426,8 @@
     "publicAddressTaken": "Ya tienes otro evento con esa dirección.",
     "publicPassword": "Contraseña de la página del evento (opcional)",
     "publicPasswordHint": "Con ella también podrá entrar quien no tenga enlace personal. Déjala vacía para que solo entren tus invitados.",
+    "publicPasswordFailures_one": "Alguien probó una contraseña equivocada {{count}} vez desde el último acceso correcto. Si no fuiste tú ni tus invitados, cámbiala.",
+    "publicPasswordFailures_other": "Alguien probó contraseñas equivocadas {{count}} veces desde el último acceso correcto. Si no fueron tú ni tus invitados, cámbiala.",
     "publicPasswordKept": "Hay una contraseña guardada. Déjala vacía para conservarla.",
     "removePublicPassword": "Quitar la contraseña de la página pública",
     "viaOpenLink": "vía enlace genérico"
@@ -607,6 +610,14 @@
       "counts": "Confirmados: {{accepted}}. No asisten: {{declined}}. En espera: {{pending}}.",
       "intro": "{{guest}} ha respondido a {{event}}.",
       "subject": "{{guest}} ha respondido a {{event}}"
+    },
+    "loginLocked": {
+      "action": "Restablecer mi contraseña",
+      "advice": "Si no fuiste tú, alguien está probando contraseñas con tu correo. Tu contraseña sigue siendo la misma; si quieres, cámbiala por una nueva.",
+      "device": "Desde un navegador en el que ya hayas entrado antes puedes seguir entrando con normalidad. Desde otro, espera una hora o restablece tu contraseña.",
+      "footer": "Aviso de seguridad sobre tu cuenta.",
+      "intro": "Hubo muchos intentos fallidos de entrar en tu cuenta, así que la cerramos un rato a quien no entre desde un dispositivo conocido.",
+      "subject": "Cerramos el acceso a tu cuenta de TuEventoFun por un rato"
     }
   },
   "mobileConnect": {

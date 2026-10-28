@@ -219,6 +219,9 @@ try {
     const intentos = client();
     for (let i = 0; i < 10; i++) await intentos.call(`${landing}/unlock`, "POST", { password: "mal" }, 401);
     await intentos.call(`${landing}/unlock`, "POST", { password: "clave-de-prueba" }, 429);
+    // El organizador ve los fallos desde el último acierto; los invitados con enlace no se ven afectados
+    assert.equal((await organizador.call(`/events/${evento.id}`)).passwordFailures, 10);
+    assert.equal((await conEnlace.call(landing)).access, "guest");
     // Sin contraseña, la landing vuelve a ser solo para invitados y organizador
     await organizador.call(`/events/${evento.id}`, "PATCH", eventData({ slug, publicPassword: "" }));
     assert.equal((await organizador.call(`/events/${evento.id}`)).hasPublicPassword, false);

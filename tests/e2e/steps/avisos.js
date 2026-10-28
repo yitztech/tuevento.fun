@@ -54,6 +54,19 @@ Given("que tengo un evento con dirección pública y contraseña {string}", asyn
     },
   });
   expect(r.status()).toBe(201);
+  ctx.evento = await r.json();
+});
+
+// Desde otro navegador, sin la sesión del organizador
+Given("que alguien prueba {int} contraseñas equivocadas en la página del evento", async ({ page, request, ctx }, n) => {
+  const { publicCode } = await (await page.request.get("/api/auth/me")).json();
+  for (let i = 0; i < n; i++) {
+    const r = await request.post(`/api/public/landing/${publicCode}/${ctx.slug}/unlock`, {
+      headers: cabecera,
+      data: { password: `equivocada-${i}` },
+    });
+    expect(r.status()).toBe(401);
+  }
 });
 
 Given("que tengo un evento con dirección pública", async ({ page, ctx }) => {

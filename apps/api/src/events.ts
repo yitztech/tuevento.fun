@@ -17,6 +17,7 @@ import { PostcardsService } from "./postcards";
 import { NoticeService } from "./notices";
 import { hashPassword, verifyPassword } from "./password";
 import { siteUrl } from "./locale-env";
+import { limits } from "./rate-limit";
 import {
   accountLimits,
   calendarFile,
@@ -43,9 +44,13 @@ import {
   type Status,
 } from "@tuevento/contracts";
 
-/** Cuántos intentos fallidos bloquean la contraseña de una página pública, y por cuánto tiempo. */
-const EVENT_PASSWORD_MAX_FAILURES = 10;
-const EVENT_PASSWORD_LOCK_MINUTES = 15;
+/**
+ * Fallos con la contraseña de una página pública a partir de los cuales cada intento, desde
+ * cualquier IP, espera cada vez más (2 s, 4 s… hasta un minuto). Desde una misma IP, el límite
+ * estricto está en `limits.unlockEventIp`. Los invitados con enlace personal no la necesitan.
+ */
+const EVENT_PASSWORD_FREE_FAILURES = 10;
+const EVENT_PASSWORD_MAX_DELAY_SECONDS = 60;
 /** Lo que dura el acceso de un invitado a la landing desde su enlace personal. */
 const GUEST_ACCESS_DAYS = 180;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -70,6 +75,7 @@ type EventRow = {
   archived: boolean;
   cancelled: boolean;
   public_password_hash: string | null;
+  public_password_failures: number;
   slug: string | null;
   created_at: Date;
 };
@@ -89,6 +95,7 @@ const eventView = (r: EventRow): Event => ({
   archived: r.archived,
   cancelled: r.cancelled,
   hasPublicPassword: !!r.public_password_hash,
+  passwordFailures: r.public_password_hash ? r.public_password_failures : 0,
   slug: r.slug ?? "",
   createdAt: r.created_at.toISOString(),
   metrics: countMetrics([]),
@@ -640,20 +647,29 @@ export class EventsService {
    * Contraseña del evento. Devuelve el token de acceso (solo se guarda su hash) y el evento,
    * o null si no tiene contraseña. Tras varios fallos, bloquea un rato.
    */
-  async unlockLanding(code: string, slug: string, password: string): Promise<{ token: string; eventId: string } | null> {
+  async unlockLanding(
+    code: string,
+    slug: string,
+    password: string,
+    ip: string,
+  ): Promise<{ token: string; eventId: string } | null> {
     const r = await this.eventByAddress(code, slug);
     if (r.archived) throw new NotFoundException("errors.eventIsntAvailable");
     if (!r.public_password_hash) return null;
+    const ipKey = `unlock:event-ip:${r.id}:${ip}`;
+    limits.unlockEventIp.check(ipKey);
     if (r.public_password_locked_until && new Date(r.public_password_locked_until) > new Date())
       throw new HttpException("errors.tooManyAttemptsPlease", HttpStatus.TOO_MANY_REQUESTS);
     const { valid, rehash } = await verifyPassword(password, r.public_password_hash);
     if (!valid) {
+      limits.unlockEventIp.allow(ipKey);
       await this.db.query(
-        "UPDATE events SET public_password_failures=public_password_failures+1, public_password_locked_until=CASE WHEN public_password_failures+1>=$2 THEN now()+make_interval(mins => $3) ELSE public_password_locked_until END WHERE id=$1",
-        [r.id, EVENT_PASSWORD_MAX_FAILURES, EVENT_PASSWORD_LOCK_MINUTES],
+        "UPDATE events SET public_password_failures=public_password_failures+1, public_password_locked_until=CASE WHEN public_password_failures+1>=$2 THEN now()+make_interval(secs => least($3, power(2, public_password_failures+2-$2))) ELSE public_password_locked_until END WHERE id=$1",
+        [r.id, EVENT_PASSWORD_FREE_FAILURES, EVENT_PASSWORD_MAX_DELAY_SECONDS],
       );
       throw new UnauthorizedException("errors.eventPasswordIncorrect");
     }
+    limits.unlockEventIp.reset(ipKey);
     await this.db.query(
       "UPDATE events SET public_password_failures=0, public_password_locked_until=NULL WHERE id=$1",
       [r.id],

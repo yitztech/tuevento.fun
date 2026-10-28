@@ -57,6 +57,7 @@ export class Database implements OnModuleInit, OnModuleDestroy {
     );
     await this.pool.query("DELETE FROM mobile_auth_codes WHERE expires_at < now()");
     await this.pool.query("DELETE FROM sessions WHERE expires_at < now()");
+    await this.pool.query("DELETE FROM trusted_devices WHERE expires_at < now()");
     await this.pool.query("DELETE FROM password_resets WHERE expires_at < now()");
     await this.pool.query("DELETE FROM geo_cache WHERE created_at < now() - interval '30 days'");
     await this.pool.query(

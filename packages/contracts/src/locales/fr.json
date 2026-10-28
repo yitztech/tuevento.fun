@@ -282,6 +282,7 @@
     "openInvitationFull": "Ce lien a atteint le nombre maximal d’inscriptions.",
     "eventPasswordIncorrect": "Le mot de passe n’est pas correct.",
     "geocoderUnavailable": "La recherche sur la carte n'est pas disponible pour le moment. Réessaie dans quelques minutes ou colle un lien de carte.",
+    "geocoderBusy": "Il y a beaucoup de recherches sur la carte en ce moment. Réessaie dans quelques secondes.",
     "mapLinkWithoutCoordinates": "Ce lien ne contient pas le lieu. Dans ton appli de cartes, ouvre le lieu, appuie sur « Partager » et copie ce lien.",
     "wrongAccountType": "Cette partie est réservée à un autre type de compte.",
     "providerProfileNotFound": "Enregistre d'abord les informations de ton activité.",
@@ -425,6 +426,8 @@
     "publicAddressTaken": "Tu as déjà un autre événement avec cette adresse.",
     "publicPassword": "Mot de passe de la page de l’événement (facultatif)",
     "publicPasswordHint": "Avec lui, les personnes sans lien personnel pourront aussi entrer. Laisse-le vide pour que seuls tes invités puissent entrer.",
+    "publicPasswordFailures_one": "Quelqu'un a essayé un mauvais mot de passe {{count}} fois depuis le dernier accès réussi. Si ce n'était ni toi ni tes invités, change-le.",
+    "publicPasswordFailures_other": "Quelqu'un a essayé de mauvais mots de passe {{count}} fois depuis le dernier accès réussi. Si ce n'était ni toi ni tes invités, change-le.",
     "publicPasswordKept": "Un mot de passe est enregistré. Laisse vide pour le conserver.",
     "removePublicPassword": "Retirer le mot de passe de la page publique",
     "viaOpenLink": "via le lien ouvert"
@@ -607,6 +610,14 @@
       "counts": "Confirmés : {{accepted}}. Absents : {{declined}}. En attente : {{pending}}.",
       "intro": "{{guest}} a répondu à {{event}}.",
       "subject": "{{guest}} a répondu à {{event}}"
+    },
+    "loginLocked": {
+      "action": "Réinitialiser mon mot de passe",
+      "advice": "Si ce n'était pas toi, quelqu'un essaie des mots de passe avec ton adresse e-mail. Ton mot de passe n'a pas changé ; si tu veux, choisis-en un nouveau.",
+      "device": "Depuis un navigateur où tu t'es déjà connecté, tu peux continuer à te connecter normalement. Depuis un autre, attends une heure ou réinitialise ton mot de passe.",
+      "footer": "Alerte de sécurité concernant ton compte.",
+      "intro": "Il y a eu de nombreuses tentatives de connexion échouées sur ton compte : nous bloquons donc un moment les connexions depuis des appareils inconnus.",
+      "subject": "Nous avons suspendu un moment les connexions à ton compte TuEventoFun"
     }
   },
   "mobileConnect": {

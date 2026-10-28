@@ -282,6 +282,7 @@
     "openInvitationFull": "This link has reached its maximum number of registrations.",
     "eventPasswordIncorrect": "The password is not correct.",
     "geocoderUnavailable": "Map search isn't available right now. Try again in a few minutes or paste a map link.",
+    "geocoderBusy": "Lots of people are searching the map right now. Try again in a few seconds.",
     "mapLinkWithoutCoordinates": "That link doesn't include the location. In your maps app, open the place, tap “Share” and copy that link.",
     "wrongAccountType": "This section is for a different type of account.",
     "providerProfileNotFound": "Save your business details first.",
@@ -425,6 +426,8 @@
     "publicAddressTaken": "You already have another event with that address.",
     "publicPassword": "Event page password (optional)",
     "publicPasswordHint": "With it, people without a personal link can also get in. Leave it empty so only your guests can.",
+    "publicPasswordFailures_one": "Someone tried a wrong password {{count}} time since the last successful access. If it wasn't you or your guests, change it.",
+    "publicPasswordFailures_other": "Someone tried wrong passwords {{count}} times since the last successful access. If it wasn't you or your guests, change it.",
     "publicPasswordKept": "A password is saved. Leave empty to keep it.",
     "removePublicPassword": "Remove the public page password",
     "viaOpenLink": "via open link"
@@ -607,6 +610,14 @@
       "counts": "Confirmed: {{accepted}}. Not attending: {{declined}}. Waiting: {{pending}}.",
       "intro": "{{guest}} replied to {{event}}.",
       "subject": "{{guest}} replied to {{event}}"
+    },
+    "loginLocked": {
+      "action": "Reset my password",
+      "advice": "If it wasn't you, someone is trying passwords with your email. Your password hasn't changed; if you like, switch to a new one.",
+      "device": "You can keep signing in as usual from a browser you've used before. From any other, wait an hour or reset your password.",
+      "footer": "Security notice about your account.",
+      "intro": "There were many failed attempts to sign in to your account, so we've blocked sign-ins from unknown devices for a while.",
+      "subject": "We've paused sign-ins to your TuEventoFun account for a while"
     }
   },
   "mobileConnect": {
