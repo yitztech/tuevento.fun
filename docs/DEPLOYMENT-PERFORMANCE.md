@@ -62,3 +62,24 @@ Verificación adicional: actionlint y diff --check correctos; Bake con cache-to 
 PR de implementación: https://github.com/yitztech/tuevento.fun/pull/42. La primera ejecución remota confirmó la integración Bake y detectó que una capa antigua de Alpine conservaba curl/libcurl 8.22.0-r0, con CVE-2026-92392 corregida en 8.23.0-r0. Se añadió SECURITY_REFRESH diario a las etapas de ejecución que aplican apk upgrade, tanto en CI como en publicación: renueva los parches sin invalidar las etapas de compilación. No se omitió el análisis de seguridad ni se añadió una excepción a la vulnerabilidad.
 
 La integración en main requiere una aprobación y los checks obligatorios según el ruleset activo del repositorio. Las mediciones de despliegue y comprobaciones de producción se realizarán después de esa integración, sin bypass administrativo.
+
+## Equilibrio de escenarios, Seguridad en paralelo y `:main` tras el CI (2026-10-27)
+
+Medición del primer despliegue con tres partes (run 40623833862, 9:32 de principio a fin), con el `results.json` de cada parte:
+
+| Parte | Escenarios | Tiempo de pruebas (suma) | E2E en el runner |
+| --- | --- | --- | --- |
+| 1/3 | 185 chromium | 152 s | 1:29 |
+| 2/3 | 9 chromium + 176 android-chrome | 132 s | 1:19 |
+| 3/3 | 4 android-chrome + 180 iphone-safari | 435 s | 3:56 |
+
+`--shard=N/3` reparte por número de escenarios y en orden de proyecto, así que la última parte se queda casi todo WebKit, que tarda unas 3 veces más por escenario (2,4 s frente a 0,8 s). La parte 3 retrasaba todo el CI 2:30.
+
+Cambios:
+
+- **Partes por duración:** 1 = chromium y android-chrome (374 escenarios, unos 145 s con dos workers); 2 y 3 = iphone-safari en dos mitades (90 cada una, unos 110 s). Las pruebas auxiliares de navegador pasan a la parte 2. El listado local con Playwright 1.64.1 da 374 + 90 + 90 = 554, igual que la suite, sin duplicados.
+- **Seguridad en dos jobs en paralelo** (`Seguridad · CodeQL` y `Seguridad · API y ZAP`) más el check obligatorio `Seguridad`, que los agrega como `Escenarios`. CodeQL ocupaba 1:40 antes de construir y levantar el entorno para ZAP; con los escenarios equilibrados, Seguridad (4:38) habría sido la ruta crítica.
+- **Publicar en paralelo con el CI, solo con `:<sha>`**, y un job `promover` que copia el manifiesto a `:main` (`docker buildx imagetools create`, sin reconstruir) cuando el CI pasa. Es la regla DEP-14 de la plataforma: un commit que falla nunca mueve la imagen que usa producción. Publicar tardaba 0:56 después del CI; promover tarda unos 0:35.
+- La comprobación de la versión consulta cada 5 s (antes, cada 10 s), con el mismo límite de 10 minutos.
+
+Estimación: CI de unos 4:30 (antes, 6:48), promover 0:35 y despliegue 1:40; en total, unos 7 minutos frente a 9:32. Jobs simultáneos: 9 del CI + 6 de publicar = 15, por debajo del tope de 20 de la organización (plan Free). La duración real se mide en el primer despliegue tras fusionar.

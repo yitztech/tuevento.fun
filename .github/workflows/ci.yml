@@ -4,7 +4,7 @@
 #                  y Trivy sobre las 6 imágenes
 #   Escenarios     API, endpoints, e2e (Chromium, Android e iPhone emulados) y recorridos de navegador
 #   Base de datos  tests/db contra PostgreSQL 18 (la imagen del proyecto) y Squawk en migraciones nuevas
-#   Seguridad      test:security, CodeQL y ZAP baseline
+#   Seguridad      test:security, CodeQL y ZAP baseline (dos jobs en paralelo y uno que los agrega)
 #
 # Cada job y cada paso tiene su timeout-minutes, holgado sobre lo que tarda cuando va bien
 # (medido en las ejecuciones en verde de oct-2026): si algo se cuelga, falla en minutos.
@@ -108,12 +108,21 @@ jobs:
             sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/trivy"
           fi
 
+  # Tres partes repartidas por duración, no por número de escenarios: WebKit (iphone-safari) tarda
+  # unas 3 veces más por escenario que Chromium. Con --shard=N/3 sobre todo, la parte 3 se quedaba
+  # casi todo iphone-safari (430 s de pruebas frente a 152 y 130; run 40623833862).
   escenarios-partes:
-    name: Escenarios (${{ matrix.shard }}/3)
+    name: Escenarios (${{ matrix.parte }}/3)
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        include:
+          - parte: 1
+            proyectos: --project=chromium --project=android-chrome
+          - parte: 2
+            proyectos: --project=iphone-safari --shard=1/2
+          - parte: 3
+            proyectos: --project=iphone-safari --shard=2/2
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -155,12 +164,13 @@ jobs:
         timeout-minutes: 3
       - run: npm run test:api && npm run test:endpoints
         timeout-minutes: 3
-      - run: npm run e2e -- --shard=${{ matrix.shard }}/3
+      - run: npm run e2e -- ${{ matrix.proyectos }}
         timeout-minutes: 12
       - run: npm run e2e:summary
         if: always()
         timeout-minutes: 2
-      - if: matrix.shard == 1
+      # En una parte de WebKit, que termina antes que la de Chromium y Android
+      - if: matrix.parte == 2
         run: npm run test:platform && node scripts/test-owner-browser.cjs && npm run test:browser && npm run test:landing && npm run test:password
         timeout-minutes: 3
       - uses: actions/upload-artifact@v7
@@ -168,7 +178,7 @@ jobs:
         timeout-minutes: 3
         with:
           retention-days: 7
-          name: qa-evidence-${{ matrix.shard }}
+          name: qa-evidence-${{ matrix.parte }}
           path: |
             qa-artifacts/
             tests/e2e/results/
@@ -280,10 +290,12 @@ jobs:
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         timeout-minutes: 5
 
-  seguridad:
-    name: Seguridad
+  # CodeQL (JS/TS y Actions) y ZAP van en paralelo: juntos, CodeQL retrasaba 1:40 la construcción
+  # y ZAP, y Seguridad era la ruta crítica una vez equilibrados los escenarios.
+  seguridad-codeql:
+    name: Seguridad · CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     permissions:
       contents: read
       actions: read
@@ -307,6 +319,23 @@ jobs:
           build-mode: none
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         timeout-minutes: 5
+
+  seguridad-zap:
+    name: Seguridad · API y ZAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        timeout-minutes: 2
+      - uses: actions/setup-node@v7
+        timeout-minutes: 3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npm run build
+        timeout-minutes: 3
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       - name: Entorno de imágenes
@@ -339,3 +368,18 @@ jobs:
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
         if: always()
         timeout-minutes: 2
+
+  # Conserva el check obligatorio `Seguridad`, como `Escenarios` con sus partes.
+  seguridad:
+    name: Seguridad
+    needs: [seguridad-codeql, seguridad-zap]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Comprobar CodeQL y ZAP
+        timeout-minutes: 1
+        env:
+          CODEQL: ${{ needs.seguridad-codeql.result }}
+          ZAP: ${{ needs.seguridad-zap.result }}
+        run: test "$CODEQL" = success && test "$ZAP" = success
