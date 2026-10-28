@@ -27,7 +27,7 @@ COPY services/web/default.dev.conf.template /etc/nginx/templates/default.dev.con
 # (el preámbulo de React Refresh) y sin la analítica, que en desarrollo no se carga
 COPY services/web/snippets/security-headers.conf /tmp/security-headers.conf
 RUN mkdir -p /etc/nginx/snippets \
- && sed -e "s/script-src 'self'/script-src 'self' 'unsafe-inline'/" -e 's/\$analytics_src//g' \
+ && sed -e "s/script-src 'self'/script-src 'self' 'unsafe-inline'/" -e 's/\$analytics_src//g' -e 's/\$errores_src//g' \
       /tmp/security-headers.conf > /etc/nginx/snippets/security-headers.conf \
  && rm /tmp/security-headers.conf
 COPY --chmod=755 services/web/17-sites.sh /17-sites.sh
@@ -49,6 +49,10 @@ COPY packages/client packages/client
 COPY packages/app packages/app
 COPY apps/web apps/web
 COPY services/web/locales-manifest.cjs services/web/
+# Registro de errores (AUDITORIA INT-07): DSN pública de la variable SENTRY_DSN; vacía = apagado
+ARG SENTRY_DSN=""
+ARG RELEASE_SHA=dev
+ENV VITE_SENTRY_DSN=$SENTRY_DSN VITE_RELEASE_SHA=$RELEASE_SHA
 RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client && npm run build -w @tuevento/web \
  && node services/web/locales-manifest.cjs packages/contracts/dist > /app/locales.txt
 

@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { ProblemException, sendProblem, type ProblemInput } from "./problem";
+import { reportError } from "./sentry";
 
 /** Todo error sale en Problem Details y en el idioma de la petición (AGENTS.md §22). */
 @Catch()
@@ -22,8 +23,12 @@ export class LocaleExceptionFilter implements ExceptionFilter {
 
 /** Convierte cualquier excepción en un problema; los 500 se registran sin salir en la respuesta. */
 export function toProblem(exception: unknown, logger: Logger, request: FastifyRequest): ProblemInput {
-  if (exception instanceof ProblemException) return exception.problem;
+  if (exception instanceof ProblemException) {
+    if (exception.problem.status >= 500) reportError(exception, request.id);
+    return exception.problem;
+  }
   if (exception instanceof HttpException) {
+    if (exception.getStatus() >= 500) reportError(exception, request.id);
     const response = exception.getResponse();
     const message = typeof response === "string" ? response : (response as { message?: unknown }).message;
     // Los mensajes por defecto de Nest («Not Found»…) no son claves: queda el título del estado
@@ -40,5 +45,6 @@ export function toProblem(exception: unknown, logger: Logger, request: FastifyRe
     `${exception instanceof Error ? exception.message : "Unexpected error"} (requestId ${request.id})`,
     exception instanceof Error ? exception.stack : undefined,
   );
+  reportError(exception, request.id);
   return { status: 500, detail: "errors.internalErrorPleaseTry" };
 }

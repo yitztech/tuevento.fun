@@ -64,6 +64,8 @@ services:
       # Analítica con Umami (vacío = sin analítica)
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+      # Registro de errores: con valor, la CSP permite conectar con Bugsink (SDK del navegador)
+      SENTRY_DSN: ${SENTRY_DSN:-}
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8080/healthz"]
       interval: 15s
@@ -87,6 +89,9 @@ services:
     environment:
       NODE_ENV: production
       NODE_OPTIONS: --max-old-space-size=192
+      # Registro de errores en Bugsink de la plataforma (vacío = apagado; AUDITORIA INT-07)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # La API se conecta como rol `api` (no como dueño de la base)
       DATABASE_URL: postgres://api@postgres:5432/tueventofun
       PGPASSWORD: ${API_DB_PASSWORD:?Define API_DB_PASSWORD}
@@ -171,6 +176,8 @@ services:
     environment:
       DATABASE_URL: postgres://search_ro@postgres:5432/tueventofun
       PGPASSWORD: ${SEARCH_DB_PASSWORD:?Define SEARCH_DB_PASSWORD}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # Los mismos orígenes que la API: las apps Capacitor leen la búsqueda desde otro origen
       ALLOWED_ORIGINS: ${SITE_URL_ES:?Define SITE_URL_ES},${SITE_URL_EN:?Define SITE_URL_EN},capacitor://localhost,https://localhost
       SITE_URL_ES: ${SITE_URL_ES:?Define SITE_URL_ES}

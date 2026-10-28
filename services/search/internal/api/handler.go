@@ -32,6 +32,8 @@ type Config struct {
 	RateWindow     time.Duration
 	Log            *slog.Logger
 	SearchStore    Searcher
+	// Report manda un fallo a Bugsink de la plataforma (AUDITORIA INT-07); nil sin SENTRY_DSN
+	Report func(err error, requestID string)
 }
 
 type ctxKey int
@@ -102,6 +104,9 @@ func New(cfg Config) http.Handler {
 		items, next, facets, err := cfg.SearchStore.Search(r.Context(), q)
 		if err != nil {
 			cfg.Log.Error("búsqueda fallida", "requestId", requestID(r), "error", err.Error())
+			if cfg.Report != nil {
+				cfg.Report(err, requestID(r))
+			}
 			writeProblem(w, r, http.StatusServiceUnavailable, "search.unavailable", nil)
 			return
 		}

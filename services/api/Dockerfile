@@ -47,7 +47,10 @@ FROM node:24.22.0-alpine3.24 AS production
 ARG ANDROID_CERT_SHA256=
 ARG APPLE_TEAM_ID=
 ARG MOBILE_APP_ID=com.tueventofun.app
+# Commit de la imagen: release de los errores en Bugsink (AUDITORIA INT-07)
+ARG RELEASE_SHA=dev
 ENV NODE_ENV=production \
+    RELEASE_SHA=${RELEASE_SHA} \
     ANDROID_CERT_SHA256=${ANDROID_CERT_SHA256} \
     APPLE_TEAM_ID=${APPLE_TEAM_ID} \
     MOBILE_APP_ID=${MOBILE_APP_ID}

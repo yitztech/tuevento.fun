@@ -22,6 +22,7 @@
     "@capacitor/geolocation": "^8.2.4",
     "@capacitor/ios": "^8.5.3",
     "@capacitor/share": "^8.0.3",
+    "@sentry/react": "^11.10.0",
     "@tuevento/app": "1.0.0",
     "@tuevento/client": "1.0.0",
     "@tuevento/contracts": "1.0.0",

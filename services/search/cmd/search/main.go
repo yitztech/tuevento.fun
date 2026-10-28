@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yitztech/tuevento.fun/services/search/internal/api"
 	"github.com/yitztech/tuevento.fun/services/search/internal/catalog"
@@ -39,10 +40,37 @@ func main() {
 			return a
 		},
 	}))
-	if err := run(log); err != nil {
+	report, flush := errorReporter(log)
+	defer flush()
+	if err := run(log, report); err != nil {
+		flush()
 		log.Error("el servicio no arranca", "error", err.Error())
 		os.Exit(1)
 	}
+}
+
+// errorReporter activa el registro de errores en Bugsink de la plataforma (AUDITORIA INT-07) si
+// hay SENTRY_DSN: solo el error y su requestId, sin datos de la petición ni trazas.
+func errorReporter(log *slog.Logger) (func(error, string), func()) {
+	dsn := os.Getenv("SENTRY_DSN")
+	if dsn == "" {
+		return nil, func() {}
+	}
+	environment := os.Getenv("SENTRY_ENVIRONMENT")
+	if environment == "" {
+		environment = "production"
+	}
+	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn, Release: os.Getenv("RELEASE_SHA"), Environment: environment}); err != nil {
+		log.Warn("Bugsink no disponible", "error", err.Error())
+		return nil, func() {}
+	}
+	report := func(err error, requestID string) {
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetTag("requestId", requestID)
+			sentry.CaptureException(err)
+		})
+	}
+	return report, func() { sentry.Flush(2 * time.Second) }
 }
 
 func port() string {
@@ -89,7 +117,7 @@ func allowedOrigins() []string {
 	return out
 }
 
-func run(log *slog.Logger) error {
+func run(log *slog.Logger, report func(error, string)) error {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		return errors.New("falta DATABASE_URL")
@@ -123,7 +151,7 @@ func run(log *slog.Logger) error {
 	server := &http.Server{
 		Addr: ":" + port(),
 		Handler: api.New(api.Config{
-			Origins: sites, AllowedOrigins: allowedOrigins(), RateLimit: rateLimit, RateWindow: 10 * time.Second, Log: log, SearchStore: store.New(pool),
+			Origins: sites, AllowedOrigins: allowedOrigins(), RateLimit: rateLimit, RateWindow: 10 * time.Second, Log: log, SearchStore: store.New(pool), Report: report,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
