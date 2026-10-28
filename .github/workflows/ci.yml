@@ -337,15 +337,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         timeout-minutes: 2
-      - uses: actions/setup-node@v7
-        timeout-minutes: 3
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-        timeout-minutes: 3
-      - run: npm run build
-        timeout-minutes: 3
+      # Como en Escenarios: el entorno arranca mientras se instalan Node y las dependencias
       - uses: docker/setup-buildx-action@v4
         timeout-minutes: 2
       - name: Entorno de imágenes
@@ -363,7 +355,20 @@ jobs:
             docker-bake.ci.hcl
           load: true
           set: "*.cache-to="
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
+      - name: Arrancar el entorno
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build
+        timeout-minutes: 2
+      - uses: actions/setup-node@v7
+        timeout-minutes: 3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        timeout-minutes: 3
+      - run: npm run build
+        timeout-minutes: 3
+      - name: Esperar a que el entorno esté sano
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci up -d --no-build --wait
         timeout-minutes: 3
       - run: npm run test:security
         timeout-minutes: 3
@@ -375,9 +380,7 @@ jobs:
           cmd_options: -I
           allow_issue_writing: false
           fail_action: true
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml --env-file .env.ci down -v
-        if: always()
-        timeout-minutes: 2
+      # Sin `docker compose down`: el runner se descarta al terminar el job
 
   # Conserva el check obligatorio `Seguridad`, como `Escenarios` con sus partes.
   seguridad:

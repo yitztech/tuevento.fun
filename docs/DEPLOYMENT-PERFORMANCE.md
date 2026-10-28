@@ -63,9 +63,9 @@ PR de implementación: https://github.com/yitztech/tuevento.fun/pull/42. La prim
 
 La integración en main requiere una aprobación y los checks obligatorios según el ruleset activo del repositorio. Las mediciones de despliegue y comprobaciones de producción se realizarán después de esa integración, sin bypass administrativo.
 
-## Equilibrio de escenarios, Seguridad en paralelo y `:main` tras el CI (2026-10-27)
+## Equilibrio de escenarios, caché de apt, Seguridad en paralelo y `:main` tras el CI (2026-10-28)
 
-Medición del primer despliegue con tres partes (run 40623833862, 9:32 de principio a fin), con el `results.json` de cada parte:
+PR https://github.com/yitztech/tuevento.fun/pull/43. Punto de partida: el primer despliegue con tres partes (run 40623833862, 9:32 de principio a fin; CI 6:48). Del `results.json` de cada parte:
 
 | Parte | Escenarios | Tiempo de pruebas (suma) | E2E en el runner |
 | --- | --- | --- | --- |
@@ -73,15 +73,31 @@ Medición del primer despliegue con tres partes (run 40623833862, 9:32 de princi
 | 2/3 | 9 chromium + 176 android-chrome | 132 s | 1:19 |
 | 3/3 | 4 android-chrome + 180 iphone-safari | 435 s | 3:56 |
 
-`--shard=N/3` reparte por número de escenarios y en orden de proyecto, así que la última parte se queda casi todo WebKit, que tarda unas 3 veces más por escenario (2,4 s frente a 0,8 s). La parte 3 retrasaba todo el CI 2:30.
+`--shard=N/3` reparte por número de escenarios y en orden de proyecto: la última parte se quedaba casi todo WebKit, que tarda unas 3 veces más por escenario. Además, `disenos.feature` (`@disenos`, 7 tamaños de pantalla) suma 128 s solo en WebKit, el 30 % de ese proyecto.
 
-Cambios:
+### Cambios
 
-- **Partes por duración, con filtros que cubren la suite entera:** 1 = chromium y android-chrome sin `@disenos` (360 escenarios, unos 236 s de pruebas); 2 y 3 = iphone-safari sin `@disenos`, en dos mitades (87 y 86, unos 150 s cada una); 4 = `@disenos` en los tres proyectos (21 escenarios, 182 s, que en WebKit son de 18 s cada uno) más las pruebas auxiliares de navegador. El listado local con Playwright 1.64.1 da 360 + 87 + 86 + 21 = 554, igual que la suite, sin duplicados; un escenario nuevo cae siempre en una parte.
-  - Por qué cuatro: con tres (chromium + android; iphone-safari en dos mitades) el E2E tardó 2:56 / 2:41 / 1:19 en un run y 3:51 / 1:59 / 1:36 en otro. La mitad con `disenos.feature` (el 30 % de WebKit) pesaba el doble, y chromium + android, con 290 s de pruebas, quedaba como la parte más lenta.
-- **Entorno en paralelo con la instalación:** cada parte construye las imágenes y arranca los contenedores (`up -d`, sin `--wait`) antes de `npm ci`, el build y los navegadores, y espera a los healthchecks justo antes de las pruebas. Se quita el `docker compose down` final: el runner se descarta.
-- **Seguridad en dos jobs en paralelo** (`Seguridad · CodeQL` y `Seguridad · API y ZAP`) más el check obligatorio `Seguridad`, que los agrega como `Escenarios`. CodeQL ocupaba 1:40 antes de construir y levantar el entorno para ZAP; con los escenarios equilibrados, Seguridad (4:38) habría sido la ruta crítica.
-- **Publicar en paralelo con el CI, solo con `:<sha>`**, y un job `promover` que copia el manifiesto a `:main` (`docker buildx imagetools create`, sin reconstruir) cuando el CI pasa. Es la regla DEP-14 de la plataforma: un commit que falla nunca mueve la imagen que usa producción. Publicar tardaba 0:56 después del CI; promover tarda unos 0:35.
-- La comprobación de la versión consulta cada 5 s (antes, cada 10 s), con el mismo límite de 10 minutos.
+1. **Cuatro partes con filtros que cubren la suite entera** (`playwright test --list` con 1.64.1: 360 + 87 + 86 + 21 = 554, igual que la suite y sin duplicados; un escenario nuevo cae siempre en una parte):
 
-Estimación: CI de unos 4:30 (antes, 6:48), promover 0:35 y despliegue 1:40; en total, unos 7 minutos frente a 9:32. Jobs simultáneos: 9 del CI (4 partes de Escenarios) + 6 de publicar = 15, por debajo del tope de 20 de la organización (plan Free). La duración real se mide en el primer despliegue tras fusionar.
+   | Parte | Filtro | Escenarios | E2E (run 40645296717) |
+   | --- | --- | --- | --- |
+   | 1 | chromium y android-chrome sin `@disenos`, con 3 workers | 360 | 2:21 |
+   | 2 | iphone-safari sin `@disenos`, primera mitad | 87 | 1:32 |
+   | 3 | iphone-safari sin `@disenos`, segunda mitad | 86 | 1:33 |
+   | 4 | `@disenos` en los tres proyectos, más las pruebas auxiliares de navegador | 21 | 1:30 |
+
+   La parte 1 tiene un costo fijo por escenario que no aparece en su duración (con 2 workers tardaba 3:18 con solo 236 s de pruebas); con 3 workers en los 4 núcleos del runner bajó a 2:21, sin escenarios inestables. Las demás siguen con 2 workers. Intentos descartados: con tres partes (chromium + android; iphone-safari en dos mitades) el E2E tardó 2:56 / 2:41 / 1:19, porque la mitad con `@disenos` pesaba el doble.
+
+2. **Caché de librerías de Playwright que de verdad se usa.** Con la caché acertada, `apt-get install <archivos .deb>` prefería la misma versión del repositorio al archivo local y bajaba los 181 paquetes (114 MB) del mirror de Azure en cada job: el paso tardaba de 30 s a 2:14 según el mirror. Ahora `Dir::Cache::Archives` apunta a la caché y `apt` no descarga nada («Need to get 0 B/114 MB»): el paso tarda 24–27 s en todas las partes. Probado antes en `ubuntu:24.04`.
+
+3. **Entorno en paralelo con la instalación**, en Escenarios y en Seguridad · API y ZAP: se construyen las imágenes y se arrancan los contenedores (`up -d`, sin `--wait`) antes de `npm ci`, el build y los navegadores, y se espera a los healthchecks justo antes de las pruebas (antes, 33 s de espera). Se quita el `docker compose down` final: el runner se descarta.
+
+4. **Seguridad en dos jobs en paralelo** (`Seguridad · CodeQL` y `Seguridad · API y ZAP`) más el check obligatorio `Seguridad`, que los agrega como `Escenarios`. CodeQL ocupaba 1:40 antes de construir el entorno para ZAP.
+
+5. **Publicar en paralelo con el CI, solo con `:<sha>`**, y un job `promover` que copia el manifiesto a `:main` (`docker buildx imagetools create`, sin reconstruir) cuando el CI pasa. Es la regla DEP-14 de la plataforma: un commit que falla nunca mueve la imagen que usa producción. Publicar tardaba 0:56 después del CI; promover tarda unos 0:35.
+
+6. La comprobación de la versión consulta cada 5 s (antes, cada 10 s), con el mismo límite de 10 minutos.
+
+### Resultado
+
+CI del PR: de 6:48 a **4:41** (run 40645296717). Con promover (~0:35) y el despliegue en Coolify (~1:40), el despliegue completo debería quedar en unos 7 minutos frente a 9:32; se mide en el primer despliegue tras fusionar. Jobs simultáneos: 9 del CI + 6 de publicar = 15, por debajo del tope de 20 de la organización (plan Free).
