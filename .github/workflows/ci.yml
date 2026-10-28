@@ -100,6 +100,13 @@ jobs:
               "${IMAGE_PREFIX}-${servicio}:${IMAGE_TAG}"
             echo "::endgroup::"
           done
+      - name: Permisos de la caché de Trivy
+        if: always()
+        timeout-minutes: 1
+        run: |
+          if [ -d "$HOME/.cache/trivy" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/trivy"
+          fi
 
   escenarios-partes:
     name: Escenarios (${{ matrix.shard }}/3)
