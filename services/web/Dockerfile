@@ -55,6 +55,8 @@ RUN npm run build -w @tuevento/contracts && npm run build -w @tuevento/client &&
 # Producción: Nginx 1.30.5 Alpine sirviendo la SPA estática en el puerto 8080
 FROM nginx:1.30.6-alpine AS production
 # Paquetes de Alpine con los arreglos publicados después de la imagen base (Trivy)
+# Renueva los parches de Alpine cada día sin invalidar la compilación.
+ARG SECURITY_REFRESH=manual
 RUN apk upgrade --no-cache
 ARG RELEASE_SHA=dev
 ENV RELEASE_SHA=${RELEASE_SHA} \

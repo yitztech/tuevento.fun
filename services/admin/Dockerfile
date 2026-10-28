@@ -26,6 +26,8 @@ RUN npm ci --omit=dev --workspace @tuevento/admin --no-audit --no-fund
 FROM node:24.22.0-alpine3.24 AS production
 ENV NODE_ENV=production
 # Sin npm, npx ni corepack en ejecución: no se usan y traen sus propias dependencias (Trivy)
+# Renueva los parches de Alpine cada día sin invalidar la compilación.
+ARG SECURITY_REFRESH=manual
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
  && apk upgrade --no-cache
 WORKDIR /app

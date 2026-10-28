@@ -52,6 +52,8 @@ ENV NODE_ENV=production \
     APPLE_TEAM_ID=${APPLE_TEAM_ID} \
     MOBILE_APP_ID=${MOBILE_APP_ID}
 # Sin npm, npx ni corepack en ejecución: no se usan y traen sus propias dependencias (Trivy)
+# Renueva los parches de Alpine cada día sin invalidar la compilación.
+ARG SECURITY_REFRESH=manual
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
  && apk upgrade --no-cache
 WORKDIR /app

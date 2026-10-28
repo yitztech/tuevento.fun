@@ -67,7 +67,9 @@ jobs:
         timeout-minutes: 2
       - name: Entorno de imágenes
         timeout-minutes: 1
-        run: sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
+        run: |
+          sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
+          echo "SECURITY_REFRESH=$(date -u +%F)" >> "$GITHUB_ENV"
       - name: Construir imágenes
         uses: docker/bake-action@v7.5.0
         timeout-minutes: 10
@@ -129,7 +131,9 @@ jobs:
       # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
       - name: Entorno de imágenes
         timeout-minutes: 1
-        run: sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
+        run: |
+          sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
+          echo "SECURITY_REFRESH=$(date -u +%F)" >> "$GITHUB_ENV"
       - name: Construir imágenes
         uses: docker/bake-action@v7.5.0
         timeout-minutes: 10
@@ -300,7 +304,9 @@ jobs:
         timeout-minutes: 2
       - name: Entorno de imágenes
         timeout-minutes: 1
-        run: sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
+        run: |
+          sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' .env.ci >> "$GITHUB_ENV"
+          echo "SECURITY_REFRESH=$(date -u +%F)" >> "$GITHUB_ENV"
       - name: Construir imágenes
         uses: docker/bake-action@v7.5.0
         timeout-minutes: 10

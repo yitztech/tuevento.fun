@@ -56,3 +56,9 @@ Se completó la integración con docker/bake-action v7.5.0: Verificar exporta ca
 API copia únicamente contratos y sus propias fuentes, y ya no compila el cliente. Web copia sus tres paquetes compartidos y sus propias fuentes. Los manifiestos permanecen antes de la instalación para conservar la capa de dependencias.
 
 Verificación adicional: actionlint y diff --check correctos; Bake con cache-to vacío produce los siete targets sin exportación; builds Docker completos de API y web correctos, usando los runtimes de sus imágenes. No se ejecutó todavía CI remoto ni se midieron los tres despliegues posteriores: la mejora de duración y el comportamiento de la caché GHA requieren esa validación. El límite gratuito de caché no se modificó; la ocupación debe revisarse después de calentar los nuevos scopes.
+
+### Validación remota y renovación de parches
+
+PR de implementación: https://github.com/yitztech/tuevento.fun/pull/42. La primera ejecución remota confirmó la integración Bake y detectó que una capa antigua de Alpine conservaba curl/libcurl 8.22.0-r0, con CVE-2026-92392 corregida en 8.23.0-r0. Se añadió SECURITY_REFRESH diario a las etapas de ejecución que aplican apk upgrade, tanto en CI como en publicación: renueva los parches sin invalidar las etapas de compilación. No se omitió el análisis de seguridad ni se añadió una excepción a la vulnerabilidad.
+
+La integración en main requiere una aprobación y los checks obligatorios según el ruleset activo del repositorio. Las mediciones de despliegue y comprobaciones de producción se realizarán después de esa integración, sin bypass administrativo.
