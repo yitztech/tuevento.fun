@@ -9,6 +9,9 @@ import { uiPlaywright } from "../support/ui-playwright.js";
 import { uiIos, conectarIos, reiniciarApp, simuladorArrancado } from "../support/ui-ios.js";
 
 /** Datos de una cuenta válida y única, para no depender del estado de la base de datos. */
+/** Fecha de evento siempre futura: un día después de su fecha, el evento queda en solo lectura. */
+export const fechaFutura = `${new Date().getUTCFullYear() + 1}-06-12T18:00:00Z`;
+
 export function nuevaCuenta(extra = {}) {
   const unico = `${Date.now()}-${randomBytes(3).toString("hex")}`;
   return {

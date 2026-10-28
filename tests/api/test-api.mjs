@@ -133,7 +133,7 @@ try {
       const data = {
         title: "QA · Celebración",
         description: "Traer alegría",
-        date: "2026-12-20T23:00:00Z",
+        date: `${new Date().getUTCFullYear() + 1}-12-20T23:00:00Z`,
         timeZone: "America/Mexico_City",
         location: "Jardín de pruebas",
         theme: "floral",

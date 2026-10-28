@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
 import { baseURL, englishURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
@@ -7,10 +7,10 @@ const cabecera = { "x-tuevento-client": "1" };
 const sitios = { es: baseURL, en: englishURL, pt: `${englishURL}/pt`, de: `${englishURL}/de`, fr: `${englishURL}/fr` };
 
 /** Evento sin dirección escrita: la API la saca del título. */
-const eventoNuevo = (titulo) => ({
+const eventoNuevo = (titulo, date = fechaFutura) => ({
   title: titulo,
   description: "",
-  date: "2027-06-12T18:00:00Z",
+  date,
   timeZone: "America/Mexico_City",
   location: "Jardín de pruebas",
   theme: "floral",
@@ -18,12 +18,12 @@ const eventoNuevo = (titulo) => ({
 
 // Con `request`, que no comparte cookies con el navegador ni con la app: quien abre la landing
 // después no tiene la sesión del organizador.
-Given("que un organizador tiene un evento con una invitación para {string}", async ({ request, ctx }, persona) => {
+async function eventoConInvitacion(request, ctx, persona, fecha) {
   const registro = await request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   ctx.codigo = (await registro.json()).publicCode;
   ctx.titulo = `Fiesta de la landing ${Date.now()}`;
-  const evento = await request.post("/api/events", { headers: cabecera, data: eventoNuevo(ctx.titulo) });
+  const evento = await request.post("/api/events", { headers: cabecera, data: eventoNuevo(ctx.titulo, fecha) });
   expect(evento.status()).toBe(201);
   ctx.evento = await evento.json();
   const invitacion = await request.post(`/api/events/${ctx.evento.id}/invitations`, {
@@ -32,6 +32,18 @@ Given("que un organizador tiene un evento con una invitación para {string}", as
   });
   expect(invitacion.status()).toBe(201);
   ctx.token = (await invitacion.json()).token;
+}
+
+Given("que un organizador tiene un evento con una invitación para {string}", async ({ request, ctx }, persona) => {
+  await eventoConInvitacion(request, ctx, persona);
+});
+
+Given("que un organizador tiene un evento de hace {int} días con una invitación para {string}", async ({ request, ctx }, dias, persona) => {
+  await eventoConInvitacion(request, ctx, persona, new Date(Date.now() - dias * 86_400_000).toISOString());
+});
+
+Then("no veo el botón {string}", async ({ page }, texto) => {
+  await expect(page.getByRole("button", { name: texto, exact: true })).toHaveCount(0);
 });
 
 Given("que tengo un evento creado sin escribir su dirección", async ({ page, ctx }) => {

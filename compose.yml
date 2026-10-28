@@ -63,6 +63,7 @@ services:
       LISTMONK_LIST_UUID_EN: ${LISTMONK_LIST_UUID_EN:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-dev-release-token}
+      APP_SECRET: ${APP_SECRET:-dev-app-secret-solo-para-desarrollo-local}
       RELEASE_DOWNLOAD_HOSTS: ${RELEASE_DOWNLOAD_HOSTS:-github.com,apps.apple.com,testflight.apple.com,play.google.com}
       DEMO_ENABLED: ${DEMO_ENABLED:-true}
       # Las suites de la API piden restablecer contraseña muchas veces desde la misma IP

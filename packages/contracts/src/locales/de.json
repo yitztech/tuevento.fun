@@ -294,7 +294,8 @@
     "providerImagesPerServiceLimit": "Dieser Service hat schon 10 Fotos, das Maximum.",
     "providerNotComplete": "Es fehlen noch Angaben, bevor du deine Seite veröffentlichen kannst.",
     "providerOrderMismatch": "Die Liste hat sich beim Sortieren geändert. Lade die Seite neu und versuch es noch einmal.",
-    "providerSuspended": "Deine Seite ist gesperrt. Schreib uns, damit wir sie prüfen."
+    "providerSuspended": "Deine Seite ist gesperrt. Schreib uns, damit wir sie prüfen.",
+    "eventAlreadyHappened": "Diese Veranstaltung ist schon vorbei. Antworten lassen sich nicht mehr ändern."
   },
   "events": {
     "actions": "Aktionen",
@@ -689,7 +690,8 @@
     "withLove": "Herzlich,",
     "wouldntSameWithout": "Ohne dich wäre es nicht dasselbe.",
     "yesIllThere": "Ja, ich komme!",
-    "eventCancelled": "Dieses Event wurde abgesagt; Antworten sind nicht mehr möglich."
+    "eventCancelled": "Dieses Event wurde abgesagt; Antworten sind nicht mehr möglich.",
+    "eventPast": "Diese Veranstaltung ist schon vorbei. Die Antworten bleiben, wie sie waren."
   },
   "status": {
     "accepted": "Zugesagt",

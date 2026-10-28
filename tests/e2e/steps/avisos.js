@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -45,7 +45,7 @@ Given("que tengo un evento con dirección pública y contraseña {string}", asyn
     data: {
       title: ctx.titulo,
       description: "",
-      date: "2027-06-12T18:00:00Z",
+      date: fechaFutura,
       timeZone: "America/Mexico_City",
       location: "Jardín de pruebas",
       theme: "floral",
@@ -78,7 +78,7 @@ Given("que tengo un evento con dirección pública", async ({ page, ctx }) => {
     data: {
       title: ctx.titulo,
       description: "",
-      date: "2027-06-12T18:00:00Z",
+      date: fechaFutura,
       timeZone: "America/Mexico_City",
       location: "Jardín de pruebas",
       theme: "floral",

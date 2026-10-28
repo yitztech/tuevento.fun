@@ -236,6 +236,16 @@ test("Invitación genérica y avisos: tipos válidos, registros enlazados al enl
   assert.equal((await uno("SELECT count(*)::int AS n FROM event_access WHERE event_id=$1", [e.id])).n, 0);
 });
 
+test("Invitaciones: el enlace se busca por su hash, único, y se guarda cifrado (024)", async () => {
+  const cols = await columnas("invitations");
+  assert.ok(cols.includes("token_hash") && cols.includes("token_sealed"));
+  const dueno = await usuario(db);
+  const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold') RETURNING id", [dueno]);
+  const fila = "INSERT INTO invitations(id,event_id,name,kind,token,token_hash,token_sealed) VALUES(gen_random_uuid(),$1,'A','individual',gen_random_uuid()::text,$2,'cifrado')";
+  await db.query(fila, [e.id, `h-${e.id}`]);
+  assert.equal(await codigoError(() => db.query(fila, [e.id, `h-${e.id}`])), UNIQUE_VIOLATION);
+});
+
 test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; la caché del mapa solo admite sus tipos", async () => {
   const dueno = await usuario(db);
   const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme,latitude,longitude) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold',18.921831,-99.234567) RETURNING id, latitude, longitude", [dueno]);

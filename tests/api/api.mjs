@@ -90,7 +90,8 @@ export const account = (prefix, n, extra = {}) => ({
 export const eventData = (extra = {}) => ({
   title: "QA · Celebración",
   description: "Traer alegría",
-  date: "2026-12-20T23:00:00Z",
+  // Siempre en el futuro: un día después de su fecha, el evento queda en solo lectura
+  date: `${new Date().getUTCFullYear() + 1}-12-20T23:00:00.000Z`,
   timeZone: "America/Mexico_City",
   location: "Jardín de pruebas",
   theme: "floral",

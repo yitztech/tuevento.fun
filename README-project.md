@@ -144,6 +144,7 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `ADMIN_USER`, `ADMIN_PASSWORD_HASH` | admin | Usuario del panel y hash scrypt de su contraseña (ver [Panel de administración](#panel-de-administración)) |
 | `ADMIN_HOST` | gateway | Subdominio del panel (por defecto `admin.tuevento.fun`) |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
+| `APP_SECRET` | api | 32+ caracteres aleatorios (`openssl rand -base64 48`). Cifra los enlaces de invitación guardados y firma los enlaces de los correos; sin ella la API no arranca. Si cambia, los enlaces de invitación existentes dejan de abrir |
 | `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | api | Servidor SMTP común a los dos idiomas |
 | `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | api | Remitente en español (`no-reply@tuevento.fun`) |

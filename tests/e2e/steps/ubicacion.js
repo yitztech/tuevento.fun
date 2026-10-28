@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -15,7 +15,7 @@ Given(
       data: {
         title: ctx.titulo,
         description: "",
-        date: "2027-06-12T18:00:00Z",
+        date: fechaFutura,
         timeZone: "America/Mexico_City",
         location: "Jardín Borda",
         theme: "floral",

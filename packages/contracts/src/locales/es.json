@@ -294,7 +294,8 @@
     "providerImagesPerServiceLimit": "Ese servicio ya tiene 10 fotos, el máximo.",
     "providerNotComplete": "Aún falta información para publicar tu página.",
     "providerOrderMismatch": "La lista cambió mientras la ordenabas. Recarga la página e inténtalo de nuevo.",
-    "providerSuspended": "Tu página está suspendida. Escríbenos para revisarla."
+    "providerSuspended": "Tu página está suspendida. Escríbenos para revisarla.",
+    "eventAlreadyHappened": "Este evento ya pasó: ya no se pueden cambiar las respuestas."
   },
   "events": {
     "actions": "Acciones",
@@ -689,7 +690,8 @@
     "withLove": "Con mucho cariño,",
     "wouldntSameWithout": "Sin ti, no es lo mismo.",
     "yesIllThere": "¡Sí, asistiré!",
-    "eventCancelled": "Este evento se ha cancelado; ya no se pueden enviar respuestas."
+    "eventCancelled": "Este evento se ha cancelado; ya no se pueden enviar respuestas.",
+    "eventPast": "Este evento ya pasó. Las respuestas quedan como estaban."
   },
   "status": {
     "accepted": "Confirmados",

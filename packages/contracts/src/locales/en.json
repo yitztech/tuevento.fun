@@ -294,7 +294,8 @@
     "providerImagesPerServiceLimit": "That service already has 10 photos, the maximum.",
     "providerNotComplete": "Some information is still missing before you can publish your page.",
     "providerOrderMismatch": "The list changed while you were sorting it. Reload the page and try again.",
-    "providerSuspended": "Your page is suspended. Contact us to review it."
+    "providerSuspended": "Your page is suspended. Contact us to review it.",
+    "eventAlreadyHappened": "This event has already happened, so replies can't be changed anymore."
   },
   "events": {
     "actions": "Actions",
@@ -689,7 +690,8 @@
     "withLove": "With love,",
     "wouldntSameWithout": "It wouldn't be the same without you.",
     "yesIllThere": "Yes, I'll be there!",
-    "eventCancelled": "This event has been cancelled; replies are closed."
+    "eventCancelled": "This event has been cancelled; replies are closed.",
+    "eventPast": "This event has already happened. Replies stay as they were."
   },
   "status": {
     "accepted": "Attending",

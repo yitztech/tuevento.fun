@@ -14,6 +14,7 @@ import { LocaleExceptionFilter } from "./locale.filter";
 import { JsonLogger, loggerOptions } from "./logger";
 import { sendProblem } from "./problem";
 import { requestLocale } from "./request-locale";
+import { assertAppSecret } from "./tokens";
 import { isTrustedProxy, startTrustedProxyRefresh } from "./trusted-proxy";
 
 /** Cuerpo JSON de 1 MB como máximo (§23); las subidas de imágenes declaran el suyo. */
@@ -25,6 +26,7 @@ const requestIdPattern = /^[A-Za-z0-9._-]{8,128}$/;
 
 async function bootstrap() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
+  assertAppSecret();
   await startTrustedProxyRefresh();
   const adapter = new FastifyAdapter({
     bodyLimit: UPLOAD_BODY_LIMIT,

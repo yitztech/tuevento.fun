@@ -228,6 +228,11 @@ export const geoLinkSchema = z.strictObject({
 export const eventSlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 /** Código público de una cuenta, primera parte de la URL de sus landings (users.public_code). */
 export const publicCodePattern = /^[a-z0-9]{8}$/;
+/**
+ * Un día después de su fecha, el evento ya pasó: las respuestas quedan como estaban (la API
+ * responde 409 `errors.eventAlreadyHappened`) y la invitación se ve en solo lectura.
+ */
+export const eventIsPast = (date: string, now = Date.now()) => new Date(date).getTime() < now - 86_400_000;
 /** Landing de un evento: /<código de la cuenta>/<dirección>, detrás del prefijo del idioma. */
 export const eventLandingPath = (code: string, slug: string) => `/${code}/${slug}`;
 /** Reconoce una ruta de landing y devuelve sus dos partes. */

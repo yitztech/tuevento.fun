@@ -13,6 +13,14 @@ Característica: Landing de cada evento
     Cuando respondo que asistiré
     Entonces veo el aviso "¡Tu respuesta está guardada!"
 
+  @solo-web @validacion
+  Escenario: Un día después del evento, la invitación se ve pero ya no se responde
+    Dado que un organizador tiene un evento de hace 3 días con una invitación para "Ana García"
+    Cuando abro mi enlace personal de invitado
+    Entonces llego a la landing del evento
+    Y veo el aviso "Este evento ya pasó. Las respuestas quedan como estaban."
+    Y no veo el botón "¡Sí, asistiré!"
+
   @solo-web
   Escenario: El invitado no ve el acceso al panel del organizador
     Dado que un organizador tiene un evento con una invitación para "Ana García"

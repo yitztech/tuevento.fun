@@ -209,8 +209,8 @@ export class PublicController {
     @Param("token") token: string,
   ) {
     limits.landingAccessIp.hit(ipKey("landing-access", req));
-    const { code, slug, eventId, access } = await this.events.invitationAccess(this.token(token, req));
-    setLandingAccess(reply, eventId, access, GUEST_ACCESS_SECONDS);
+    const { code, slug, eventId, access, seconds } = await this.events.invitationAccess(this.token(token, req));
+    setLandingAccess(reply, eventId, access, seconds);
     return { code, slug };
   }
   @Get("public/landing/:code/:slug") async landing(
@@ -553,8 +553,6 @@ export class AccountController {
  */
 const landingCookie = (eventId: string) => `landing_${eventId}`;
 const LANDING_COOKIE_PATH = "/api/public/landing";
-/** Lo que dura el acceso del invitado: lo mismo que su fila en event_access. */
-const GUEST_ACCESS_SECONDS = 180 * 86400;
 const landingAccess = (req: FastifyRequest) => (eventId: string) => req.cookies?.[landingCookie(eventId)];
 function setLandingAccess(reply: FastifyReply, eventId: string, token: string, maxAge: number) {
   reply.setCookie(landingCookie(eventId), token, {

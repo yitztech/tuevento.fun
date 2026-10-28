@@ -780,6 +780,41 @@ try {
     }
   });
 
+  await suite("Evento pasado: la invitación se abre en solo lectura y el acceso a la landing caduca un mes después", async () => {
+    const organizador = client();
+    await organizador.call("/auth/register", "POST", account(P, "pasado"), 201);
+    const haceTres = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    const pasado = await organizador.call("/events", "POST", eventData({ date: haceTres }), 201);
+    const inv = await organizador.call(`/events/${pasado.id}/invitations`, "POST", invitationData(), 201);
+    const abierta = await organizador.call(`/events/${pasado.id}/invitations`, "POST", { ...invitationData(), kind: "open", members: [] }, 201);
+    const invitado = await guest.call(`/invitations/${inv.token}`);
+    assert.equal(invitado.event.date, pasado.date);
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    for (const [locale, headers] of locales) {
+      const r = await guest.raw(`/invitations/${inv.token}/rsvp`, { method: "POST", headers, body: { members: invitado.members.map((m) => ({ id: m.id, status: "accepted" })) } });
+      assert.equal(r.status, 409, locale);
+      assert.equal(r.data.detail, translate(locale, "errors.eventAlreadyHappened"), locale);
+    }
+    const registro = await guest.raw(`/invitations/${abierta.token}/register`, { method: "POST", body: { name: "Tarde", email: "", phone: "", notes: "", kind: "individual", members: [{ name: "Tarde", kind: "adult", notes: "", status: "accepted" }] } });
+    assert.equal(registro.status, 409);
+    // El acceso a la landing desde el enlace dura hasta un mes después del evento (aquí, 27 días)
+    const acceso = await client().raw(`/invitations/${inv.token}/access`, { method: "POST", body: {} });
+    const maxAge = Number(/Max-Age=(\d+)/i.exec(acceso.setCookie.find((c) => c.startsWith(`landing_${pasado.id}=`)))[1]);
+    assert.ok(Math.abs(maxAge - 27 * 86400) < 120, `Max-Age ${maxAge}`);
+    // Con el evento por delante, el acceso dura como mucho 180 días
+    const futuro = await organizador.call("/events", "POST", eventData(), 201);
+    const invFuturo = await organizador.call(`/events/${futuro.id}/invitations`, "POST", invitationData(), 201);
+    const accesoFuturo = await client().raw(`/invitations/${invFuturo.token}/access`, { method: "POST", body: {} });
+    const maxFuturo = Number(/Max-Age=(\d+)/i.exec(accesoFuturo.setCookie.find((c) => c.startsWith(`landing_${futuro.id}=`)))[1]);
+    assert.ok(maxFuturo <= 180 * 86400 && maxFuturo > 86400, `Max-Age ${maxFuturo}`);
+  });
+
   await suite("Recursos inexistentes o con formato inválido responden 404/400, nunca 500", async () => {
     const a = client();
     await a.call("/auth/register", "POST", account(P, "404"), 201);

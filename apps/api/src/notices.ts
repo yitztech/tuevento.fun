@@ -15,6 +15,7 @@ import {
   ownerReplyMail,
 } from "./mail-templates";
 import { siteUrl } from "./locale-env";
+import { openToken } from "./tokens";
 
 /** Fecha y hora del evento en el idioma de quien la lee y en la zona del evento. */
 export function eventDateText(date: Date, timeZone: string, locale: Locale) {
@@ -57,7 +58,7 @@ export class NoticeService {
 
   private async guestsOf(eventId: string) {
     return this.db.query(
-      "SELECT name,email,token FROM invitations WHERE event_id=$1 AND kind<>'open' AND email IS NOT NULL AND email<>''",
+      "SELECT name,email,token_sealed FROM invitations WHERE event_id=$1 AND kind<>'open' AND email IS NOT NULL AND email<>''",
       [eventId],
     );
   }
@@ -79,7 +80,7 @@ export class NoticeService {
           name: guest.name,
           event: event.title,
           changes: texts,
-          url: `${event.site}/i/${guest.token}`,
+          url: `${event.site}/i/${openToken(guest.token_sealed)}`,
           site: event.site,
         }),
       );
@@ -95,7 +96,7 @@ export class NoticeService {
           to: guest.email,
           name: guest.name,
           event: event.title,
-          url: `${event.site}/i/${guest.token}`,
+          url: `${event.site}/i/${openToken(guest.token_sealed)}`,
           site: event.site,
         }),
       );
@@ -104,7 +105,7 @@ export class NoticeService {
   /** Confirmación al invitado con sus personas y estados, si dejó correo. */
   async guestReply(invitationId: string) {
     const [inv] = await this.db.query(
-      "SELECT i.name,i.email,i.token,i.event_id FROM invitations i WHERE i.id=$1",
+      "SELECT i.name,i.email,i.token_sealed,i.event_id FROM invitations i WHERE i.id=$1",
       [invitationId],
     );
     if (!inv?.email) return;
@@ -124,7 +125,7 @@ export class NoticeService {
           name: m.name,
           status: translate(event.locale, statusLabels[m.status as Status]),
         })),
-        url: `${event.site}/i/${inv.token}`,
+        url: `${event.site}/i/${openToken(inv.token_sealed)}`,
         site: event.site,
       }),
     );
