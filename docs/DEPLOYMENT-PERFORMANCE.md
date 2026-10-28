@@ -101,3 +101,20 @@ PR https://github.com/yitztech/tuevento.fun/pull/43. Punto de partida: el primer
 ### Resultado
 
 CI del PR: de 6:48 a entre **4:41 y 5:54** (runs 40645296717 y 40645883531). La preparación de cada parte ya es estable (unos 2:10); la diferencia entre runs es la velocidad del runner, que en el segundo hizo las pruebas un 30 % más lentas en todas las partes (parte 1: 141 s frente a 185 s, sin reintentos ni escenarios inestables en ninguno). Con promover (~0:35) y el despliegue en Coolify (~1:40), el despliegue completo debería quedar en unos 7 minutos frente a 9:32; se mide en el primer despliegue tras fusionar. Jobs simultáneos: 9 del CI + 6 de publicar = 15, por debajo del tope de 20 de la organización (plan Free).
+
+## Partes de escenarios por etiquetas (2026-10-28)
+
+PR https://github.com/yitztech/tuevento.fun/pull/44. En el primer despliegue tras #43 (run 40724065495, CI 5:51) la parte 1 seguía siendo la ruta crítica: 2:30 de E2E frente a 1:04 y 1:02 de las mitades de iphone-safari. Se quita `--shard` y se reparte por etiquetas; `@plataforma` (salud, indexación, dominios, legales, sesión, errores de la API y accesibilidad) pasa entera a la parte 2:
+
+| Parte | Filtro | Escenarios | E2E antes (run 40724065495) | E2E después (run 40727430031, intento 2) |
+| --- | --- | --- | --- | --- |
+| 1 | chromium y android-chrome sin `@disenos` ni `@plataforma`, 3 workers | 238 (antes 360) | 2:30 | 1:45 |
+| 2 | `@plataforma` en los tres proyectos, sin `@disenos`, 3 workers | 183 | 1:04 | 2:00 |
+| 3 | iphone-safari sin `@disenos` ni `@plataforma`, 2 workers | 112 | 1:02 | 2:15 |
+| 4 | `@disenos` (sin cambios) | 21 | 1:28 | 1:31 |
+
+`playwright test --list` (1.64.1): 238 + 183 + 112 + 21 = 554, la suite entera sin duplicados. Ningún reintento ni escenario inestable en los dos intentos.
+
+Las duraciones no se suman como pruebas sueltas: la aplicación corre en el mismo runner de 4 núcleos, y cada escenario tarda más cuanto más carga tiene el job. Quitar un tercio de los escenarios de la parte 1 solo bajó su suma de 399 s a 371 s, y `@plataforma` en iphone-safari pasó de unos 62 s a 156 s al compartir job con Chromium. Por eso la ganancia es de unos 15 s en el E2E más lento, no de un minuto. El primer intento cayó en un runner más lento (la parte 4, igual en los dos, tardó 1:45): 2:21 / 2:04 / 2:18.
+
+CI completo: de 5:51 a 4:42 (intento 2) o 5:22 (intento 1). Parte de la diferencia con el run de main es la instalación de Playwright de la parte 1 en ese run (68 s frente a 24–30 s habituales). La parte 3 (WebKit) es ahora la más larga: el siguiente ajuste, si hace falta, es pasar alguna etiqueta suya a la parte 1.
