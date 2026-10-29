@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1
+# Sembrado del entorno local «demo» (compose.demo.yml): crea con la API real 20 organizadores y
+# 20 proveedores. Solo para local; no se despliega. Se construye desde la raíz del repositorio:
+#   docker compose -f compose.yml -f compose.demo.yml build seed
+FROM node:24.22.0-alpine3.24
+LABEL tuevento.entorno="demo" tuevento.solo-pruebas="true"
+WORKDIR /seed
+COPY scripts/seed-demo.mjs ./
+USER node
+CMD ["node", "seed-demo.mjs"]

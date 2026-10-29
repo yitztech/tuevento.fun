@@ -1,0 +1,90 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  ENTORNO LOCAL «DEMO»: la misma pila que compose.yml, aparte y con datos de ejemplo
+#  (20 organizadores con 0 a 15 eventos y 20 proveedores publicados).
+#
+#  Conviven con el entorno limpio (compose.yml, proyecto `tueventofun`) porque tienen otro
+#  proyecto (`tueventofun-demo`: contenedores, volúmenes, red e imágenes propios), otros puertos
+#  y su propia base de datos. Funciona igual en cualquier máquina con Docker Compose.
+#
+#    bash scripts/local-env.sh demo      # levanta, siembra e imprime la contraseña
+#    bash scripts/local-env.sh borrar demo
+#
+#  Web:      http://tuevento.localhost:5287 (es) · http://yourevent.localhost:5287 (en)
+#  Correos:  http://127.0.0.1:8126 · Panel admin: http://127.0.0.1:8288
+#  Se usa siempre junto a compose.yml: docker compose -f compose.yml -f compose.demo.yml …
+#  Solo para local: producción usa compose.prod.yml y no sabe que este archivo existe.
+# ─────────────────────────────────────────────────────────────────────────────
+name: tueventofun-demo
+
+x-demo-labels: &demo-labels
+  tuevento.entorno: demo
+
+x-demo-sites: &demo-sites
+  SITE_URL_ES: http://tuevento.localhost:${DEMO_WEB_PORT:-5287}
+  SITE_URL_EN: http://yourevent.localhost:${DEMO_WEB_PORT:-5287}
+
+x-demo-origins: &demo-origins
+  ALLOWED_ORIGINS: http://localhost:${DEMO_WEB_PORT:-5287},http://127.0.0.1:${DEMO_WEB_PORT:-5287},http://tuevento.localhost:${DEMO_WEB_PORT:-5287},http://yourevent.localhost:${DEMO_WEB_PORT:-5287}
+
+services:
+  postgres:
+    labels: *demo-labels
+    ports: !override
+      - "127.0.0.1:${DEMO_DB_PORT:-5587}:5432"
+
+  api:
+    labels: *demo-labels
+    environment:
+      <<: [*demo-sites, *demo-origins]
+    ports: !override
+      - "127.0.0.1:${DEMO_API_PORT:-3187}:3087"
+
+  admin:
+    labels: *demo-labels
+    ports: !override
+      - "127.0.0.1:${DEMO_ADMIN_PORT:-8288}:3088"
+
+  search:
+    labels: *demo-labels
+    environment:
+      <<: [*demo-sites, *demo-origins]
+    ports: !override
+      - "127.0.0.1:${DEMO_SEARCH_PORT:-3189}:3089"
+
+  mailpit:
+    labels: *demo-labels
+    ports: !override
+      - "127.0.0.1:${DEMO_MAIL_UI_PORT:-8126}:8025"
+
+  geocoder-fake:
+    labels: *demo-labels
+
+  gateway:
+    labels: *demo-labels
+    ports: !override
+      - "127.0.0.1:${DEMO_WEB_PORT:-5287}:80"
+
+  web:
+    labels: *demo-labels
+    environment:
+      <<: *demo-sites
+
+  # Sembrado: se ejecuta a mano con la API arriba (scripts/local-env.sh demo lo hace).
+  # Su Dockerfile propio lo distingue del resto de la pila.
+  seed:
+    profiles: ["seed"]
+    build:
+      context: .
+      dockerfile: services/demo/Dockerfile.demo
+    image: tueventofun-demo-seed
+    labels: *demo-labels
+    environment:
+      SEED_API_URL: http://api:3087/api
+      SEED_MAILPIT_URL: http://mailpit:8025
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+    depends_on:
+      api:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    restart: "no"
