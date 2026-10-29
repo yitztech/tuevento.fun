@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import test from "node:test";
 import { newInvitationToken, openToken, sealToken, signLink, tokenLookup } from "./tokens";
 
 // Las claves se derivan en el primer uso
-process.env.APP_SECRET = "secreto-de-pruebas-con-mas-de-32-caracteres";
+process.env.APP_SECRET = randomBytes(32).toString("hex");
 
 test("El token se guarda cifrado y se recupera; el hash de búsqueda es estable", () => {
   const { token, hash, sealed } = newInvitationToken();
