@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import {
   type Locale,
   mcpActorToolMatrix,
@@ -138,7 +139,7 @@ test("MCP: permisos por ámbito (scope) ocultan herramientas de escritura si sol
 });
 
 test("MCP: tokens de confirmación criptográfica HMAC para vista previa y dry-run", () => {
-  process.env.APP_SECRET = "dev-secret-key-32-chars-long-minimum-length";
+  process.env.APP_SECRET = randomBytes(32).toString("hex");
   const actorId = "user-123";
   const tool = "events_create";
   const params = { title: "Evento Test", date: "2026-12-01T20:00:00Z" };

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import test from "node:test";
 import { validStripeSignature } from "./payments";
 
-const secret = "whsec_pruebas";
+const secret = `whsec_${randomBytes(24).toString("hex")}`;
 const body = JSON.stringify({ type: "checkout.session.completed" });
 const now = 1_800_000_000_000;
 const sign = (t: number, raw = body, key = secret) =>
