@@ -30,16 +30,18 @@ Las variantes **horizontal** y **compacta** del logotipo son el componente `Logo
 
 `boda-floral`, `cumpleanos-globos`, `noche-bokeh`, `infantil-oso`, `xv-rosas`, `minimalista`, `elegante`, `evento-especial` — origen propio, **validado**.
 
-## Fotografías (WebP, 480/960/1600 px según la ranura) — **marcadores**
+## Fotografías (WebP, 480/960/1600 px según la ranura) — **provisionales, recortadas de las referencias**
 
-| Clave | Dónde | Proporción | Qué debe mostrar |
-|---|---|---|---|
-| `providers/hero-mesa` | Hero de proveedores | 1,6:1 | Mesa de banquete con flores y velas |
-| `events/mesa-gracias` | Portada, «Cada persona cuenta» | 1,4:1 | Mesa con arreglo floral y espacio para la tarjeta |
-| `events/hero-fondo` | Portada, fondo difuso del hero | 16:9 | Flores desenfocadas, tonos durazno |
-| `providers/salones`, `catering`, `fotografia`, `decoracion`, `musica`, `experiencias`, `pasteles`, `coordinacion` | Tarjetas y mosaico | 4:3 | Una por categoría |
-| `events/auth-login` | Login | 4:5 | Flores con velas |
-| `events/auth-registro` | Registro | 4:5 | Persona sonriendo con portátil y globos |
-| `events/auth-recuperar` | Recuperar contraseña | 4:5 | Sobre con corazón sobre flores |
+Origen: recortes de `design/01_Landing.png` y `design/Collage UI de TuEventoFun en español.png` (maquetas generadas por IA,
+1024–1536 px), hechos con `scripts/crop-references.mjs` hacia `photos-src/` y procesados por `npm run assets`. Sin texto
+dentro. Son de 80–300 px de origen, así que se ven suaves al ampliarse: **no son aptas para publicar** y no tienen licencia
+documentada; hay que sustituirlas por fotografías con licencia (mismo nombre en `photos-src/`).
 
-Origen: **pendiente** (sin generador de imágenes en la sesión; la búsqueda en Unsplash/Pexels no fue posible desde el entorno). Sin texto dentro de las fotos.
+| Clave | Dónde | Recorte de origen |
+|---|---|---|
+| `providers/hero-mesa` | Hero de proveedores | Mesa con velas (collage, panel de proveedores) |
+| `events/mesa-gracias`, `events/hero-fondo`, `events/auth-recuperar` | Portada «Cada persona cuenta», fondo del hero, recuperar contraseña | Flores y velas (landing, sección de familia); las tres comparten origen |
+| `providers/salones`, `catering`, `fotografia`, `decoracion`, `musica`, `experiencias` | Tarjetas y mosaico | Un mosaico de la landing cada una |
+| `providers/pasteles`, `providers/coordinacion` | Tarjetas | Reutilizan los mosaicos de decoración y música (la referencia no trae otros) |
+| `events/auth-login` | Login | Flores con velas (collage, login) |
+| `events/auth-registro` | Registro | Mujer sonriendo con globos (collage, registro) |
