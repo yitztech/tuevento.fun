@@ -25,7 +25,7 @@ Un mismo paquete (zod, react…) lleva **el mismo rango en todos los workspaces*
 
 ## Componentes: shadcn/ui sobre DESIGN.md
 
-Los componentes nuevos de la web salen de shadcn/ui (`packages/app/src/ui/`, skill en `.claude/skills/shadcn`). Se añaden con `npx shadcn@latest add <componente>` **desde `packages/app`**, usan los colores semánticos que `packages/app/src/tailwind.css` mapea a los tokens de DESIGN.md y sus textos se traducen como cualquier otro. Una pantalla que pase a clases de Tailwind se añade a `@source` en `tailwind.css`. Detalle en [docs/SHADCN.md](docs/SHADCN.md).
+Los componentes nuevos de la web salen de shadcn/ui (`packages/app/src/ui/`, skill en `.claude/skills/shadcn`). Se añaden con `npx shadcn@latest add <componente>` **desde `packages/app`**, usan los colores semánticos que `packages/app/src/tailwind.css` mapea a los tokens de DESIGN.md y sus textos se traducen como cualquier otro. Las clases de Tailwind solo van en `src/ui`: las pantallas usan los componentes y sus variantes. Detalle en [docs/SHADCN.md](docs/SHADCN.md).
 
 ## Límites de datos: los mismos en frontend, backend y base de datos
 

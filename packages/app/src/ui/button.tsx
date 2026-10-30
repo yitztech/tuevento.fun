@@ -3,31 +3,32 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 import { Slot } from "radix-ui"
 
+// Variantes de DESIGN.md: default = principal (terracota), outline = secundario,
+// celebrate = ámbar, destructive y destructive-outline = acciones que borran,
+// ghost + size icon = botón de icono, link + size inline = acción de texto.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2.5 rounded-md border border-transparent text-[13px] leading-[1.3] font-bold whitespace-nowrap transition-[background-color,color,transform] duration-200 ease-out outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-55 aria-invalid:border-destructive aria-invalid:ring-destructive/20 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        default:
+          "bg-primary text-primary-foreground hover:-translate-y-px hover:bg-primary-hover motion-reduce:hover:translate-y-0",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border-input bg-background text-foreground hover:-translate-y-px hover:bg-secondary motion-reduce:hover:translate-y-0",
+        celebrate:
+          "bg-celebrate text-celebrate-foreground hover:-translate-y-px hover:bg-celebrate-hover motion-reduce:hover:translate-y-0",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:-translate-y-px hover:bg-destructive-hover motion-reduce:hover:translate-y-0 focus-visible:ring-destructive/20",
+        "destructive-outline":
+          "border-destructive/20 bg-background text-destructive hover:-translate-y-px hover:border-destructive/45 hover:bg-destructive-soft hover:text-destructive-hover motion-reduce:hover:translate-y-0 focus-visible:ring-destructive/20",
+        ghost: "hover:bg-accent",
+        link: "text-xs font-[750] text-primary underline-offset-[5px] hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        default: "min-h-11 px-5 py-3",
+        sm: "min-h-9 gap-2 px-3.5 py-2",
+        icon: "size-9 rounded-sm",
+        inline: "gap-2 px-0 py-2",
       },
     },
     defaultVariants: {

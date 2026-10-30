@@ -21,6 +21,7 @@ import {
   type MessageValues,
   type SiteOrigins,
 } from "@tuevento/contracts";
+import { Button } from "./ui/button";
 const STORED_LOCALE = "tueventofun:app_locale";
 const SUGGESTION_DISMISSED = "tueventofun:language_suggestion";
 /** Orígenes de cada idioma que publica el gateway en <meta name="tuevento:sites">. */
@@ -329,8 +330,7 @@ export function LanguageSuggestion() {
     <aside className="language-suggestion" lang={suggested} aria-live="polite">
       <p>{t("language.suggest")}</p>
       <div className="language-suggestion-actions">
-        <a
-          className="button"
+        <Button asChild><a
           href={otherUrl(suggested, pathname, search, hash)}
           hrefLang={suggested}
           onClick={(event) => {
@@ -342,10 +342,10 @@ export function LanguageSuggestion() {
           }}
         >
           {t("language.suggestAccept")}
-        </a>
-        <button type="button" className="button secondary" onClick={close}>
+        </a></Button>
+        <Button variant="outline" type="button" onClick={close}>
           {t("language.suggestDismiss")}
-        </button>
+        </Button>
       </div>
     </aside>
   );

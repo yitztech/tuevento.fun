@@ -14,6 +14,8 @@ Característica: Perfil, servicios y fotos del proveedor
     Y marco la categoría "Banquetes y catering"
     Y escribo "hola@lupita.example" en el campo "Correo para clientes"
     Y pego el enlace de mapas "https://www.google.com/maps/place/X/@18.92,-99.23,17z"
+    # El enlace se resuelve en segundo plano: se espera al punto antes de guardar (como en ubicacion.feature)
+    Y veo el texto "El punto exacto está marcado en el mapa."
     Y pulso el botón "Guardar mi negocio"
     Entonces veo el aviso "Los datos de tu negocio están guardados."
     Y para publicar solo falta "Al menos una foto"

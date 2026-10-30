@@ -62,7 +62,8 @@ for (const dir of dirs.filter((d) => d !== ".")) {
     for (const m of readFileSync(file, "utf8").matchAll(
       /(?:from\s+|import\s*\(\s*|require\(\s*)["']([^."'/][^"']*)["']/g,
     )) {
-      if (m[1].startsWith("node:")) continue;
+      // node: es del runtime; @/ es el alias de los componentes de shadcn (packages/app/components.json)
+      if (m[1].startsWith("node:") || m[1].startsWith("@/")) continue;
       const spec = m[1];
       const name = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0];
       if (!builtins.has(name) && !declared.has(name)) missing.add(name);

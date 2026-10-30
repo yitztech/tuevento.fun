@@ -21,6 +21,9 @@ import {
   type PostcardLayer,
   type PostcardPhoto,
 } from "./postcard-canvas";
+import { Textarea } from "./ui/textarea";
+import { NativeSelect } from "./ui/native-select";
+import { Button } from "./ui/button";
 
 /** Paleta de la postal: neutros, cálidos, fríos y acentos. Cualquier otro color se elige con el selector. */
 const palette = [
@@ -234,10 +237,10 @@ export function PostcardEditor() {
             {selected && <p className="postcard-hint">{tr("postcard.layerHint")}</p>}
             <div className="postcard-save">
               <span>{dirty ? tr("postcard.unsaved") : tr("postcard.savedState")}</span>
-              <button className="button" type="button" disabled={!dirty || busy} onClick={save}>
+              <Button type="button" disabled={!dirty || busy} onClick={save}>
                 <Save size={17} />
                 {tr("postcard.save")}
-              </button>
+              </Button>
             </div>
             {error && <ErrorBox message={error} />}
           </section>
@@ -270,33 +273,31 @@ export function PostcardEditor() {
                 {photos.map((photo) => (
                   <div key={photo.id} className="postcard-photo-item">
                     <img src={photo.url} alt="" />
-                    <button
-                      className="button secondary"
+                    <Button variant="outline"
                       type="button"
                       disabled={busy}
                       aria-pressed={design.background.type === "photo" && design.background.photo === photo.id}
                       onClick={() => setDesign({ ...design, background: { type: "photo", photo: photo.id } })}
                     >
                       {tr("postcard.useAsBackground")}
-                    </button>
-                    <button
-                      className="button secondary"
+                    </Button>
+                    <Button variant="outline"
                       type="button"
                       disabled={busy}
                       onClick={() => removePhoto(photo)}
                     >
                       <Trash2 size={15} />
                       {tr("postcard.removePhoto")}
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
               {photos.length < postcardLimits.photos && (
-                <label className="button secondary postcard-upload">
+                <Button asChild variant="outline"><label className="postcard-upload">
                   <ImagePlus size={17} />
                   {tr("postcard.uploadPhoto")}
                   <input type="file" accept={imageTypes.join(",")} onChange={upload} disabled={busy} />
-                </label>
+                </label></Button>
               )}
               <p className="field-hint">{tr("postcard.photosHint", { max: postcardLimits.photos })}</p>
             </fieldset>
@@ -313,25 +314,25 @@ export function PostcardEditor() {
                     onChange={(e) => resizePhoto(Number(e.target.value))}
                   />
                 </Field>
-                <button className="button secondary" type="button" onClick={removeLayerPhoto}>
+                <Button variant="outline" type="button" onClick={removeLayerPhoto}>
                   <Trash2 size={15} />
                   {tr("postcard.removeFromPostcard")}
-                </button>
+                </Button>
               </fieldset>
             )}
 
             <fieldset className="postcard-panel">
               <legend>{tr("postcard.texts")}</legend>
               {design.texts.length < postcardLimits.texts && (
-                <button className="button secondary" type="button" onClick={addText}>
+                <Button variant="outline" type="button" onClick={addText}>
                   <Plus size={17} />
                   {tr("postcard.addText")}
-                </button>
+                </Button>
               )}
               {selectedText && selected?.kind === "text" && (
                 <div className="postcard-text-editor">
                   <Field label={tr("postcard.textContent")}>
-                    <textarea
+                    <Textarea
                       rows={3}
                       maxLength={accountLimits.postcardText}
                       value={selectedText.content}
@@ -339,11 +340,11 @@ export function PostcardEditor() {
                     />
                   </Field>
                   <Field label={tr("postcard.font")}>
-                    <select value={selectedText.font} onChange={(e) => updateText({ font: e.target.value as PostcardFont })}>
+                    <NativeSelect value={selectedText.font} onChange={(e) => updateText({ font: e.target.value as PostcardFont })}>
                       {postcardFonts.map((font) => (
                         <option key={font} value={font}>{fontNames[font]}</option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </Field>
                   <Field label={tr("postcard.textSize")}>
                     <input
@@ -360,8 +361,7 @@ export function PostcardEditor() {
                   </div>
                   <div className="postcard-field-row">
                     <span>{tr("postcard.shadow")}</span>
-                    <button
-                      className="button secondary"
+                    <Button variant="outline"
                       type="button"
                       aria-pressed={selectedText.shadow !== undefined}
                       onClick={() =>
@@ -371,7 +371,7 @@ export function PostcardEditor() {
                       }
                     >
                       {selectedText.shadow ? tr("postcard.shadowOn") : tr("postcard.shadowOff")}
-                    </button>
+                    </Button>
                   </div>
                   {selectedText.shadow && (
                     <>
@@ -418,22 +418,21 @@ export function PostcardEditor() {
                     <span>{tr("postcard.align")}</span>
                     <div className="postcard-align">
                       {(["left", "center", "right"] as const).map((align) => (
-                        <button
+                        <Button variant="outline"
                           key={align}
                           type="button"
-                          className="button secondary"
                           aria-pressed={selectedText.align === align}
                           onClick={() => updateText({ align })}
                         >
                           {tr(alignLabels[align])}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>
-                  <button className="button secondary" type="button" onClick={removeText}>
+                  <Button variant="outline" type="button" onClick={removeText}>
                     <Trash2 size={15} />
                     {tr("postcard.removeText")}
-                  </button>
+                  </Button>
                 </div>
               )}
             </fieldset>
@@ -455,10 +454,10 @@ export function PostcardEditor() {
                       {index === 0 && ` · ${tr("postcard.latest")}`}
                     </span>
                     {index > 0 && (
-                      <button className="button secondary" type="button" disabled={busy} onClick={() => restore(version)}>
+                      <Button variant="outline" type="button" disabled={busy} onClick={() => restore(version)}>
                         <RotateCcw size={15} />
                         {tr("postcard.restore")}
-                      </button>
+                      </Button>
                     )}
                   </li>
                 ))}

@@ -1,6 +1,9 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { accountLimits, type Locale } from "@tuevento/contracts";
 import { formatLocale, getLocale, tr, trMessage } from "./i18n";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { NativeSelect } from "./ui/native-select";
 
 /** Países del selector de prefijo: código ISO y prefijo internacional. Cada prefijo aparece una sola vez. */
 const countryDials: [iso: string, dial: string][] = [
@@ -98,11 +101,9 @@ export function PhoneField({
 
   return (
     <div className="field">
-      <span>
-        <label htmlFor={id}>{label}</label>
-      </span>
+      <Label htmlFor={id}>{label}</Label>
       <div className="phone-field">
-        <select
+        <NativeSelect
           aria-label={tr("common.country")}
           value={parts.iso}
           onChange={(event) => update({ ...parts, iso: event.target.value })}
@@ -112,8 +113,8 @@ export function PhoneField({
               {`${flagOf(iso)} ${name} (${optionDial})`}
             </option>
           ))}
-        </select>
-        <input
+        </NativeSelect>
+        <Input
           id={id}
           type="tel"
           inputMode="tel"

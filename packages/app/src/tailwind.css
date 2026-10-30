@@ -1,14 +1,14 @@
 /* Tailwind v4 para los componentes de shadcn/ui (src/ui). Ver docs/SHADCN.md.
-   - Sin preflight: el reinicio base lo sigue dando styles.css, que no cambia.
-   - Utilidades sin capa e importadas después de styles.css: una clase (.bg-primary) gana a
-     las reglas de elemento de styles.css (button, a, h1…).
-   - source(none): solo se generan utilidades de las carpetas de @source, para que una clase
-     antigua que coincida con una de Tailwind (hidden, container…) no cambie de aspecto.
-     Al migrar una pantalla a shadcn, se añade su archivo aquí.
+   - Sin preflight: el reinicio base lo da styles.css, en @layer base.
+   - Utilidades en @layer utilities: ganan a las reglas de elemento (capa base) y pierden ante
+     las reglas por clase de styles.css y landing.css, que no van en capa. Así una clase propia
+     junto a un componente (className="landing-primary") ajusta su aspecto en su contexto.
+   - source(none): solo se generan utilidades de src/ui y src/lib. Las pantallas no llevan
+     clases de Tailwind: usan los componentes y su CSS propio.
    - Los colores y radios de shadcn apuntan a los tokens de styles.css (DESIGN.md): no se
      redefinen --primary ni --muted, que styles.css ya usa con otro sentido. */
 @import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" source(none);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
 @import "tw-animate-css";
 
 @source "./ui";
@@ -28,6 +28,7 @@
   --color-popover-foreground: var(--ink);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-text);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--surface-soft);
   --color-secondary-foreground: var(--ink);
   --color-muted: var(--surface-soft);
@@ -36,8 +37,11 @@
   --color-accent-foreground: var(--ink);
   --color-celebrate: var(--celebrate);
   --color-celebrate-foreground: var(--celebrate-text);
+  --color-celebrate-hover: var(--celebrate-hover);
   --color-destructive: var(--error);
   --color-destructive-foreground: var(--ground);
+  --color-destructive-hover: var(--error-hover);
+  --color-destructive-soft: var(--error-bg);
   --color-border: var(--line);
   --color-input: var(--line-strong);
   --color-ring: var(--primary);

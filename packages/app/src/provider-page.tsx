@@ -8,6 +8,7 @@ import { errorText, useApp } from "./context";
 import { ErrorBox, Logo, Modal } from "./components";
 import { MapLinks, MapView } from "./location";
 import { priceText } from "./provider";
+import { Button } from "./ui/button";
 
 /** wa.me con el número en E.164 sin el «+» y el mensaje ya escrito en el idioma de la página. */
 const whatsappUrl = (p: ProviderPublic) =>
@@ -172,9 +173,9 @@ function ProviderView({ profile: p }: { profile: ProviderPublic }) {
 
         <aside className="provider-own">
           <p>{tr("providerPage.ownBusiness")}</p>
-          <Link className="button secondary" to="/registro?tipo=proveedor">
+          <Button asChild variant="outline"><Link to="/registro?tipo=proveedor">
             {tr("providerPage.ownBusinessLink")}
-          </Link>
+          </Link></Button>
         </aside>
       </main>
     </div>
@@ -201,33 +202,33 @@ function Contact({ profile: p }: { profile: ProviderPublic }) {
       <h2 id="provider-contact">{tr("providerPage.contact")}</h2>
       <div className="button-group">
         {p.whatsapp && (
-          <a className="button" href={whatsappUrl(p)} target="_blank" rel="noopener noreferrer">
+          <Button asChild><a href={whatsappUrl(p)} target="_blank" rel="noopener noreferrer">
             <MessageCircle size={18} aria-hidden="true" />
             {tr("providerPage.whatsapp")}
-          </a>
+          </a></Button>
         )}
         {p.phone && (
-          <a className="button secondary" href={`tel:${p.phone}`}>
+          <Button asChild variant="outline"><a href={`tel:${p.phone}`}>
             <Phone size={18} aria-hidden="true" />
             {tr("providerPage.call")}
-          </a>
+          </a></Button>
         )}
         {p.publicEmail && (
-          <a className="button secondary" href={`mailto:${p.publicEmail}`}>
+          <Button asChild variant="outline"><a href={`mailto:${p.publicEmail}`}>
             <Mail size={18} aria-hidden="true" />
             {tr("providerPage.email")}
-          </a>
+          </a></Button>
         )}
         {p.website && (
-          <a className="button secondary" href={p.website} target="_blank" rel="noopener noreferrer nofollow">
+          <Button asChild variant="outline"><a href={p.website} target="_blank" rel="noopener noreferrer nofollow">
             <Globe size={18} aria-hidden="true" />
             {tr("providerPage.website")}
-          </a>
+          </a></Button>
         )}
-        <button type="button" className="button secondary" onClick={share}>
+        <Button variant="outline" type="button" onClick={share}>
           <Share2 size={18} aria-hidden="true" />
           {tr("providerPage.share")}
-        </button>
+        </Button>
       </div>
       {networks.some(([key]) => p[key]) && (
         <ul className="provider-networks">
@@ -295,14 +296,14 @@ function Gallery({ images }: { images: ProviderImage[] }) {
             <img src={current.urls[1600]} alt={current.alt} />
             {images.length > 1 && (
               <div className="button-group">
-                <button type="button" className="button secondary" onClick={() => move(-1)}>
+                <Button variant="outline" type="button" onClick={() => move(-1)}>
                   <ChevronLeft size={18} aria-hidden="true" />
                   {tr("providerPage.previous")}
-                </button>
-                <button type="button" className="button secondary" onClick={() => move(1)}>
+                </Button>
+                <Button variant="outline" type="button" onClick={() => move(1)}>
                   {tr("providerPage.next")}
                   <ChevronRight size={18} aria-hidden="true" />
-                </button>
+                </Button>
               </div>
             )}
           </div>

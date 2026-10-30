@@ -36,6 +36,8 @@ import {
   InvitationArt,
   Modal,
 } from "./components";
+import { Button } from "./ui/button";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 export function Dashboard() {
   const { user, events, notifications, api, setUser, toast } = useApp(),
     navigate = useNavigate(),
@@ -78,14 +80,14 @@ export function Dashboard() {
           </p>
         </div>
         {user && !user.isDemo && (
-          <button className="button secondary" disabled={demoBusy} onClick={exploreDemo}>
+          <Button variant="outline" disabled={demoBusy} onClick={exploreDemo}>
             {tr("common.exploreDemo")}
-          </button>
+          </Button>
         )}
-        <Link to="/eventos/nuevo" className="button">
+        <Button asChild><Link to="/eventos/nuevo">
           <Plus size={18} />
           {tr("dashboard.createEvent")}
-        </Link>
+        </Link></Button>
       </div>
       {user?.isDemo && (
         <div className="demo-notice" role="note">
@@ -94,10 +96,10 @@ export function Dashboard() {
               "dashboard.exploringDemoEventsTheir",
             )}
           </p>
-          <Link to="/pago" className="button demo-pay">
+          <Button asChild><Link to="/pago" className="demo-pay">
             {tr("pricing.payService")}
             <ArrowRight size={16} />
-          </Link>
+          </Link></Button>
           <Link to="/registro">
             {tr("common.createMyAccount")}
             <ArrowRight size={16} />
@@ -113,10 +115,10 @@ export function Dashboard() {
             {tr("dashboard.invitationsStyleAllFavorite")} <br />
             {tr("dashboard.everyDetailTakenCare")}
           </p>
-          <Link to="/disenos" className="button pink">
+          <Button asChild variant="celebrate"><Link to="/disenos">
             {tr("dashboard.findInvitation") + " "}
             <ArrowUpRight size={18} />
-          </Link>
+          </Link></Button>
         </div>
         <div className="welcome-photo">
           <img
@@ -165,10 +167,10 @@ export function Dashboard() {
           <Empty
             title={tr("dashboard.nextStoryStartsHere")}
             action={
-              <Link className="button" to="/eventos/nuevo">
+              <Button asChild><Link to="/eventos/nuevo">
                 <Plus size={17} />
                 {tr("common.createFirstEvent")}
-              </Link>
+              </Link></Button>
             }
           >
             {tr(
@@ -269,28 +271,30 @@ export function EventsPage() {
             {tr("dashboard.everyCelebrationAllDetails")}
           </p>
         </div>
-        <Link className="button" to="/eventos/nuevo">
+        <Button asChild><Link to="/eventos/nuevo">
           <Plus size={18} />
           {tr("dashboard.createEvent")}
-        </Link>
+        </Link></Button>
       </div>
       <div className="list-toolbar">
-        <div className="tabs" aria-label={tr("dashboard.filterEvents")}>
+        <ToggleGroup
+          type="single"
+          variant="tabs"
+          className="tabs"
+          aria-label={tr("dashboard.filterEvents")}
+          value={filter}
+          onValueChange={(value) => value && setFilter(value)}
+        >
           {[
             ["active", tr("dashboard.upcoming")],
             ["past", tr("dashboard.past")],
             ["archived", tr("events.filters.archived")],
           ].map(([id, label]) => (
-            <button
-              className={filter === id ? "active" : ""}
-              key={id}
-              onClick={() => setFilter(id)}
-              aria-pressed={filter === id}
-            >
+            <ToggleGroupItem key={id} value={id}>
               {label}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
         <label className="search-field">
           <Search size={18} />
           <input
@@ -312,9 +316,9 @@ export function EventsPage() {
           title={tr("dashboard.nothingHereYet")}
           action={
             filter === "active" ? (
-              <Link to="/eventos/nuevo" className="button">
+              <Button asChild><Link to="/eventos/nuevo">
                 {tr("dashboard.createEvent")}
-              </Link>
+              </Link></Button>
             ) : undefined
           }
         >
@@ -365,13 +369,12 @@ export function TemplatesPage() {
                 <h2>{tr(t.name)}</h2>
                 <p>{tr(t.description)}</p>
               </div>
-              <Link
-                className="icon-button"
+              <Button asChild variant="ghost" size="icon"><Link
                 to={`/eventos/nuevo?tema=${t.id}`}
                 aria-label={tr("dashboard.useTheme", { theme: tr(t.name) })}
               >
                 <ArrowUpRight size={23} />
-              </Link>
+              </Link></Button>
             </div>
           </article>
         ))}
@@ -392,13 +395,13 @@ export function TemplatesPage() {
               "dashboard.makeYoursEventName",
             )}
           </p>
-          <Link
-            className="button full"
+          <Button asChild><Link
+            className="full"
             to={`/eventos/nuevo?tema=${preview.id}`}
           >
             {tr("dashboard.createEventDesign")}
             <ArrowRight size={17} />
-          </Link>
+          </Link></Button>
         </Modal>
       )}
     </>
@@ -429,31 +432,28 @@ export function NotificationsPage() {
           <h1>{tr("dashboard.goodNewsComesHere")}</h1>
           <p>{tr("dashboard.repliesAttendanceUpdatesFrom")}</p>
         </div>
-        <button
-          className="button secondary"
+        <Button variant="outline"
           disabled={busy || !notifications.some((n) => !n.read)}
           onClick={mark}
         >
           <CheckCheck size={18} />
           {tr("dashboard.markAllRead")}
-        </button>
+        </Button>
       </div>
-      <div className="tabs">
-        <button
-          className={!onlyUnread ? "active" : ""}
-          onClick={() => setOnlyUnread(false)}
-        >
-          {tr("common.allFeminine")}
-        </button>
-        <button
-          className={onlyUnread ? "active" : ""}
-          onClick={() => setOnlyUnread(true)}
-        >
+      <ToggleGroup
+        type="single"
+        variant="tabs"
+        className="tabs"
+        value={onlyUnread ? "unread" : "all"}
+        onValueChange={(value) => value && setOnlyUnread(value === "unread")}
+      >
+        <ToggleGroupItem value="all">{tr("common.allFeminine")}</ToggleGroupItem>
+        <ToggleGroupItem value="unread">
           {tr("dashboard.unreadCount", {
             count: notifications.filter((n) => !n.read).length,
           })}
-        </button>
-      </div>
+        </ToggleGroupItem>
+      </ToggleGroup>
       {list.length ? (
         <div className="notification-list">
           {list.map((n) => (
@@ -576,9 +576,9 @@ export function AllGuests() {
         <Empty
           title={tr("dashboard.letsMakeGuestList")}
           action={
-            <Link className="button" to="/eventos">
+            <Button asChild><Link to="/eventos">
               {tr("dashboard.goEvents")}
-            </Link>
+            </Link></Button>
           }
         >
           {tr("dashboard.addGuestsEachEvent")}

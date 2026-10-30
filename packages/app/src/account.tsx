@@ -35,9 +35,11 @@ import {
   MailCheck,
 } from "lucide-react";
 import { useApp, errorText } from "./context";
-import { Logo, Field, ErrorBox, Avatar, Container, Card } from "./components";
+import { Logo, Field, ErrorBox, Avatar, Container } from "./components";
 import { AuthLegalNotice } from "./legal";
 import { PhoneField } from "./phone-field";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
   const challenge = query.get("appChallenge");
@@ -188,7 +190,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   label={tr("account.firstNames")}
                   error={form.formState.errors.firstName?.message}
                 >
-                  <input
+                  <Input
                     autoComplete="given-name"
                     maxLength={accountLimits.personName}
                     {...form.register("firstName", { onChange: onlyNameChars })}
@@ -198,7 +200,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   label={tr("account.lastNames")}
                   error={form.formState.errors.lastName?.message}
                 >
-                  <input
+                  <Input
                     autoComplete="family-name"
                     maxLength={accountLimits.personName}
                     {...form.register("lastName", { onChange: onlyNameChars })}
@@ -222,7 +224,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               label={tr("common.email")}
               error={form.formState.errors.email?.message}
             >
-              <input
+              <Input
                 type="email"
                 autoComplete="email"
                 maxLength={accountLimits.email}
@@ -239,7 +241,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               }
             >
               <span className="password-input">
-                <input
+                <Input
                   type={showPassword ? "text" : "password"}
                   autoComplete={
                     registerMode ? "new-password" : "current-password"
@@ -247,9 +249,8 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   maxLength={accountLimits.password}
                   {...form.register("password")}
                 />
-                <button
+                <Button variant="ghost" size="icon"
                   type="button"
-                  className="icon-button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={
                     showPassword
@@ -258,7 +259,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   }
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                </Button>
               </span>
             </Field>
             {!registerMode && (
@@ -296,8 +297,8 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               </label>
             )}
             {error && <ErrorBox message={error} />}
-            <button
-              className="button full"
+            <Button
+              className="full"
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting
@@ -306,7 +307,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   ? tr("common.createMyAccount")
                   : tr("common.signSpace")}
               <ArrowRight size={18} />
-            </button>
+            </Button>
           </form>
           <p className="auth-switch">
             {registerMode
@@ -359,7 +360,7 @@ export function ForgotPasswordPage() {
             label={tr("common.email")}
             error={form.formState.errors.email?.message}
           >
-            <input
+            <Input
               type="email"
               autoComplete="email"
               maxLength={accountLimits.email}
@@ -367,12 +368,12 @@ export function ForgotPasswordPage() {
             />
           </Field>
           {error && <ErrorBox message={error} />}
-          <button className="button full" disabled={form.formState.isSubmitting}>
+          <Button className="full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting
               ? tr("account.justMoment")
               : tr("account.sendMeLink")}
             <ArrowRight size={18} />
-          </button>
+          </Button>
         </form>
       )}
       <p className="auth-switch">
@@ -415,10 +416,10 @@ export function ResetPasswordPage() {
       {invalid ? (
         <>
           <ErrorBox message="common.passwordResetLinkInvalid" />
-          <Link className="button full" to={passwordResetPaths.request}>
+          <Button asChild><Link className="full" to={passwordResetPaths.request}>
             {tr("account.requestNewLink")}
             <ArrowRight size={18} />
-          </Link>
+          </Link></Button>
         </>
       ) : (
         <>
@@ -430,22 +431,21 @@ export function ResetPasswordPage() {
               hint={tr("account.least10CharactersUse")}
             >
               <span className="password-input">
-                <input
+                <Input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   maxLength={accountLimits.password}
                   {...form.register("password")}
                 />
-                <button
+                <Button variant="ghost" size="icon"
                   type="button"
-                  className="icon-button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={
                     showPassword ? tr("account.hidePassword") : tr("account.showPassword")
                   }
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                </Button>
               </span>
             </Field>
             {error && (
@@ -456,10 +456,10 @@ export function ResetPasswordPage() {
                 </p>
               </>
             )}
-            <button className="button full" disabled={form.formState.isSubmitting}>
+            <Button className="full" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? tr("account.justMoment") : tr("account.saveAndSignIn")}
               <ArrowRight size={18} />
-            </button>
+            </Button>
           </form>
         </>
       )}
@@ -603,7 +603,7 @@ export function ProfilePage() {
           <p>
             {user.isDemo ? tr("account.demoHost") : tr("common.host")}
           </p>
-          <label className="button secondary upload-button">
+          <Button asChild variant="outline"><label className="upload-button">
             <Upload size={17} />
             {uploading ? tr("common.loadingEllipsis") : tr("account.changePhotoLogo")}
             <input
@@ -626,7 +626,7 @@ export function ProfilePage() {
                 }
               }}
             />
-          </label>
+          </label></Button>
           <small>{tr("account.jpgPngWebp2")}</small>
         </aside>
         <form onSubmit={submit} className="form-panel" noValidate>
@@ -636,7 +636,7 @@ export function ProfilePage() {
               label={tr("common.firstName")}
               error={form.formState.errors.firstName?.message}
             >
-              <input
+              <Input
                 maxLength={accountLimits.personName}
                 {...form.register("firstName", { onChange: onlyNameChars })}
               />
@@ -645,14 +645,14 @@ export function ProfilePage() {
               label={tr("common.lastName")}
               error={form.formState.errors.lastName?.message}
             >
-              <input
+              <Input
                 maxLength={accountLimits.personName}
                 {...form.register("lastName", { onChange: onlyNameChars })}
               />
             </Field>
           </div>
           <Field label={tr("common.email")}>
-            <input value={user.email} readOnly type="email" />
+            <Input value={user.email} readOnly type="email" />
           </Field>
           <Controller
             control={form.control}
@@ -668,12 +668,12 @@ export function ProfilePage() {
           />
           {error && <ErrorBox message={error} />}
           <div className="form-actions">
-            <button className="button" disabled={form.formState.isSubmitting}>
+            <Button disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting
                 ? tr("common.saving")
                 : tr("common.saveChanges")}
               <Check size={17} />
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -719,10 +719,10 @@ export function ConfirmEmailPage() {
         <ErrorBox message={error} />
       )}
       {state !== "working" && (
-        <Link className="button full" to={user ? "/app" : "/acceso"}>
+        <Button asChild><Link className="full" to={user ? "/app" : "/acceso"}>
           {user ? tr("account.goToMySpace") : tr("account.signIn")}
           <ArrowRight size={18} />
-        </Link>
+        </Link></Button>
       )}
     </AuthShell>
   );
@@ -762,9 +762,9 @@ export function UnsubscribePage() {
         <>
           <p>{tr("account.unsubscribeIntro")}</p>
           {error && <ErrorBox message={error} />}
-          <button className="button full" disabled={busy} onClick={() => void confirm()}>
+          <Button className="full" disabled={busy} onClick={() => void confirm()}>
             {busy ? tr("account.justMoment") : tr("account.unsubscribeButton")}
-          </button>
+          </Button>
         </>
       )}
     </AuthShell>
@@ -799,9 +799,9 @@ export function VerifyEmailBanner() {
           : tr("account.verifyEmailBanner", { email: user.email })}
       </p>
       {!sent && (
-        <button className="button secondary" disabled={busy} onClick={() => void resend()}>
+        <Button variant="outline" disabled={busy} onClick={() => void resend()}>
           {tr("account.resendVerification")}
-        </button>
+        </Button>
       )}
       {error && <ErrorBox message={error} />}
     </div>

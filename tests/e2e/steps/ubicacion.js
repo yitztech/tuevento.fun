@@ -51,6 +51,10 @@ Then("veo el texto {string}", async ({ page }, texto) => {
   await expect(page.getByText(texto).first()).toBeVisible();
 });
 
+Then("no veo el texto {string}", async ({ page }, texto) => {
+  await expect(page.getByText(texto)).toHaveCount(0);
+});
+
 Then("veo la alerta {string}", async ({ page }, texto) => {
   await expect(page.getByRole("alert").filter({ hasText: texto })).toBeVisible();
 });

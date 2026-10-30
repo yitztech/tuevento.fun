@@ -1,5 +1,5 @@
 import { tr, formatLocale, getLocale, useLocale, LanguageSwitcher, Lines } from "./i18n";
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Routes,
   Route,
@@ -60,6 +60,9 @@ import { EventLanding, LegacyEventAddress } from "./public-event";
 import { PostcardEditor } from "./postcard-editor";
 import { LegalPage, legalPageFor } from "./legal";
 import { PaymentPage, PricingPage } from "./pricing";
+import { Button } from "./ui/button";
+import { Toaster } from "./ui/sonner";
+import { toast as showToast } from "sonner";
 export type { Runtime } from "./context";
 export { SeoLinks, getLocale, switchAppLocale, tr } from "./i18n";
 export function TuEventoApp({ runtime }: { runtime: Runtime }) {
@@ -85,12 +88,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     [notifications, setNotifications] = useState<Notification[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [message, setMessage] = useState(""),
     [menu, setMenu] = useState(false),
     [config, setConfig] = useState({ googleClientId: "", demoEnabled: false, paymentsEnabled: false });
   const location = useLocation(),
-    navigate = useNavigate(),
-    timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    navigate = useNavigate();
   const legal = legalPageFor(location.pathname);
   const pricing = localizedPage(location.pathname) === "pricing";
   const isPublic =
@@ -108,10 +109,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       mailPaths.verify,
       mailPaths.unsubscribe,
     ].includes(location.pathname);
+  // Un solo aviso a la vez: el nuevo sustituye al anterior (mismo id)
   const toast = useCallback((text: string) => {
-    setMessage(text);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMessage(""), 5000);
+    showToast(text, { id: "app", duration: 5000 });
   }, []);
   const reload = useCallback(async () => {
     const [e, n] = await Promise.all([api.events(), api.notifications()]);
@@ -139,7 +139,6 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     })();
     return () => {
       alive = false;
-      clearTimeout(timer.current);
     };
   }, [api]);
   // Quien ofrece servicios no tiene eventos ni avisos de invitados: la API se los niega (403)
@@ -186,9 +185,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       <div className="startup">
         <Logo />
         <ErrorBox message={error} />
-        <button className="button" onClick={() => window.location.reload()}>
+        <Button onClick={() => window.location.reload()}>
           {tr("app.tryAgain")}
-        </button>
+        </Button>
       </div>
     );
   const unread = notifications.filter((n) => !n.read).length;
@@ -268,13 +267,13 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
           <aside className={`sidebar ${menu ? "open" : ""}`}>
             <div className="sidebar-logo">
               <Logo to="/app" />
-              <button
-                className="icon-button mobile-only"
+              <Button variant="ghost" size="icon"
+                className="mobile-only"
                 aria-label={tr("common.closeMenu")}
                 onClick={() => setMenu(false)}
               >
                 <X />
-              </button>
+              </Button>
             </div>
             <div className="workspace-label">
               <span className="workspace-dot" />
@@ -337,26 +336,25 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                     {user.isDemo ? tr("app.demoAccount") : provider ? tr("provider.accountLabel") : tr("common.host")}
                   </span>
                 </div>
-                <button
-                  className="icon-button"
+                <Button variant="ghost" size="icon"
                   onClick={logout}
                   aria-label={tr("app.signOut")}
                 >
                   <LogOut size={18} />
-                </button>
+                </Button>
               </div>
             </div>
           </aside>
           <div className="main-shell">
             <header className="topbar">
               <div className="breadcrumb">
-                <button
-                  className="icon-button mobile-only"
+                <Button variant="ghost" size="icon"
+                  className="mobile-only"
                   onClick={() => setMenu(true)}
                   aria-label={tr("common.openMenu")}
                 >
                   <Menu />
-                </button>
+                </Button>
                 <span>{tr("app.space")}</span>
                 <ChevronRight size={13} />
                 <strong>
@@ -379,8 +377,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   }).format(new Date())}
                 </span>
                 {!provider && (
-                <Link
-                  className="bell-button icon-button"
+                <Button asChild variant="ghost" size="icon"><Link
+                  className="bell-button"
                   to="/notificaciones"
                   aria-label={tr("app.notificationsCountUnread", {
                     count: unread,
@@ -392,7 +390,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                       {unread > 99 ? "99+" : unread}
                     </span>
                   )}
-                </Link>
+                </Link></Button>
                 )}
                 <Link to="/perfil" aria-label={tr("app.profile")}>
                   <Avatar user={user} />
@@ -433,9 +431,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   element={
                     <div className="empty">
                       <h1>{tr("app.couldntFindPage")}</h1>
-                      <Link className="button" to="/app">
+                      <Button asChild><Link to="/app">
                         {tr("app.backOverview")}
-                      </Link>
+                      </Link></Button>
                     </div>
                   }
                 />
@@ -451,18 +449,11 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
           </div>
         </div>
       )}
-      {message && (
-        <div className="toast" role="status">
-          {message}
-          <button
-            className="icon-button"
-            onClick={() => setMessage("")}
-            aria-label={tr("app.dismissNotification")}
-          >
-            <X size={17} />
-          </button>
-        </div>
-      )}
+      <Toaster
+        closeButton
+        containerAriaLabel={tr("app.notifications")}
+        toastOptions={{ closeButtonAriaLabel: tr("app.dismissNotification") }}
+      />
     </AppContext.Provider>
   );
 }
