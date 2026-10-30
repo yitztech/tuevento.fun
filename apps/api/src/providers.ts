@@ -46,7 +46,7 @@ import {
   type ProviderProfileData,
   type ProviderService,
 } from "@tuevento/contracts";
-import { AccountTypeGuard, AuthService, RequireAccountType, SessionGuard, type AuthedRequest } from "./auth";
+import { AccountTypeGuard, AuthService, isUniqueViolation, RequireAccountType, SessionGuard, type AuthedRequest } from "./auth";
 import { Database } from "./database";
 import { parse, ProblemException } from "./problem";
 
@@ -238,13 +238,32 @@ export class ProvidersService {
   private async freeSlug(db: Queryable, name: string, providerId: string | null) {
     let base = slugify(name, accountLimits.providerSlug - 5);
     if (base.length < 3) base = base ? `negocio-${base}` : "negocio";
+    // Los que guardan a la vez el mismo nombre se esperan hasta el final de la transacción: el siguiente ya ve la dirección ocupada
+    await db.query("SELECT pg_advisory_xact_lock(hashtext('provider-slug:' || $1))", [base]);
     for (let n = 1; ; n++) {
       const candidate = n === 1 ? base : `${base}-${n}`;
       if (!(await this.slugTaken(db, candidate, providerId))) return candidate;
     }
   }
 
+  /**
+   * Dos guardados a la vez pueden chocar con una restricción única: la misma dirección escrita a mano, otra que
+   * coincide con un -N automático o el primer guardado de la misma cuenta dos veces. Se repite la transacción,
+   * que ya ve lo que confirmó la otra: la dirección automática busca la siguiente libre y una escrita a mano
+   * responde 409, nunca 500.
+   */
   async saveProfile(userId: string, input: ProviderProfileData) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.saveProfileOnce(userId, input);
+      } catch (e) {
+        if (!isUniqueViolation(e)) throw e;
+        if (attempt === 5) throw new ConflictException("errors.providerSlugTaken");
+      }
+    }
+  }
+
+  private async saveProfileOnce(userId: string, input: ProviderProfileData) {
     return this.db.transaction(async (db) => {
       const { rows: [current] } = await db.query<{ id: string; slug: string; status: string }>(
         "SELECT id, slug, status FROM provider_profiles WHERE user_id=$1 FOR UPDATE",

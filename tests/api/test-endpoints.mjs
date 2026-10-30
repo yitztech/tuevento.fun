@@ -484,6 +484,25 @@ try {
     assert.equal((await a.call("/provider/profile", "PUT", providerData({ slug }))).slug, slug);
   });
 
+  await suite("Proveedor: varias cuentas que guardan a la vez el mismo nombre reciben direcciones distintas, sin 500", async () => {
+    const cuentas = await Promise.all(Array.from({ length: 6 }, (_, i) => proveedorNuevo(`prov-carrera-${i}`)));
+    const nombre = `Carrera ${unique}`;
+    const respuestas = await Promise.all(cuentas.map((c) => c.raw("/provider/profile", { method: "PUT", body: providerData({ businessName: nombre }) })));
+    for (const r of respuestas) assert.equal(r.status, 200, r.text);
+    const base = `carrera-${unique}`;
+    assert.deepEqual(respuestas.map((r) => r.data.slug).sort(), [base, ...[2, 3, 4, 5, 6].map((n) => `${base}-${n}`)].sort());
+    // La misma cuenta, dos primeros guardados a la vez: un solo perfil
+    const sola = await proveedorNuevo("prov-carrera-doble");
+    const dobles = await Promise.all([1, 2].map(() => sola.raw("/provider/profile", { method: "PUT", body: providerData({ businessName: `Doble ${unique}` }) })));
+    for (const r of dobles) assert.equal(r.status, 200, r.text);
+    assert.equal(dobles[0].data.id, dobles[1].data.id);
+    // Una dirección escrita a mano que otra cuenta ocupa a la vez: 409, no 500
+    const [x, y] = await Promise.all([proveedorNuevo("prov-carrera-x"), proveedorNuevo("prov-carrera-y")]);
+    const manual = `manual-${unique}`;
+    const estados = (await Promise.all([x, y].map((c) => c.raw("/provider/profile", { method: "PUT", body: providerData({ slug: manual }) })))).map((r) => r.status);
+    assert.deepEqual(estados.sort(), [200, 409]);
+  });
+
   await suite("Proveedor: publicar exige lo mínimo y una página que deja de cumplirlo vuelve a borrador", async () => {
     const p = await proveedorNuevo("prov-publicar");
     await p.call("/provider/profile", "PUT", { businessName: `Luz ${unique}` });
