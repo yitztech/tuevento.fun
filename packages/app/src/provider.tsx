@@ -26,6 +26,10 @@ import { errorText, useApp } from "./context";
 import { ErrorBox, Field, Modal } from "./components";
 import { PhoneField } from "./phone-field";
 import { LocationPicker } from "./location";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { NativeSelect } from "./ui/native-select";
+import { Button } from "./ui/button";
 
 /** Perfil del proveedor de la sesión: null mientras carga o si aún no guardó su negocio. */
 function useProviderProfile() {
@@ -88,9 +92,9 @@ function NeedsProfile() {
   return (
     <div className="empty">
       <p>{tr("errors.providerProfileNotFound")}</p>
-      <Link className="button" to="/negocio">
+      <Button asChild><Link to="/negocio">
         {tr("provider.goToBusiness")}
-      </Link>
+      </Link></Button>
     </div>
   );
 }
@@ -164,14 +168,13 @@ function PublishBox({ profile, onChange }: { profile: ProviderProfile; onChange:
       )}
       {error && <ErrorBox message={error} />}
       {profile.status !== "suspended" && (
-        <button
+        <Button variant={published ? "outline" : "default"}
           type="button"
-          className={published ? "button secondary" : "button"}
           disabled={busy || (!published && profile.missing.length > 0)}
           onClick={toggle}
         >
           {tr(published ? "provider.unpublish" : "provider.publish")}
-        </button>
+        </Button>
       )}
     </section>
   );
@@ -222,17 +225,17 @@ export function ProviderBusinessPage() {
         <fieldset>
           <legend>{tr("provider.identity")}</legend>
           <Field label={tr("provider.businessName")} error={errors.businessName?.message}>
-            <input maxLength={accountLimits.businessName} autoComplete="organization" {...form.register("businessName")} />
+            <Input maxLength={accountLimits.businessName} autoComplete="organization" {...form.register("businessName")} />
           </Field>
           <Field label={tr("provider.headline")} hint={tr("provider.headlineHint")} error={errors.headline?.message}>
-            <input maxLength={accountLimits.headline} {...form.register("headline")} />
+            <Input maxLength={accountLimits.headline} {...form.register("headline")} />
           </Field>
           <Field label={tr("provider.description")} error={errors.description?.message}>
-            <textarea rows={6} maxLength={accountLimits.providerDescription} onPaste={description.onPaste} {...form.register("description")} />
+            <Textarea rows={6} maxLength={accountLimits.providerDescription} onPaste={description.onPaste} {...form.register("description")} />
           </Field>
           <div className="field-note">{description.hint}</div>
           <Field label={tr("provider.slug")} hint={tr("provider.slugHint")} error={errors.slug?.message}>
-            <input maxLength={accountLimits.providerSlug} autoCapitalize="none" {...form.register("slug")} />
+            <Input maxLength={accountLimits.providerSlug} autoCapitalize="none" {...form.register("slug")} />
           </Field>
           <fieldset className="provider-categories" aria-describedby="provider-categories-hint">
             <legend>{tr("provider.categories")}</legend>
@@ -285,26 +288,26 @@ export function ProviderBusinessPage() {
             )}
           />
           <Field label={tr("provider.publicEmail")} error={errors.publicEmail?.message}>
-            <input type="email" autoComplete="email" maxLength={accountLimits.email} {...form.register("publicEmail")} />
+            <Input type="email" autoComplete="email" maxLength={accountLimits.email} {...form.register("publicEmail")} />
           </Field>
           <Field label={tr("provider.website")} error={errors.website?.message}>
-            <input type="url" inputMode="url" placeholder="https://" maxLength={accountLimits.url} {...form.register("website")} />
+            <Input type="url" inputMode="url" placeholder="https://" maxLength={accountLimits.url} {...form.register("website")} />
           </Field>
           <Field label="Instagram" error={errors.instagramUrl?.message}>
-            <input type="url" inputMode="url" placeholder="https://instagram.com/…" maxLength={accountLimits.url} {...form.register("instagramUrl")} />
+            <Input type="url" inputMode="url" placeholder="https://instagram.com/…" maxLength={accountLimits.url} {...form.register("instagramUrl")} />
           </Field>
           <Field label="Facebook" error={errors.facebookUrl?.message}>
-            <input type="url" inputMode="url" placeholder="https://facebook.com/…" maxLength={accountLimits.url} {...form.register("facebookUrl")} />
+            <Input type="url" inputMode="url" placeholder="https://facebook.com/…" maxLength={accountLimits.url} {...form.register("facebookUrl")} />
           </Field>
           <Field label="TikTok" error={errors.tiktokUrl?.message}>
-            <input type="url" inputMode="url" placeholder="https://tiktok.com/@…" maxLength={accountLimits.url} {...form.register("tiktokUrl")} />
+            <Input type="url" inputMode="url" placeholder="https://tiktok.com/@…" maxLength={accountLimits.url} {...form.register("tiktokUrl")} />
           </Field>
         </fieldset>
 
         <fieldset>
           <legend>{tr("provider.location")}</legend>
           <Field label={tr("provider.address")} error={errors.address?.message}>
-            <input autoComplete="street-address" maxLength={accountLimits.addressLine} {...form.register("address")} />
+            <Input autoComplete="street-address" maxLength={accountLimits.addressLine} {...form.register("address")} />
           </Field>
           <Controller
             control={form.control}
@@ -322,15 +325,15 @@ export function ProviderBusinessPage() {
           />
           <div className="form-row">
             <Field label={tr("provider.city")} error={errors.city?.message}>
-              <input autoComplete="address-level2" maxLength={accountLimits.city} {...form.register("city")} />
+              <Input autoComplete="address-level2" maxLength={accountLimits.city} {...form.register("city")} />
             </Field>
             <Field label={tr("provider.region")} error={errors.region?.message}>
-              <input autoComplete="address-level1" maxLength={accountLimits.region} {...form.register("region")} />
+              <Input autoComplete="address-level1" maxLength={accountLimits.region} {...form.register("region")} />
             </Field>
           </div>
           <div className="form-row">
             <Field label={tr("provider.postalCode")} error={errors.postalCode?.message}>
-              <input
+              <Input
                 autoComplete="postal-code"
                 maxLength={accountLimits.postalCode}
                 {...form.register("postalCode", {
@@ -341,7 +344,7 @@ export function ProviderBusinessPage() {
               />
             </Field>
             <Field label={tr("provider.country")} hint={tr("provider.countryHint")} error={errors.country?.message}>
-              <input
+              <Input
                 autoComplete="country"
                 maxLength={2}
                 {...form.register("country", {
@@ -361,7 +364,7 @@ export function ProviderBusinessPage() {
             {tr("provider.showExactAddress")}
           </label>
           <Field label={tr("provider.serviceRadius")} hint={tr("provider.serviceRadiusHint")} error={errors.serviceRadiusKm?.message}>
-            <input
+            <Input
               type="number"
               inputMode="numeric"
               min={0}
@@ -371,9 +374,9 @@ export function ProviderBusinessPage() {
           </Field>
         </fieldset>
         {error && <ErrorBox message={error} />}
-        <button type="submit" className="button" disabled={form.formState.isSubmitting}>
+        <Button type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? tr("account.justMoment") : tr("provider.saveBusiness")}
-        </button>
+        </Button>
       </form>
     </>
   );
@@ -450,10 +453,10 @@ function ServiceEditor({ service, onClose, onSaved }: { service: ProviderService
         }}
       >
         <Field label={tr("provider.serviceTitle")} error={errors.title}>
-          <input maxLength={accountLimits.serviceTitle} value={values.title} onChange={(e) => set({ title: e.target.value })} />
+          <Input maxLength={accountLimits.serviceTitle} value={values.title} onChange={(e) => set({ title: e.target.value })} />
         </Field>
         <Field label={tr("provider.serviceDescription")} error={errors.description}>
-          <textarea
+          <Textarea
             rows={4}
             maxLength={accountLimits.serviceDescription}
             value={values.description}
@@ -469,40 +472,40 @@ function ServiceEditor({ service, onClose, onSaved }: { service: ProviderService
         {values.hasPrice && (
           <div className="form-row">
             <Field label={tr("provider.priceFromLabel")} error={errors.fromCents}>
-              <input
+              <Input
                 inputMode="decimal"
                 value={values.amount}
                 onChange={(e) => set({ amount: e.target.value.replace(/[^0-9.,]/g, "") })}
               />
             </Field>
             <Field label={tr("provider.currency")} error={errors.currency}>
-              <select value={values.currency} onChange={(e) => set({ currency: e.target.value })}>
+              <NativeSelect value={values.currency} onChange={(e) => set({ currency: e.target.value })}>
                 {providerCurrencies.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
             <Field label={tr("provider.priceUnit")} error={errors.unit}>
-              <select value={values.unit} onChange={(e) => set({ unit: e.target.value as PriceUnit })}>
+              <NativeSelect value={values.unit} onChange={(e) => set({ unit: e.target.value as PriceUnit })}>
                 {priceUnits.map((u) => (
                   <option key={u} value={u}>
                     {tr(priceUnitLabels[u])}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
           </div>
         )}
         {error && <ErrorBox message={error} />}
         <div className="button-group">
-          <button type="submit" className="button" disabled={busy}>
+          <Button type="submit" disabled={busy}>
             {busy ? tr("account.justMoment") : tr("provider.saveService")}
-          </button>
-          <button type="button" className="button secondary" onClick={onClose}>
+          </Button>
+          <Button variant="outline" type="button" onClick={onClose}>
             {tr("provider.cancel")}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -518,9 +521,8 @@ function ConfirmDelete({ text, onConfirm, onClose }: { text: string; onConfirm: 
       <p>{text}</p>
       {error && <ErrorBox message={error} />}
       <div className="button-group">
-        <button
+        <Button variant="destructive"
           type="button"
-          className="button danger"
           disabled={busy}
           onClick={async () => {
             setBusy(true);
@@ -534,10 +536,10 @@ function ConfirmDelete({ text, onConfirm, onClose }: { text: string; onConfirm: 
         >
           <Trash2 size={16} />
           {tr("provider.delete")}
-        </button>
-        <button type="button" className="button secondary" onClick={onClose}>
+        </Button>
+        <Button variant="outline" type="button" onClick={onClose}>
           {tr("provider.cancel")}
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -571,15 +573,14 @@ export function ProviderServicesPage() {
         title={tr("provider.services")}
         intro={tr("provider.servicesIntro")}
         action={
-          <button
+          <Button
             type="button"
-            className="button"
             disabled={profile.services.length >= providerLimits.services}
             onClick={() => setEditing("new")}
           >
             <Plus size={18} />
             {tr("provider.addService")}
-          </button>
+          </Button>
         }
       />
       {profile.services.length === 0 ? (
@@ -594,36 +595,33 @@ export function ProviderServicesPage() {
                 {service.description && <p>{service.description}</p>}
               </div>
               <div className="provider-card-actions">
-                <button
+                <Button variant="ghost" size="icon"
                   type="button"
-                  className="icon-button"
                   disabled={index === 0}
                   aria-label={tr("provider.moveUp", { name: service.title })}
                   onClick={() => reorder(moved(ids, index, -1))}
                 >
                   <ArrowUp size={17} />
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="icon"
                   type="button"
-                  className="icon-button"
                   disabled={index === ids.length - 1}
                   aria-label={tr("provider.moveDown", { name: service.title })}
                   onClick={() => reorder(moved(ids, index, 1))}
                 >
                   <ArrowDown size={17} />
-                </button>
-                <button type="button" className="button secondary" onClick={() => setEditing(service)}>
+                </Button>
+                <Button variant="outline" type="button" onClick={() => setEditing(service)}>
                   <Pencil size={15} />
                   {tr("provider.edit")}
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="icon"
                   type="button"
-                  className="icon-button"
                   aria-label={tr("provider.deleteNamed", { name: service.title })}
                   onClick={() => setRemoving(service)}
                 >
                   <Trash2 size={17} />
-                </button>
+                </Button>
               </div>
             </li>
           ))}
@@ -706,60 +704,56 @@ function PhotoCard({
         }}
       >
         <Field label={tr("provider.photoAlt")} hint={tr("provider.photoAltHint")}>
-          <input maxLength={accountLimits.imageAlt} value={alt} onChange={(e) => setAlt(e.target.value)} />
+          <Input maxLength={accountLimits.imageAlt} value={alt} onChange={(e) => setAlt(e.target.value)} />
         </Field>
         {profile.services.length > 0 && (
           <Field label={tr("provider.photoService")}>
-            <select value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
+            <NativeSelect value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
               <option value="">{tr("provider.photoNoService")}</option>
               {profile.services.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.title}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </Field>
         )}
-        <button type="submit" className="button secondary">{tr("provider.savePhoto")}</button>
+        <Button variant="outline" type="submit">{tr("provider.savePhoto")}</Button>
       </form>
       <div className="provider-card-actions">
-        <button
+        <Button variant="outline"
           type="button"
-          className="button secondary"
           aria-pressed={profile.coverImageId === image.id}
           onClick={() => run(() => api.chooseProviderImage("cover", profile.coverImageId === image.id ? null : image.id))}
         >
           {tr("provider.cover")}
-        </button>
-        <button
+        </Button>
+        <Button variant="outline"
           type="button"
-          className="button secondary"
           aria-pressed={profile.logoImageId === image.id}
           onClick={() => run(() => api.chooseProviderImage("logo", profile.logoImageId === image.id ? null : image.id))}
         >
           {tr("provider.logo")}
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="icon"
           type="button"
-          className="icon-button"
           disabled={index === 0}
           aria-label={tr("provider.moveUp", { name: label })}
           onClick={() => run(() => api.orderProviderImages(moved(ids, index, -1)))}
         >
           <ArrowUp size={17} />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="icon"
           type="button"
-          className="icon-button"
           disabled={index === ids.length - 1}
           aria-label={tr("provider.moveDown", { name: label })}
           onClick={() => run(() => api.orderProviderImages(moved(ids, index, 1)))}
         >
           <ArrowDown size={17} />
-        </button>
-        <button type="button" className="icon-button" aria-label={tr("provider.deleteNamed", { name: label })} onClick={onRemove}>
+        </Button>
+        <Button variant="ghost" size="icon" type="button" aria-label={tr("provider.deleteNamed", { name: label })} onClick={onRemove}>
           <Trash2 size={17} />
-        </button>
+        </Button>
       </div>
     </li>
   );

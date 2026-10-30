@@ -13,6 +13,7 @@ import {
 import { Logo, Container, ErrorBox } from "./components";
 import { errorText, useApp } from "./context";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
+import { Button } from "./ui/button";
 
 /** Ruta de la página de precios en un idioma (/precios, /pricing…). */
 export const pricingPath = (locale: Locale) => localizedPath("pricing", locale);
@@ -64,10 +65,10 @@ export function PricingPage() {
           <h1>{tr("pricing.title")}</h1>
           <p className="legal-intro">{tr("pricing.intro")}</p>
           <TierList />
-          <Link to="/registro" className="button pricing-cta">
+          <Button asChild><Link to="/registro" className="pricing-cta">
             {tr("pricing.buy")}
             <ArrowRight size={18} />
-          </Link>
+          </Link></Button>
         </main>
       </Container>
     </div>
@@ -122,11 +123,11 @@ function CheckoutTiers({ event }: { event: Event }) {
               ) : tooSmall ? (
                 <small>{tr("pricing.tierTooSmall")}</small>
               ) : (
-                <button className="button" disabled={busy !== null} onClick={() => void pay(position)}>
+                <Button disabled={busy !== null} onClick={() => void pay(position)}>
                   {busy === position
                     ? tr("pricing.goingToCheckout")
                     : tr("pricing.payTier", { price: price(upgradeCents(event.paidTier, position) / 100) })}
-                </button>
+                </Button>
               )}
             </li>
           );

@@ -12,11 +12,13 @@ import {
 } from "@tuevento/contracts";
 import { ApiError } from "@tuevento/client";
 import { useApp, errorText, dateText } from "./context";
-import { Logo, Avatar, ErrorBox } from "./components";
+import { Logo, Avatar, ErrorBox, Field } from "./components";
 import { MapLinks, MapView } from "./location";
 import { PostcardCanvas } from "./postcard-canvas";
 import { CalendarLinks } from "./calendar-links";
 import { PublicRsvp } from "./public-rsvp";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 /** Fuera de los buscadores: la landing es solo para los invitados y el organizador. */
 function useNoIndex() {
@@ -72,9 +74,9 @@ export function EventLanding() {
         <Lock size={28} />
         <h1>{tr("eventLanding.guestsOnlyTitle")}</h1>
         <p>{tr("eventLanding.guestsOnlyText")}</p>
-        <Link className="button secondary" to="/registro">
+        <Button asChild variant="outline"><Link to="/registro">
           {tr("rsvp.createOwnEvent")}
-        </Link>
+        </Link></Button>
       </div>
     ) : (
       <div className="startup">
@@ -121,9 +123,9 @@ export function LegacyEventAddress() {
         <>
           <h1>{tr("publicEvent.unavailable")}</h1>
           <ErrorBox message={error} />
-          <Link className="button secondary" to="/registro">
+          <Button asChild variant="outline"><Link to="/registro">
             {tr("rsvp.createOwnEvent")}
-          </Link>
+          </Link></Button>
         </>
       ) : (
         <p role="status">{tr("publicEvent.opening")}</p>
@@ -137,10 +139,10 @@ function OwnerBar({ eventId }: { eventId: string }) {
   return (
     <div className="landing-owner-bar">
       <p>{tr("eventLanding.ownerNote")}</p>
-      <Link className="button" to={`/eventos/${eventId}`}>
+      <Button asChild><Link to={`/eventos/${eventId}`}>
         <LayoutDashboard size={17} />
         {tr("eventLanding.goToPanel")}
-      </Link>
+      </Link></Button>
     </div>
   );
 }
@@ -243,19 +245,18 @@ function PasswordGate({ code, slug, onUnlocked }: { code: string; slug: string; 
       <h1>{tr("publicEvent.lockedTitle")}</h1>
       <p>{tr("publicEvent.lockedText")}</p>
       <form className="password-gate" onSubmit={submit}>
-        <label className="field">
-          <span>{tr("publicEvent.passwordLabel")}</span>
-          <input
+        <Field label={tr("publicEvent.passwordLabel")}>
+          <Input
             type="password"
             autoComplete="off"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-        </label>
+        </Field>
         {error && <ErrorBox message={error} />}
-        <button className="button full" disabled={busy || !password}>
+        <Button className="full" disabled={busy || !password}>
           {tr("publicEvent.unlock")}
-        </button>
+        </Button>
       </form>
     </div>
   );

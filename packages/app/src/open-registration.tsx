@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
 import { tr } from "./i18n";
 import { useApp, errorText } from "./context";
-import { ErrorBox } from "./components";
+import { ErrorBox, Field } from "./components";
 import { openInvitationLimits, type Status } from "@tuevento/contracts";
+import { Input } from "./ui/input";
+import { NativeSelect } from "./ui/native-select";
+import { Button } from "./ui/button";
 
 type Person = { name: string; kind: "adult" | "child"; status: Status };
 const emptyPerson = (): Person => ({ name: "", kind: "adult", status: "pending" });
@@ -49,61 +52,55 @@ export function OpenRegistration({ token }: { token: string }) {
     <div className="rsvp-form open-registration">
       <h2>{tr("registration.title")}</h2>
       <p>{tr("registration.intro")}</p>
-      <label className="field">
-        <span>{tr("registration.name")}</span>
-        <input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="field">
-        <span>{tr("registration.email")}</span>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-      </label>
-      <label className="field">
-        <span>{tr("registration.phone")}</span>
-        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-      </label>
+      <Field label={tr("registration.name")}>
+        <Input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+      </Field>
+      <Field label={tr("registration.email")}>
+        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </Field>
+      <Field label={tr("registration.phone")}>
+        <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      </Field>
       <h3>{tr("registration.people")}</h3>
       {people.map((p, index) => (
         <fieldset className="rsvp-member" key={index}>
           <legend>{tr("registration.personNumber", { number: index + 1 })}</legend>
-          <label className="field">
-            <span>{tr("registration.personName")}</span>
-            <input value={p.name} maxLength={50} onChange={(e) => update(index, { name: e.target.value })} />
-          </label>
+          <Field label={tr("registration.personName")}>
+            <Input value={p.name} maxLength={50} onChange={(e) => update(index, { name: e.target.value })} />
+          </Field>
           <div className="form-row">
-            <label className="field">
-              <span>{tr("registration.personKind")}</span>
-              <select value={p.kind} onChange={(e) => update(index, { kind: e.target.value as Person["kind"] })}>
+            <Field label={tr("registration.personKind")}>
+              <NativeSelect value={p.kind} onChange={(e) => update(index, { kind: e.target.value as Person["kind"] })}>
                 <option value="adult">{tr("common.adult")}</option>
                 <option value="child">{tr("common.child")}</option>
-              </select>
-            </label>
-            <label className="field">
-              <span>{tr("registration.personStatus")}</span>
-              <select value={p.status} onChange={(e) => update(index, { status: e.target.value as Status })}>
+              </NativeSelect>
+            </Field>
+            <Field label={tr("registration.personStatus")}>
+              <NativeSelect value={p.status} onChange={(e) => update(index, { status: e.target.value as Status })}>
                 <option value="accepted">{tr("status.accepted")}</option>
                 <option value="declined">{tr("status.declined")}</option>
                 <option value="pending">{tr("status.pending")}</option>
-              </select>
-            </label>
+              </NativeSelect>
+            </Field>
           </div>
           {people.length > 1 && (
-            <button type="button" className="text-button" onClick={() => setPeople((l) => l.filter((_, i) => i !== index))}>
+            <Button variant="link" size="inline" type="button" onClick={() => setPeople((l) => l.filter((_, i) => i !== index))}>
               <Trash2 size={15} />
               {tr("registration.removePerson")}
-            </button>
+            </Button>
           )}
         </fieldset>
       ))}
       {people.length < openInvitationLimits.members && (
-        <button type="button" className="button secondary" onClick={() => setPeople((l) => [...l, emptyPerson()])}>
+        <Button variant="outline" type="button" onClick={() => setPeople((l) => [...l, emptyPerson()])}>
           <Plus size={16} />
           {tr("registration.addPerson")}
-        </button>
+        </Button>
       )}
       {error && <ErrorBox message={error} />}
-      <button className="button full" onClick={submit} disabled={busy}>
+      <Button className="full" onClick={submit} disabled={busy}>
         {busy ? tr("registration.sending") : tr("registration.submit")}
-      </button>
+      </Button>
     </div>
   );
 }

@@ -322,7 +322,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page
       .getByRole("button", { name: "Copiar enlace", exact: true })
       .click();
-    await expect(page.locator(".toast")).toContainText("Enlace copiado.");
+    await expect(page.locator("[data-sonner-toast]")).toContainText("Enlace copiado.");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       link,
     );
@@ -412,12 +412,12 @@ fs.mkdirSync(artifacts, { recursive: true });
     );
     await shot("event-detail-desktop");
     await page
-      .getByRole("button", { name: "Confirmados", exact: false })
+      .getByRole("radio", { name: "Confirmados", exact: false })
       .click();
     await expect(
       page.getByRole("button", { name: "Familia Prueba", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Todos", exact: true }).click();
+    await page.getByRole("radio", { name: "Todos", exact: true }).click();
     await page.setViewportSize({ width: 390, height: 844 });
     await shot("event-detail-mobile");
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -464,7 +464,7 @@ fs.mkdirSync(artifacts, { recursive: true });
       .getByRole("button", { name: "Marcar todas como leídas" })
       .click();
     await expect(
-      page.getByRole("button", { name: "Sin leer (0)" }),
+      page.getByRole("radio", { name: "Sin leer (0)" }),
     ).toBeVisible();
     checks.push("Notificación de respuesta y marcado como leída");
     await page.goto(eventUrl);

@@ -1,7 +1,5 @@
 import { tr, trMessage } from "./i18n";
 import {
-  useEffect,
-  useRef,
   useId,
   Children,
   cloneElement,
@@ -31,6 +29,18 @@ import {
 } from "@tuevento/contracts";
 import { dateText } from "./context";
 import { themeImageSrcSet } from "./theme-images";
+import { Card } from "./ui/card";
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { NativeSelect } from "./ui/native-select";
+import { Textarea } from "./ui/textarea";
 export function Logo({
   compact = false,
   to = "/",
@@ -117,8 +127,9 @@ export function Field({
       if (!isValidElement(node)) return node;
       const element = node as ReactElement<Record<string, unknown>>;
       if (
-        typeof element.type === "string" &&
-        ["input", "textarea", "select"].includes(element.type)
+        [Input, Textarea, NativeSelect].includes(element.type as never) ||
+        (typeof element.type === "string" &&
+          ["input", "textarea", "select"].includes(element.type))
       )
         return cloneElement(element, {
           id,
@@ -135,9 +146,7 @@ export function Field({
     });
   return (
     <div className="field">
-      <span>
-        <label htmlFor={id}>{label}</label>
-      </span>
+      <Label htmlFor={id}>{label}</Label>
       {connect(children)}
       {hint && <small id={`${id}-hint`}>{hint}</small>}
       {error && (
@@ -159,42 +168,16 @@ export function Modal({
   children: ReactNode;
   wide?: boolean;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    ref.current?.showModal();
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = original;
-    };
-  }, []);
   return (
-    <dialog
-      ref={ref}
-      className={`modal ${wide ? "wide" : ""}`}
-      onCancel={(e) => {
-        e.preventDefault();
-        onClose();
-      }}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
-      aria-labelledby="modal-heading"
-    >
-      <div className="modal-inner">
-        <header>
-          <h2 id="modal-heading">{title}</h2>
-          <button
-            className="icon-button"
-            onClick={onClose}
-            aria-label={tr("common.close")}
-          >
-            <X size={20} />
-          </button>
-        </header>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size={wide ? "wide" : "default"} aria-describedby={undefined}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogCloseButton label={tr("common.close")} />
+        </DialogHeader>
         {children}
-      </div>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   );
 }
 export function Stats({
@@ -291,7 +274,8 @@ export function AttendanceBar({ metrics }: { metrics: Metrics }) {
 export function EventCard({ event }: { event: Event }) {
   const theme = themes.find((t) => t.id === event.theme)!;
   return (
-    <article className="event-card">
+    <Card asChild flush className="event-card">
+    <article>
       <Link className="event-photo" to={`/eventos/${event.id}`}>
         <img
           src={`/images/${theme.image}`}
@@ -334,6 +318,7 @@ export function EventCard({ event }: { event: Event }) {
         </div>
       </div>
     </article>
+    </Card>
   );
 }
 export function ThemePicker({
@@ -476,21 +461,5 @@ export function Container({
   );
 }
 
-/**
- * Tarjeta estándar con fondo de superficie, borde sutil y elevación suave.
- */
-export function Card({
-  className = "",
-  children,
-  ...props
-}: {
-  className?: string;
-  children?: ReactNode;
-} & React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={`ui-card ${className}`.trim()} {...props}>
-      {children}
-    </div>
-  );
-}
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 

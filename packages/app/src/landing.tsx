@@ -19,6 +19,7 @@ import { themeImageSrcSet } from "./theme-images";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { LegalLinks, legalPath } from "./legal";
 import { pricingPath } from "./pricing";
+import { Button } from "./ui/button";
 import "./landing.css";
 
 const family = [
@@ -158,19 +159,19 @@ export function LandingPage() {
             <Link className="landing-login" to="/acceso">
               {tr("landing.logIn")}
             </Link>
-            <Link className="button landing-header-cta" to={primary}>
+            <Button asChild><Link className="landing-header-cta" to={primary}>
               {tr("landing.createEvent")}
               <ArrowRight size={16} />
-            </Link>
-            <button
-              className="icon-button landing-menu-button"
+            </Link></Button>
+            <Button variant="ghost" size="icon"
+              className="landing-menu-button"
               aria-label={menu ? tr("common.closeMenu") : tr("common.openMenu")}
               aria-expanded={menu}
               aria-controls="landing-navigation"
               onClick={() => setMenu(!menu)}
             >
               {menu ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -184,10 +185,10 @@ export function LandingPage() {
               )}
             </p>
             <div className="landing-hero-actions">
-              <Link className="button landing-primary" to={primary}>
+              <Button asChild><Link className="landing-primary" to={primary}>
                 {tr("common.createFirstEvent")}
                 <ArrowRight size={20} />
-              </Link>
+              </Link></Button>
               <Link className="landing-demo-link" to="/registro">
                 <span>
                   <Play size={15} fill="currentColor" />
@@ -298,13 +299,13 @@ export function LandingPage() {
                   </button>
                 ))}
               </div>
-              <Link
-                className="button landing-primary"
+              <Button asChild><Link
+                className="landing-primary"
                 to={`/registro?tema=${theme}`}
               >
                 {tr("landing.createDesign")}
                 <ArrowRight size={19} />
-              </Link>
+              </Link></Button>
             </div>
             <figure className="landing-invitation-preview">
               <InvitationArt
@@ -452,10 +453,10 @@ export function LandingPage() {
                 "landing.bringOccasionTueventofunHelps",
               )}
             </p>
-            <Link className="button landing-primary" to={primary}>
+            <Button asChild><Link className="landing-primary" to={primary}>
               {tr("landing.startCelebration")}
               <ArrowRight size={20} />
-            </Link>
+            </Link></Button>
           </div>
           <img
             src="/images/gold.jpg"
@@ -475,10 +476,10 @@ export function LandingPage() {
               <h2 id="landing-providers-title">{tr("landing.providersTitle")}</h2>
               <p>{tr("landing.providersText")}</p>
             </div>
-            <Link className="button landing-primary" to="/registro?tipo=proveedor">
+            <Button asChild><Link className="landing-primary" to="/registro?tipo=proveedor">
               {tr("landing.providersAction")}
               <ArrowRight size={20} />
-            </Link>
+            </Link></Button>
           </div>
         </section>
 
@@ -498,13 +499,13 @@ export function LandingPage() {
                 disabled={newsletterStatus === "loading"}
                 aria-label={tr("common.email")}
               />
-              <button
+              <Button
                 type="submit"
-                className="button landing-primary"
+                className="landing-primary"
                 disabled={newsletterStatus === "loading"}
               >
                 {newsletterStatus === "loading" ? tr("common.loadingEllipsis") : tr("landing.subscribe")}
-              </button>
+              </Button>
             </form>
             <p className="landing-newsletter-legal">
               {tr("landing.wellWriteLanguageUnsubscribe")}{" "}

@@ -3,6 +3,7 @@ import { Copy, Link2, LocateFixed, MapPin, Navigation, Search, Share2, ExternalL
 import { accountLimits, mapLinks, type GeoPlace, type GeoPoint } from "@tuevento/contracts";
 import { tr } from "./i18n";
 import { errorText, useApp } from "./context";
+import { Button } from "./ui/button";
 
 /** Estilo de OpenFreeMap: teselas de OpenStreetMap gratis y sin clave (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, D3). */
 const mapStyle = "https://tiles.openfreemap.org/styles/liberty";
@@ -113,26 +114,25 @@ export function MapLinks({ label, geo }: { label: string; geo: GeoPoint | null }
   };
   return (
     <div className="map-links">
-      <a className="button secondary" href={links.google} target="_blank" rel="noreferrer">
+      <Button asChild variant="outline"><a href={links.google} target="_blank" rel="noreferrer">
         <MapPin size={16} />
         {tr("location.openGoogle")}
         <ExternalLink size={13} />
-      </a>
-      <a className="button secondary" href={links.apple} target="_blank" rel="noreferrer">
+      </a></Button>
+      <Button asChild variant="outline"><a href={links.apple} target="_blank" rel="noreferrer">
         {tr("location.openApple")}
         <ExternalLink size={13} />
-      </a>
-      <a className="button secondary" href={links.waze} target="_blank" rel="noreferrer">
+      </a></Button>
+      <Button asChild variant="outline"><a href={links.waze} target="_blank" rel="noreferrer">
         {tr("location.openWaze")}
         <ExternalLink size={13} />
-      </a>
-      <a className="button secondary" href={links.directions} target="_blank" rel="noreferrer">
+      </a></Button>
+      <Button asChild variant="outline"><a href={links.directions} target="_blank" rel="noreferrer">
         <Navigation size={16} />
         {tr("location.directions")}
-      </a>
-      <button
+      </a></Button>
+      <Button variant="outline"
         type="button"
-        className="button secondary"
         onClick={async () => {
           await runtime.copy(label);
           toast(tr("location.copied"));
@@ -140,11 +140,11 @@ export function MapLinks({ label, geo }: { label: string; geo: GeoPoint | null }
       >
         <Copy size={16} />
         {tr("location.copyAddress")}
-      </button>
-      <button type="button" className="button secondary" onClick={share}>
+      </Button>
+      <Button variant="outline" type="button" onClick={share}>
         <Share2 size={16} />
         {tr("location.share")}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -199,19 +199,17 @@ export function LocationPicker({
   return (
     <div className="location-tools">
       <div className="button-group">
-        <button
+        <Button variant="outline"
           type="button"
-          className="button secondary"
           disabled={busy || place.trim().length < 3}
           onClick={() => run(async () => setResults(await api.geoSearch(place)))}
         >
           <Search size={16} />
           {tr("location.searchOnMap")}
-        </button>
+        </Button>
         {getPosition && (
-          <button
+          <Button variant="outline"
             type="button"
-            className="button secondary"
             disabled={busy}
             onClick={() =>
               run(async () => {
@@ -226,17 +224,16 @@ export function LocationPicker({
           >
             <LocateFixed size={16} />
             {tr("location.useMyLocation")}
-          </button>
+          </Button>
         )}
-        <button
+        <Button variant="outline"
           type="button"
-          className="button secondary"
           aria-expanded={linkOpen}
           onClick={() => setLinkOpen((open) => !open)}
         >
           <Link2 size={16} />
           {tr("location.pasteLink")}
-        </button>
+        </Button>
       </div>
       {linkOpen && (
         <div className="location-link">
@@ -251,9 +248,8 @@ export function LocationPicker({
               placeholder={tr("location.linkPlaceholder")}
             />
           </label>
-          <button
+          <Button variant="outline"
             type="button"
-            className="button secondary"
             disabled={busy || !link.trim()}
             onClick={() =>
               run(async () => {
@@ -266,7 +262,7 @@ export function LocationPicker({
             }
           >
             {tr("location.applyLink")}
-          </button>
+          </Button>
         </div>
       )}
       {busy && <p role="status">{tr("location.searching")}</p>}
@@ -307,21 +303,20 @@ export function LocationPicker({
           <p className="location-pin" role="status">
             <MapPin size={15} />
             {tr("location.pinSet")}
-            <button type="button" className="text-button" onClick={() => onChange(null)}>
+            <Button variant="link" size="inline" type="button" onClick={() => onChange(null)}>
               {tr("location.removePin")}
-            </button>
+            </Button>
           </p>
           {suggestion && suggestion !== place && (
-            <button
+            <Button variant="link" size="inline"
               type="button"
-              className="text-button"
               onClick={() => {
                 onUseAddress(suggestion);
                 setSuggestion("");
               }}
             >
               {tr("location.useAddress", { address: suggestion })}
-            </button>
+            </Button>
           )}
         </>
       ) : (

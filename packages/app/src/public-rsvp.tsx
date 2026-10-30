@@ -24,6 +24,7 @@ import { CalendarLinks } from "./calendar-links";
 import { OpenRegistration } from "./open-registration";
 import { eventIsPast, googleCalendarUrl } from "@tuevento/contracts";
 import { MapLinks, MapView } from "./location";
+import { Button } from "./ui/button";
 /**
  * Invitación de un invitado: la postal, los datos y su respuesta. Por su enlace personal
  * (/i/:token) primero le da acceso a la landing del evento y lo lleva a ella, que la muestra
@@ -98,9 +99,9 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
         <h1>{tr("rsvp.couldntFindInvitation")}</h1>
         <ErrorBox message={error} />
         <p>{tr("rsvp.askHostShareLink")}</p>
-        <Link className="button secondary" to="/registro">
+        <Button asChild variant="outline"><Link to="/registro">
           {tr("rsvp.createOwnEvent")}
-        </Link>
+        </Link></Button>
       </div>
     );
   const event = invitation.event;
@@ -215,8 +216,7 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
                   )}
             </p>
             {invitation.members.length > 1 && (
-              <button
-                className="text-button"
+              <Button variant="link" size="inline"
                 onClick={() => {
                   setStatuses(
                     Object.fromEntries(
@@ -228,7 +228,7 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
               >
                 <CheckCheckIcon />
                 {tr("rsvp.everyoneAttending")}
-              </button>
+              </Button>
             )}
             <div className="rsvp-members">
               {invitation.members.map((m) => (
@@ -291,8 +291,8 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
                 </div>
               </div>
             )}
-            <button
-              className="button full"
+            <Button
+              className="full"
               onClick={save}
               disabled={busy || saved}
             >
@@ -302,7 +302,7 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
                   ? tr("rsvp.replySavedShort")
                   : tr("rsvp.saveReply")}
               <Check size={18} />
-            </button>
+            </Button>
             <small className="rsvp-no-account">
               {tr("rsvp.noAccountNeededJust")}
             </small>
@@ -317,10 +317,10 @@ export function PublicRsvp({ token: landingToken }: { token?: string }) {
             {tr("rsvp.createSpecialInvitationNext")}
           </p>
         </div>
-        <Link className="button" to="/registro">
+        <Button asChild><Link to="/registro">
           {tr("rsvp.createOwnEvent")}
           <ArrowRight size={17} />
-        </Link>
+        </Link></Button>
       </section>
       <footer className="public-footer">
         {tr("rsvp.loveTueventofun") + " "}

@@ -88,6 +88,11 @@ import {
   Empty,
   AttendanceBar,
 } from "./components";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { NativeSelect } from "./ui/native-select";
+import { Button } from "./ui/button";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 const formSchema = eventSchema.extend({
   date: z.string().min(1, "events.chooseDateTime"),
 });
@@ -219,7 +224,7 @@ export function EventEditor() {
             label={tr("events.eventName")}
             error={form.formState.errors.title?.message}
           >
-            <input
+            <Input
               {...form.register("title")}
               placeholder={tr("events.exampleSofiaAlejandrosWedding")}
               maxLength={100}
@@ -230,26 +235,26 @@ export function EventEditor() {
               label={tr("events.dateTime")}
               error={form.formState.errors.date?.message}
             >
-              <input type="datetime-local" {...form.register("date")} />
+              <Input type="datetime-local" {...form.register("date")} />
             </Field>
             <Field
               label={tr("events.timeZone")}
               error={form.formState.errors.timeZone?.message}
             >
-              <select {...form.register("timeZone")}>
+              <NativeSelect {...form.register("timeZone")}>
                 {timeZones.map(([value, label]) => (
                   <option key={value} value={value}>
                     {tr(label)}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
           </div>
           <Field
             label={tr("events.whereMeeting")}
             error={form.formState.errors.location?.message}
           >
-            <input
+            <Input
               {...form.register("location")}
               placeholder={tr("events.venueNameAddress")}
               maxLength={300}
@@ -276,7 +281,7 @@ export function EventEditor() {
               "events.includeDirectionsDressCode",
             )}
           >
-            <textarea
+            <Textarea
               {...form.register("description")}
               rows={4}
               placeholder={tr(
@@ -296,7 +301,7 @@ export function EventEditor() {
                   })
             }
           >
-            <input
+            <Input
               {...form.register("slug", { onChange: () => setSlugTouched(true) })}
               placeholder="boda-ana-y-luis"
               maxLength={accountLimits.eventSlug}
@@ -307,7 +312,7 @@ export function EventEditor() {
             error={form.formState.errors.publicPassword?.message}
             hint={hasPassword && !removePassword ? tr("events.publicPasswordKept") : tr("events.publicPasswordHint")}
           >
-            <input
+            <Input
               type="password"
               autoComplete="new-password"
               maxLength={accountLimits.password}
@@ -346,14 +351,12 @@ export function EventEditor() {
           )}
           {error && <ErrorBox message={error} />}
           <div className="form-actions">
-            <Link
-              className="button secondary"
+            <Button asChild variant="outline"><Link
               to={id ? `/eventos/${id}` : "/eventos"}
             >
               {tr("common.cancel")}
-            </Link>
-            <button
-              className="button"
+            </Link></Button>
+            <Button
               type="submit"
               disabled={form.formState.isSubmitting}
             >
@@ -363,7 +366,7 @@ export function EventEditor() {
                   ? tr("common.saveChanges")
                   : tr("common.createMyEvent")}
               <ArrowRight size={17} />
-            </button>
+            </Button>
           </div>
         </div>
         <aside className="preview-panel">
@@ -495,18 +498,18 @@ export function EventDetail() {
           <MapLinks label={event.location} geo={event.geo} />
         </div>
         <div className="button-group">
-          <Link className="button secondary" to={`/eventos/${id}/pantalla`}>
+          <Button asChild variant="outline"><Link to={`/eventos/${id}/pantalla`}>
             <Monitor size={17} />
             {tr("events.displayMode")}
-          </Link>
-          <Link className="button secondary" to={`/eventos/${id}/postal`}>
+          </Link></Button>
+          <Button asChild variant="outline"><Link to={`/eventos/${id}/postal`}>
             <Palette size={17} />
             {tr("postcard.open")}
-          </Link>
-          <Link className="button secondary" to={`/eventos/${id}/editar`}>
+          </Link></Button>
+          <Button asChild variant="outline"><Link to={`/eventos/${id}/editar`}>
             <Pencil size={17} />
             {tr("events.editEvent")}
-          </Link>
+          </Link></Button>
         </div>
         {user && event.slug && (
           <p className="event-public-link">
@@ -529,25 +532,26 @@ export function EventDetail() {
             {tr("events.oneInvitationPerPerson")}
           </p>
         </div>
-        <button className="button" onClick={() => setEditing("new")}>
+        <Button onClick={() => setEditing("new")}>
           <Plus size={18} />
           {tr("events.addInvitation")}
-        </button>
+        </Button>
       </div>
       <div className="list-toolbar">
-        <div className="tabs scroll-tabs">
+        <ToggleGroup
+          type="single"
+          variant="tabs"
+          className="tabs scroll-tabs"
+          value={filter}
+          onValueChange={(value) => value && setFilter(value as typeof filter)}
+        >
           {(["all", "accepted", "pending", "declined"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={filter === s ? "active" : ""}
-              aria-pressed={filter === s}
-            >
+            <ToggleGroupItem key={s} value={s}>
               {s === "all" ? tr("common.allMasculine") : tr(statusLabels[s])}
               {s !== "all" && <span className={`dot ${s}`} />}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
         <label className="search-field">
           <Search size={17} />
           <input
@@ -615,8 +619,7 @@ export function EventDetail() {
                   ))}
               </div>
               <div className="row-actions">
-                <button
-                  className="icon-button"
+                <Button variant="ghost" size="icon"
                   onClick={() => setSharing(i)}
                   aria-label={tr("events.shareNameSInvitation", {
                     name: i.name,
@@ -624,22 +627,21 @@ export function EventDetail() {
                   title={tr("events.shareInvitation")}
                 >
                   <Share2 size={17} />
-                </button>
-                <button
-                  className="icon-button"
+                </Button>
+                <Button variant="ghost" size="icon"
                   onClick={() => setEditing(i)}
                   aria-label={tr("events.editName", { name: i.name })}
                   title={tr("events.memberDetails")}
                 >
                   <Pencil size={16} />
-                </button>
-                <button
-                  className="icon-button danger-text"
+                </Button>
+                <Button variant="ghost" size="icon"
+                  className="danger-text"
                   onClick={() => setDeleting(i)}
                   aria-label={tr("events.deleteName", { name: i.name })}
                 >
                   <Trash2 size={16} />
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -653,20 +655,19 @@ export function EventDetail() {
           }
           action={
             !invitations.length ? (
-              <button className="button" onClick={() => setEditing("new")}>
+              <Button onClick={() => setEditing("new")}>
                 <Plus size={17} />
                 {tr("events.addFirstInvitation")}
-              </button>
+              </Button>
             ) : (
-              <button
-                className="button secondary"
+              <Button variant="outline"
                 onClick={() => {
                   setFilter("all");
                   setSearch("");
                 }}
               >
                 {tr("events.clearFilters")}
-              </button>
+              </Button>
             )
           }
         >
@@ -692,30 +693,28 @@ export function EventDetail() {
         <div className="event-plan">
           <span>{planText(event)}</span>
           {event.paidTier !== guestTiers.length - 1 && (
-            <Link to={paymentPath(event.id)} className="button secondary">
+            <Button asChild variant="outline"><Link to={paymentPath(event.id)}>
               {event.paidTier === null ? tr("pricing.payThisEvent") : tr("pricing.upgrade")}
-            </Link>
+            </Link></Button>
           )}
         </div>
       )}
       <details className="event-options">
         <summary>{tr("events.moreEventOptions")}</summary>
         <div>
-          <button
-            className="button secondary"
+          <Button variant="outline"
             disabled={busy}
             onClick={archive}
           >
             <Archive size={17} />
             {event.archived ? tr("events.reactivateEvent") : tr("events.archiveEvent")}
-          </button>
-          <button
-            className="button danger-outline"
+          </Button>
+          <Button variant="destructive-outline"
             onClick={() => setDeleting("event")}
           >
             <Trash2 size={17} />
             {tr("events.deleteEvent")}
-          </button>
+          </Button>
         </div>
         <p>
           {tr(
@@ -762,15 +761,14 @@ export function EventDetail() {
                 )}
           </p>
           <div className="form-actions">
-            <button
-              className="button secondary"
+            <Button variant="outline"
               onClick={() => setDeleting(null)}
             >
               {tr("common.cancel")}
-            </button>
-            <button className="button danger" disabled={busy} onClick={remove}>
+            </Button>
+            <Button variant="destructive" disabled={busy} onClick={remove}>
               {busy ? tr("events.deleting") : tr("events.yesDelete")}
-            </button>
+            </Button>
           </div>
         </Modal>
       )}
@@ -880,7 +878,7 @@ function InvitationEditor({
           error={form.formState.errors.name?.message}
           hint={tr("events.useNameEmailContact")}
         >
-          <input
+          <Input
             {...form.register("name")}
             placeholder={
               kind === "family"
@@ -894,7 +892,7 @@ function InvitationEditor({
             label={tr("events.contactEmailOptional")}
             error={form.formState.errors.email?.message}
           >
-            <input
+            <Input
               type="email"
               {...form.register("email")}
               placeholder={tr("events.emailPlaceholder")}
@@ -934,16 +932,16 @@ function InvitationEditor({
                     : tr("events.guestDetails")}
                 </strong>
                 {fields.length > 1 && (
-                  <button
+                  <Button variant="ghost" size="icon"
                     type="button"
-                    className="icon-button danger-text"
+                    className="danger-text"
                     onClick={() => remove(index)}
                     aria-label={tr("events.removeMemberNumber", {
                       number: index + 1,
                     })}
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="form-row">
@@ -951,23 +949,23 @@ function InvitationEditor({
                   label={tr("common.firstName")}
                   error={form.formState.errors.members?.[index]?.name?.message}
                 >
-                  <input
+                  <Input
                     {...form.register(`members.${index}.name`)}
                     placeholder={tr("events.personsName")}
                   />
                 </Field>
                 <Field label={tr("events.type")}>
-                  <select {...form.register(`members.${index}.kind`)}>
+                  <NativeSelect {...form.register(`members.${index}.kind`)}>
                     <option value="adult">{tr("common.adult")}</option>
                     <option value="child">{tr("common.child")}</option>
-                  </select>
+                  </NativeSelect>
                 </Field>
               </div>
               <Field
                 label={tr("events.individualNotesOptional")}
                 error={form.formState.errors.members?.[index]?.notes?.message}
               >
-                <input
+                <Input
                   {...form.register(`members.${index}.notes`)}
                   placeholder={tr("events.allergiesSpecialMealsAdditional")}
                   maxLength={500}
@@ -977,15 +975,15 @@ function InvitationEditor({
           ))}
         </div>
         {kind === "family" && (
-          <button
-            className="button secondary full"
+          <Button variant="outline"
+            className="full"
             type="button"
             onClick={() => append({ name: "", kind: "adult", notes: "" })}
             disabled={fields.length >= 50}
           >
             <Plus size={17} />
             {tr("events.addMember")}
-          </button>
+          </Button>
         )}
         </>
         )}
@@ -993,24 +991,24 @@ function InvitationEditor({
           label={tr("events.invitationNotesOptional")}
           error={form.formState.errors.notes?.message}
         >
-          <textarea {...form.register("notes")} rows={2} maxLength={1000} />
+          <Textarea {...form.register("notes")} rows={2} maxLength={1000} />
         </Field>
         {form.formState.errors.members?.root?.message && (
           <ErrorBox message={form.formState.errors.members.root.message} />
         )}{" "}
         {error && <ErrorBox message={error} />}
         <div className="form-actions sticky-actions">
-          <button className="button secondary" type="button" onClick={onClose}>
+          <Button variant="outline" type="button" onClick={onClose}>
             {tr("common.cancel")}
-          </button>
-          <button className="button" disabled={form.formState.isSubmitting}>
+          </Button>
+          <Button disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting
               ? tr("common.saving")
               : invitation
                 ? tr("common.saveChanges")
                 : tr("events.createInvitation")}
             <Check size={17} />
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -1057,17 +1055,15 @@ export function ShareDialog({
           readOnly
           onFocus={(e) => e.target.select()}
         />
-        <button
-          className="icon-button"
+        <Button variant="ghost" size="icon"
           onClick={copy}
           aria-label={tr("events.copyLink")}
         >
           {copied ? <Check size={19} /> : <Copy size={19} />}
-        </button>
+        </Button>
       </div>
       <div className="share-actions">
-        <button
-          className="button"
+        <Button
           onClick={() =>
             runtime.openExternal(
               `https://wa.me/${invitation.phone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`,
@@ -1076,14 +1072,13 @@ export function ShareDialog({
         >
           <MessageCircle size={18} />
           WhatsApp
-        </button>
-        <a
-          className="button secondary"
+        </Button>
+        <Button asChild variant="outline"><a
           href={`mailto:${invitation.email}?subject=${encodeURIComponent(tr("events.youreInvitedEvent", { event: event.title }))}&body=${encodeURIComponent(message)}`}
         >
           <Mail size={18} />
           {tr("common.email")}
-        </a>
+        </a></Button>
       </div>
       <a className="preview-link" href={url} target="_blank" rel="noreferrer">
         <ExternalLink size={16} />
@@ -1112,16 +1107,15 @@ export function TvPage() {
     <div className="tv-page">
       <header>
         <LanguageSwitcher />
-        <Link to={`/eventos/${id}`} className="button secondary">
+        <Button asChild variant="outline"><Link to={`/eventos/${id}`}>
           <ArrowLeft size={20} />
           {tr("events.backEvent")}
-        </Link>
+        </Link></Button>
         <span>
           <span className="dot accepted" />
           {tr("events.live")}
         </span>
-        <button
-          className="button secondary"
+        <Button variant="outline"
           onClick={() => {
             if (document.fullscreenElement) void document.exitFullscreen();
             else void document.documentElement.requestFullscreen();
@@ -1129,7 +1123,7 @@ export function TvPage() {
         >
           <Monitor size={20} />
           {tr("events.fullScreen")}
-        </button>
+        </Button>
       </header>
       <main>
         <p className="greeting">{tr("events.wereSoGladYoure")}</p>

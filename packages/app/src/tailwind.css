@@ -1,0 +1,59 @@
+/* Tailwind v4 para los componentes de shadcn/ui (src/ui). Ver docs/SHADCN.md.
+   - Sin preflight: el reinicio base lo da styles.css, en @layer base.
+   - Utilidades en @layer utilities: ganan a las reglas de elemento (capa base) y pierden ante
+     las reglas por clase de styles.css y landing.css, que no van en capa. Así una clase propia
+     junto a un componente (className="landing-primary") ajusta su aspecto en su contexto.
+   - source(none): solo se generan utilidades de src/ui y src/lib. Las pantallas no llevan
+     clases de Tailwind: usan los componentes y su CSS propio.
+   - Los colores y radios de shadcn apuntan a los tokens de styles.css (DESIGN.md): no se
+     redefinen --primary ni --muted, que styles.css ya usa con otro sentido. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tw-animate-css";
+
+@source "./ui";
+@source "./lib";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Manrope Variable", sans-serif;
+  --font-heading: "Bricolage Grotesque Variable", "Manrope Variable", sans-serif;
+
+  --color-background: var(--ground);
+  --color-foreground: var(--ink);
+  --color-card: var(--ground);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--ground);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-text);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--surface-soft);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-soft);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--surface-soft-hover);
+  --color-accent-foreground: var(--ink);
+  --color-celebrate: var(--celebrate);
+  --color-celebrate-foreground: var(--celebrate-text);
+  --color-celebrate-hover: var(--celebrate-hover);
+  --color-destructive: var(--error);
+  --color-destructive-foreground: var(--ground);
+  --color-destructive-hover: var(--error-hover);
+  --color-destructive-soft: var(--error-bg);
+  --color-border: var(--line);
+  --color-input: var(--line-strong);
+  --color-ring: var(--primary);
+
+  /* rounded de DESIGN.md: tag 5, control 8, button 9, card 13, surface 14, modal 16 */
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 9px;
+  --radius-lg: 13px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+
+  --shadow-sm: var(--shadow-soft);
+  --ease-out: var(--ease);
+}
