@@ -650,6 +650,9 @@ Divídela en tres PR: 8a (API), 8b (cliente y almacenamiento) y 8c (pantallas y 
 
 ### 8a — API de sincronización
 
+> Hecha: el resumen de lo construido está en `docs/ARCHITECTURE.md` («Sincronización sin conexión»). El perfil
+> del proveedor viaja entero (con servicios y fotos), así que no hay `services` ni `images` sueltos.
+
 - Migración: `updated_at` y `version integer NOT NULL DEFAULT 1` en `events`, `invitations` y
   `members` (y `version` en las tablas de proveedor). Trigger que suma 1 a `version` y actualiza
   `updated_at` en cada `UPDATE`. Columnas nuevas en tablas con datos: `ADD COLUMN … DEFAULT` (sin

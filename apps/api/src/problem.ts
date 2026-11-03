@@ -19,6 +19,8 @@ export type ProblemInput = {
   detail?: string;
   errors?: ProblemFieldError[];
   retryAfter?: number;
+  /** Campos propios del error (p. ej. `currentVersion` en un `version_conflict`). */
+  extra?: Record<string, unknown>;
 };
 
 /** Error con código propio, campos y, en los 429, los segundos de `Retry-After`. */
@@ -35,6 +37,31 @@ export const tooManyRequests = (retryAfter: number) =>
     detail: "errors.tooManyAttemptsPlease",
     retryAfter,
   });
+
+/** 409 `version_conflict` con la versión guardada: el cliente decide qué conservar. */
+export const versionConflict = (currentVersion: number) =>
+  new ProblemException({
+    status: HttpStatus.CONFLICT,
+    code: "version_conflict",
+    detail: "errors.versionConflict",
+    extra: { currentVersion },
+  });
+
+/** 409 `id_taken`: el id que propone el cliente ya es de otro dato (o de otra cuenta). */
+export const idTaken = () =>
+  new ProblemException({ status: HttpStatus.CONFLICT, code: "id_taken", detail: "errors.idTaken" });
+
+/**
+ * Versión de `If-Match` (`"3"`, `W/"3"` o `3`); undefined sin la cabecera, que se comporta como
+ * antes (la web y las apps anteriores). Otro formato: 400 `invalid_if_match`.
+ */
+export function ifMatchVersion(req: FastifyRequest): number | undefined {
+  const header = req.headers["if-match"];
+  if (header === undefined) return undefined;
+  const match = /^(?:W\/)?(?:"([1-9][0-9]{0,15})"|([1-9][0-9]{0,15}))$/.exec(String(header).trim());
+  if (!match) throw new ProblemException({ status: 400, code: "invalid_if_match", detail: "errors.invalidIfMatch" });
+  return Number(match[1] ?? match[2]);
+}
 
 /**
  * Valida con zod. Un cuerpo que no pasa responde 422 con un error por campo; un parámetro de la
@@ -73,6 +100,7 @@ export function sendProblem(req: FastifyRequest, reply: FastifyReply, input: Pro
     detail,
     requestId: req.id,
     ...(errors?.length ? { errors } : {}),
+    ...input.extra,
     statusCode: input.status,
     message: detail,
     ...(errors?.length ? { fields: legacyFields(errors) } : {}),

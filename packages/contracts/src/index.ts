@@ -403,6 +403,11 @@ export const eventSchema = z.strictObject({
     )
     .default(""),
 });
+/**
+ * Alta de un evento. `id` (UUIDv7 generado en el teléfono, opcional) hace repetible la creación sin
+ * conexión: si ya existe en la cuenta, se devuelve lo guardado.
+ */
+export const eventCreateSchema = eventSchema.extend({ id: z.uuid().optional() });
 export const memberSchema = z.strictObject({
   id: z.uuid().optional(),
   name,
@@ -431,7 +436,10 @@ function checkInvitation(v: InvitationFields, ctx: z.RefinementCtx) {
     ctx.addIssue({ code: "custom", path: ["members"], message: "validation.thereDuplicateMembers" });
 }
 /** Invitación del organizador: personalizada (con personas) o genérica (sin personas; las pone cada invitado). */
-export const invitationSchema = invitationFields.superRefine((v, ctx) => {
+export const invitationSchema = invitationFields.extend({
+  /** Solo al crear: id generado en el teléfono (como en `eventCreateSchema`). */
+  id: z.uuid().optional(),
+}).superRefine((v, ctx) => {
   checkInvitation(v, ctx);
   if (v.kind !== "open" && v.members.length === 0)
     ctx.addIssue({ code: "custom", path: ["members"], message: "validation.addLeastOnePerson" });
@@ -501,6 +509,9 @@ export type Event = Omit<EventInput, "publicPassword" | "geo"> & {
   passwordFailures: number;
   /** Tramo de invitados pagado (posición en `guestTiers`), o null si el evento es gratuito. */
   paidTier: 0 | 1 | 2 | 3 | null;
+  /** Versión para `If-Match`: sube con cada cambio de lo que edita el organizador. */
+  version: number;
+  updatedAt: string;
 };
 /** Evento visto desde su landing: sin invitados ni respuestas. */
 export type PublicEvent = {
@@ -549,6 +560,9 @@ export type Invitation = {
   parentId: string | null;
   members: Member[];
   createdAt: string;
+  /** Versión para `If-Match`: no cambia cuando un invitado responde. */
+  version: number;
+  updatedAt: string;
 };
 export type Notification = {
   id: string;
@@ -559,6 +573,29 @@ export type Notification = {
   read: boolean;
   createdAt: string;
 };
+/** Lo borrado desde el cursor: el teléfono también lo borra (un evento, con sus invitaciones y avisos). */
+export type SyncDeleted = { entity: "event" | "invitation" | "notification" | "provider"; id: string };
+/** Límite de elementos por página de `GET /api/sync/changes`. */
+export const syncPageLimit = { default: 100, max: 100 } as const;
+/**
+ * Una página de `GET /api/sync/changes`: lo que cambió desde `cursor` (o todo, sin cursor). Las
+ * invitaciones llevan sus personas, y el perfil del proveedor sus servicios y fotos. `nextCursor`
+ * se guarda y se envía en la siguiente llamada, también cuando `hasMore` es false.
+ */
+export type SyncChanges = {
+  events: Event[];
+  invitations: Invitation[];
+  notifications: Notification[];
+  /** Solo si cambió (cuentas de proveedor). */
+  provider?: ProviderProfile;
+  deleted: SyncDeleted[];
+  nextCursor: string;
+  hasMore: boolean;
+};
+export const syncQuerySchema = z.strictObject({
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(syncPageLimit.max).default(syncPageLimit.default),
+});
 export type PublicInvitation = {
   name: string;
   kind: "individual" | "family" | "open";
@@ -821,6 +858,8 @@ export type ProviderService = {
   title: string;
   description: string;
   price: ProviderPrice | null;
+  /** Versión para `If-Match`. */
+  version: number;
 };
 export type ProviderStatus = "draft" | "published" | "suspended";
 /** Lo que falta para publicar, como códigos (`providers.missing.<código>` en el catálogo). */
@@ -829,6 +868,8 @@ export type ProviderRequirement = (typeof providerRequirements)[number];
 /** Perfil completo, como lo ve su dueño en el panel. */
 export type ProviderProfile = ProviderProfileData & {
   id: string;
+  /** Versión para `If-Match`: no cambia cuando cambian sus servicios o fotos. */
+  version: number;
   status: ProviderStatus;
   publishedAt: string | null;
   coverImageId: string | null;
@@ -866,7 +907,8 @@ export type ProviderPublic = {
   serviceRadiusKm: number;
   cover: ProviderImage | null;
   logo: ProviderImage | null;
-  services: ProviderService[];
+  /** Sin `version`: es un dato del panel del dueño. */
+  services: Omit<ProviderService, "version">[];
   images: ProviderImage[];
   updatedAt: string;
 };

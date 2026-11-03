@@ -382,7 +382,7 @@ export function ProviderBusinessPage() {
   );
 }
 
-export const priceText = (service: ProviderService) =>
+export const priceText = (service: Pick<ProviderService, "price">) =>
   service.price
     ? tr("provider.priceFrom", {
         price: new Intl.NumberFormat(formatLocale(), { style: "currency", currency: service.price.currency }).format(

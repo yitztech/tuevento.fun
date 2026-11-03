@@ -605,7 +605,8 @@ try {
     await p.call("/provider/publish", "POST", {});
     // Publicada, con la dirección aproximada: sin calle ni código postal y el punto a 2 decimales
     const pagina = await client().call(`/public/providers/${slug}`);
-    for (const privado of ["id", "userId", "email", "status", "missing", "coverImageId"]) assert.ok(!(privado in pagina), privado);
+    for (const privado of ["id", "userId", "email", "status", "missing", "coverImageId", "version"]) assert.ok(!(privado in pagina), privado);
+    assert.ok(pagina.services.every((s) => !("version" in s)), "las versiones son del panel del dueño");
     assert.equal(pagina.businessName, datos.businessName);
     assert.equal(pagina.address, "");
     assert.equal(pagina.postalCode, "");
@@ -1206,6 +1207,249 @@ try {
       assert.ok([400, 404].includes(r.status), `invitación ${token} → ${r.status}`);
     }
     assert.equal((await client().raw("/ruta-que-no-existe")).status, 404);
+  });
+
+  // ── Sincronización sin conexión (fase 8a) ──
+  /** Todas las páginas desde `cursor` con `limit`, y el cursor final. */
+  const todasLasPaginas = async (api, cursor, limit = 100) => {
+    const paginas = [];
+    for (let vuelta = 0; vuelta < 50; vuelta++) {
+      const q = new URLSearchParams({ limit: String(limit), ...(cursor ? { cursor } : {}) });
+      const pagina = await api.call(`/sync/changes?${q}`);
+      paginas.push(pagina);
+      cursor = pagina.nextCursor;
+      if (!pagina.hasMore) return { paginas, cursor };
+    }
+    throw new Error("La sincronización no terminó en 50 páginas");
+  };
+  const claves = (paginas) =>
+    paginas.flatMap((p) => [
+      ...p.events.map((e) => `event:${e.id}`),
+      ...p.invitations.map((i) => `invitation:${i.id}`),
+      ...p.notifications.map((n) => `notification:${n.id}`),
+      ...(p.provider ? [`provider:${p.provider.id}`] : []),
+    ]);
+  const cursorCon = (s, t) => Buffer.from(JSON.stringify({ v: 1, s, t })).toString("base64url");
+
+  await suite("Sincronización: sin cursor, todo por páginas sin huecos ni duplicados; después, solo lo cambiado y lo borrado", async () => {
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "sync"), 201);
+    const eventos = [];
+    for (let n = 0; n < 3; n++) eventos.push(await org.call("/events", "POST", eventData({ title: `Sync ${n}` }), 201));
+    const inv1 = await org.call(`/events/${eventos[0].id}/invitations`, "POST", invitationData(), 201);
+    const inv2 = await org.call(`/events/${eventos[0].id}/invitations`, "POST", invitationData({ name: "Otra" }), 201);
+    const esperadas = [...eventos.map((e) => `event:${e.id}`), `invitation:${inv1.id}`, `invitation:${inv2.id}`].sort();
+
+    // De dos en dos: cada dato una sola vez y ninguno se queda fuera
+    const { paginas, cursor } = await todasLasPaginas(org, undefined, 2);
+    assert.ok(paginas.length >= 3, `páginas: ${paginas.length}`);
+    assert.ok(paginas.slice(0, -1).every((p) => p.hasMore && claves([p]).length === 2));
+    assert.deepEqual(claves(paginas).sort(), esperadas);
+    assert.ok(paginas.every((p) => p.deleted.length === 0), "sin cursor no hay borrados");
+    const ev = paginas.flatMap((p) => p.events).find((e) => e.id === eventos[0].id);
+    assert.equal(ev.version, 1);
+    assert.equal(typeof ev.updatedAt, "string");
+    const inv = paginas.flatMap((p) => p.invitations).find((i) => i.id === inv1.id);
+    assert.equal(inv.members.length, 1, "la invitación viaja con sus personas");
+    assert.equal(inv.version, 1);
+
+    // Con el cursor final, nada nuevo
+    const quieto = await org.call(`/sync/changes?cursor=${cursor}`);
+    assert.deepEqual([quieto.events, quieto.invitations, quieto.notifications, quieto.deleted, quieto.hasMore], [[], [], [], [], false]);
+    assert.equal(quieto.nextCursor, cursor);
+    assert.match(quieto.nextCursor, /^[A-Za-z0-9_-]+$/);
+
+    // Un cambio del organizador: solo ese evento, con la versión siguiente
+    await org.call(`/events/${eventos[1].id}`, "PATCH", eventData({ title: "Sync cambiado" }));
+    const cambio = await org.call(`/sync/changes?cursor=${cursor}`);
+    assert.deepEqual(claves([cambio]), [`event:${eventos[1].id}`]);
+    assert.equal(cambio.events[0].title, "Sync cambiado");
+    assert.equal(cambio.events[0].version, 2);
+
+    // Responde un invitado: su invitación (con la respuesta, misma versión) y el aviso
+    await client().call(`/invitations/${inv1.token}/rsvp`, "POST", { members: inv1.members.map((m) => ({ id: m.id, status: "accepted" })) }, 201);
+    const respuesta = await org.call(`/sync/changes?cursor=${cambio.nextCursor}`);
+    assert.deepEqual(respuesta.invitations.map((i) => i.id), [inv1.id]);
+    assert.equal(respuesta.invitations[0].members[0].status, "accepted");
+    assert.equal(respuesta.invitations[0].version, 1, "la respuesta de un invitado no cambia la versión de la invitación");
+    assert.equal(respuesta.notifications.length, 1);
+    assert.equal(respuesta.notifications[0].eventId, eventos[0].id);
+
+    // Borrar: la invitación sola; después el evento, que se lleva su otra invitación y el aviso
+    await org.call(`/events/${eventos[0].id}/invitations/${inv2.id}`, "DELETE");
+    const sinInv = await org.call(`/sync/changes?cursor=${respuesta.nextCursor}`);
+    assert.deepEqual(sinInv.deleted, [{ entity: "invitation", id: inv2.id }]);
+    await org.call(`/events/${eventos[0].id}`, "DELETE");
+    const sinEvento = await org.call(`/sync/changes?cursor=${sinInv.nextCursor}`);
+    assert.deepEqual(
+      sinEvento.deleted.map((d) => `${d.entity}:${d.id}`).sort(),
+      [`event:${eventos[0].id}`, `invitation:${inv1.id}`, `notification:${respuesta.notifications[0].id}`].sort(),
+    );
+    for (const e of eventos.slice(1)) await org.call(`/events/${e.id}`, "DELETE");
+  });
+
+  await suite("Sincronización: cursor inválido 400, caducado 410 y límite acotado, en los cinco idiomas", async () => {
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "sync-cursor"), 201);
+    const locales = [
+      ["es", { Host: spanishHost }],
+      ["en", { Host: englishHost }],
+      ["pt", { Host: englishHost, "X-App-Locale": "pt" }],
+      ["de", { Host: englishHost, "X-App-Locale": "de" }],
+      ["fr", { Host: englishHost, "X-App-Locale": "fr" }],
+    ];
+    const viejo = cursorCon(0, Math.floor(Date.now() / 1000) - 91 * 24 * 60 * 60);
+    for (const [locale, headers] of locales) {
+      const caducado = await org.raw(`/sync/changes?cursor=${viejo}`, { headers });
+      assert.equal(caducado.status, 410, locale);
+      assert.equal(caducado.data.code, "sync_cursor_expired");
+      assert.equal(caducado.data.title, translate(locale, "problems.gone"), locale);
+      assert.equal(caducado.data.detail, translate(locale, "errors.syncCursorExpired"), locale);
+      const roto = await org.raw("/sync/changes?cursor=no-es-un-cursor", { headers });
+      assert.equal(roto.status, 400, locale);
+      assert.equal(roto.data.code, "invalid_sync_cursor");
+      assert.equal(roto.data.detail, translate(locale, "errors.invalidSyncCursor"), locale);
+    }
+    for (const cursor of [cursorCon("1", 1), cursorCon(-5, Math.floor(Date.now() / 1000)), Buffer.from("[]").toString("base64url")])
+      assert.equal((await org.raw(`/sync/changes?cursor=${cursor}`)).status, 400, cursor);
+    for (const limit of ["0", "101", "dos"]) assert.equal((await org.raw(`/sync/changes?limit=${limit}`)).status, 400, limit);
+    assert.equal((await org.raw("/sync/changes?otro=1")).status, 400, "parámetro desconocido");
+    const ahora = await org.raw(`/sync/changes?cursor=${cursorCon(0, Math.floor(Date.now() / 1000))}`);
+    assert.equal(ahora.status, 200);
+    assert.match(ahora.headers["cache-control"] ?? "", /no-store/);
+  });
+
+  await suite("If-Match: con la versión guardada se cambia; con otra, 409 version_conflict con la versión actual", async () => {
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "ifmatch"), 201);
+    const ev = await org.call("/events", "POST", eventData(), 201);
+    const cambiado = await org.call(`/events/${ev.id}`, "PATCH", eventData({ title: "Primera" }), 200, { "If-Match": '"1"' });
+    assert.equal(cambiado.version, 2);
+    for (const [locale, headers] of [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]]) {
+      const tarde = await org.raw(`/events/${ev.id}`, { method: "PATCH", body: eventData({ title: "Tarde" }), headers: { ...headers, "If-Match": '"1"' } });
+      assert.equal(tarde.status, 409, locale);
+      assert.equal(tarde.data.code, "version_conflict");
+      assert.equal(tarde.data.currentVersion, 2);
+      assert.equal(tarde.data.detail, translate(locale, "errors.versionConflict"), locale);
+    }
+    assert.equal((await org.call(`/events/${ev.id}`)).title, "Primera", "el cambio tardío no se guardó");
+    // W/"2" y 2 también valen; sin If-Match, como siempre (la web y las apps anteriores)
+    assert.equal((await org.call(`/events/${ev.id}`, "PATCH", eventData({ title: "Segunda" }), 200, { "If-Match": 'W/"2"' })).version, 3);
+    assert.equal((await org.call(`/events/${ev.id}`, "PATCH", eventData({ title: "Tercera" }), 200, { "If-Match": "3" })).version, 4);
+    assert.equal((await org.call(`/events/${ev.id}`, "PATCH", eventData({ title: "Cuarta" }))).version, 5);
+    // La web reenvía el evento entero: version y updatedAt no rompen el esquema estricto
+    const entero = await org.call(`/events/${ev.id}`);
+    assert.equal((await org.call(`/events/${ev.id}`, "PATCH", { ...entero, title: "Quinta" })).title, "Quinta");
+    for (const valor of ["abc", '"0"', '"1', "*"]) {
+      const r = await org.raw(`/events/${ev.id}`, { method: "PATCH", body: eventData(), headers: { "If-Match": valor } });
+      assert.equal(r.status, 400, valor);
+      assert.equal(r.data.code, "invalid_if_match");
+    }
+    // Invitaciones
+    const inv = await org.call(`/events/${ev.id}/invitations`, "POST", invitationData(), 201);
+    const ruta = `/events/${ev.id}/invitations/${inv.id}`;
+    const editada = await org.call(ruta, "PUT", invitationData({ notes: "Una", members: inv.members.map(({ id, name, kind, notes }) => ({ id, name, kind, notes })) }), 200, { "If-Match": '"1"' });
+    assert.equal(editada.version, 2);
+    const choque = await org.raw(ruta, { method: "PUT", body: invitationData({ notes: "Dos" }), headers: { "If-Match": '"1"' } });
+    assert.equal(choque.status, 409);
+    assert.equal(choque.data.code, "version_conflict");
+    assert.equal(choque.data.currentVersion, 2);
+    assert.equal((await org.call(`/events/${ev.id}/invitations`)).find((i) => i.id === inv.id).notes, "Una");
+    await org.call(`/events/${ev.id}`, "DELETE");
+  });
+
+  await suite("Proveedor: If-Match en el perfil y los servicios; la sincronización trae el perfil con todo dentro", async () => {
+    const prov = client();
+    await prov.call("/auth/register", "POST", account(P, "sync-prov", { accountType: "provider" }), 201);
+    const perfil = await prov.call("/provider/profile", "PUT", providerData({ businessName: `Sync ${unique}` }));
+    assert.equal(perfil.version, 1);
+    const inicio = await prov.call("/sync/changes");
+    assert.equal(inicio.provider?.id, perfil.id);
+    assert.deepEqual([inicio.events, inicio.invitations, inicio.notifications], [[], [], []]);
+    // Un servicio nuevo toca el perfil (llega por la sincronización) sin subir su versión
+    const servicio = await prov.call("/provider/services", "POST", { title: "Banquete", description: "", price: null }, 201);
+    assert.equal(servicio.version, 1);
+    const tocado = await prov.call(`/sync/changes?cursor=${inicio.nextCursor}`);
+    assert.equal(tocado.provider?.version, 1);
+    assert.deepEqual(tocado.provider?.services.map((s) => s.id), [servicio.id]);
+    // Perfil
+    assert.equal((await prov.call("/provider/profile", "PUT", providerData({ businessName: `Sync ${unique}`, headline: "Uno" }), 200, { "If-Match": '"1"' })).version, 2);
+    const choque = await prov.raw("/provider/profile", { method: "PUT", body: providerData({ businessName: `Sync ${unique}`, headline: "Dos" }), headers: { "If-Match": '"1"' } });
+    assert.equal(choque.status, 409);
+    assert.equal(choque.data.code, "version_conflict");
+    assert.equal(choque.data.currentVersion, 2);
+    // Servicio
+    const ruta = `/provider/services/${servicio.id}`;
+    assert.equal((await prov.call(ruta, "PUT", { title: "Banquete grande", description: "", price: null }, 200, { "If-Match": '"1"' })).version, 2);
+    const tarde = await prov.raw(ruta, { method: "PUT", body: { title: "Tarde", description: "", price: null }, headers: { "If-Match": '"1"' } });
+    assert.equal(tarde.status, 409);
+    assert.equal(tarde.data.currentVersion, 2);
+    assert.equal((await prov.raw(`/provider/services/${crypto.randomUUID()}`, { method: "PUT", body: { title: "Otro servicio", description: "", price: null }, headers: { "If-Match": '"1"' } })).status, 404);
+  });
+
+  await suite("ID del cliente: crear dos veces con el mismo id devuelve lo guardado; un id ajeno, 409 id_taken", async () => {
+    const org = client(), otra = client();
+    await org.call("/auth/register", "POST", account(P, "clientid"), 201);
+    await otra.call("/auth/register", "POST", account(P, "clientid-otra"), 201);
+    const id = crypto.randomUUID();
+    const primera = await org.call("/events", "POST", eventData({ id, title: "Desde el teléfono" }), 201);
+    assert.equal(primera.id, id);
+    const repetida = await org.raw("/events", { method: "POST", body: eventData({ id, title: "Desde el teléfono" }) });
+    assert.ok([200, 201].includes(repetida.status), repetida.text);
+    assert.equal(repetida.data.id, id);
+    assert.equal((await org.call("/events")).filter((e) => e.id === id).length, 1);
+    const ajena = await otra.raw("/events", { method: "POST", body: eventData({ id }) });
+    assert.equal(ajena.status, 409);
+    assert.equal(ajena.data.code, "id_taken");
+    assert.equal(ajena.data.id, undefined, "no devuelve el evento de la otra cuenta");
+    assert.equal((await org.raw("/events", { method: "POST", body: eventData({ id: "no-es-uuid" }) })).status, 422);
+    // Invitaciones: dentro del mismo evento se repite; en otro evento, 409
+    const invId = crypto.randomUUID();
+    const inv = await org.call(`/events/${id}/invitations`, "POST", invitationData({ id: invId }), 201);
+    assert.equal(inv.id, invId);
+    const otraVez = await org.raw(`/events/${id}/invitations`, { method: "POST", body: invitationData({ id: invId }) });
+    assert.ok([200, 201].includes(otraVez.status), otraVez.text);
+    assert.equal((await org.call(`/events/${id}/invitations`)).length, 1);
+    const otroEvento = await org.call("/events", "POST", eventData(), 201);
+    const cruzada = await org.raw(`/events/${otroEvento.id}/invitations`, { method: "POST", body: invitationData({ id: invId }) });
+    assert.equal(cruzada.status, 409);
+    assert.equal(cruzada.data.code, "id_taken");
+    await org.call(`/events/${id}`, "DELETE");
+    await org.call(`/events/${otroEvento.id}`, "DELETE");
+  });
+
+  await suite("Idempotency-Key: repetir devuelve la misma respuesta sin repetir el efecto; otro cuerpo, 422", async () => {
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "idem"), 201);
+    const key = crypto.randomUUID();
+    const primera = await org.raw("/events", { method: "POST", body: eventData({ title: "Una vez" }), headers: { "Idempotency-Key": key } });
+    assert.equal(primera.status, 201);
+    assert.equal(primera.headers["idempotency-replayed"], undefined);
+    const segunda = await org.raw("/events", { method: "POST", body: eventData({ title: "Una vez" }), headers: { "Idempotency-Key": key } });
+    assert.equal(segunda.status, 201);
+    assert.equal(segunda.headers["idempotency-replayed"], "true");
+    assert.deepEqual(segunda.data, primera.data);
+    assert.equal((await org.call("/events")).filter((e) => e.title === "Una vez").length, 1);
+    const otroCuerpo = await org.raw("/events", { method: "POST", body: eventData({ title: "Otra cosa" }), headers: { "Idempotency-Key": key } });
+    assert.equal(otroCuerpo.status, 422);
+    assert.equal(otroCuerpo.data.code, "idempotency_key_reused");
+    const otraRuta = await org.raw(`/events/${primera.data.id}`, { method: "PATCH", body: eventData({ title: "Una vez" }), headers: { "Idempotency-Key": key } });
+    assert.equal(otraRuta.status, 422);
+    const rota = await org.raw("/events", { method: "POST", body: eventData(), headers: { "Idempotency-Key": "123" } });
+    assert.equal(rota.status, 400);
+    assert.equal(rota.data.code, "invalid_idempotency_key");
+    // Un error no se guarda: con la misma clave y el cuerpo corregido, se crea
+    const k2 = crypto.randomUUID();
+    assert.equal((await org.raw("/events", { method: "POST", body: eventData({ title: "" }), headers: { "Idempotency-Key": k2 } })).status, 422);
+    assert.equal((await org.raw("/events", { method: "POST", body: eventData({ title: "Corregido" }), headers: { "Idempotency-Key": k2 } })).status, 201);
+    // Borrar dos veces con la misma clave: la segunda repite el 200, no da 404
+    const k3 = crypto.randomUUID();
+    const borrar = () => org.raw(`/events/${primera.data.id}`, { method: "DELETE", headers: { "Idempotency-Key": k3 } });
+    assert.equal((await borrar()).status, 200);
+    const repetido = await borrar();
+    assert.equal(repetido.status, 200);
+    assert.equal(repetido.headers["idempotency-replayed"], "true");
+    assert.equal((await org.raw(`/events/${primera.data.id}`, { method: "DELETE" })).status, 404);
   });
 
   mkdirSync("qa-artifacts", { recursive: true });

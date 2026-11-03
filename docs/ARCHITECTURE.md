@@ -54,6 +54,35 @@ Después de una escritura, el servidor emite un evento SSE dirigido al usuario p
 
 El bus SSE actual es en memoria para una única instancia de backend. Para varias réplicas se debe sustituir por PostgreSQL LISTEN/NOTIFY o Redis Pub/Sub, conservando las interfaces.
 
+## Sincronización sin conexión (API)
+
+Para las apps que trabajan sin red (`docs/PLAN-PROVEEDORES-Y-OFFLINE.md`, fase 8). Migración
+`028_sincronizacion.sql`, `apps/api/src/sync.ts` e `idempotency.ts`; pruebas en `tests/db/specs/sync.test.js`,
+`test-endpoints.mjs` y `test-security.mjs`.
+
+- **Reloj de cambios por cuenta** (`sync_clock`): cada alta, cambio o borrado de un dato de la cuenta toma el
+  siguiente número (`sync_seq`), por triggers. La fila del reloj queda bloqueada hasta el final de la
+  transacción, así que los números de una cuenta se confirman en orden.
+- **`GET /api/sync/changes?cursor=&limit=`** (con sesión, cualquier tipo de cuenta): lo que tiene un número
+  mayor que el del cursor, por páginas de hasta 100, con `events`, `invitations` (con sus personas),
+  `notifications`, `provider` (con servicios y fotos, solo si cambió), `deleted`, `nextCursor` y `hasMore`.
+  Los números de una página salen de una sola instantánea (`REPEATABLE READ`). Sin cursor, todo. El cursor es
+  opaco; uno roto responde 400 `invalid_sync_cursor` y uno de más de 90 días (o anterior a tombstones ya
+  purgados), 410 `sync_cursor_expired`: el teléfono vuelve a descargarlo todo.
+- **Tombstones** (`sync_tombstones`): un borrado deja `{ entity, id }`; un evento borrado deja también los de
+  sus invitaciones y avisos. Se purgan a los 90 días.
+- **Personas, servicios, fotos y categorías** viajan dentro de su invitación o su perfil: su cambio solo da un
+  número nuevo al padre, sin subir su versión (que un invitado responda no es un conflicto para el organizador).
+- **`If-Match: "<version>"`** en `PATCH /api/events/:id`, `PUT /api/events/:id/invitations/:id`,
+  `PUT /api/provider/profile` y `PUT /api/provider/services/:id`: si no coincide, 409 `version_conflict` con
+  `currentVersion`. Sin la cabecera, como siempre. `version` y `updatedAt` vienen en cada evento e invitación.
+- **Id del cliente**: `POST /api/events` y `POST /api/events/:id/invitations` aceptan `id` (UUID, v7 desde el
+  teléfono). Si ya existe en la cuenta (o en ese evento), devuelve lo guardado; si es de otra, 409 `id_taken`.
+- **`Idempotency-Key`** (UUID) en cualquier escritura con sesión: la respuesta se guarda 24 horas por cuenta y
+  repetir la clave la devuelve (`Idempotency-Replayed: true`) sin repetir el efecto. Con otro método, ruta o
+  cuerpo, 422 `idempotency_key_reused`; mientras la primera sigue en curso, 409 `idempotency_in_progress`. Un
+  error no se guarda.
+
 ## Demostración
 
 Al abrir el panel sin sesión y con `DEMO_ENABLED=true`, se crea un usuario temporal exclusivo de ese navegador con tres eventos sintéticos, invitaciones y respuestas de ejemplo. No se comparte una cuenta entre visitantes. Los datos se etiquetan como demostración. Las cuentas de demo con más de siete días se limpian al iniciar el backend. El registro de una cuenta normal siempre comienza vacío.

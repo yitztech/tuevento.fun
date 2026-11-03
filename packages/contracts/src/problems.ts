@@ -23,6 +23,7 @@ export const problemStatuses: Record<number, { code: string; title: MessageKey }
   403: { code: "forbidden", title: "problems.forbidden" },
   404: { code: "not_found", title: "problems.notFound" },
   409: { code: "conflict", title: "problems.conflict" },
+  410: { code: "gone", title: "problems.gone" },
   413: { code: "payload_too_large", title: "problems.payloadTooLarge" },
   422: { code: "validation_failed", title: "problems.validationFailed" },
   429: { code: "rate_limited", title: "problems.rateLimited" },

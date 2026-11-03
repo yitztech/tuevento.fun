@@ -1,5 +1,8 @@
 import { PlatformController } from "./platform";
 import { Module } from "@nestjs/common";
+import { APP_INTERCEPTOR } from "@nestjs/core";
+import { IdempotencyInterceptor } from "./idempotency";
+import { SyncController, SyncService } from "./sync";
 import { Database } from "./database";
 import { AuthService, SessionGuard, AccountTypeGuard } from "./auth";
 import { EventsService, Updates } from "./events";
@@ -15,7 +18,7 @@ import { ProviderPagesController } from "./provider-pages";
 import { ProviderController, ProviderImagesController, ProvidersService } from "./providers";
 import { McpController, McpService } from "./mcp";
 @Module({
-  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController, McpController],
+  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController, McpController, SyncController],
   providers: [
     Database,
     AuthService,
@@ -32,6 +35,8 @@ import { McpController, McpService } from "./mcp";
     GeoService,
     ProvidersService,
     McpService,
+    SyncService,
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
 })
 export class AppModule {}

@@ -317,7 +317,15 @@
     "paymentProviderUnavailable": "We couldn't open the payment page. Try again in a few minutes.",
     "paymentSignatureInvalid": "The payment notification signature is invalid.",
     "paymentDemo": "Demo events can't be paid for. Create your account to pay for your event.",
-    "guestLimitReached": "Your event reached its tier's guest limit. Move to a bigger tier to add more."
+    "guestLimitReached": "Your event reached its tier's guest limit. Move to a bigger tier to add more.",
+    "idTaken": "That identifier is already used by something else. Generate a new one and try again.",
+    "idempotencyInProgress": "That request is still being processed. Try again in a few seconds.",
+    "idempotencyKeyReused": "That idempotency key was already used with a different request.",
+    "invalidIdempotencyKey": "The Idempotency-Key header must be a UUID.",
+    "invalidIfMatch": "The If-Match header must contain the version in quotes, for example \"3\".",
+    "invalidSyncCursor": "The sync cursor isn't valid.",
+    "syncCursorExpired": "Your offline copy is too old: it needs to be downloaded in full again.",
+    "versionConflict": "This changed on another device while you were editing it. Check the current version before saving."
   },
   "events": {
     "actions": "Actions",
@@ -931,6 +939,7 @@
     "forbidden": "Access denied",
     "notFound": "Not found",
     "conflict": "Conflicts with the current data",
+    "gone": "No longer available",
     "payloadTooLarge": "Content too large",
     "validationFailed": "Invalid data",
     "rateLimited": "Too many requests",

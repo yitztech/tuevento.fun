@@ -84,6 +84,17 @@ export class Database implements OnModuleInit, OnModuleDestroy {
     await this.pool.query("DELETE FROM trusted_devices WHERE expires_at < now()");
     await this.pool.query("DELETE FROM password_resets WHERE expires_at < now()");
     await this.pool.query("DELETE FROM geo_cache WHERE created_at < now() - interval '30 days'");
+    await this.pool.query("DELETE FROM idempotency_keys WHERE created_at < now() - interval '24 hours'");
+    // Tombstones de más de 90 días: el reloj de la cuenta recuerda hasta dónde se purgó, y un
+    // cursor anterior responde 410 sync_cursor_expired (el teléfono vuelve a descargarlo todo)
+    await this.pool.query(
+      `WITH purged AS (
+         DELETE FROM sync_tombstones WHERE deleted_at < now() - interval '90 days' RETURNING user_id, seq
+       )
+       UPDATE sync_clock c SET purged_seq = GREATEST(c.purged_seq, p.seq)
+         FROM (SELECT user_id, max(seq) AS seq FROM purged GROUP BY user_id) p
+        WHERE c.user_id = p.user_id`,
+    );
     await this.pool.query(
       "DELETE FROM users WHERE is_demo = true AND created_at < now() - interval '7 days'",
     );

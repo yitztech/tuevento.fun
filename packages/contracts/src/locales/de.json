@@ -317,7 +317,15 @@
     "paymentProviderUnavailable": "Wir konnten die Zahlungsseite nicht öffnen. Versuch es in ein paar Minuten noch einmal.",
     "paymentSignatureInvalid": "Die Signatur der Zahlungsbenachrichtigung ist ungültig.",
     "paymentDemo": "Für Veranstaltungen der Demo wird nicht bezahlt. Erstelle dein Konto, um deine Veranstaltung zu bezahlen.",
-    "guestLimitReached": "Deine Veranstaltung hat die Gästegrenze ihrer Stufe erreicht. Wechsle zu einer größeren Stufe, um mehr hinzuzufügen."
+    "guestLimitReached": "Deine Veranstaltung hat die Gästegrenze ihrer Stufe erreicht. Wechsle zu einer größeren Stufe, um mehr hinzuzufügen.",
+    "idTaken": "Diese Kennung wird schon von etwas anderem verwendet. Erzeuge eine neue und versuch es noch einmal.",
+    "idempotencyInProgress": "Diese Anfrage wird noch verarbeitet. Versuch es in ein paar Sekunden noch einmal.",
+    "idempotencyKeyReused": "Dieser Idempotenzschlüssel wurde schon für eine andere Anfrage verwendet.",
+    "invalidIdempotencyKey": "Der Header Idempotency-Key muss eine UUID sein.",
+    "invalidIfMatch": "Der Header If-Match muss die Version in Anführungszeichen enthalten, zum Beispiel \"3\".",
+    "invalidSyncCursor": "Der Synchronisierungs-Cursor ist ungültig.",
+    "syncCursorExpired": "Deine Offline-Kopie ist zu alt: Sie muss noch einmal vollständig geladen werden.",
+    "versionConflict": "Das wurde auf einem anderen Gerät geändert, während du es bearbeitet hast. Prüfe die aktuelle Version, bevor du speicherst."
   },
   "events": {
     "actions": "Aktionen",
@@ -931,6 +939,7 @@
     "forbidden": "Zugriff verweigert",
     "notFound": "Nicht gefunden",
     "conflict": "Konflikt mit den aktuellen Daten",
+    "gone": "Nicht mehr verfügbar",
     "payloadTooLarge": "Inhalt zu groß",
     "validationFailed": "Ungültige Daten",
     "rateLimited": "Zu viele Anfragen",

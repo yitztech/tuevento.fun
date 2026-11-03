@@ -317,7 +317,15 @@
     "paymentProviderUnavailable": "Nous n’avons pas pu ouvrir la page de paiement. Réessaie dans quelques minutes.",
     "paymentSignatureInvalid": "La signature de la notification de paiement n’est pas valide.",
     "paymentDemo": "Les événements de la démonstration ne se paient pas. Crée ton compte pour payer ton événement.",
-    "guestLimitReached": "Ton événement a atteint le maximum d’invités de sa formule. Passe à une formule plus grande pour en ajouter."
+    "guestLimitReached": "Ton événement a atteint le maximum d’invités de sa formule. Passe à une formule plus grande pour en ajouter.",
+    "idTaken": "Cet identifiant est déjà utilisé par autre chose. Génère-en un nouveau et réessaie.",
+    "idempotencyInProgress": "Cette requête est encore en cours de traitement. Réessaie dans quelques secondes.",
+    "idempotencyKeyReused": "Cette clé d’idempotence a déjà servi pour une autre requête.",
+    "invalidIdempotencyKey": "L’en-tête Idempotency-Key doit être un UUID.",
+    "invalidIfMatch": "L’en-tête If-Match doit contenir la version entre guillemets, par exemple « 3 ».",
+    "invalidSyncCursor": "Le curseur de synchronisation n’est pas valide.",
+    "syncCursorExpired": "Ta copie hors ligne est trop ancienne : il faut la télécharger à nouveau en entier.",
+    "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer."
   },
   "events": {
     "actions": "Actions",
@@ -931,6 +939,7 @@
     "forbidden": "Accès refusé",
     "notFound": "Introuvable",
     "conflict": "Conflit avec les données actuelles",
+    "gone": "N’est plus disponible",
     "payloadTooLarge": "Contenu trop volumineux",
     "validationFailed": "Données non valides",
     "rateLimited": "Trop de requêtes",
