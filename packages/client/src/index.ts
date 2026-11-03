@@ -24,7 +24,20 @@ import type {
   ProviderProfileInput,
   ProviderService,
   ProviderServiceInput,
+  ProviderCategory,
+  ProviderSearchResult,
+  SearchSort,
 } from "@tuevento/contracts";
+/** Filtros de la búsqueda de proveedores (`GET /api/search/providers`). */
+export type ProviderSearchParams = {
+  q?: string;
+  categories?: ProviderCategory[];
+  point?: GeoPoint | null;
+  radiusKm?: number;
+  sort?: SearchSort;
+  limit?: number;
+  cursor?: string;
+};
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -74,7 +87,10 @@ export class EventApi {
         response.status,
         typeof data.message === "string"
           ? data.message
-          : "common.couldntCompleteRequest",
+          : // Problem Details sin el `message` heredado (servicio search): el detalle ya traducido
+            typeof data.detail === "string"
+            ? data.detail
+            : "common.couldntCompleteRequest",
         data.fields,
       );
     return data;
@@ -178,6 +194,21 @@ export class EventApi {
     this.request<{ place: GeoPlace | null }>(
       `/geo/reverse?${new URLSearchParams({ lat: String(point.lat), lng: String(point.lng) })}`,
     );
+  /** Búsqueda pública de proveedores (servicio search); sin punto no se envían distancia ni orden por distancia. */
+  searchProviders = (params: ProviderSearchParams) => {
+    const query = new URLSearchParams();
+    if (params.q?.trim()) query.set("q", params.q.trim());
+    if (params.categories?.length) query.set("categories", params.categories.join(","));
+    if (params.point) {
+      query.set("lat", String(params.point.lat));
+      query.set("lng", String(params.point.lng));
+      if (params.radiusKm) query.set("radiusKm", String(params.radiusKm));
+      if (params.sort) query.set("sort", params.sort);
+    }
+    if (params.limit) query.set("limit", String(params.limit));
+    if (params.cursor) query.set("cursor", params.cursor);
+    return this.request<ProviderSearchResult>(`/search/providers?${query}`);
+  };
   /** Coordenadas de un enlace de Google Maps, Apple Maps o Waze. */
   parseMapLink = (url: string) => this.request<GeoPoint>("/geo/parse-link", "POST", { url });
   // Panel del proveedor (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, fase 3)

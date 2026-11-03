@@ -77,8 +77,8 @@ export type Locale = keyof typeof locales;
 /** Idioma principal: el de un Host desconocido y el fallback de cualquier texto que falte. */
 export const defaultLocale: Locale = "es";
 export const supportedLocales = Object.keys(locales) as Locale[];
-/** Páginas traducidas que se publican (rutas de la SPA y sitemap). La de proveedores solo tiene perfiles por ahora. */
-export const localizedPages = ["privacy", "terms", "pricing"] as const satisfies readonly LocalizedPage[];
+/** Páginas traducidas que se publican (rutas de la SPA y sitemap). `providers` es la búsqueda de proveedores. */
+export const localizedPages = ["privacy", "terms", "pricing", "providers"] as const satisfies readonly LocalizedPage[];
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && Object.hasOwn(locales, value);
