@@ -62,6 +62,10 @@ test("Mapa común de rutas traducidas", () => {
   assert.equal(translatePath("", "es"), "/");
   assert.equal(localizedPage("/descargas"), null);
   assert.equal(localizedPage("/privacy"), "privacy");
+  // La búsqueda de proveedores es la raíz de su sección; los perfiles cuelgan de ella
+  assert.equal(localizedPage("/vendors"), "providers");
+  assert.equal(localizedPage("/proveedores/salon-luna"), null);
+  assert.equal(translatePath("/proveedores", "de"), "/dienstleister");
 });
 test("Orígenes publicados por el gateway", () => {
   assert.deepEqual(

@@ -65,7 +65,7 @@ async function start() {
  ReactDOM.createRoot(document.getElementById("root")!).render(
   <Router><Analytics api={api} native={native}/>{!native&&<><SeoLinks/><LanguageSuggestion/></>}{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>
    <Route path="/" element={<LandingPage/>}/><Route path="/descargas" element={<DownloadsPage api={api}/>}/>
-   {localizedPages.flatMap(page=>supportedLocales.map(locale=><Route key={`${page}-${locale}`} path={localizedPath(page,locale)} element={page==='pricing'?<PricingPage/>:<LegalPage page={page}/>}/>))}
+   {localizedPages.filter(page=>page!=='providers').flatMap(page=>supportedLocales.map(locale=><Route key={`${page}-${locale}`} path={localizedPath(page,locale)} element={page==='pricing'?<PricingPage/>:<LegalPage page={page as 'privacy'|'terms'}/>}/>))}
    <Route path="*" element={<TuEventoApp runtime={activeRuntime}/>}/>
   </Routes>}</Router>);
 }
