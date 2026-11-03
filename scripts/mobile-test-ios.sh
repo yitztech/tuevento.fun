@@ -35,15 +35,16 @@ if [ -z "${SKIP_BUILD:-}" ]; then
   bash scripts/mobile-test-ca.sh >/dev/null
 
   echo "▸ Web empaquetada contra $ORIGIN"
-  export VITE_PUBLIC_ORIGIN="$ORIGIN" VITE_APP_VERSION="0.0.0-pruebas"
+  export VITE_PUBLIC_ORIGIN="$ORIGIN" VITE_APP_VERSION="0.0.0-pruebas" VITE_TEST_BUILD=1
   npm run build -w @tuevento/contracts >/dev/null
   npm run build -w @tuevento/client >/dev/null
   (cd apps/web && npm run build >/dev/null && npx cap sync ios >/dev/null)
 
-  echo "▸ App para el simulador (sin firma)"
+  echo "▸ App para el simulador (firma ad hoc: el llavero exige una app firmada)"
   xcodebuild -project apps/web/ios/App/App.xcodeproj -scheme App -configuration Debug \
     -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath "$BUILD" \
-    CODE_SIGNING_ALLOWED=NO PRODUCT_BUNDLE_IDENTIFIER="$APP_ID" APP_LINK_HOST=localhost \
+    CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES DEVELOPMENT_TEAM= CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER= \
+    PRODUCT_BUNDLE_IDENTIFIER="$APP_ID" APP_LINK_HOST=localhost \
     -quiet build
 fi
 [ -d "$APP" ] || { echo "No existe $APP" >&2; exit 1; }

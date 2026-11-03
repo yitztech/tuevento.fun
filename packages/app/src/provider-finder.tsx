@@ -45,8 +45,9 @@ function useOnline() {
  * en un diálogo con la ubicación del evento: el formulario de detrás no se pierde porque no se navega.
  */
 export function ProviderFinder({ eventKey, location, geo }: { eventKey: string; location: string; geo: GeoPoint | null }) {
-  const { api, runtime } = useApp();
-  const online = useOnline();
+  const { api, runtime, online: appOnline } = useApp();
+  // La red según el navegador y, en las apps, según el sistema
+  const online = useOnline() && appOnline;
   const opener = useRef<HTMLButtonElement>(null);
   const [hidden, setHidden] = useState(() => readHidden(eventKey)),
     [open, setOpen] = useState(false),

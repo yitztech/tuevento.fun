@@ -108,6 +108,27 @@ aleatoria por cuenta, en `SecureStorage` (`tueventofun:offline-key:<userId>`). `
 (`@capacitor/network`), `openOfflineStore(userId)` (borra antes la copia de otra cuenta) y `clearOfflineStore()`
 (cerrar sesión, 401). En la web quedan sin definir. Las pantallas lo usan desde la fase 8c.
 
+## Sincronización sin conexión (pantallas)
+
+`packages/app/src/offline.tsx` y `sync-review.tsx` (fase 8c), solo en las apps y para organizadores:
+
+- **`useOfflineSync`**: con `openOfflineStore`, abre la copia de la cuenta, crea el `SyncEngine` y cambia la
+  `api` del contexto por `OfflineEventApi`. Sincroniza al abrir, al volver la red y al volver a primer plano.
+  Un 401 borra la copia (`clearOfflineStore`) y lleva a entrar.
+  Abrir y borrar la copia van en fila, y antes de borrar se cierran las conexiones propias a
+  IndexedDB: un borrado bloqueado deja en cola toda apertura posterior y la app no arrancaría sin red.
+- **Arranque sin red**: si `config()` o `me()` fallan por red, la app arranca con el usuario guardado en la
+  copia (`meta/user`) de la cuenta dueña (`offlineOwner`).
+- **Aviso fijo** (`OfflineBanner`): sin conexión, cambios pendientes con «Sincronizar ahora» y cambios por
+  revisar. **`PendingMark`** en eventos e invitaciones con cambios sin enviar. Una invitación creada sin red no
+  tiene enlace: «Compartir» desactivado con su motivo.
+- **Correos al sincronizar**: sin red, cancelar un evento o cambiar su fecha o su lugar pide confirmar antes.
+- **`/sincronizar`**: conflictos con «Tu versión» y «Versión guardada»; «Quedarme con la mía» reenvía sobre la
+  versión del servidor y «Usar la guardada» (o «Descartar este cambio» en un fallo) se queda con lo del servidor.
+- **Solo con conexión** (desactivado con «Necesita conexión a internet»): entrar, registrarse, Google,
+  contraseña, perfil y foto, subir fotos, comprobar la dirección pública, buscar en el mapa y buscar
+  proveedores. En la web, `online` es siempre verdadero y nada de esto aparece.
+
 ## Demostración
 
 Al abrir el panel sin sesión y con `DEMO_ENABLED=true`, se crea un usuario temporal exclusivo de ese navegador con tres eventos sintéticos, invitaciones y respuestas de ejemplo. No se comparte una cuenta entre visitantes. Los datos se etiquetan como demostración. Las cuentas de demo con más de siete días se limpian al iniciar el backend. El registro de una cuenta normal siempre comienza vacío.

@@ -32,7 +32,7 @@ if [ -z "${SKIP_BUILD:-}" ]; then
   cp tests/mobile/.ca/root.crt apps/web/android/app/src/debug/res/raw/test_ca.crt
 
   echo "▸ Web empaquetada contra $ORIGIN"
-  export VITE_PUBLIC_ORIGIN="$ORIGIN" VITE_APP_VERSION="0.0.0-pruebas"
+  export VITE_PUBLIC_ORIGIN="$ORIGIN" VITE_APP_VERSION="0.0.0-pruebas" VITE_TEST_BUILD=1
   npm run build -w @tuevento/contracts >/dev/null
   npm run build -w @tuevento/client >/dev/null
   (cd apps/web && npm run build >/dev/null && npx cap sync android >/dev/null)

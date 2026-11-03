@@ -25,19 +25,40 @@ const request = <T>(req: IDBRequest<T>) =>
     req.onerror = () => reject(req.error);
   });
 
-function openDatabase(): Promise<IDBDatabase> {
+/** Conexiones abiertas: se cierran antes de borrar la base, o el borrado queda bloqueado. */
+const connections = new Set<IDBDatabase>();
+
+async function openDatabase(): Promise<IDBDatabase> {
   const req = indexedDB.open(DB_NAME, 1);
   req.onupgradeneeded = () => {
     const records = req.result.createObjectStore(RECORDS, { keyPath: 'k' });
     records.createIndex('c', 'c');
   };
-  return request(req);
+  const db = await request(req);
+  connections.add(db);
+  // Otra pestaña o versión pide borrar o cambiar la base: se suelta en vez de bloquearla
+  db.onversionchange = () => {
+    db.close();
+    connections.delete(db);
+  };
+  return db;
 }
 
+/**
+ * Borra la base. Un borrado bloqueado deja en cola toda apertura posterior (la app no arrancaría
+ * sin red): antes se cierran las conexiones propias, y como máximo se esperan 3 s.
+ */
 function deleteDatabase(): Promise<void> {
+  for (const db of connections) db.close();
+  connections.clear();
   return new Promise((resolve) => {
+    const timer = setTimeout(resolve, 3000);
+    const done = () => {
+      clearTimeout(timer);
+      resolve();
+    };
     const req = indexedDB.deleteDatabase(DB_NAME);
-    req.onsuccess = req.onerror = req.onblocked = () => resolve();
+    req.onsuccess = req.onerror = req.onblocked = done;
   });
 }
 
@@ -86,18 +107,40 @@ class EncryptedStore implements OfflineStore {
   }
 }
 
+/**
+ * Abrir y borrar van en fila: el borrado tras un 401 al arrancar no se cruza con la apertura del
+ * inicio de sesión que llega justo después.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function serial<T>(task: () => Promise<T>): Promise<T> {
+  const next = queue.then(task, task);
+  queue = next.catch(() => {});
+  return next;
+}
+
+/** Cuenta dueña de la copia local guardada (para arrancar sin conexión con ella). */
+export async function offlineOwner(): Promise<string | null> {
+  return ((await SecureStorage.getItem(OWNER).catch(() => null)) as string | null) ?? null;
+}
+
 /** Borra la copia local y la clave de quien la tenía (cerrar sesión, 401, otra cuenta). */
-export async function clearOfflineStore(): Promise<void> {
+export const clearOfflineStore = (): Promise<void> => serial(clear);
+
+async function clear(): Promise<void> {
   const owner = (await SecureStorage.getItem(OWNER).catch(() => null)) as string | null;
+  // Sin dueño no hay copia que borrar (la base se crea siempre después de guardar el dueño)
+  if (!owner) return;
   await deleteDatabase();
-  if (owner) await SecureStorage.removeItem(keyName(owner)).catch(() => {});
+  await SecureStorage.removeItem(keyName(owner)).catch(() => {});
   await SecureStorage.removeItem(OWNER).catch(() => {});
 }
 
 /** Abre la copia local de una cuenta; la de otra cuenta se borra antes. */
-export async function openOfflineStore(userId: string): Promise<OfflineStore> {
+export const openOfflineStore = (userId: string): Promise<OfflineStore> => serial(() => open(userId));
+
+async function open(userId: string): Promise<OfflineStore> {
   const owner = (await SecureStorage.getItem(OWNER).catch(() => null)) as string | null;
-  if (owner !== userId) await clearOfflineStore();
+  if (owner !== userId) await clear();
   const saved = (await SecureStorage.getItem(keyName(userId)).catch(() => null)) as string | null;
   let key: CryptoKey;
   if (saved) key = await importRecordKey(saved);

@@ -27,7 +27,8 @@ import {
   type Metrics,
   type User,
 } from "@tuevento/contracts";
-import { dateText } from "./context";
+import { dateText, useApp } from "./context";
+import { PendingMark } from "./offline";
 import { themeImageSrcSet } from "./theme-images";
 import { Card } from "./ui/card";
 import {
@@ -273,6 +274,7 @@ export function AttendanceBar({ metrics }: { metrics: Metrics }) {
 }
 export function EventCard({ event }: { event: Event }) {
   const theme = themes.find((t) => t.id === event.theme)!;
+  const { offline } = useApp();
   return (
     <Card asChild flush className="event-card">
     <article>
@@ -306,6 +308,7 @@ export function EventCard({ event }: { event: Event }) {
           <MapPin size={14} />
           {event.location}
         </p>
+        <PendingMark id={event.id} offline={offline} />
         <AttendanceBar metrics={event.metrics} />
         <div className="event-bottom">
           <span>

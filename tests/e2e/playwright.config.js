@@ -20,8 +20,11 @@ export default defineConfig({
   // Web: calienta Vite antes de empezar (ver support/calentar.js).
   globalSetup: android || ios ? undefined : "./support/calentar.js",
   // A ritmo humano un escenario tarda mucho más que los 30 s por defecto.
-  timeout: lento ? 180_000 : 30_000,
-  expect: { timeout: lento ? 15_000 : 5_000 },
+  // En el emulador o el simulador, la app tarda en abrir (unos 15 s) y cada acción pasa por el
+  // puente de depuración: 30 s no alcanzan ni para entrar.
+  timeout: lento ? 180_000 : android || ios ? 120_000 : 30_000,
+  // En las apps, volver a tener red (quitar el modo avión) y sincronizar tarda unos segundos más
+  expect: { timeout: lento ? 15_000 : android || ios ? 20_000 : 5_000 },
   fullyParallel: !(android || ios),
   forbidOnly: !!process.env.CI,
   // En el emulador, el primer arranque de la app puede fallar al cargar: un reintento lo cubre y
@@ -51,10 +54,11 @@ export default defineConfig({
     : ios
       ? [{ name: "ios", grep: /@movil/, grepInvert: /@solo-web|@sin-ios/ }]
       : [
-          { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+          // @solo-movil: escenarios que solo existen dentro de las apps (sin conexión, docs/E2E.md)
+          { name: "chromium", use: { ...devices["Desktop Chrome"] }, grepInvert: /@solo-movil/ },
           // Web en el móvil (§38): Android con Chromium e iPhone con WebKit, emulados, en cada PR.
           // El panel de administración es de escritorio y se prueba solo en Chromium.
-          { name: "android-chrome", use: { ...devices["Pixel 7"] }, grepInvert: /@admin/ },
+          { name: "android-chrome", use: { ...devices["Pixel 7"] }, grepInvert: /@admin|@solo-movil/ },
           // WebKit no tiene --host-resolver-rules: en local, el propio gateway hace de proxy HTTP y
           // atiende el dominio inglés por la URL absoluta de cada petición.
           {
@@ -66,13 +70,14 @@ export default defineConfig({
               // 127.0.0.1 va directo: ahí escucha el doble de Stripe (payments-fake), que no es del gateway
               ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: `${new URL(baseURL).hostname},127.0.0.1` } } : {}),
             },
-            grepInvert: /@admin/,
+            grepInvert: /@admin|@solo-movil/,
           },
           // Firefox, en la ejecución semanal (E2E_FIREFOX=1)
           ...(process.env.E2E_FIREFOX
             ? [
                 {
                   name: "firefox",
+                  grepInvert: /@solo-movil/,
                   use: {
                     ...devices["Desktop Firefox"],
                     // En local, el dominio inglés se resuelve a 127.0.0.1 como en Chromium

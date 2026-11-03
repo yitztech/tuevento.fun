@@ -3,6 +3,7 @@ import { Copy, Link2, LocateFixed, MapPin, Navigation, Search, Share2, ExternalL
 import { accountLimits, mapLinks, type GeoPlace, type GeoPoint } from "@tuevento/contracts";
 import { tr } from "./i18n";
 import { errorText, useApp } from "./context";
+import { NeedsConnection } from "./offline";
 import { Button } from "./ui/button";
 
 /** Estilo de OpenFreeMap: teselas de OpenStreetMap gratis y sin clave (docs/PLAN-PROVEEDORES-Y-OFFLINE.md, D3). */
@@ -165,7 +166,7 @@ export function LocationPicker({
   onChange: (geo: GeoPoint | null) => void;
   onUseAddress: (label: string) => void;
 }) {
-  const { api, runtime } = useApp();
+  const { api, runtime, online } = useApp();
   const getPosition = runtime.getPosition;
   const [busy, setBusy] = useState(false),
     [results, setResults] = useState<GeoPlace[] | null>(null),
@@ -201,7 +202,7 @@ export function LocationPicker({
       <div className="button-group">
         <Button variant="outline"
           type="button"
-          disabled={busy || place.trim().length < 3}
+          disabled={!online || busy || place.trim().length < 3}
           onClick={() => run(async () => setResults(await api.geoSearch(place)))}
         >
           <Search size={16} />
@@ -228,6 +229,7 @@ export function LocationPicker({
         )}
         <Button variant="outline"
           type="button"
+          disabled={!online}
           aria-expanded={linkOpen}
           onClick={() => setLinkOpen((open) => !open)}
         >
@@ -235,6 +237,7 @@ export function LocationPicker({
           {tr("location.pasteLink")}
         </Button>
       </div>
+      <NeedsConnection online={online} />
       {linkOpen && (
         <div className="location-link">
           <label>

@@ -57,6 +57,9 @@
     "@angular/build": {
       "vite": "^8.3.5"
     },
-    "body-parser": "^2.4.0"
+    "body-parser": "^2.4.0",
+    "@appium/support": {
+      "shell-quote": "^1.12.0"
+    }
   }
 }

@@ -29,4 +29,7 @@ export default defineConfig({
     },
   },
   build: { chunkSizeWarningLimit: 650 },
+  // Solo el build de pruebas de las apps (scripts/mobile-test-*.sh) lleva el interruptor
+  // «simular sin conexión»; en cualquier otro build vale false y el código desaparece.
+  define: { __PRUEBAS__: JSON.stringify(process.env.VITE_TEST_BUILD === "1") },
 });

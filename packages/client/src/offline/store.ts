@@ -19,7 +19,10 @@ export class MemoryStore implements OfflineStore {
   private data = new Map<Collection, Map<string, string>>();
   private bucket(collection: Collection) {
     let map = this.data.get(collection);
-    if (!map) this.data.set(collection, (map = new Map()));
+    if (!map) {
+      map = new Map();
+      this.data.set(collection, map);
+    }
     return map;
   }
   async get<T>(collection: Collection, id: string) {

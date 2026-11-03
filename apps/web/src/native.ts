@@ -9,7 +9,12 @@ import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { EventApi } from '@tuevento/client';
 import { landingRoute } from '@tuevento/contracts';
 import { tr, type Runtime } from '@tuevento/app';
-import { clearOfflineStore, openOfflineStore } from './offline-store';
+import { clearOfflineStore, offlineOwner, openOfflineStore } from './offline-store';
+
+declare const __PRUEBAS__: boolean;
+// Solo pruebas: sin red simulada (el simulador de iOS no puede quitarse la red por línea de comandos)
+const SIN_RED='tueventofun:pruebas-sin-red';
+const sinRedSimulada=()=>__PRUEBAS__&&localStorage.getItem(SIN_RED)==='1';
 // Verificador PKCE del acceso con navegador: vive en el llavero de iOS o el Keystore de Android
 // solo mientras dura el flujo (FE-03), nunca en localStorage.
 const PKCE_KEY='tueventofun:pkce';
@@ -20,6 +25,7 @@ export async function nativeRuntime():Promise<Runtime> {
  const platform=Capacitor.getPlatform() as 'android'|'ios';
  const transport:typeof fetch=async(input,init)=>{
   const url=String(input);if(!url.startsWith(`${origin.origin}/api/`))throw new Error('Blocked API origin');
+  if(sinRedSimulada())throw new TypeError('Failed to fetch');
   const headers=Object.fromEntries(new Headers(init?.headers).entries());
   const result=await CapacitorHttp.request({url,method:init?.method||'GET',headers,data:init?.body?JSON.parse(String(init.body)):undefined,responseType:'json',connectTimeout:15000,readTimeout:30000,disableRedirects:true});
   // CapacitorHttp solo interpreta como JSON `application/json`: un error en `application/problem+json` llega como texto
@@ -51,11 +57,18 @@ export async function nativeRuntime():Promise<Runtime> {
   return ()=>{clearInterval(timer);void resume.then(handle=>handle.remove())};
  };
  // Red según el sistema: la copia local se usa sin esperar a que una petición falle (fase 8b)
- let online=(await Network.getStatus().catch(()=>({connected:true}))).connected;
+ let connected=(await Network.getStatus().catch(()=>({connected:true}))).connected;
  const networkListeners=new Set<(online:boolean)=>void>();
- await Network.addListener('networkStatusChange',status=>{online=status.connected;for(const listener of networkListeners)listener(online)});
- const network={online:()=>online,onChange:(listener:(online:boolean)=>void)=>{networkListeners.add(listener);return ()=>{networkListeners.delete(listener)}}};
- return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,subscribe,network,openOfflineStore,clearOfflineStore,
+ const online=()=>connected&&!sinRedSimulada();
+ const notify=()=>{for(const listener of networkListeners)listener(online())};
+ await Network.addListener('networkStatusChange',status=>{connected=status.connected;notify()});
+ const network={online,onChange:(listener:(online:boolean)=>void)=>{networkListeners.add(listener);return ()=>{networkListeners.delete(listener)}}};
+ if(__PRUEBAS__)Object.assign(window,{
+  tueventoPruebasSinRed:(sinRed:boolean)=>{if(sinRed)localStorage.setItem(SIN_RED,'1');else localStorage.removeItem(SIN_RED);notify()},
+  // La copia local ya tiene el usuario y una sincronización completa: se puede quitar la red
+  tueventoPruebasCopiaLista:async(email:string)=>{const owner=await offlineOwner();if(!owner)return false;const store=await openOfflineStore(owner);return (await store.get<{email:string}>('meta','user'))?.email===email&&!!(await store.get('meta','sync-last'))},
+ });
+ return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,subscribe,network,openOfflineStore,clearOfflineStore,offlineOwner,
  copy:async text=>{await Clipboard.write({string:text})},
  getPosition:async()=>{const {coords}=await Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:15000});return {lat:coords.latitude,lng:coords.longitude}},
  share:async({title,text,url})=>{await Share.share({title,text,url,dialogTitle:title})},

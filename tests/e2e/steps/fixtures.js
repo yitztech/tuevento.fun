@@ -64,7 +64,8 @@ const conAndroid = {
     { scope: "worker" },
   ],
   page: async ({ dispositivo }, use, testInfo) => {
-    // Estado limpio en cada escenario: sin sesión ni datos, en español, app recién abierta.
+    // Estado limpio en cada escenario: con red, sin sesión ni datos, en español, app recién abierta.
+    await dispositivo.shell("cmd connectivity airplane-mode disable");
     await dispositivo.shell(`pm clear ${paquete}`);
     await dispositivo.shell(`cmd locale set-app-locales ${paquete} --locales es-ES`);
     await dispositivo.shell(`monkey -p ${paquete} -c android.intent.category.LAUNCHER 1`);
@@ -77,7 +78,16 @@ const conAndroid = {
         contentType: "image/png",
       });
   },
-  ui: conWeb.ui,
+  // Sin red: modo avión del emulador (la app lo sabe por @capacitor/network)
+  ui: async ({ page, dispositivo }, use) =>
+    use(
+      uiPlaywright(page, {
+        abrir: (ruta) => abrirRuta(page, ruta),
+        teclado,
+        android,
+        sinRed: (activar) => dispositivo.shell(`cmd connectivity airplane-mode ${activar ? "enable" : "disable"}`),
+      }),
+    ),
 };
 
 // iOS: el WebView de la app instalada en el simulador, conducido con Appium (XCUITest).
