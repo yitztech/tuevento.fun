@@ -38,6 +38,8 @@ Then('puedo abrir la vista previa de cada postal hermana', async ({ page }) => {
     await expect(modal.getByRole('link', { name: 'Crear evento con este diseño' })).toHaveAttribute('href', `/eventos/nuevo?tema=${tema.id}`);
     await sinDesbordamiento(page);
     await modal.getByRole('button', { name: 'Cerrar', exact: true }).click();
+    // El diálogo se va con una animación: la siguiente vista previa se abre cuando ya no está
+    await expect(modal).toHaveCount(0);
   }
 });
 
