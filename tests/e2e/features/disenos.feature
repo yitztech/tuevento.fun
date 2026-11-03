@@ -2,6 +2,9 @@
 @disenos @solo-web @REQ-04
 Característica: Postales hermanas en móviles y tabletas
 
+  # @slow (tiempo máximo ×3): recorre 16 postales, abre 10 vistas previas y crea un evento; en el
+  # WebKit de Linux del CI pasa de los 30 s por defecto sin que falle ninguna comprobación.
+  @slow
   Esquema del escenario: El catálogo y el editor permiten usar las diez variantes nuevas
     Dado que abro el catálogo de postales con una cuenta nueva a <ancho> por <alto>
     Entonces las dieciséis postales cargan sin desbordamiento horizontal

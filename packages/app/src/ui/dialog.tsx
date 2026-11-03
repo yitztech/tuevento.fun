@@ -37,7 +37,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-foreground/45 backdrop-blur-[3px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-50 bg-foreground/45 backdrop-blur-[3px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none",
         className
       )}
       {...props}
@@ -62,7 +62,7 @@ function DialogContent({
         data-slot="dialog-content"
         data-size={size}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[480px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-background p-7 text-foreground shadow-[0_24px_90px_#131b2f40] duration-200 outline-none data-[size=wide]:w-[670px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-[480px]:max-h-[93dvh] max-[480px]:max-w-[calc(100%-20px)] max-[480px]:rounded-lg max-[480px]:px-[19px] max-[480px]:py-[23px]",
+          "fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[480px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-background p-7 text-foreground shadow-[0_24px_90px_#131b2f40] duration-200 outline-none data-[size=wide]:w-[670px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:animate-none max-[480px]:max-h-[93dvh] max-[480px]:max-w-[calc(100%-20px)] max-[480px]:rounded-lg max-[480px]:px-[19px] max-[480px]:py-[23px]",
           className
         )}
         {...props}
