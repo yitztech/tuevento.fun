@@ -1,0 +1,72 @@
+{
+  "site.tagKids": {
+    "es": "Infantil",
+    "en": "Kids",
+    "pt": "Infantil",
+    "de": "Kinder",
+    "fr": "Enfants"
+  },
+  "site.tagMinimal": {
+    "es": "Minimalista",
+    "en": "Minimal",
+    "pt": "Minimalista",
+    "de": "Minimalistisch",
+    "fr": "Minimaliste"
+  },
+  "site.tagFloral": {
+    "es": "Floral",
+    "en": "Floral",
+    "pt": "Floral",
+    "de": "Floral",
+    "fr": "Floral"
+  },
+  "site.tagElegant": {
+    "es": "Elegante",
+    "en": "Elegant",
+    "pt": "Elegante",
+    "de": "Elegant",
+    "fr": "Élégant"
+  },
+  "site.tagParty": {
+    "es": "Celebración",
+    "en": "Party",
+    "pt": "Festa",
+    "de": "Party",
+    "fr": "Fête"
+  },
+  "site.designsEyebrow": {
+    "es": "Diseños para cada ocasión",
+    "en": "Designs for every occasion",
+    "pt": "Modelos para cada ocasião",
+    "de": "Designs für jeden Anlass",
+    "fr": "Des modèles pour chaque occasion"
+  },
+  "site.designFilters": {
+    "es": "Filtrar diseños por estilo",
+    "en": "Filter designs by style",
+    "pt": "Filtrar modelos por estilo",
+    "de": "Designs nach Stil filtern",
+    "fr": "Filtrer les modèles par style"
+  },
+  "site.moreDesigns": {
+    "es": "Más diseños",
+    "en": "More designs",
+    "pt": "Mais modelos",
+    "de": "Weitere Designs",
+    "fr": "Plus de modèles"
+  },
+  "site.previousDesigns": {
+    "es": "Diseños anteriores",
+    "en": "Previous designs",
+    "pt": "Modelos anteriores",
+    "de": "Vorherige Designs",
+    "fr": "Modèles précédents"
+  },
+  "site.stepsEyebrow": {
+    "es": "Así de fácil",
+    "en": "It’s that easy",
+    "pt": "Simples assim",
+    "de": "So einfach geht’s",
+    "fr": "C’est aussi simple que ça"
+  }
+}
