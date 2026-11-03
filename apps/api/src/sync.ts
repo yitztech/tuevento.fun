@@ -8,39 +8,11 @@ import {
 import { SessionGuard, type AuthedRequest } from "./auth";
 import { Database } from "./database";
 import { EventsService } from "./events";
-import { ProblemException, parse } from "./problem";
+import { parse } from "./problem";
 import { ProvidersService } from "./providers";
 import { requestLocale } from "./request-locale";
 
-/** Un cursor más antiguo puede haber perdido tombstones ya purgados (migración 028). */
-const CURSOR_MAX_AGE_DAYS = 90;
-/** Sin cursor: todo, desde antes del primer número (el perfil de proveedor anterior a la 028 tiene 0). */
-const START = -1;
-
-type Cursor = { seq: number; issuedAt: number };
-
-const invalidCursor = () =>
-  new ProblemException({ status: 400, code: "invalid_sync_cursor", detail: "errors.invalidSyncCursor" });
-const cursorExpired = () =>
-  new ProblemException({ status: 410, code: "sync_cursor_expired", detail: "errors.syncCursorExpired" });
-
-/** Cursor opaco: base64url de `{v, s, t}` (versión, número del reloj de la cuenta y segundos de emisión). */
-export function encodeCursor(seq: number, issuedAt = Date.now()): string {
-  return Buffer.from(JSON.stringify({ v: 1, s: seq, t: Math.floor(issuedAt / 1000) })).toString("base64url");
-}
-
-export function decodeCursor(text: string): Cursor {
-  let value: unknown;
-  try {
-    value = JSON.parse(Buffer.from(text, "base64url").toString("utf8"));
-  } catch {
-    throw invalidCursor();
-  }
-  const { v, s, t } = (value ?? {}) as { v?: unknown; s?: unknown; t?: unknown };
-  if (v !== 1 || !Number.isSafeInteger(s) || (s as number) < START || !Number.isSafeInteger(t) || (t as number) < 0)
-    throw invalidCursor();
-  return { seq: s as number, issuedAt: (t as number) * 1000 };
-}
+import { cursorExpired, cursorExpiredError, decodeCursor, encodeCursor, START } from "./sync-cursor";
 
 type Change =
   | { seq: number; kind: "event"; id: string }
@@ -69,14 +41,12 @@ export class SyncService {
     const page = await this.db.transaction(async (c) => {
       await c.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY");
       if (cursor) {
-        const { rows: [clock] } = await c.query<{ purged_seq: string }>(
-          "SELECT purged_seq FROM sync_clock WHERE user_id=$1",
+        const { rows: [clock] } = await c.query<{ purged_seq: string; purged_at: Date | null }>(
+          "SELECT purged_seq, purged_at FROM sync_clock WHERE user_id=$1",
           [userId],
         );
-        const tooOld = Date.now() - cursor.issuedAt > CURSOR_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-        // Solo caduca si ya se purgó algún tombstone posterior al cursor
-        const purged = Number(clock?.purged_seq ?? 0);
-        if (tooOld || (purged > 0 && cursor.seq < purged)) throw cursorExpired();
+        if (cursorExpired(cursor, clock && { purgedSeq: Number(clock.purged_seq), purgedAt: clock.purged_at }))
+          throw cursorExpiredError();
       }
       const take = limit + 1;
       const params = [userId, from, take];

@@ -3,11 +3,13 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Clipboard } from '@capacitor/clipboard';
 import { Geolocation } from '@capacitor/geolocation';
+import { Network } from '@capacitor/network';
 import { Share } from '@capacitor/share';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { EventApi } from '@tuevento/client';
 import { landingRoute } from '@tuevento/contracts';
 import { tr, type Runtime } from '@tuevento/app';
+import { clearOfflineStore, openOfflineStore } from './offline-store';
 // Verificador PKCE del acceso con navegador: vive en el llavero de iOS o el Keystore de Android
 // solo mientras dura el flujo (FE-03), nunca en localStorage.
 const PKCE_KEY='tueventofun:pkce';
@@ -48,7 +50,12 @@ export async function nativeRuntime():Promise<Runtime> {
   const resume=App.addListener('appStateChange',({isActive})=>{if(isActive)onChange()});
   return ()=>{clearInterval(timer);void resume.then(handle=>handle.remove())};
  };
- return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,subscribe,
+ // Red según el sistema: la copia local se usa sin esperar a que una petición falle (fase 8b)
+ let online=(await Network.getStatus().catch(()=>({connected:true}))).connected;
+ const networkListeners=new Set<(online:boolean)=>void>();
+ await Network.addListener('networkStatusChange',status=>{online=status.connected;for(const listener of networkListeners)listener(online)});
+ const network={online:()=>online,onChange:(listener:(online:boolean)=>void)=>{networkListeners.add(listener);return ()=>{networkListeners.delete(listener)}}};
+ return {apiBase:`${origin.origin}/api`,publicOrigin:origin.origin,platform,appVersion:import.meta.env.VITE_APP_VERSION||'1.0.0',fetch:transport,subscribe,network,openOfflineStore,clearOfflineStore,
  copy:async text=>{await Clipboard.write({string:text})},
  getPosition:async()=>{const {coords}=await Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:15000});return {lat:coords.latitude,lng:coords.longitude}},
  share:async({title,text,url})=>{await Share.share({title,text,url,dialogTitle:title})},

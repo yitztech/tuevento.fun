@@ -82,6 +82,31 @@ Para las apps que trabajan sin red (`docs/PLAN-PROVEEDORES-Y-OFFLINE.md`, fase 8
   repetir la clave la devuelve (`Idempotency-Replayed: true`) sin repetir el efecto. Con otro método, ruta o
   cuerpo, 422 `idempotency_key_reused`; mientras la primera sigue en curso, 409 `idempotency_in_progress`. Un
   error no se guarda.
+- **Purga y cursor** (migración 029): la limpieza guarda `sync_clock.purged_at`; un cursor caduca si tiene más de
+  90 días o si es anterior a la última purga en número y en fecha. Así, el cursor de una descarga completa
+  hecha después de purgar ya no responde 410.
+
+## Sincronización sin conexión (cliente)
+
+`packages/client/src/offline/` (sin DOM ni Capacitor; pruebas en `offline.test.ts` con `fake-server.ts`):
+
+- **`OfflineStore`**: `get/set/delete/list/clear` por colección (`events`, `invitations`, `notifications`,
+  `provider`, `outbox`, `meta`). `MemoryStore` para las pruebas.
+- **`Outbox`**: cola ordenada de escrituras con su `Idempotency-Key`, `baseVersion` y estado (`pending`,
+  `failed`, `conflict`).
+- **`SyncEngine`**: envía la cola en orden y después descarga `/api/sync/changes` desde el cursor guardado.
+  Error de red, 5xx o 429: espera exponencial de 2 s a 5 min. 409: `conflict` con `currentVersion`. Otro 4xx:
+  `failed`. 401: borra la copia y avisa (`onAuthLost`). 410: borra los datos y descarga todo. Lo que aún tiene
+  escrituras en la cola no se pisa con lo descargado.
+- **`OfflineEventApi`** (extiende `EventApi`): eventos, invitaciones y avisos. Lecturas con red primero (8 s) y
+  la copia local si no hay; escrituras directas con `Idempotency-Key` y, sin red, a la copia local y a la cola.
+  Creaciones con UUIDv7 del teléfono. Con escrituras en la cola, las nuevas también van a la cola.
+- **Cifrado** (`crypto.ts`): AES-GCM 256 por registro, con colección e id como dato autenticado.
+
+En las apps (`apps/web/src/offline-store.ts` y `native.ts`): IndexedDB con los registros cifrados; la clave,
+aleatoria por cuenta, en `SecureStorage` (`tueventofun:offline-key:<userId>`). `Runtime` gana `network`
+(`@capacitor/network`), `openOfflineStore(userId)` (borra antes la copia de otra cuenta) y `clearOfflineStore()`
+(cerrar sesión, 401). En la web quedan sin definir. Las pantallas lo usan desde la fase 8c.
 
 ## Demostración
 

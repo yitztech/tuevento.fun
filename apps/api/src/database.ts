@@ -91,7 +91,7 @@ export class Database implements OnModuleInit, OnModuleDestroy {
       `WITH purged AS (
          DELETE FROM sync_tombstones WHERE deleted_at < now() - interval '90 days' RETURNING user_id, seq
        )
-       UPDATE sync_clock c SET purged_seq = GREATEST(c.purged_seq, p.seq)
+       UPDATE sync_clock c SET purged_seq = GREATEST(c.purged_seq, p.seq), purged_at = now()
          FROM (SELECT user_id, max(seq) AS seq FROM purged GROUP BY user_id) p
         WHERE c.user_id = p.user_id`,
     );
