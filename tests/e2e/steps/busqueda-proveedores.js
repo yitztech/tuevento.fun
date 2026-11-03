@@ -17,14 +17,14 @@ const categoria = (nombre) => {
   return codigo;
 };
 /** Código único en minúsculas y sin dígitos sueltos: entra en el nombre y distingue los datos del escenario. */
-const codigoUnico = () => `q${randomBytes(5).toString("hex")}`;
+export const codigoUnico = () => `q${randomBytes(5).toString("hex")}`;
 /** Punto aleatorio lejos de los de otros escenarios (latitudes medias, cualquier longitud). */
-const puntoUnico = () => ({ lat: -40 + Math.random() * 80, lng: -170 + Math.random() * 340 });
+export const puntoUnico = () => ({ lat: -40 + Math.random() * 80, lng: -170 + Math.random() * 340 });
 /** El punto a `km` kilómetros al norte. */
-const alNorte = (p, km) => ({ lat: p.lat + km / 111.32, lng: p.lng });
+export const alNorte = (p, km) => ({ lat: p.lat + km / 111.32, lng: p.lng });
 
 /** Registra un negocio, completa su perfil con una foto y lo publica. Devuelve sus datos. */
-async function publicarNegocio(playwright, extra) {
+export async function publicarNegocio(playwright, extra) {
   const api = await playwright.request.newContext({ baseURL, extraHTTPHeaders: cabecera });
   try {
     expect((await api.post("/api/auth/register", { data: { ...nuevaCuenta(), accountType: "provider" } })).status()).toBe(201);

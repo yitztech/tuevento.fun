@@ -1163,6 +1163,16 @@
     "widenRadius": "Auf {{km}} km erweitern",
     "clearFilters": "Filter entfernen"
   },
+  "eventProviders": {
+    "title": "Brauchst du eine Location, Stühle, Musik …?",
+    "text": "Finde Dienstleister in der Nähe deines Events.",
+    "search": "Dienstleister suchen",
+    "notNow": "Jetzt nicht",
+    "panelTitle": "Dienstleister in der Nähe deines Events",
+    "back": "Zurück zu den Ergebnissen",
+    "openFull": "Ganze Seite öffnen",
+    "offline": "Keine Verbindung: Die Dienstleistersuche braucht Internet."
+  },
   "mcp": {
     "unauthorized": "Ungültige oder fehlende MCP-Anmeldeinformationen.",
     "forbidden": "Du hast keine Berechtigung für den Zugriff auf diese Ressource oder dieses Werkzeug.",

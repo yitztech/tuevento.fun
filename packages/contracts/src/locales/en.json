@@ -1163,6 +1163,16 @@
     "widenRadius": "Widen to {{km}} km",
     "clearFilters": "Clear filters"
   },
+  "eventProviders": {
+    "title": "Need a venue, chairs, music…?",
+    "text": "Find vendors near your event.",
+    "search": "Find vendors",
+    "notNow": "Not now",
+    "panelTitle": "Vendors near your event",
+    "back": "Back to results",
+    "openFull": "Open full page",
+    "offline": "You're offline: vendor search needs an internet connection."
+  },
   "mcp": {
     "unauthorized": "Invalid or missing MCP credentials.",
     "forbidden": "You do not have permission to access this resource or tool.",
