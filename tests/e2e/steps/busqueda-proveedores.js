@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
 import { baseURL, englishURL, local } from "../support/entorno.js";
@@ -19,7 +19,9 @@ const categoria = (nombre) => {
 /** Código único en minúsculas y sin dígitos sueltos: entra en el nombre y distingue los datos del escenario. */
 const codigoUnico = () => `q${randomBytes(5).toString("hex")}`;
 /** Punto aleatorio lejos de los de otros escenarios (latitudes medias, cualquier longitud). */
-const puntoUnico = () => ({ lat: -40 + Math.random() * 80, lng: -170 + Math.random() * 340 });
+/** Fracción aleatoria en [0, 1) con crypto (Math.random() lo marca CodeQL aunque aquí no sea un secreto). */
+const azar = () => randomInt(0, 1_000_000) / 1_000_000;
+const puntoUnico = () => ({ lat: -40 + azar() * 80, lng: -170 + azar() * 340 });
 /** El punto a `km` kilómetros al norte. */
 const alNorte = (p, km) => ({ lat: p.lat + km / 111.32, lng: p.lng });
 
