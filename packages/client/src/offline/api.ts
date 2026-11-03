@@ -8,7 +8,7 @@ import {
   type Notification,
 } from "@tuevento/contracts";
 import { ApiError } from "../errors";
-import { type ApiOptions, EventApi } from "../index";
+import { type ApiOptions, EventApi } from "../api";
 import { localInvitations, refreshMetrics, removeEventLocally } from "./local";
 import type { NewOperation, OutboxOperation } from "./outbox";
 import type { OfflineStore } from "./store";

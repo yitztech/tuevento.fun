@@ -35,6 +35,7 @@ import {
   MailCheck,
 } from "lucide-react";
 import { useApp, errorText } from "./context";
+import { NeedsConnection } from "./offline";
 import { Logo, Field, ErrorBox, Avatar, Container } from "./components";
 import { AuthLegalNotice } from "./legal";
 import { PhoneField } from "./phone-field";
@@ -112,7 +113,7 @@ const onlyNameChars = filterInput(/[^\p{L}\p{M}\s'’.-]/gu);
 export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const postAuthTarget = usePostAuthTarget();
   const { search } = useLocation();
-  const { api, setUser, toast } = useApp(),
+  const { api, setUser, toast, online } = useApp(),
     navigate = useNavigate(),
     [error, setError] = useState(""),
     [showPassword, setShowPassword] = useState(false),
@@ -297,9 +298,10 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               </label>
             )}
             {error && <ErrorBox message={error} />}
+            <NeedsConnection online={online} />
             <Button
               className="full"
-              disabled={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting || !online}
             >
               {form.formState.isSubmitting
                 ? tr("account.justMoment")
@@ -323,7 +325,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
 }
 /** Pide el enlace para elegir contraseña nueva. Llega en el idioma de este dominio. */
 export function ForgotPasswordPage() {
-  const { api } = useApp(),
+  const { api, online } = useApp(),
     [error, setError] = useState(""),
     [sent, setSent] = useState("");
   const form = useForm<{ email: string }>({
@@ -368,7 +370,8 @@ export function ForgotPasswordPage() {
             />
           </Field>
           {error && <ErrorBox message={error} />}
-          <Button className="full" disabled={form.formState.isSubmitting}>
+          <NeedsConnection online={online} />
+          <Button className="full" disabled={form.formState.isSubmitting || !online}>
             {form.formState.isSubmitting
               ? tr("account.justMoment")
               : tr("account.sendMeLink")}
@@ -384,7 +387,7 @@ export function ForgotPasswordPage() {
 }
 /** Elige la contraseña nueva desde el enlace del correo. */
 export function ResetPasswordPage() {
-  const { api, setUser, toast } = useApp(),
+  const { api, setUser, toast, online } = useApp(),
     navigate = useNavigate(),
     [query] = useSearchParams(),
     [error, setError] = useState(""),
@@ -456,7 +459,8 @@ export function ResetPasswordPage() {
                 </p>
               </>
             )}
-            <Button className="full" disabled={form.formState.isSubmitting}>
+            <NeedsConnection online={online} />
+            <Button className="full" disabled={form.formState.isSubmitting || !online}>
               {form.formState.isSubmitting ? tr("account.justMoment") : tr("account.saveAndSignIn")}
               <ArrowRight size={18} />
             </Button>
@@ -471,7 +475,7 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
   // El botón de Google se inicia una vez: el tipo elegido después se lee de aquí al volver
   const chosenType = useRef(accountType);
   chosenType.current = accountType;
-  const { api, setUser, config, runtime } = useApp(),
+  const { api, setUser, config, runtime, online } = useApp(),
     navigate = useNavigate(),
     ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -531,7 +535,7 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
       script?.removeEventListener("load", init);
     };
   }, [config.googleClientId, getLocale(), postAuthTarget]);
-  if (runtime.startNativeLogin && config.googleClientId) return <button type="button" className="google-button" onClick={() => { void runtime.startNativeLogin!().catch(e=>onError(errorText(e))); }}>{tr("account.continueGoogle")}</button>;
+  if (runtime.startNativeLogin && config.googleClientId) return <button type="button" className="google-button" disabled={!online} title={online ? undefined : tr("offline.needsConnection")} onClick={() => { void runtime.startNativeLogin!().catch(e=>onError(errorText(e))); }}>{tr("account.continueGoogle")}</button>;
   if (!config.googleClientId)
     return (
       <div className="google-unavailable">
@@ -562,7 +566,7 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
   return <div ref={ref} className="google-container" />;
 }
 export function ProfilePage() {
-  const { user, api, setUser, toast } = useApp(),
+  const { user, api, setUser, toast, online } = useApp(),
     [error, setError] = useState(""),
     [uploading, setUploading] = useState(false);
   const form = useForm<ProfileInput>({
@@ -610,7 +614,7 @@ export function ProfilePage() {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               aria-label={tr("account.changePhotoLogo")}
-              disabled={uploading}
+              disabled={uploading || !online}
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
@@ -667,8 +671,9 @@ export function ProfilePage() {
             )}
           />
           {error && <ErrorBox message={error} />}
+          <NeedsConnection online={online} />
           <div className="form-actions">
-            <Button disabled={form.formState.isSubmitting}>
+            <Button disabled={form.formState.isSubmitting || !online}>
               {form.formState.isSubmitting
                 ? tr("common.saving")
                 : tr("common.saveChanges")}
@@ -730,7 +735,7 @@ export function ConfirmEmailPage() {
 
 /** Baja de los avisos a invitados: el enlace del pie de esos correos lleva aquí. */
 export function UnsubscribePage() {
-  const { api } = useApp(),
+  const { api, online } = useApp(),
     [query] = useSearchParams(),
     [done, setDone] = useState(false),
     [busy, setBusy] = useState(false),

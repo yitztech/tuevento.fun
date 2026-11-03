@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from "react";
+import { NeedsConnection } from "./offline";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ImagePlus, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import {
@@ -89,7 +90,7 @@ function ColorChoices({ value, onPick }: { value: string; onPick: (color: string
 
 export function PostcardEditor() {
   const { id = "" } = useParams();
-  const { api, toast } = useApp();
+  const { api, toast, online } = useApp();
   const [event, setEvent] = useState<Event | null>(null);
   const [design, setDesign] = useState<PostcardDesign | null>(null);
   const [saved, setSaved] = useState<PostcardDesign | null>(null);
@@ -296,10 +297,11 @@ export function PostcardEditor() {
                 <Button asChild variant="outline"><label className="postcard-upload">
                   <ImagePlus size={17} />
                   {tr("postcard.uploadPhoto")}
-                  <input type="file" accept={imageTypes.join(",")} onChange={upload} disabled={busy} />
+                  <input type="file" accept={imageTypes.join(",")} onChange={upload} disabled={busy || !online} />
                 </label></Button>
               )}
               <p className="field-hint">{tr("postcard.photosHint", { max: postcardLimits.photos })}</p>
+              <NeedsConnection online={online} />
             </fieldset>
 
             {selectedPhoto && selected?.kind === "photo" && (

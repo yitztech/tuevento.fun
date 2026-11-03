@@ -1,5 +1,5 @@
 import { tr, formatLocale, getLocale, useLocale, LanguageSwitcher, Lines } from "./i18n";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   Routes,
   Route,
@@ -28,7 +28,7 @@ import {
   ClipboardList,
   Images,
 } from "lucide-react";
-import { EventApi, ApiError } from "@tuevento/client";
+import { EventApi, ApiError, isTransient, type ApiOptions } from "@tuevento/client";
 import type { User, Event, Notification } from "@tuevento/contracts";
 import { AppContext, type Runtime, errorText } from "./context";
 import { Logo, Avatar, ErrorBox } from "./components";
@@ -61,6 +61,8 @@ import { EventLanding, LegacyEventAddress } from "./public-event";
 import { PostcardEditor } from "./postcard-editor";
 import { LegalPage, legalPageFor } from "./legal";
 import { PaymentPage, PricingPage } from "./pricing";
+import { OfflineBanner, savedOfflineUser, useOfflineSync, useOnline } from "./offline";
+import { SyncReview } from "./sync-review";
 import { Button } from "./ui/button";
 import { Toaster } from "./ui/sonner";
 import { toast as showToast } from "sonner";
@@ -72,18 +74,19 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   useEffect(() => {
     document.title = tr("app.documentTitle");
   }, [locale]);
-  const api = useMemo(
-    () =>
-      new EventApi({
-        baseUrl: runtime.apiBase,
-        fetch: runtime.fetch,
-        platform: runtime.platform,
-        appVersion: runtime.appVersion,
-        // Las apps nativas usan un solo dominio: la API responde en el idioma de la app
-        locale: getLocale,
-      }),
+  const options = useMemo<ApiOptions>(
+    () => ({
+      baseUrl: runtime.apiBase,
+      fetch: runtime.fetch,
+      platform: runtime.platform,
+      appVersion: runtime.appVersion,
+      // Las apps nativas usan un solo dominio: la API responde en el idioma de la app
+      locale: getLocale,
+    }),
     [runtime],
   );
+  const base = useMemo(() => new EventApi(options), [options]);
+  const online = useOnline(runtime);
   const [user, setUser] = useState<User | null>(null),
     [events, setEvents] = useState<Event[]>([]),
     [notifications, setNotifications] = useState<Notification[]>([]),
@@ -93,6 +96,24 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     [config, setConfig] = useState({ googleClientId: "", demoEnabled: false, paymentsEnabled: false });
   const location = useLocation(),
     navigate = useNavigate();
+  // Apps: copia local, cola y sincronización (fase 8c); en la web, `api` es la de siempre
+  const reloadRef = useRef<() => Promise<void>>(async () => {});
+  const { api, offline } = useOfflineSync({
+    runtime,
+    options,
+    base,
+    user,
+    online,
+    onData: () => void reloadRef.current().catch(() => {}),
+    // La sesión caducó (401): la copia local ya se borró; se pide entrar otra vez
+    onAuthLost: () => {
+      void runtime.clearOfflineStore?.();
+      setUser(null);
+      setEvents([]);
+      setNotifications([]);
+      navigate("/acceso");
+    },
+  });
   const legal = legalPageFor(location.pathname);
   const pricing = localizedPage(location.pathname) === "pricing";
   const providerSearch = localizedPage(location.pathname) === "providers";
@@ -120,22 +141,30 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     const [e, n] = await Promise.all([api.events(), api.notifications()]);
     setEvents(e);
     setNotifications(n);
-  }, [api, locale]);
+    await offline?.refresh();
+  }, [api, offline, locale]);
+  reloadRef.current = reload;
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const c = await api.config();
+        const c = await base.config();
         if (alive) setConfig(c);
         let u: User | null = null;
         try {
-          u = await api.me();
+          u = await base.me();
         } catch (e) {
           if (!(e instanceof ApiError && e.status === 401)) throw e;
+          // Sin sesión: la copia local de la anterior ya no se puede usar
+          void runtime.clearOfflineStore?.().catch(() => {});
         }
         if (alive) setUser(u);
       } catch (e) {
-        if (alive) setError(errorText(e));
+        // Sin red y con una sesión guardada en el teléfono: la app arranca sin conexión con ella
+        const saved = isTransient(e) ? await savedOfflineUser(runtime).catch(() => null) : null;
+        if (!alive) return;
+        if (saved) setUser(saved);
+        else setError(errorText(e));
       } finally {
         if (alive) setLoading(false);
       }
@@ -143,7 +172,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     return () => {
       alive = false;
     };
-  }, [api]);
+  }, [base, runtime]);
   // Quien ofrece servicios no tiene eventos ni avisos de invitados: la API se los niega (403)
   const provider = user?.accountType === "provider";
   useEffect(() => {
@@ -174,6 +203,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     reload,
     toast,
     config,
+    online,
+    offline,
   };
   if (loading)
     return (
@@ -211,6 +242,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const logout = async () => {
     try {
       await api.logout();
+      await runtime.clearOfflineStore?.().catch(() => {});
       setUser(null);
       setEvents([]);
       setNotifications([]);
@@ -344,7 +376,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 </div>
                 <Button variant="ghost" size="icon"
                   onClick={logout}
+                  disabled={!online}
                   aria-label={tr("app.signOut")}
+                  title={online ? tr("app.signOut") : tr("offline.needsConnection")}
                 >
                   <LogOut size={18} />
                 </Button>
@@ -404,6 +438,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               </div>
             </header>
             <main id="main" className="main-content">
+              <OfflineBanner online={online} offline={offline} />
               <VerifyEmailBanner />
               {provider ? (
                 <Routes>
@@ -430,6 +465,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <Route path="/disenos" element={<TemplatesPage />} />
                 <Route path="/invitados" element={<AllGuests />} />
                 <Route path="/notificaciones" element={<NotificationsPage />} />
+                <Route path="/sincronizar" element={<SyncReview />} />
                 <Route path="/perfil" element={<ProfilePage />} />
                 <Route path="/ayuda" element={<HelpPage />} />
                 <Route

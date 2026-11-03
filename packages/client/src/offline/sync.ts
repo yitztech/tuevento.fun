@@ -1,6 +1,6 @@
 import type { Event, Invitation } from "@tuevento/contracts";
 import { ApiError } from "../errors";
-import type { EventApi } from "../index";
+import type { EventApi } from "../api";
 import { applyChanges, clearData, refreshMetrics, removeEventLocally } from "./local";
 import { Outbox, type OutboxOperation } from "./outbox";
 import type { OfflineStore } from "./store";

@@ -715,6 +715,12 @@ En la app (`apps/web/src/native.ts`):
 
 ### 8c — Pantallas y pruebas móviles
 
+> Hecha (salvo la publicación de una versión de la app, que queda para cuando el usuario la pida):
+> resumen en `docs/ARCHITECTURE.md` («Sincronización sin conexión (pantallas)»). Cambios respecto a lo
+> de abajo: el interruptor de iOS es `window.tueventoPruebasSinRed`, sin botón visible; el trabajo sin
+> conexión es para organizadores (el perfil del proveedor sigue necesitando red); cerrar sesión también
+> se desactiva sin conexión, porque la sesión del servidor no se puede cerrar sin red.
+
 - `App.tsx`: si `config()` o `me()` fallan por red y hay un usuario guardado, la app arranca sin
   conexión con él (hoy mostraría un error).
 - Aviso fijo: «Sin conexión. Tus cambios se guardan en el teléfono y se enviarán al volver la red».

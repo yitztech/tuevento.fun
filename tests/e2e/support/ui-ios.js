@@ -2,7 +2,8 @@ import { execFileSync } from "node:child_process";
 import { remote } from "webdriverio";
 
 export const bundleIos = "com.tueventofun.app.pruebas";
-const espera = { timeout: 8000, interval: 150 };
+// Como en Android (playwright.config.js): sincronizar al volver la red tarda unos segundos
+const espera = { timeout: 20_000, interval: 150 };
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
 const literal = (s) => (s.includes('"') ? `concat("${s.split('"').join('", \'"\', "')}")` : `"${s}"`);
 const xCampo = (etiqueta) => `//input[@id=//label[normalize-space(.)=${literal(etiqueta)}]/@for]`;
@@ -77,6 +78,59 @@ export function uiIos(driver, { teclado }) {
       await el.waitForDisplayed({ timeout: espera.timeout });
       await el.setValue(texto);
     },
+    /** Fecha y hora: el selector nativo de iOS no se escribe; se fija como lo haría React. */
+    fijarValor: (etiqueta, valor) =>
+      driver.execute(
+        (texto, v) => {
+          const label = [...document.querySelectorAll("label")].find((l) => l.textContent.trim() === texto);
+          const input = label && document.getElementById(label.htmlFor);
+          if (!input) throw new Error(`Sin campo ${texto}`);
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, v);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        },
+        etiqueta,
+        valor,
+      ),
+    /** El simulador no puede quitarse la red: interruptor del build de pruebas (VITE_TEST_BUILD). */
+    sinRed: (activar) => driver.execute((v) => window.tueventoPruebasSinRed(v), activar),
+    // El `execute` de XCUITest no espera promesas: cada sondeo lanza la comprobación y lee la anterior
+    elegirOpcion: async (nombre) => {
+      const opcion = await driver.$(`//label[contains(normalize-space(.), ${literal(nombre)})]`);
+      await opcion.waitForClickable({ timeout: espera.timeout });
+      await opcion.click();
+    },
+    esperarOpcionElegida: (nombre) =>
+      esperar(
+        () =>
+          driver.execute(
+            (n) => [...document.querySelectorAll("label")].some((l) => l.textContent.includes(n) && l.querySelector('input[type="radio"]')?.checked),
+            nombre,
+          ),
+        `La opción "${nombre}" no está elegida`,
+      ),
+    esperarEnlaceMenu: (texto, hay) =>
+      esperar(
+        async () =>
+          (await driver.$$(`//nav[@aria-label="Navegación principal"]//a[starts-with(normalize-space(.), ${literal(texto)})]`)).length === (hay ? 1 : 0),
+        `El enlace "${texto}" ${hay ? "no está" : "sigue"} en el menú`,
+      ),
+    esperarCopiaLocal: (email) =>
+      esperar(
+        () =>
+          driver.execute((e) => {
+            window.tueventoPruebasCopiaLista(e).then((listo) => { window.__copiaLista = listo; }, () => {});
+            return window.__copiaLista === true;
+          }, email),
+        "La copia local no terminó de guardarse",
+      ),
+    async reabrir() {
+      await driver.execute(() => window.location.reload());
+      await driver.waitUntil(() => driver.execute(() => document.readyState === "complete" && !!document.querySelector("#root *")), {
+        timeout: 40_000,
+        interval: 500,
+        timeoutMsg: "La app no volvió a cargar",
+      });
+    },
     async pulsar(nombre) {
       const boton = await driver.$(`//button[normalize-space(.)=${literal(nombre)}]`);
       await boton.waitForClickable({ timeout: espera.timeout });
@@ -91,7 +145,10 @@ export function uiIos(driver, { teclado }) {
     esperarAusente: (etiqueta) =>
       esperar(async () => (await driver.$$(xCampo(etiqueta))).length === 0, `El campo "${etiqueta}" existe`),
     esperarUrl: (patron) => esperar(async () => patron.test(await driver.getUrl()), `La URL no coincide con ${patron}`),
+    // El elemento más interno que contiene el texto (sus padres también lo contienen)
     esperarTexto: (texto) =>
-      driver.$(`//*[contains(normalize-space(.), ${literal(texto)})]`).then((el) => el.waitForDisplayed({ timeout: espera.timeout })),
+      driver
+        .$(`(//*[contains(normalize-space(.), ${literal(texto)}) and not(*[contains(normalize-space(.), ${literal(texto)})])])[1]`)
+        .then((el) => el.waitForDisplayed({ timeout: espera.timeout })),
   };
 }

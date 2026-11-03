@@ -3,6 +3,7 @@ import { paymentPath, planText } from "./pricing";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { LocationPicker, MapLinks, MapView } from "./location";
 import { ProviderFinder } from "./provider-finder";
+import { PendingMark } from "./offline";
 import { useState, useEffect } from "react";
 import {
   Link,
@@ -103,10 +104,13 @@ const landingText = (origin: string, code: string, slug: string) =>
 export function EventEditor() {
   const { id } = useParams(),
     [query] = useSearchParams(),
-    { api, reload, toast, runtime, user } = useApp(),
+    { api, reload, toast, runtime, user, online } = useApp(),
     navigate = useNavigate();
   const [error, setError] = useState(""),
-    [loading, setLoading] = useState(!!id);
+    [loading, setLoading] = useState(!!id),
+    // Sin conexión, antes de guardar un cambio que enviará correos a los invitados al sincronizar
+    [original, setOriginal] = useState<Event | null>(null),
+    [mailWarning, setMailWarning] = useState<{ kind: "cancel" | "change"; payload: EventInput } | null>(null);
   // La dirección se sugiere desde el título hasta que el organizador la escriba a mano
   const [slugTouched, setSlugTouched] = useState(!!id),
     [slugFree, setSlugFree] = useState<boolean | null>(null),
@@ -138,6 +142,7 @@ export function EventEditor() {
     api
       .event(id)
       .then((e) => {
+        setOriginal(e);
         setHasPassword(e.hasPublicPassword);
         setPasswordFailures(e.passwordFailures ?? 0);
         form.reset({
@@ -152,7 +157,7 @@ export function EventEditor() {
   // Sugerencia: el título limpio y, si está ocupado, con -2, -3… (hasta -9)
   useEffect(() => {
     const base = slugify(values.title);
-    if (slugTouched || !base) return;
+    if (slugTouched || !base || !online) return;
     const timer = setTimeout(async () => {
       for (let n = 1; n <= 9; n++) {
         const candidate =
@@ -162,31 +167,25 @@ export function EventEditor() {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [values.title, slugTouched]);
+  }, [values.title, slugTouched, online]);
   // Aviso mientras se escribe a mano
   useEffect(() => {
-    if (!values.slug) return setSlugFree(null);
+    if (!values.slug || !online) return setSlugFree(null);
     const timer = setTimeout(
       () => api.slugAvailable(values.slug, id).then((r) => setSlugFree(r.available)).catch(() => setSlugFree(null)),
       400,
     );
     return () => clearTimeout(timer);
-  }, [values.slug, id]);
+  }, [values.slug, id, online]);
   const preview = {
     ...values,
     date: values.date
       ? fromZonedTime(values.date, values.timeZone).toISOString()
       : "",
   };
-  const save = form.handleSubmit(async (data) => {
+  const persist = async (payload: EventInput) => {
     setError("");
     try {
-      const payload = eventSchema.parse({
-        ...data,
-        date: fromZonedTime(data.date, data.timeZone).toISOString(),
-        // Vacía y sin quitar: se conserva la contraseña que ya tenía
-        publicPassword: removePassword ? "" : data.publicPassword || undefined,
-      });
       const event = await api.saveEvent(payload, id);
       await reload();
       toast(
@@ -198,6 +197,29 @@ export function EventEditor() {
     } catch (e) {
       setError(errorText(e));
     }
+  };
+  const save = form.handleSubmit(async (data) => {
+    setError("");
+    let payload: EventInput;
+    try {
+      payload = eventSchema.parse({
+        ...data,
+        date: fromZonedTime(data.date, data.timeZone).toISOString(),
+        // Vacía y sin quitar: se conserva la contraseña que ya tenía
+        publicPassword: removePassword ? "" : data.publicPassword || undefined,
+      });
+    } catch (e) {
+      return setError(errorText(e));
+    }
+    // Cancelar o cambiar fecha o lugar avisa a los invitados por correo: sin red, se dice antes
+    if (!online && original) {
+      const cancel = payload.cancelled && !original.cancelled;
+      const change =
+        !payload.cancelled &&
+        (new Date(payload.date).getTime() !== new Date(original.date).getTime() || payload.location !== original.location);
+      if (cancel || change) return setMailWarning({ kind: cancel ? "cancel" : "change", payload });
+    }
+    await persist(payload);
   });
   if (loading) return <p role="status">{tr("events.loadingEvent")}</p>;
   return (
@@ -296,7 +318,9 @@ export function EventEditor() {
             label={tr("events.publicAddress")}
             error={form.formState.errors.slug?.message}
             hint={
-              slugFree === false
+              !online
+                ? tr("offline.slugCheckLater")
+                : slugFree === false
                 ? tr("events.publicAddressTaken")
                 : tr("events.publicAddressHint", {
                     url: landingText(runtime.publicOrigin, user?.publicCode ?? "", values.slug || slugify(values.title) || "…"),
@@ -382,12 +406,31 @@ export function EventEditor() {
           </p>
         </aside>
       </form>
+      {mailWarning && (
+        <Modal title={tr("offline.mailWarningTitle")} onClose={() => setMailWarning(null)}>
+          <p>{mailWarning.kind === "cancel" ? tr("offline.mailWarningCancel") : tr("offline.mailWarningChange")}</p>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setMailWarning(null)}>
+              {tr("common.cancel")}
+            </Button>
+            <Button
+              onClick={async () => {
+                const { payload } = mailWarning;
+                setMailWarning(null);
+                await persist(payload);
+              }}
+            >
+              {tr("offline.saveAndNotify")}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
 export function EventDetail() {
   const { id } = useParams(),
-    { api, events, reload, toast, runtime, user, config } = useApp(),
+    { api, events, reload, toast, runtime, user, config, offline } = useApp(),
     navigate = useNavigate();
   const event = events.find((e) => e.id === id),
     [invitations, setInvitations] = useState<Invitation[]>([]),
@@ -481,6 +524,7 @@ export function EventDetail() {
                 : tr(themes.find((t) => t.id === event.theme)!.name)}
           </span>
           <h1>{event.title}</h1>
+          <PendingMark id={event.id} offline={offline} />
           <div className="event-meta">
             <span>
               <CalendarDays size={16} />
@@ -593,6 +637,7 @@ export function EventDetail() {
                     {i.name}
                   </button>
                   <small>{i.members.map((m) => m.name).join(", ")}</small>
+                  <PendingMark id={i.id} offline={offline} />
                 </div>
               </div>
               <span className="type-tag">
@@ -624,10 +669,12 @@ export function EventDetail() {
               <div className="row-actions">
                 <Button variant="ghost" size="icon"
                   onClick={() => setSharing(i)}
+                  // Creada sin conexión: el enlace lo genera el servidor al recibirla
+                  disabled={!i.token}
                   aria-label={tr("events.shareNameSInvitation", {
                     name: i.name,
                   })}
-                  title={tr("events.shareInvitation")}
+                  title={i.token ? tr("events.shareInvitation") : tr("offline.shareAfterSync")}
                 >
                   <Share2 size={17} />
                 </Button>

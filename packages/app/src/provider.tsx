@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ClipboardEvent, type ReactNode } from "react";
+import { NeedsConnection } from "./offline";
 import { Link } from "react-router-dom";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -760,7 +761,7 @@ function PhotoCard({
 }
 
 export function ProviderPhotosPage() {
-  const { api, toast } = useApp();
+  const { api, toast, online } = useApp();
   const { profile, setProfile, loaded, error } = useProviderProfile();
   const [busy, setBusy] = useState(false),
     [uploadError, setUploadError] = useState(""),
@@ -795,7 +796,7 @@ export function ProviderPhotosPage() {
         <input
           type="file"
           accept={imageTypes.join(",")}
-          disabled={full || busy}
+          disabled={full || busy || !online}
           aria-label={tr("provider.uploadPhoto")}
           onChange={(e) => {
             void upload(e.target.files?.[0]);
@@ -803,6 +804,7 @@ export function ProviderPhotosPage() {
           }}
         />
       </label>
+      <NeedsConnection online={online} />
       {uploadError && <ErrorBox message={uploadError} />}
       {profile.images.length === 0 ? (
         <p className="empty">

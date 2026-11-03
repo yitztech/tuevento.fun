@@ -41,8 +41,13 @@ for (const file of prohibidos) {
       errores.push(`${file} menciona ${servicio} (solo para pruebas)`);
 }
 
+// El interruptor «simular sin conexión» solo existe en el build de pruebas de las apps
+// (VITE_TEST_BUILD=1 en scripts/mobile-test-*.sh): ningún workflow ni Dockerfile lo activa.
+for (const file of prohibidos)
+  if (readFileSync(file, "utf8").includes("VITE_TEST_BUILD")) errores.push(`${file} activa VITE_TEST_BUILD (solo para pruebas)`);
+
 if (errores.length) {
   console.error(errores.map((e) => `✗ ${e}`).join("\n"));
   process.exit(1);
 }
-console.log(`✓ Servicios solo de pruebas aislados de producción (${[...soloPruebas, ...soloPruebasCi].join(", ")})`);
+console.log(`✓ Servicios solo de pruebas aislados de producción (${[...soloPruebas, ...soloPruebasCi].join(", ")}; VITE_TEST_BUILD)`);

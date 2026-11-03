@@ -89,7 +89,6 @@ export class FakeServer {
   private route(method: string, path: string, query: URLSearchParams, body: any, headers: Record<string, string>): Response {
     const ifMatch = headers["if-match"] ? Number(headers["if-match"].replace(/"/g, "")) : undefined;
     const now = new Date().toISOString();
-    let m: RegExpMatchArray | null;
     if (method === "GET" && path === "/events") return json([...this.events.values()].map((e) => this.eventView(e)));
     if (method === "POST" && path === "/events") {
       const { id = crypto.randomUUID(), publicPassword, ...data } = body;
@@ -101,7 +100,8 @@ export class FakeServer {
       this.stamp("event", id);
       return json(this.eventView(event), 201);
     }
-    if ((m = path.match(/^\/events\/([^/]+)$/))) {
+    let m = path.match(/^\/events\/([^/]+)$/);
+    if (m) {
       const event = this.events.get(m[1]);
       if (!event) return problem(404, "not_found", "No encontramos el evento.");
       if (method === "GET") return json(this.eventView(event));
@@ -124,7 +124,8 @@ export class FakeServer {
         return json({ ok: true });
       }
     }
-    if ((m = path.match(/^\/events\/([^/]+)\/invitations$/))) {
+    m = path.match(/^\/events\/([^/]+)\/invitations$/);
+    if (m) {
       if (!this.events.has(m[1])) return problem(404, "not_found", "No encontramos el evento.");
       if (method === "GET") return json([...this.invitations.values()].filter((i) => i.eventId === m![1]));
       const { id = crypto.randomUUID(), ...data } = body;
@@ -135,7 +136,8 @@ export class FakeServer {
       this.stamp("invitation", id);
       return json(invitation, 201);
     }
-    if ((m = path.match(/^\/events\/([^/]+)\/invitations\/([^/]+)$/))) {
+    m = path.match(/^\/events\/([^/]+)\/invitations\/([^/]+)$/);
+    if (m) {
       const invitation = this.invitations.get(m[2]);
       if (!invitation || invitation.eventId !== m[1]) return problem(404, "not_found", "No encontramos la invitación.");
       if (method === "PUT") {

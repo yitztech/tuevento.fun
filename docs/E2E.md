@@ -53,7 +53,9 @@ Variables: `E2E_BASE_URL` (por defecto `http://localhost:5187`), `E2E_BASE_URL_E
 3. Etiquetas: área (`@registro`, `@perfil`…) y tipo (`@smoke` = lo imprescindible,
    `@validacion`, `@limites`, `@i18n`, `@api` = sin navegador). `@slow` triplica el tiempo
    máximo de un escenario largo (de playwright-bdd), con un comentario que diga por qué; nunca
-   para tapar una espera que no llega.
+   para tapar una espera que no llega. `@solo-movil` marca un escenario que solo existe dentro de
+   las apps (p. ej. `sin-conexion.feature`, la copia local del teléfono): los proyectos web lo
+   excluyen y corre con `npm run e2e:android`, `e2e:ios` o `e2e:movil`, siempre junto a `@movil`.
 4. Los datos se crean únicos en cada escenario (`nuevaCuenta()`); no dependas de la base de datos.
 
 ## CI
@@ -135,6 +137,26 @@ E2E_IOS_SIMULADOR="iPad Pro 13-inch (M5)" npm run e2e:ios
 - **Recursos:** emulador de Android + simuladores de iOS + Docker saturan la máquina. Con varios
   abiertos a la vez, las pruebas se vuelven lentas y fallan por tiempo: apaga los que no uses
   (`xcrun simctl shutdown all`).
+
+## Sin conexión en las apps (`sin-conexion.feature`, `@solo-movil`)
+
+- **Android:** el paso «me quedo sin conexión» activa el modo avión del emulador
+  (`cmd connectivity airplane-mode enable`) y la app lo sabe por `@capacitor/network`. El túnel
+  `adb reverse` sigue funcionando, así que lo que se prueba es el comportamiento de la app según la red
+  que le dice el sistema. Cada escenario empieza con el modo avión apagado.
+- **iOS:** el simulador no puede quitarse la red por línea de comandos. El build de pruebas
+  (`VITE_TEST_BUILD=1`, que solo ponen `scripts/mobile-test-*.sh`) expone
+  `window.tueventoPruebasSinRed(true|false)`: la app se cree sin red y sus peticiones fallan como sin
+  conexión. En cualquier otro build el código desaparece (`__PRUEBAS__` vale `false` en
+  `vite.config.ts`), y `scripts/check-test-only.mjs` falla si un workflow o un Dockerfile activa
+  `VITE_TEST_BUILD`.
+- Antes de quitar la red, el paso «entro en la app» espera a que la copia local tenga a esa cuenta y
+  una sincronización completa (`window.tueventoPruebasCopiaLista(correo)`, también solo en el build de
+  pruebas). Sin esa espera, la prueba podría quitar la red antes de que el teléfono guarde nada.
+- El build de pruebas de iOS se firma ad hoc (`CODE_SIGN_IDENTITY=-`): sin firma, el llavero del
+  simulador responde -34018 y la copia local cifrada no se puede abrir.
+- En las apps, cada escenario tiene 120 s y cada comprobación 20 s: la app tarda unos 15 s en abrir y
+  volver a tener red y sincronizar lleva unos segundos.
 
 ## Android e iOS, uno tras otro (nunca a la vez)
 

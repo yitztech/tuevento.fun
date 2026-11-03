@@ -1,6 +1,7 @@
 import { tr, trMessage, formatLocale } from "./i18n";
 import { createContext, useContext } from "react";
 import { EventApi, type OfflineStore } from "@tuevento/client";
+import type { OfflineState } from "./offline";
 import type { User, Event, Notification, GeoPoint } from "@tuevento/contracts";
 export type Runtime = {
   apiBase: string;
@@ -22,6 +23,8 @@ export type Runtime = {
   openOfflineStore?: (userId: string) => Promise<OfflineStore>;
   /** Borra la copia local y su clave: al cerrar sesión, con un 401 o al entrar con otra cuenta. */
   clearOfflineStore?: () => Promise<void>;
+  /** Cuenta dueña de la copia local guardada: para arrancar sin conexión con ella. */
+  offlineOwner?: () => Promise<string | null>;
 };
 export type AppState = {
   api: EventApi;
@@ -32,6 +35,10 @@ export type AppState = {
   notifications: Notification[];
   reload: () => Promise<void>;
   toast: (message: string) => void;
+  /** Con red según el sistema (en la web, siempre). */
+  online: boolean;
+  /** Cola y sincronización de las apps; nulo en la web y para los proveedores. */
+  offline: OfflineState | null;
   config: {
     googleClientId: string;
     demoEnabled: boolean;
