@@ -51,7 +51,9 @@ Variables: `E2E_BASE_URL` (por defecto `http://localhost:5187`), `E2E_BASE_URL_E
 2. Reutiliza los pasos existentes (`steps/`); si falta uno, `npm run bddgen -w @tuevento/e2e`
    indica el que hay que escribir.
 3. Etiquetas: área (`@registro`, `@perfil`…) y tipo (`@smoke` = lo imprescindible,
-   `@validacion`, `@limites`, `@i18n`, `@api` = sin navegador).
+   `@validacion`, `@limites`, `@i18n`, `@api` = sin navegador). `@slow` triplica el tiempo
+   máximo de un escenario largo (de playwright-bdd), con un comentario que diga por qué; nunca
+   para tapar una espera que no llega.
 4. Los datos se crean únicos en cada escenario (`nuevaCuenta()`); no dependas de la base de datos.
 
 ## CI
