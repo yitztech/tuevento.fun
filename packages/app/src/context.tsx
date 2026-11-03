@@ -1,6 +1,6 @@
 import { tr, trMessage, formatLocale } from "./i18n";
 import { createContext, useContext } from "react";
-import { EventApi } from "@tuevento/client";
+import { EventApi, type OfflineStore } from "@tuevento/client";
 import type { User, Event, Notification, GeoPoint } from "@tuevento/contracts";
 export type Runtime = {
   apiBase: string;
@@ -16,6 +16,12 @@ export type Runtime = {
   getPosition?: () => Promise<GeoPoint>;
   /** Hoja de compartir del sistema. Sin ella se copia el texto. */
   share?: (data: { title: string; text: string; url?: string }) => Promise<void>;
+  /** Estado de la red según el sistema (apps). En la web, sin definir: se trabaja siempre con red. */
+  network?: { online(): boolean; onChange(listener: (online: boolean) => void): () => void };
+  /** Copia local cifrada de una cuenta, para trabajar sin conexión (apps). */
+  openOfflineStore?: (userId: string) => Promise<OfflineStore>;
+  /** Borra la copia local y su clave: al cerrar sesión, con un 401 o al entrar con otra cuenta. */
+  clearOfflineStore?: () => Promise<void>;
 };
 export type AppState = {
   api: EventApi;

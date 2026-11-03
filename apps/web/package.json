@@ -21,6 +21,7 @@
     "@capacitor/core": "^8.5.3",
     "@capacitor/geolocation": "^8.2.4",
     "@capacitor/ios": "^8.5.3",
+    "@capacitor/network": "^8.0.1",
     "@capacitor/share": "^8.0.3",
     "@sentry/react": "^11.10.0",
     "@tuevento/app": "1.0.0",

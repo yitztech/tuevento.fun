@@ -679,6 +679,12 @@ Divídela en tres PR: 8a (API), 8b (cliente y almacenamiento) y 8c (pantallas y 
 
 ### 8b — Cliente y almacenamiento en el teléfono
 
+> Hecha: resumen en `docs/ARCHITECTURE.md` («Sincronización sin conexión (cliente)»). Cambios respecto a lo de
+> abajo: `Runtime` gana `openOfflineStore(userId)` y `clearOfflineStore()` en vez de `offlineStore` (la clave es
+> por cuenta, así que el almacén se abre al saber quién entró); el perfil del proveedor sin conexión y la caché
+> de fotos quedan para 8c. Las pruebas encontraron un bucle de 410 tras purgar tombstones: la migración 029
+> guarda `sync_clock.purged_at` y un cursor solo caduca si es anterior a la purga en número **y** en fecha.
+
 En `packages/client/src/offline/` (sin DOM ni Capacitor: se prueba con `node:test`):
 
 - `OfflineStore`: interfaz `get/set/delete/list/clear` por colección.

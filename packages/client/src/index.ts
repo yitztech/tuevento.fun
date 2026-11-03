@@ -27,6 +27,7 @@ import type {
   ProviderCategory,
   ProviderSearchResult,
   SearchSort,
+  SyncChanges,
 } from "@tuevento/contracts";
 /** Filtros de la búsqueda de proveedores (`GET /api/search/providers`). */
 export type ProviderSearchParams = {
@@ -38,16 +39,8 @@ export type ProviderSearchParams = {
   limit?: number;
   cursor?: string;
 };
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public fields?: Record<string, string[]>,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+import { ApiError } from "./errors";
+export { ApiError };
 export type ApiOptions = {
   baseUrl: string;
   platform?: "web" | "android" | "ios";
@@ -64,7 +57,8 @@ export class EventApi {
   constructor(private options: ApiOptions) {
     this.transport = options.fetch ?? globalThis.fetch.bind(globalThis);
   }
-  async request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+  /** `headers`: cabeceras propias de la petición (`Idempotency-Key`, `If-Match`). */
+  async request<T>(path: string, method = "GET", body?: unknown, headers?: Record<string, string>): Promise<T> {
     const resolvedLocale =
       typeof this.options.locale === "function"
         ? this.options.locale()
@@ -78,6 +72,7 @@ export class EventApi {
         "X-Client-Platform": this.options.platform || "web",
         "X-App-Version": this.options.appVersion || "web",
         ...(resolvedLocale ? { "X-App-Locale": resolvedLocale } : {}),
+        ...headers,
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
@@ -92,6 +87,8 @@ export class EventApi {
             ? data.detail
             : "common.couldntCompleteRequest",
         data.fields,
+        typeof data.code === "string" ? data.code : undefined,
+        data,
       );
     return data;
   }
@@ -233,8 +230,17 @@ export class EventApi {
   orderProviderImages = (ids: string[]) => this.request<ProviderProfile>("/provider/images/order", "PUT", { ids });
   chooseProviderImage = (kind: "cover" | "logo", imageId: string | null) =>
     this.request<ProviderProfile>(`/provider/${kind}`, "PUT", { imageId });
+  /** Una página de cambios para la sincronización sin conexión (`docs/ARCHITECTURE.md`). */
+  syncChanges = (cursor?: string, limit?: number) => {
+    const query = new URLSearchParams();
+    if (cursor) query.set("cursor", cursor);
+    if (limit) query.set("limit", String(limit));
+    const text = query.toString();
+    return this.request<SyncChanges>(`/sync/changes${text ? `?${text}` : ""}`);
+  };
   rsvp = (token: string, members: { id: string; status: Status }[]) =>
     this.request<PublicInvitation>(`/invitations/${token}/rsvp`, "POST", {
       members,
     });
 }
+export * from "./offline";

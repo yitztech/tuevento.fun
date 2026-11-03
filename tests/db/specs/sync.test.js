@@ -110,6 +110,28 @@ test("Perfil de proveedor: servicios, fotos y categorías lo tocan; borrar la cu
     assert.equal(Number((await uno(`SELECT count(*) AS n FROM ${tabla} WHERE user_id=$1`, [dueno])).n), 0, tabla);
 });
 
+test("La 029: el reloj guarda cuándo se purgó (vacío hasta la primera purga)", async () => {
+  const dueno = await usuario(db);
+  await evento(dueno);
+  const c = await uno("SELECT purged_seq, purged_at FROM sync_clock WHERE user_id=$1", [dueno]);
+  assert.equal(Number(c.purged_seq), 0);
+  assert.equal(c.purged_at, null);
+  // La misma purga que hace la API (database.ts): tombstones viejos fuera, número y fecha al reloj
+  const e = await evento(dueno);
+  await db.query("DELETE FROM events WHERE id=$1", [e.id]);
+  await db.query("UPDATE sync_tombstones SET deleted_at = now() - interval '91 days' WHERE user_id=$1", [dueno]);
+  await db.query(`WITH purged AS (
+      DELETE FROM sync_tombstones WHERE deleted_at < now() - interval '90 days' RETURNING user_id, seq
+    )
+    UPDATE sync_clock c SET purged_seq = GREATEST(c.purged_seq, p.seq), purged_at = now()
+      FROM (SELECT user_id, max(seq) AS seq FROM purged GROUP BY user_id) p
+     WHERE c.user_id = p.user_id`);
+  const purgado = await uno("SELECT purged_seq, purged_at FROM sync_clock WHERE user_id=$1", [dueno]);
+  assert.ok(Number(purgado.purged_seq) > 0);
+  assert.ok(purgado.purged_at instanceof Date);
+  assert.deepEqual(await tombstones(dueno), []);
+});
+
 test("idempotency_keys: una clave por cuenta, con método y estado acotados, y se borra con la cuenta", async () => {
   const dueno = await usuario(db);
   const clave = crypto.randomUUID();
