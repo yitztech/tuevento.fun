@@ -54,6 +54,7 @@ import {
   VerifyEmailBanner,
 } from "./account";
 import { ProviderPage } from "./provider-page";
+import { ProviderSearchPage } from "./provider-search";
 import { landingRoute, localizedPage, localizedPath, mailPaths, passwordResetPaths, providerRoute, supportedLocales } from "@tuevento/contracts";
 import { PublicRsvp } from "./public-rsvp";
 import { EventLanding, LegacyEventAddress } from "./public-event";
@@ -94,11 +95,13 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     navigate = useNavigate();
   const legal = legalPageFor(location.pathname);
   const pricing = localizedPage(location.pathname) === "pricing";
+  const providerSearch = localizedPage(location.pathname) === "providers";
   const isPublic =
       location.pathname.startsWith("/i/") ||
       location.pathname.startsWith("/e/") ||
       landingRoute(location.pathname) !== null ||
       providerRoute(location.pathname) !== null ||
+      providerSearch ||
       legal !== null ||
       pricing,
     isAuth = [
@@ -228,6 +231,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
           <Route path="/e/:slug" element={<LegacyEventAddress />} />
           {supportedLocales.map((locale) => (
             <Route key={locale} path={`${localizedPath("providers", locale)}/:slug`} element={<ProviderPage />} />
+          ))}
+          {supportedLocales.map((locale) => (
+            <Route key={`search-${locale}`} path={localizedPath("providers", locale)} element={<ProviderSearchPage />} />
           ))}
           <Route path="/:code/:slug" element={<EventLanding />} />
         </Routes>

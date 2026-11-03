@@ -13,7 +13,7 @@ import {
   X,
   Store,
 } from "lucide-react";
-import { themes, type MessageKey, type Status } from "@tuevento/contracts";
+import { localizedPath, themes, type MessageKey, type Status } from "@tuevento/contracts";
 import { Logo, InvitationArt } from "./components";
 import { themeImageSrcSet } from "./theme-images";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
@@ -152,6 +152,9 @@ export function LandingPage() {
             </a>
             <Link to={pricingPath(locale)} onClick={closeMenu}>
               {tr("pricing.title")}
+            </Link>
+            <Link to={localizedPath("providers", locale)} onClick={closeMenu}>
+              {tr("providerSearch.navLink")}
             </Link>
           </nav>
           <div className="landing-header-actions">
@@ -527,6 +530,7 @@ export function LandingPage() {
         <nav aria-label={tr("landing.footerLinks")}>
           <Link to="/acceso">{tr("common.signSpace")}</Link>
           <Link to={pricingPath(locale)}>{tr("pricing.title")}</Link>
+          <Link to={localizedPath("providers", locale)}>{tr("providerSearch.navLink")}</Link>
           <Link to="/registro">{tr("common.exploreDemo")}</Link>
           <a href="#preguntas">{tr("landing.frequentlyAskedQuestions")}</a>
           <LegalLinks className="landing-legal-links" />
