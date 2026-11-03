@@ -99,7 +99,6 @@ export function ProviderPage() {
 }
 
 function ProviderView({ profile: p }: { profile: ProviderPublic }) {
-  const place = [p.city, p.region].filter(Boolean).join(", ");
   return (
     <div className="provider-page">
       <header className="provider-page-top">
@@ -107,70 +106,7 @@ function ProviderView({ profile: p }: { profile: ProviderPublic }) {
         <LanguageSwitcher />
       </header>
       <main>
-        <section className="provider-hero" aria-labelledby="provider-name">
-          {p.cover && <img className="provider-hero-cover" src={p.cover.urls[1600]} alt={p.cover.alt} />}
-          <div className="provider-hero-text">
-            {p.logo && <img className="provider-logo" src={p.logo.urls[480]} alt={p.logo.alt} />}
-            <h1 id="provider-name">{p.businessName}</h1>
-            {p.headline && <p className="provider-headline">{p.headline}</p>}
-            <ul className="provider-tags">
-              {p.categories.map((c) => (
-                <li key={c}>{tr(providerCategoryLabels[c])}</li>
-              ))}
-            </ul>
-            {place && (
-              <p className="provider-place">
-                <MapPin size={16} aria-hidden="true" /> {place}
-              </p>
-            )}
-          </div>
-        </section>
-
-        <Contact profile={p} />
-
-        {p.services.length > 0 && (
-          <section className="provider-section" aria-labelledby="provider-services">
-            <h2 id="provider-services">{tr("providerPage.services")}</h2>
-            <ul className="provider-service-grid">
-              {p.services.map((service) => {
-                const photo = p.images.find((i) => i.serviceId === service.id);
-                return (
-                  <li key={service.id} className="provider-service">
-                    {photo && <img src={photo.urls[480]} alt={photo.alt} loading="lazy" />}
-                    <h3>{service.title}</h3>
-                    <p className="provider-price">{priceText(service)}</p>
-                    {service.description && <p className="provider-text">{service.description}</p>}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-
-        {p.images.length > 0 && <Gallery images={p.images} />}
-
-        {p.description && (
-          <section className="provider-section" aria-labelledby="provider-about">
-            <h2 id="provider-about">{tr("providerPage.about")}</h2>
-            {/* Texto plano: los saltos de línea se respetan con CSS, nunca se interpreta HTML */}
-            <p className="provider-text">{p.description}</p>
-          </section>
-        )}
-
-        <section className="provider-section" aria-labelledby="provider-location">
-          <h2 id="provider-location">{tr("providerPage.location")}</h2>
-          {p.addressVisibility === "exact" && p.address && <p>{p.address}</p>}
-          <p className="provider-place">
-            {p.serviceRadiusKm > 0 ? tr("providerPage.serviceRadius", { count: p.serviceRadiusKm }) : tr("providerPage.onlyAtVenue")}
-          </p>
-          {p.geo && <MapView point={p.geo} label={p.businessName} approximate={p.addressVisibility !== "exact"} />}
-          {p.addressVisibility === "exact" ? (
-            <MapLinks label={[p.businessName, p.address, place].filter(Boolean).join(", ")} geo={p.geo} />
-          ) : (
-            <p className="field-note">{tr("providerPage.approximate")}</p>
-          )}
-        </section>
-
+        <ProviderDetails profile={p} />
         <aside className="provider-own">
           <p>{tr("providerPage.ownBusiness")}</p>
           <Button asChild variant="outline"><Link to="/registro?tipo=proveedor">
@@ -182,7 +118,87 @@ function ProviderView({ profile: p }: { profile: ProviderPublic }) {
   );
 }
 
-function Contact({ profile: p }: { profile: ProviderPublic }) {
+/** Niveles de título: h1-h3 en la página propia; h3-h5 dentro del panel del evento, bajo su título. */
+const levels = {
+  page: { Name: "h1", H: "h2", Sub: "h3" },
+  embedded: { Name: "h3", H: "h4", Sub: "h5" },
+} as const;
+type SectionHeading = "h2" | "h4";
+
+/** Contenido del perfil: lo usan la página pública y el panel «Buscar proveedores» del evento. */
+export function ProviderDetails({ profile: p, embedded = false }: { profile: ProviderPublic; embedded?: boolean }) {
+  const place = [p.city, p.region].filter(Boolean).join(", ");
+  const { Name, H, Sub } = levels[embedded ? "embedded" : "page"];
+  return (
+    <>
+      <section className="provider-hero" aria-labelledby="provider-name">
+        {p.cover && <img className="provider-hero-cover" src={p.cover.urls[1600]} alt={p.cover.alt} />}
+        <div className="provider-hero-text">
+          {p.logo && <img className="provider-logo" src={p.logo.urls[480]} alt={p.logo.alt} />}
+          <Name id="provider-name">{p.businessName}</Name>
+          {p.headline && <p className="provider-headline">{p.headline}</p>}
+          <ul className="provider-tags">
+            {p.categories.map((c) => (
+              <li key={c}>{tr(providerCategoryLabels[c])}</li>
+            ))}
+          </ul>
+          {place && (
+            <p className="provider-place">
+              <MapPin size={16} aria-hidden="true" /> {place}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <Contact profile={p} heading={H} />
+
+      {p.services.length > 0 && (
+        <section className="provider-section" aria-labelledby="provider-services">
+          <H id="provider-services">{tr("providerPage.services")}</H>
+          <ul className="provider-service-grid">
+            {p.services.map((service) => {
+              const photo = p.images.find((i) => i.serviceId === service.id);
+              return (
+                <li key={service.id} className="provider-service">
+                  {photo && <img src={photo.urls[480]} alt={photo.alt} loading="lazy" />}
+                  <Sub>{service.title}</Sub>
+                  <p className="provider-price">{priceText(service)}</p>
+                  {service.description && <p className="provider-text">{service.description}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {p.images.length > 0 && <Gallery images={p.images} heading={H} />}
+
+      {p.description && (
+        <section className="provider-section" aria-labelledby="provider-about">
+          <H id="provider-about">{tr("providerPage.about")}</H>
+          {/* Texto plano: los saltos de línea se respetan con CSS, nunca se interpreta HTML */}
+          <p className="provider-text">{p.description}</p>
+        </section>
+      )}
+
+      <section className="provider-section" aria-labelledby="provider-location">
+        <H id="provider-location">{tr("providerPage.location")}</H>
+        {p.addressVisibility === "exact" && p.address && <p>{p.address}</p>}
+        <p className="provider-place">
+          {p.serviceRadiusKm > 0 ? tr("providerPage.serviceRadius", { count: p.serviceRadiusKm }) : tr("providerPage.onlyAtVenue")}
+        </p>
+        {p.geo && <MapView point={p.geo} label={p.businessName} approximate={p.addressVisibility !== "exact"} />}
+        {p.addressVisibility === "exact" ? (
+          <MapLinks label={[p.businessName, p.address, place].filter(Boolean).join(", ")} geo={p.geo} />
+        ) : (
+          <p className="field-note">{tr("providerPage.approximate")}</p>
+        )}
+      </section>
+    </>
+  );
+}
+
+function Contact({ profile: p, heading: H }: { profile: ProviderPublic; heading: SectionHeading }) {
   const { runtime, toast } = useApp();
   const share = async () => {
     const url = window.location.href.split(/[?#]/)[0];
@@ -199,7 +215,7 @@ function Contact({ profile: p }: { profile: ProviderPublic }) {
   };
   return (
     <section className="provider-section provider-contact" aria-labelledby="provider-contact">
-      <h2 id="provider-contact">{tr("providerPage.contact")}</h2>
+      <H id="provider-contact">{tr("providerPage.contact")}</H>
       <div className="button-group">
         {p.whatsapp && (
           <Button asChild><a href={whatsappUrl(p)} target="_blank" rel="noopener noreferrer">
@@ -249,7 +265,7 @@ function Contact({ profile: p }: { profile: ProviderPublic }) {
 }
 
 /** Cuadrícula de fotos con visor: flechas para moverse, Esc para cerrar y el foco vuelve a la foto. */
-function Gallery({ images }: { images: ProviderImage[] }) {
+function Gallery({ images, heading: H }: { images: ProviderImage[]; heading: SectionHeading }) {
   const [open, setOpen] = useState<number | null>(null);
   const openers = useRef<(HTMLButtonElement | null)[]>([]);
   const close = () => {
@@ -273,7 +289,7 @@ function Gallery({ images }: { images: ProviderImage[] }) {
   const current = open === null ? null : images[open];
   return (
     <section className="provider-section" aria-labelledby="provider-gallery">
-      <h2 id="provider-gallery">{tr("providerPage.gallery")}</h2>
+      <H id="provider-gallery">{tr("providerPage.gallery")}</H>
       <ul className="provider-gallery">
         {images.map((image, index) => (
           <li key={image.id}>

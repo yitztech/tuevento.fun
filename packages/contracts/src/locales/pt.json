@@ -1172,6 +1172,16 @@
     "widenRadius": "Ampliar para {{km}} km",
     "clearFilters": "Limpar filtros"
   },
+  "eventProviders": {
+    "title": "Precisa de salão, cadeiras, música…?",
+    "text": "Encontre fornecedores perto do seu evento.",
+    "search": "Buscar fornecedores",
+    "notNow": "Agora não",
+    "panelTitle": "Fornecedores perto do seu evento",
+    "back": "Voltar aos resultados",
+    "openFull": "Abrir página completa",
+    "offline": "Sem conexão: a busca de fornecedores precisa de internet."
+  },
   "mcp": {
     "unauthorized": "Credenciais MCP inválidas ou ausentes.",
     "forbidden": "Você não tem permissão para acessar este recurso ou ferramenta.",

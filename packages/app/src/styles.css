@@ -5109,7 +5109,7 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   gap: 10px;
   justify-items: start;
 }
-.provider-hero h1 {
+.provider-hero :is(h1, h3) {
   margin: 0;
   font-family: "Bricolage Grotesque Variable", "Manrope Variable", sans-serif;
   font-size: clamp(30px, 6vw, 44px);
@@ -5159,7 +5159,7 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   display: grid;
   gap: 14px;
 }
-.provider-section h2 {
+.provider-section :is(h2, h4) {
   margin: 0;
   font-family: "Bricolage Grotesque Variable", "Manrope Variable", sans-serif;
   font-size: 23px;
@@ -5204,7 +5204,7 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   object-fit: cover;
   border-radius: 9px;
 }
-.provider-service h3 {
+.provider-service :is(h3, h5) {
   margin: 0;
   font-size: 16px;
 }
@@ -5519,6 +5519,50 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .provider-search-more {
   display: flex;
   justify-content: center;
+}
+
+/* Invitación a buscar proveedores en el editor y el detalle del evento */
+.provider-finder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 14px 0 18px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 13px;
+  background: var(--surface-soft);
+}
+.provider-finder > svg {
+  flex: none;
+  color: var(--primary);
+}
+.provider-finder-text {
+  flex: 1 1 220px;
+}
+.provider-finder-text p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.provider-finder-text .provider-finder-title {
+  color: var(--ink);
+  font-weight: 700;
+}
+.provider-finder-detail {
+  display: grid;
+  gap: 16px;
+}
+/* Dentro del diálogo, el perfil en una columna y con títulos a la medida del panel */
+.provider-finder-detail .provider-hero {
+  grid-template-columns: 1fr;
+}
+.provider-finder-detail .provider-hero h3 {
+  font-size: clamp(24px, 4vw, 30px);
+  overflow-wrap: anywhere;
+}
+.provider-finder-detail .provider-section {
+  margin-top: 24px;
 }
 
 /* Aviso hasta confirmar el correo de la cuenta */

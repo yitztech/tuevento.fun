@@ -17,16 +17,16 @@ const categoria = (nombre) => {
   return codigo;
 };
 /** Código único en minúsculas y sin dígitos sueltos: entra en el nombre y distingue los datos del escenario. */
-const codigoUnico = () => `q${randomBytes(5).toString("hex")}`;
+export const codigoUnico = () => `q${randomBytes(5).toString("hex")}`;
 /** Punto aleatorio lejos de los de otros escenarios (latitudes medias, cualquier longitud). */
 /** Fracción aleatoria en [0, 1) con crypto (Math.random() lo marca CodeQL aunque aquí no sea un secreto). */
 const azar = () => randomInt(0, 1_000_000) / 1_000_000;
-const puntoUnico = () => ({ lat: -40 + azar() * 80, lng: -170 + azar() * 340 });
+export const puntoUnico = () => ({ lat: -40 + azar() * 80, lng: -170 + azar() * 340 });
 /** El punto a `km` kilómetros al norte. */
-const alNorte = (p, km) => ({ lat: p.lat + km / 111.32, lng: p.lng });
+export const alNorte = (p, km) => ({ lat: p.lat + km / 111.32, lng: p.lng });
 
 /** Registra un negocio, completa su perfil con una foto y lo publica. Devuelve sus datos. */
-async function publicarNegocio(playwright, extra) {
+export async function publicarNegocio(playwright, extra) {
   const api = await playwright.request.newContext({ baseURL, extraHTTPHeaders: cabecera });
   try {
     expect((await api.post("/api/auth/register", { data: { ...nuevaCuenta(), accountType: "provider" } })).status()).toBe(201);

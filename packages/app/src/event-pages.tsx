@@ -2,6 +2,7 @@ import { accountLimits, eventInput, eventLandingPath, guestTiers, invitationInpu
 import { paymentPath, planText } from "./pricing";
 import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { LocationPicker, MapLinks, MapView } from "./location";
+import { ProviderFinder } from "./provider-finder";
 import { useState, useEffect } from "react";
 import {
   Link,
@@ -274,6 +275,7 @@ export function EventEditor() {
               />
             )}
           />
+          <ProviderFinder eventKey={id ?? "nuevo"} location={values.location} geo={values.geo ?? null} />
           <Field
             label={tr("events.messageGuests")}
             error={form.formState.errors.description?.message}
@@ -496,6 +498,7 @@ export function EventDetail() {
           </div>
           {event.geo && <MapView point={event.geo} label={event.location} />}
           <MapLinks label={event.location} geo={event.geo} />
+          <ProviderFinder eventKey={event.id} location={event.location} geo={event.geo} />
         </div>
         <div className="button-group">
           <Button asChild variant="outline"><Link to={`/eventos/${id}/pantalla`}>

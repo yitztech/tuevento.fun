@@ -229,6 +229,9 @@ export function ProviderSearch({
   const update = (patch: Partial<SearchFilters>) => onChange({ ...filters, ...patch });
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    // Dentro del panel del evento el diálogo va en un portal, pero React propaga el envío al
+    // formulario del evento: sin esto, buscar lo guardaría
+    e.stopPropagation();
     update({ q: draft.trim().slice(0, accountLimits.search) });
   };
   const toggle = (category: ProviderCategory) =>

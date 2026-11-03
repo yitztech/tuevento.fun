@@ -1172,6 +1172,16 @@
     "widenRadius": "Élargir à {{km}} km",
     "clearFilters": "Retirer les filtres"
   },
+  "eventProviders": {
+    "title": "Besoin d’une salle, de chaises, de musique… ?",
+    "text": "Trouve des prestataires près de ton événement.",
+    "search": "Chercher des prestataires",
+    "notNow": "Pas maintenant",
+    "panelTitle": "Prestataires près de ton événement",
+    "back": "Revenir aux résultats",
+    "openFull": "Ouvrir la page complète",
+    "offline": "Pas de connexion : la recherche de prestataires a besoin d’Internet."
+  },
   "mcp": {
     "unauthorized": "Identifiants MCP non valides ou absents.",
     "forbidden": "Tu n’as pas la permission d’accéder à cette ressource ou à cet outil.",
