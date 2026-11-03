@@ -57,7 +57,7 @@ export function publicView(p: ProviderProfile, updatedAt: Date): ProviderPublic 
     serviceRadiusKm: p.serviceRadiusKm,
     cover: image(p.coverImageId) ?? p.images[0] ?? null,
     logo: image(p.logoImageId),
-    services: p.services,
+    services: p.services.map(({ version: _version, ...service }) => service),
     images: p.images,
     updatedAt: updatedAt.toISOString(),
   };

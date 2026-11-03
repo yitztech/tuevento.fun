@@ -48,7 +48,7 @@ import {
 } from "@tuevento/contracts";
 import { AccountTypeGuard, AuthService, isUniqueViolation, RequireAccountType, SessionGuard, type AuthedRequest } from "./auth";
 import { Database } from "./database";
-import { parse, ProblemException } from "./problem";
+import { ifMatchVersion, parse, ProblemException, versionConflict } from "./problem";
 
 /** Carpeta de las fotos de los proveedores: el volumen provider_uploads (ver compose). */
 const imageDir = () => process.env.PROVIDER_IMAGE_DIR || "/data/providers";
@@ -58,6 +58,7 @@ export const providerImageUrl = (id: string, size: ProviderImageSize) => `/api/p
 type Queryable = Pick<PoolClient, "query">;
 type ProfileRow = {
   id: string;
+  version: string;
   slug: string;
   business_name: string;
   headline: string;
@@ -107,9 +108,11 @@ function serviceView(r: {
   price_from_cents: string | null;
   currency: string | null;
   price_unit: string | null;
+  version: string;
 }): ProviderService {
   return {
     id: r.id,
+    version: Number(r.version),
     title: r.title,
     description: r.description,
     price:
@@ -190,6 +193,7 @@ export class ProvidersService {
     return {
       ...data,
       id: r.id,
+      version: Number(r.version),
       status: r.status,
       publishedAt: r.published_at?.toISOString() ?? null,
       coverImageId: r.cover_image_id,
@@ -252,10 +256,10 @@ export class ProvidersService {
    * que ya ve lo que confirmó la otra: la dirección automática busca la siguiente libre y una escrita a mano
    * responde 409, nunca 500.
    */
-  async saveProfile(userId: string, input: ProviderProfileData) {
+  async saveProfile(userId: string, input: ProviderProfileData, expectedVersion?: number) {
     for (let attempt = 1; ; attempt++) {
       try {
-        return await this.saveProfileOnce(userId, input);
+        return await this.saveProfileOnce(userId, input, expectedVersion);
       } catch (e) {
         if (!isUniqueViolation(e)) throw e;
         if (attempt === 5) throw new ConflictException("errors.providerSlugTaken");
@@ -263,12 +267,15 @@ export class ProvidersService {
     }
   }
 
-  private async saveProfileOnce(userId: string, input: ProviderProfileData) {
+  /** `expectedVersion` (If-Match): si no coincide con la guardada, 409 version_conflict. */
+  private async saveProfileOnce(userId: string, input: ProviderProfileData, expectedVersion?: number) {
     return this.db.transaction(async (db) => {
-      const { rows: [current] } = await db.query<{ id: string; slug: string; status: string }>(
-        "SELECT id, slug, status FROM provider_profiles WHERE user_id=$1 FOR UPDATE",
+      const { rows: [current] } = await db.query<{ id: string; slug: string; status: string; version: string }>(
+        "SELECT id, slug, status, version FROM provider_profiles WHERE user_id=$1 FOR UPDATE",
         [userId],
       );
+      if (current && expectedVersion !== undefined && Number(current.version) !== expectedVersion)
+        throw versionConflict(Number(current.version));
       const id = current?.id ?? randomUUID();
       const slug = input.slug || current?.slug || (await this.freeSlug(db, input.businessName, current?.id ?? null));
       if (slug !== current?.slug && (await this.slugTaken(db, slug, current?.id ?? null)))
@@ -355,17 +362,29 @@ export class ProvidersService {
     });
   }
 
-  async updateService(userId: string, serviceId: string, input: z.infer<typeof providerServiceSchema>) {
+  async updateService(
+    userId: string,
+    serviceId: string,
+    input: z.infer<typeof providerServiceSchema>,
+    expectedVersion?: number,
+  ) {
     // El servicio se busca junto con la cuenta: el de otro proveedor no existe para quien pregunta
     const [r] = await this.db.query(
       `UPDATE provider_services s SET title=$3, description=$4, price_from_cents=$5, currency=$6, price_unit=$7
        FROM provider_profiles p
-       WHERE s.id=$1 AND s.provider_id=p.id AND p.user_id=$2 RETURNING s.*`,
+       WHERE s.id=$1 AND s.provider_id=p.id AND p.user_id=$2 AND ($8::bigint IS NULL OR s.version=$8) RETURNING s.*`,
       [serviceId, userId, input.title, input.description, input.price?.fromCents ?? null,
-        input.price?.currency ?? null, input.price?.unit ?? null],
+        input.price?.currency ?? null, input.price?.unit ?? null, expectedVersion ?? null],
     );
-    if (!r) throw serviceNotFound();
-    return serviceView(r);
+    if (r) return serviceView(r);
+    if (expectedVersion !== undefined) {
+      const [current] = await this.db.query<{ version: string }>(
+        "SELECT s.version FROM provider_services s JOIN provider_profiles p ON p.id=s.provider_id WHERE s.id=$1 AND p.user_id=$2",
+        [serviceId, userId],
+      );
+      if (current) throw versionConflict(Number(current.version));
+    }
+    throw serviceNotFound();
   }
 
   async removeService(userId: string, serviceId: string) {
@@ -511,7 +530,7 @@ export class ProviderController {
     return { profile: await this.providers.profile(req.user.id) };
   }
   @Put("profile") saveProfile(@Req() req: AuthedRequest, @Body() body: unknown) {
-    return this.providers.saveProfile(req.user.id, parse(providerProfileSchema, body, req));
+    return this.providers.saveProfile(req.user.id, parse(providerProfileSchema, body, req), ifMatchVersion(req));
   }
   @Get("slug-available") slugAvailable(@Req() req: AuthedRequest, @Query() query: unknown) {
     const { slug } = parse(
@@ -542,7 +561,7 @@ export class ProviderController {
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: unknown,
   ) {
-    return this.providers.updateService(req.user.id, id, parse(providerServiceSchema, body, req));
+    return this.providers.updateService(req.user.id, id, parse(providerServiceSchema, body, req), ifMatchVersion(req));
   }
   @Delete("services/:id") @HttpCode(204) async removeService(@Req() req: AuthedRequest, @Param("id", ParseUUIDPipe) id: string) {
     await this.providers.removeService(req.user.id, id);

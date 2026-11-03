@@ -24,7 +24,7 @@ try {
       ["GET", `/events/${evento.id}/invitations`], ["POST", `/events/${evento.id}/invitations`],
       ["PUT", `/events/${evento.id}/invitations/${invitacion.id}`], ["DELETE", `/events/${evento.id}/invitations/${invitacion.id}`],
       ["GET", "/notifications"], ["POST", "/notifications/read"], ["PATCH", "/profile"], ["PUT", "/profile/avatar"],
-      ["GET", "/owner/metrics"], ["POST", `/events/${evento.id}/checkout`],
+      ["GET", "/owner/metrics"], ["POST", `/events/${evento.id}/checkout`], ["GET", "/sync/changes"],
     ];
     for (const [method, path] of protegidos) {
       const r = await guest.raw(path, { method, body: method === "GET" || method === "DELETE" ? undefined : {} });
@@ -679,6 +679,63 @@ try {
     assert.equal(propio.headers["x-request-id"], "prueba-1234567890");
     // /api/health solo dice el estado
     assert.deepEqual(propio.data, { status: "ok" });
+  });
+
+  await suite("Sincronización: cada cuenta recibe solo lo suyo, también lo borrado", async () => {
+    const propia = await a.call("/events", "POST", eventData({ title: "Solo de A" }), 201);
+    const invPropia = await a.call(`/events/${propia.id}/invitations`, "POST", invitationData(), 201);
+    const deB = async () => {
+      const paginas = [];
+      let cursor;
+      do {
+        const pagina = await b.call(`/sync/changes${cursor ? `?cursor=${cursor}` : ""}`);
+        paginas.push(pagina);
+        cursor = pagina.nextCursor;
+        if (!pagina.hasMore) break;
+      } while (paginas.length < 50);
+      return { texto: JSON.stringify(paginas), cursor };
+    };
+    const inicio = await deB();
+    for (const id of [evento.id, invitacion.id, propia.id, invPropia.id]) assert.ok(!inicio.texto.includes(id), `B recibe ${id}`);
+    assert.ok(!inicio.texto.includes(invitacion.token), "B recibe un enlace de A");
+    // Lo que A borra tampoco llega a B como borrado
+    await a.call(`/events/${propia.id}`, "DELETE");
+    const despues = await b.call(`/sync/changes?cursor=${inicio.cursor}`);
+    assert.deepEqual(despues.deleted, []);
+    assert.ok(!JSON.stringify(despues).includes(propia.id));
+    // Un cursor fabricado con un número muy bajo no abre datos ajenos: el reloj es de cada cuenta
+    const forjado = Buffer.from(JSON.stringify({ v: 1, s: -1, t: Math.floor(Date.now() / 1000) })).toString("base64url");
+    const todo = JSON.stringify(await b.call(`/sync/changes?cursor=${forjado}`));
+    for (const id of [evento.id, invitacion.id, propia.id]) assert.ok(!todo.includes(id), `cursor forjado → ${id}`);
+  });
+
+  await suite("Idempotency-Key: la clave de otra cuenta no devuelve su respuesta; If-Match e id del cliente no abren datos ajenos", async () => {
+    const key = crypto.randomUUID();
+    const deA = await a.raw("/events", { method: "POST", body: eventData({ title: "Clave de A" }), headers: { "Idempotency-Key": key } });
+    assert.equal(deA.status, 201);
+    const deBconLaMisma = await b.raw("/events", { method: "POST", body: eventData({ title: "Clave de A" }), headers: { "Idempotency-Key": key } });
+    assert.equal(deBconLaMisma.status, 201);
+    assert.equal(deBconLaMisma.headers["idempotency-replayed"], undefined, "B no recibe la respuesta guardada de A");
+    assert.notEqual(deBconLaMisma.data.id, deA.data.id);
+    // If-Match sobre un evento ajeno: 404, sin decir su versión
+    const ajeno = await b.raw(`/events/${deA.data.id}`, { method: "PATCH", body: eventData(), headers: { "If-Match": '"1"' } });
+    assert.equal(ajeno.status, 404);
+    assert.equal(ajeno.data.currentVersion, undefined);
+    // El id de un evento ajeno para crear: 409 sin datos, y el evento de A no cambia
+    const robo = await b.raw("/events", { method: "POST", body: eventData({ id: deA.data.id, title: "Robado" }) });
+    assert.equal(robo.status, 409);
+    assert.equal(robo.data.code, "id_taken");
+    assert.ok(!robo.text.includes("Clave de A"));
+    assert.equal((await a.call(`/events/${deA.data.id}`)).title, "Clave de A");
+    // El id de una invitación de A en un evento de B: 409, y la de A sigue en su evento
+    const deB = await b.call("/events", "POST", eventData(), 201);
+    const cruzada = await b.raw(`/events/${deB.id}/invitations`, { method: "POST", body: invitationData({ id: invitacion.id }) });
+    assert.equal(cruzada.status, 409);
+    assert.ok(!cruzada.text.includes(invitacion.token));
+    assert.ok((await a.call(`/events/${evento.id}/invitations`)).some((i) => i.id === invitacion.id));
+    await a.call(`/events/${deA.data.id}`, "DELETE");
+    await b.call(`/events/${deBconLaMisma.data.id}`, "DELETE");
+    await b.call(`/events/${deB.id}`, "DELETE");
   });
 
   mkdirSync("qa-artifacts", { recursive: true });

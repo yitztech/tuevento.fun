@@ -23,14 +23,12 @@ import sharp from "sharp";
 import { randomBytes } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import {
-  translate,
-  translateMessage,
-  notificationMessage,
   type Locale,
   registerSchema,
   googleLoginSchema,
   loginSchema,
   eventSchema,
+  eventCreateSchema,
   invitationSchema,
   rsvpSchema,
   profileSchema,
@@ -66,7 +64,7 @@ import { paymentsEnabled } from "./payment-config";
 import { PostcardsService } from "./postcards";
 import { siteUrl } from "./locale-env";
 import { requestLocale } from "./request-locale";
-import { parse } from "./problem";
+import { ifMatchVersion, parse } from "./problem";
 import { ipKey, limits } from "./rate-limit";
 @Controller()
 export class PublicController {
@@ -372,7 +370,8 @@ export class OrganizerController {
     return this.events.event(req.user.id, id);
   }
   @Post("events") create(@Req() req: AuthedRequest, @Body() body: unknown) {
-    return this.events.saveEvent(req.user.id, parse(eventSchema, body, req));
+    const { id, ...input } = parse(eventCreateSchema, body, req);
+    return this.events.saveEvent(req.user.id, input, undefined, { clientId: id });
   }
   @Patch("events/:id") update(
     @Req() req: AuthedRequest,
@@ -383,6 +382,7 @@ export class OrganizerController {
       req.user.id,
       parse(eventSchema, withoutEventOutput(body), req),
       id,
+      { expectedVersion: ifMatchVersion(req) },
     );
   }
   @Post("events/:id/checkout") @HttpCode(200) checkout(
@@ -462,11 +462,8 @@ export class OrganizerController {
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: unknown,
   ) {
-    return this.events.saveInvitation(
-      req.user.id,
-      id,
-      parse(invitationSchema, body, req),
-    );
+    const data = parse(invitationSchema, body, req);
+    return this.events.saveInvitation(req.user.id, id, data, undefined, { clientId: data.id });
   }
   @Put("events/:id/invitations/:invitationId") updateInvite(
     @Req() req: AuthedRequest,
@@ -479,6 +476,7 @@ export class OrganizerController {
       id,
       parse(invitationSchema, body, req),
       invitationId,
+      { expectedVersion: ifMatchVersion(req) },
     );
   }
   @Delete("events/:id/invitations/:invitationId") removeInvite(
@@ -488,47 +486,8 @@ export class OrganizerController {
   ) {
     return this.events.removeInvitation(req.user.id, id, invitationId);
   }
-  @Get("notifications") async notifications(@Req() req: AuthedRequest) {
-    const rows = await this.db.query(
-      "SELECT n.*,e.title FROM notifications n JOIN events e ON e.id=n.event_id WHERE n.user_id=$1 ORDER BY n.created_at DESC LIMIT 100",
-      [req.user.id],
-    );
-    return rows.map((r) => ({
-      id: r.id,
-      eventId: r.event_id,
-      eventTitle: r.title,
-      guestName: r.guest_name,
-      message: r.counts
-        ? notificationMessage(
-            r.counts,
-            requestLocale(req),
-          )
-        : this.legacyNotification(
-            r.message,
-            requestLocale(req),
-          ),
-      read: r.read,
-      createdAt: r.created_at.toISOString(),
-    }));
-  }
-  /** Notificaciones guardadas antes de `counts`: solo tienen el texto en español. */
-  private legacyNotification(message: string, locale: Locale) {
-    const reply = message.match(
-      /^(\d+) confirmad[oa]s?, (\d+) no asistir[aá]n? y (\d+) en espera\.$/,
-    );
-    if (reply)
-      return notificationMessage(
-        {
-          accepted: Number(reply[1]),
-          declined: Number(reply[2]),
-          pending: Number(reply[3]),
-        },
-        locale,
-      );
-    const demo = message.match(/^(\d+) persona/);
-    if (demo)
-      return translate(locale, "notifications.demoConfirmed", { count: Number(demo[1]) });
-    return translateMessage(message, locale);
+  @Get("notifications") notifications(@Req() req: AuthedRequest) {
+    return this.events.notifications(req.user.id, requestLocale(req));
   }
   @Post("notifications/read") async read(@Req() req: AuthedRequest) {
     await this.db.query(
@@ -651,6 +610,8 @@ function withoutEventOutput(body: unknown) {
     hasPublicPassword: _hasPublicPassword,
     passwordFailures: _passwordFailures,
     paidTier: _paidTier,
+    version: _version,
+    updatedAt: _updatedAt,
     ...input
   } = body as Record<string, unknown>;
   return input;

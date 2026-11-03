@@ -317,7 +317,15 @@
     "paymentProviderUnavailable": "No pudimos abrir la página de pago. Inténtalo de nuevo en unos minutos.",
     "paymentSignatureInvalid": "La firma del aviso de pago no es válida.",
     "paymentDemo": "Los eventos de la demostración no se pagan. Crea tu cuenta para pagar tu evento.",
-    "guestLimitReached": "Tu evento llegó al máximo de invitados de su tramo. Pasa a un tramo mayor para añadir más."
+    "guestLimitReached": "Tu evento llegó al máximo de invitados de su tramo. Pasa a un tramo mayor para añadir más.",
+    "idTaken": "Ese identificador ya lo usa otro dato. Genera uno nuevo y vuelve a intentarlo.",
+    "idempotencyInProgress": "Esa petición todavía se está procesando. Inténtalo de nuevo en unos segundos.",
+    "idempotencyKeyReused": "Esa clave de idempotencia ya se usó con otra petición.",
+    "invalidIdempotencyKey": "La cabecera Idempotency-Key debe ser un UUID.",
+    "invalidIfMatch": "La cabecera If-Match debe llevar la versión entre comillas, por ejemplo \"3\".",
+    "invalidSyncCursor": "El cursor de sincronización no es válido.",
+    "syncCursorExpired": "Tu copia sin conexión es demasiado antigua: hay que descargarla completa otra vez.",
+    "versionConflict": "Esto cambió en otro dispositivo mientras lo editabas. Revisa la versión actual antes de guardar."
   },
   "events": {
     "actions": "Acciones",
@@ -931,6 +939,7 @@
     "forbidden": "Acceso denegado",
     "notFound": "No encontrado",
     "conflict": "Conflicto con los datos actuales",
+    "gone": "Ya no está disponible",
     "payloadTooLarge": "Contenido demasiado grande",
     "validationFailed": "Datos no válidos",
     "rateLimited": "Demasiadas solicitudes",

@@ -88,8 +88,8 @@ async function bootstrap() {
   app.enableCors({
     origin: origins,
     credentials: true,
-    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "X-Client-Platform", "X-App-Version", "X-App-Locale", "X-Request-ID", "Authorization"],
-    exposedHeaders: ["X-Request-ID", "Retry-After"],
+    allowedHeaders: ["Content-Type", "X-TuEvento-Client", "X-Client-Platform", "X-App-Version", "X-App-Locale", "X-Request-ID", "Authorization", "Idempotency-Key", "If-Match"],
+    exposedHeaders: ["X-Request-ID", "Retry-After", "Idempotency-Replayed"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
   fastify.addHook("onRequest", async (req: FastifyRequest, reply: FastifyReply) => {

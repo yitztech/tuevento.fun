@@ -13,6 +13,7 @@ import { Subject, filter, map, merge, interval } from "rxjs";
 import type { PoolClient } from "pg";
 import { Database } from "./database";
 import { isUniqueViolation } from "./auth";
+import { idTaken, versionConflict } from "./problem";
 import { PostcardsService } from "./postcards";
 import { NoticeService } from "./notices";
 import { hashPassword, verifyPassword } from "./password";
@@ -33,6 +34,8 @@ import {
   openInvitationLimits,
   publicCodePattern,
   slugify,
+  translate,
+  translateMessage,
   type EventInput,
   type EventLanding,
   type Invitation,
@@ -42,6 +45,7 @@ import {
   type LandingAddress,
   type Locale,
   type Member,
+  type Notification,
   type PublicEvent,
   type PublicInvitation,
   type RegistrationInput,
@@ -85,6 +89,9 @@ type EventRow = {
   public_password_failures: number;
   slug: string | null;
   created_at: Date;
+  /** bigint: llega como texto */
+  version: string;
+  updated_at: Date;
   /** Calculado con paidTierSql: no es una columna de events. */
   paid_tier: number | null;
 };
@@ -109,6 +116,8 @@ const eventView = (r: EventRow): Event => ({
   createdAt: r.created_at.toISOString(),
   metrics: countMetrics([]),
   paidTier: (r.paid_tier ?? null) as Event["paidTier"],
+  version: Number(r.version),
+  updatedAt: r.updated_at.toISOString(),
 });
 /** Dos eventos no pueden compartir dirección: el índice único lo impide y aquí se avisa claro. */
 const slugConflict = (e: unknown): never => {
@@ -122,6 +131,18 @@ const memberView = (m: MemberRow) => ({
   notes: m.notes,
   status: m.status,
 });
+/** Notificaciones guardadas antes de `counts`: solo tienen el texto en español. */
+function legacyNotification(message: string, locale: Locale) {
+  const reply = message.match(/^(\d+) confirmad[oa]s?, (\d+) no asistir[aá]n? y (\d+) en espera\.$/);
+  if (reply)
+    return notificationMessage(
+      { accepted: Number(reply[1]), declined: Number(reply[2]), pending: Number(reply[3]) },
+      locale,
+    );
+  const demo = message.match(/^(\d+) persona/);
+  if (demo) return translate(locale, "notifications.demoConfirmed", { count: Number(demo[1]) });
+  return translateMessage(message, locale);
+}
 @Injectable()
 export class Updates {
   private changes = new Subject<string>();
@@ -180,6 +201,8 @@ export class EventsService {
       token: openToken(r.token_sealed),
       parentId: r.parent_id ?? null,
       createdAt: r.created_at.toISOString(),
+      version: Number(r.version),
+      updatedAt: r.updated_at.toISOString(),
       members: members.filter((m) => m.invitation_id === r.id).map(memberView),
     }));
   }
@@ -188,20 +211,21 @@ export class EventsService {
     event.metrics = countMetrics(await this.invitations(userId, id));
     return event;
   }
-  async list(userId: string): Promise<Event[]> {
+  /** Eventos de la cuenta con sus métricas; con `ids`, solo esos (la sincronización). */
+  async list(userId: string, ids?: string[]): Promise<Event[]> {
     const events = await this.db.query(
-      `SELECT e.*, ${paidTierSql} AS paid_tier FROM events e WHERE e.user_id=$1 ORDER BY e.date`,
-      [userId],
+      `SELECT e.*, ${paidTierSql} AS paid_tier FROM events e WHERE e.user_id=$1 AND ($2::uuid[] IS NULL OR e.id=ANY($2::uuid[])) ORDER BY e.date`,
+      [userId, ids ?? null],
     );
     if (!events.length) return [];
-    const ids = events.map((e) => e.id);
+    const eventIds = events.map((e) => e.id);
     const invites = await this.db.query(
       "SELECT id,event_id FROM invitations WHERE event_id=ANY($1::uuid[])",
-      [ids],
+      [eventIds],
     );
     const members = await this.db.query(
       "SELECT m.invitation_id,m.kind,m.status FROM members m JOIN invitations i ON i.id=m.invitation_id WHERE i.event_id=ANY($1::uuid[])",
-      [ids],
+      [eventIds],
     );
     const membersByInvite = new Map<string, Pick<Member, "kind" | "status">[]>();
     for (const m of members) {
@@ -221,9 +245,25 @@ export class EventsService {
       return event;
     });
   }
-  async saveEvent(userId: string, input: EventInput, id?: string) {
+  /**
+   * Crea (sin `id`) o cambia un evento. `clientId`: id propuesto por el teléfono al crear; si ya
+   * existe en la cuenta, devuelve lo guardado sin repetir nada. `expectedVersion` (If-Match): si no
+   * coincide con la guardada, 409 version_conflict.
+   */
+  async saveEvent(
+    userId: string,
+    input: EventInput,
+    id?: string,
+    { clientId, expectedVersion }: { clientId?: string; expectedVersion?: number } = {},
+  ): Promise<Event> {
+    if (!id && clientId) {
+      const saved = await this.existingEvent(userId, clientId);
+      if (saved) return saved;
+    }
     const before = id ? await this.owned(userId, id) : null;
-    const eventId = id || randomUUID();
+    if (before && expectedVersion !== undefined && Number(before.version) !== expectedVersion)
+      throw versionConflict(Number(before.version));
+    const eventId = id || clientId || randomUUID();
     // Todo evento tiene landing: sin dirección escrita, se conserva la que tenía o sale del título
     const slug = input.slug || before?.slug || (await this.freeSlug(userId, input.title, eventId));
     // undefined conserva la contraseña actual; "" la quita; cualquier otro texto la cambia
@@ -234,10 +274,10 @@ export class EventsService {
         : await hashPassword(input.publicPassword);
     // Igual con el punto del mapa: undefined (apps anteriores) lo conserva, null lo quita
     const keepGeo = input.geo === undefined;
-    if (id)
-      await this.db
+    if (id) {
+      const updated = await this.db
         .query(
-          "UPDATE events SET title=$1,description=$2,date=$3,time_zone=$4,location=$5,theme=$6,archived=$7,cancelled=$8,slug=$9,public_password_hash=CASE WHEN $10 THEN public_password_hash ELSE $11 END,public_password_failures=CASE WHEN $10 THEN public_password_failures ELSE 0 END,public_password_locked_until=CASE WHEN $10 THEN public_password_locked_until ELSE NULL END,latitude=CASE WHEN $14 THEN latitude ELSE $15 END,longitude=CASE WHEN $14 THEN longitude ELSE $16 END WHERE id=$12 AND user_id=$13",
+          "UPDATE events SET title=$1,description=$2,date=$3,time_zone=$4,location=$5,theme=$6,archived=$7,cancelled=$8,slug=$9,public_password_hash=CASE WHEN $10 THEN public_password_hash ELSE $11 END,public_password_failures=CASE WHEN $10 THEN public_password_failures ELSE 0 END,public_password_locked_until=CASE WHEN $10 THEN public_password_locked_until ELSE NULL END,latitude=CASE WHEN $14 THEN latitude ELSE $15 END,longitude=CASE WHEN $14 THEN longitude ELSE $16 END WHERE id=$12 AND user_id=$13 AND ($17::bigint IS NULL OR version=$17) RETURNING id",
           [
             input.title,
             input.description,
@@ -255,10 +295,13 @@ export class EventsService {
             keepGeo,
             input.geo?.lat ?? null,
             input.geo?.lng ?? null,
+            expectedVersion ?? null,
           ],
         )
         .catch(slugConflict);
-    else
+      // Otro cambio se guardó entre la lectura y esta escritura
+      if (!updated.length) throw versionConflict(Number((await this.owned(userId, id)).version));
+    } else
       await this.db
         .query(
           "INSERT INTO events(id,user_id,title,description,date,time_zone,location,theme,archived,cancelled,slug,public_password_hash,latitude,longitude) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
@@ -279,7 +322,14 @@ export class EventsService {
             input.geo?.lng ?? null,
           ],
         )
-        .catch(slugConflict);
+        .catch(async (e: unknown) => {
+          // Dos altas a la vez con el mismo id del teléfono: la segunda devuelve la primera
+          if (clientId && isUniqueViolation(e) && (e as { constraint?: string }).constraint === "events_pkey") {
+            const saved = await this.existingEvent(userId, clientId);
+            if (saved) return;
+          }
+          slugConflict(e);
+        });
     if (before && !input.archived) {
       const date = before.date.getTime() !== new Date(input.date).getTime();
       const movedPin =
@@ -294,6 +344,29 @@ export class EventsService {
     }
     this.updates.emit(userId);
     return this.event(userId, eventId);
+  }
+  /** Evento con ese id si es de la cuenta; null si no existe; 409 id_taken si es de otra. */
+  private async existingEvent(userId: string, id: string) {
+    const [r] = await this.db.query<{ user_id: string }>("SELECT user_id FROM events WHERE id=$1", [id]);
+    if (!r) return null;
+    if (r.user_id !== userId) throw idTaken();
+    return this.event(userId, id);
+  }
+  /** Avisos de la cuenta, los 100 más recientes; con `ids`, solo esos (la sincronización). */
+  async notifications(userId: string, locale: Locale, ids?: string[]): Promise<Notification[]> {
+    const rows = await this.db.query(
+      "SELECT n.*,e.title FROM notifications n JOIN events e ON e.id=n.event_id WHERE n.user_id=$1 AND ($2::uuid[] IS NULL OR n.id=ANY($2::uuid[])) ORDER BY n.created_at DESC LIMIT 100",
+      [userId, ids ?? null],
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      eventId: r.event_id,
+      eventTitle: r.title,
+      guestName: r.guest_name,
+      message: r.counts ? notificationMessage(r.counts, locale) : legacyNotification(r.message, locale),
+      read: r.read,
+      createdAt: r.created_at.toISOString(),
+    }));
   }
   /** Número de invitaciones que han nacido de una genérica. */
   private async registrationCount(invitationId: string) {
@@ -359,14 +432,20 @@ export class EventsService {
     this.updates.emit(userId);
     return { ok: true };
   }
+  /** Como saveEvent: `clientId` hace repetible el alta y `expectedVersion` es el If-Match. */
   async saveInvitation(
     userId: string,
     eventId: string,
     data: InvitationInput,
     id?: string,
-  ) {
+    { clientId, expectedVersion }: { clientId?: string; expectedVersion?: number } = {},
+  ): Promise<Invitation> {
     await this.owned(userId, eventId);
-    const invitationId = id || randomUUID();
+    if (!id && clientId) {
+      const saved = await this.existingInvitation(userId, eventId, clientId);
+      if (saved) return saved;
+    }
+    const invitationId = id || clientId || randomUUID();
     const link = newInvitationToken();
     await this.db.transaction(async (c) => {
       const prior = id
@@ -379,6 +458,8 @@ export class EventsService {
         : null;
       if (id && !prior)
         throw new NotFoundException("errors.couldntFindInvitation");
+      if (prior && expectedVersion !== undefined && Number(prior.version) !== expectedVersion)
+        throw versionConflict(Number(prior.version));
       const existing = id
         ? (
             await c.query("SELECT id FROM members WHERE invitation_id=$1", [id])
@@ -435,11 +516,24 @@ export class EventsService {
             [randomUUID(), invitationId, m.name, m.kind, m.notes, i],
           );
       }
+    }).catch(async (e: unknown) => {
+      // Dos altas a la vez con el mismo id del teléfono: la segunda devuelve la primera
+      if (clientId && isUniqueViolation(e) && (e as { constraint?: string }).constraint === "invitations_pkey") {
+        if (await this.existingInvitation(userId, eventId, clientId)) return;
+      }
+      throw e;
     });
     this.updates.emit(userId);
     return (await this.invitations(userId, eventId)).find(
       (i) => i.id === invitationId,
     )!;
+  }
+  /** Invitación con ese id si es de este evento; null si no existe; 409 id_taken si es de otro. */
+  private async existingInvitation(userId: string, eventId: string, id: string) {
+    const [r] = await this.db.query<{ event_id: string }>("SELECT event_id FROM invitations WHERE id=$1", [id]);
+    if (!r) return null;
+    if (r.event_id !== eventId) throw idTaken();
+    return (await this.invitations(userId, eventId)).find((i) => i.id === id) ?? null;
   }
   /**
    * Con los pagos activos, un evento que pagó un tramo no pasa de su máximo de invitados (para
