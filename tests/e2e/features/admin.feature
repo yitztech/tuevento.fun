@@ -88,3 +88,27 @@ Característica: Panel de administración
     Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
     Y salgo del panel
     Entonces veo el formulario de entrada del panel
+
+  @pagos
+  Escenario: El administrador crea un cupón y lo desactiva
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y abro la pestaña "Cupones" del panel
+    Y creo un cupón nuevo del 20 % en el panel
+    Entonces veo el cupón nuevo en el panel con "20 %" y "Activo"
+    Cuando desactivo el cupón nuevo en el panel
+    Entonces veo el cupón nuevo en el panel con "20 %" y "Desactivado"
+
+  @pagos @validacion
+  Escenario: El panel no admite dos cupones con el mismo código
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y abro la pestaña "Cupones" del panel
+    Y creo un cupón nuevo del 20 % en el panel
+    Y repito el cupón nuevo en el panel
+    Entonces veo el error "Ya existe un cupón con ese código." del panel
+
+  @solo-lectura
+  Escenario: Sin sesión, los cupones no se ven
+    Cuando pido los cupones del panel sin haber entrado
+    Entonces el panel responde 401

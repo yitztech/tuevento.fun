@@ -66,3 +66,12 @@ export async function events(db, { offset, limit }) {
         WHERE i.event_id = e.id AND m.status = 'accepted') AS accepted
     FROM events e JOIN users u ON u.id = e.user_id ORDER BY e.created_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
 }
+
+// «Usos» cuenta solo los pagos confirmados: una reserva pendiente aún puede caducar
+export async function coupons(db, { offset, limit }) {
+  return db.query(`SELECT c.id, c.code, c.percent_off::int AS "percentOff", c.amount_off_cents::int AS "amountOffCents",
+      c.expires_at AS "expiresAt", c.max_redemptions::int AS "maxRedemptions", c.active, c.created_at AS "createdAt",
+      (SELECT count(*)::int FROM coupon_redemptions r JOIN event_payments p ON p.id = r.payment_id
+        WHERE r.coupon_id = c.id AND p.status = 'paid') AS used
+    FROM coupons c ORDER BY c.created_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
+}
