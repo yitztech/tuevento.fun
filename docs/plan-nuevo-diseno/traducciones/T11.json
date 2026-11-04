@@ -1,0 +1,100 @@
+{
+  "site.loginQuote": {
+    "es": "Los mejores momentos comienzan aquí.",
+    "en": "The best moments start here.",
+    "pt": "Os melhores momentos começam aqui.",
+    "de": "Die schönsten Momente beginnen hier.",
+    "fr": "Les plus beaux moments commencent ici."
+  },
+  "site.loginBenefitEvents": {
+    "es": "Tus eventos en un solo lugar",
+    "en": "Your events in one place",
+    "pt": "Seus eventos em um só lugar",
+    "de": "Deine Events an einem Ort",
+    "fr": "Tes événements au même endroit"
+  },
+  "site.loginBenefitReplies": {
+    "es": "Invitaciones y confirmaciones",
+    "en": "Invitations and replies",
+    "pt": "Convites e confirmações",
+    "de": "Einladungen und Zusagen",
+    "fr": "Invitations et réponses"
+  },
+  "site.loginBenefitDesigns": {
+    "es": "Todos tus diseños a mano",
+    "en": "All your designs at hand",
+    "pt": "Todos os seus modelos à mão",
+    "de": "Alle deine Designs griffbereit",
+    "fr": "Tous tes modèles à portée de main"
+  },
+  "site.loginBenefitProviders": {
+    "es": "Encuentra proveedores",
+    "en": "Find vendors",
+    "pt": "Encontre fornecedores",
+    "de": "Finde Anbieter",
+    "fr": "Trouve des prestataires"
+  },
+  "site.registerQuote": {
+    "es": "Una celebración más cerca de ser real.",
+    "en": "One celebration closer to happening.",
+    "pt": "Uma celebração mais perto de acontecer.",
+    "de": "Eine Feier, die jetzt Wirklichkeit wird.",
+    "fr": "Une fête de plus en passe de devenir réelle."
+  },
+  "site.registerBenefitUnique": {
+    "es": "Invitaciones únicas y personalizadas",
+    "en": "One-of-a-kind, personal invitations",
+    "pt": "Convites únicos e personalizados",
+    "de": "Einzigartige, persönliche Einladungen",
+    "fr": "Des invitations uniques et personnalisées"
+  },
+  "site.registerBenefitGuests": {
+    "es": "Gestión de invitados y confirmaciones",
+    "en": "Guest and reply management",
+    "pt": "Gestão de convidados e confirmações",
+    "de": "Gäste und Zusagen im Blick",
+    "fr": "Gestion des invités et des réponses"
+  },
+  "site.registerBenefitDesigns": {
+    "es": "Diseños para cada ocasión",
+    "en": "Designs for every occasion",
+    "pt": "Modelos para cada ocasião",
+    "de": "Designs für jeden Anlass",
+    "fr": "Des modèles pour chaque occasion"
+  },
+  "site.recoverQuote": {
+    "es": "A veces solo hace falta un nuevo comienzo.",
+    "en": "Sometimes all it takes is a fresh start.",
+    "pt": "Às vezes só falta um novo começo.",
+    "de": "Manchmal braucht es nur einen Neuanfang.",
+    "fr": "Parfois, il suffit d’un nouveau départ."
+  },
+  "site.recoverHelpTitle": {
+    "es": "¿No recibes el correo?",
+    "en": "Not getting the email?",
+    "pt": "Não recebeu o e-mail?",
+    "de": "Keine E-Mail bekommen?",
+    "fr": "Tu ne reçois pas l’e-mail ?"
+  },
+  "site.recoverHelpSpam": {
+    "es": "Revisa tu carpeta de spam",
+    "en": "Check your spam folder",
+    "pt": "Confira a pasta de spam",
+    "de": "Sieh in deinem Spam-Ordner nach",
+    "fr": "Vérifie ton dossier de spam"
+  },
+  "site.recoverHelpEmail": {
+    "es": "Asegúrate de escribir bien tu correo",
+    "en": "Make sure you typed your email correctly",
+    "pt": "Confira se você digitou o e-mail certo",
+    "de": "Prüfe, ob du deine E-Mail richtig eingegeben hast",
+    "fr": "Assure-toi d’avoir bien saisi ton e-mail"
+  },
+  "site.recoverHelpLink": {
+    "es": "El enlace es de un solo uso y caduca pronto",
+    "en": "The link works once and expires soon",
+    "pt": "O link é de uso único e expira em breve",
+    "de": "Der Link gilt nur einmal und läuft bald ab",
+    "fr": "Le lien ne sert qu’une fois et expire vite"
+  }
+}

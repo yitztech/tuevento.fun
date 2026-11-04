@@ -1,0 +1,163 @@
+{
+  "T02": {
+    "parche": "T02.patch",
+    "nuevos": [
+      "packages/app/src/site.css"
+    ]
+  },
+  "T03": {
+    "parche": "T03.patch",
+    "nuevos": [
+      "packages/app/src/ui/accordion.tsx",
+      "apps/web/public/site/branding/logo-mark.svg",
+      "apps/web/public/site/decorations/floral-corner.svg",
+      "apps/web/public/site/decorations/leaf-branch.svg",
+      "apps/web/public/site/decorations/balloons.svg",
+      "apps/web/public/site/backgrounds/cta-band.svg"
+    ]
+  },
+  "T04": {
+    "nuevos": [
+      "packages/app/src/ui/site/section-heading.tsx",
+      "packages/app/src/ui/site/decorative-background.tsx",
+      "packages/app/src/ui/site/rings-icon.tsx",
+      "packages/app/src/ui/site/photos.ts",
+      "packages/app/src/ui/site/site-photo.tsx",
+      "packages/app/src/ui/site/phone-frame.tsx",
+      "packages/app/src/ui/site/theme-card.tsx",
+      "packages/app/src/ui/site/phone-invitation.tsx"
+    ],
+    "claves": "T04.json"
+  },
+  "T05": {
+    "nuevos": [
+      "packages/app/src/ui/site/site-layout.tsx"
+    ]
+  },
+  "T06": {
+    "nuevos": [
+      "packages/app/src/ui/site/home-shared.ts",
+      "packages/app/src/ui/site/home-hero.tsx",
+      "packages/app/src/ui/site/home-categories.tsx"
+    ],
+    "claves": "T06.json"
+  },
+  "T07": {
+    "nuevos": [
+      "packages/app/src/ui/site/home-designs.tsx",
+      "packages/app/src/ui/site/home-steps.tsx"
+    ],
+    "claves": "T07.json"
+  },
+  "T08": {
+    "nuevos": [
+      "packages/app/src/ui/site/rsvp-card.tsx",
+      "packages/app/src/ui/site/home-family.tsx",
+      "packages/app/src/ui/site/home-providers.tsx"
+    ],
+    "claves": "T08.json"
+  },
+  "T09": {
+    "nuevos": [
+      "packages/app/src/ui/site/home-faq.tsx",
+      "packages/app/src/ui/site/home-newsletter.tsx"
+    ],
+    "claves": "T09.json"
+  },
+  "T10": {
+    "parche": "T10.patch",
+    "nuevos": [
+      "tests/e2e/features/sitio.feature",
+      "tests/e2e/steps/sitio.js"
+    ],
+    "reemplazar": [
+      "packages/app/src/landing.tsx"
+    ],
+    "borrar": [
+      "packages/app/src/landing.css"
+    ],
+    "podar": [
+      "landing",
+      "common"
+    ]
+  },
+  "T11": {
+    "parche": "T11.patch",
+    "nuevos": [
+      "packages/app/src/ui/site/auth-shell.tsx",
+      "tests/e2e/features/sitio-acceso.feature"
+    ],
+    "podar": [
+      "account",
+      "common",
+      "landing"
+    ],
+    "claves": "T11.json"
+  },
+  "T12": {
+    "parche": "T12.patch",
+    "nuevos": [
+      "tests/e2e/features/sitio-paginas.feature"
+    ]
+  },
+  "T13": {
+    "parche": "T13.patch"
+  },
+  "T14": {
+    "parche": "T14.patch",
+    "claves": "T14.json"
+  },
+  "T15": {
+    "css": [
+      "auth-layout",
+      "auth-story",
+      "auth-story-footer",
+      "auth-heart",
+      "auth-form-wrap",
+      "auth-language",
+      "provider-page-top",
+      "landing-legal-links"
+    ]
+  },
+  "T16": {
+    "parche": "T16.patch",
+    "borrar": [
+      "packages/app/.impeccable/surfaces/landing-page.md"
+    ]
+  },
+  "P02": {
+    "nuevos": [
+      "apps/api/migrations/030_payment_states.sql",
+      "apps/api/migrations/031_payment_states_validate.sql"
+    ],
+    "parche": "P02.patch"
+  },
+  "P03": {
+    "nuevos": [
+      "apps/api/migrations/032_coupons.sql"
+    ],
+    "parche": "P03.patch",
+    "claves": "P03.json"
+  },
+  "P04": {
+    "nuevos": [
+      "apps/admin/src/coupons.mjs",
+      "apps/admin/src/coupons.test.mjs"
+    ],
+    "parche": "P04.patch"
+  },
+  "P05": {
+    "parche": "P05.patch",
+    "claves": "P05.json"
+  },
+  "P06": {
+    "nuevos": [
+      "packages/app/src/coupon.tsx"
+    ],
+    "parche": "P06.patch",
+    "claves": "P06.json"
+  },
+  "P07": {
+    "parche": "P07.patch"
+  }
+}
