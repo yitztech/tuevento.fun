@@ -318,6 +318,11 @@ try {
     assert.equal((await a.call("/coupons/check", "POST", { code: propio.code })).code, propio.code);
     // El importe no se elige desde el cuerpo
     assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0, coupon: propio.code, amountCents: 1 } })).status, 422);
+    // Las cuentas de demostración, que se crean sin límite, no sirven para probar códigos
+    const demo = client();
+    await demo.call("/auth/register", "POST", account(P, "cupon-demo"), 201);
+    await demo.call("/auth/demo", "POST", {}, 201);
+    assert.equal((await demo.raw("/coupons/check", { method: "POST", body: { code: propio.code } })).status, 409);
     // Quien prueba códigos al azar recibe 429 con Retry-After
     const d = client();
     await d.call("/auth/register", "POST", account(P, "cupon-d"), 201);

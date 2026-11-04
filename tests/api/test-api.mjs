@@ -4,7 +4,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import http from "node:http";
 import https from "node:https";
-import { client as clientWithRaw, createCoupon } from "./api.mjs";
+import { client as clientWithRaw, createCoupon, setCouponActive } from "./api.mjs";
 const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 // Dominio inglés de desarrollo (mismo valor que SITE_URL_EN del compose).
 const englishHost = new URL(
@@ -809,6 +809,52 @@ try {
     const i = await organizador("cupon-i");
     const carrera = await Promise.all([pagar(h.owner, h.evento.id, 0, ultimo.code), pagar(i.owner, i.evento.id, 0, ultimo.code)]);
     assert.deepEqual(carrera.map((r) => r.status).sort(), [200, 422]);
+
+    // Un pago nuevo cierra el anterior del evento, con o sin cupón: no se cobra dos veces
+    const k = await organizador("cupon-k");
+    const completo = await k.owner.call(`/events/${k.evento.id}/checkout`, "POST", { tier: 0 });
+    const regalo = await createCoupon({ percentOff: 100 });
+    assert.deepEqual(await k.owner.call(`/events/${k.evento.id}/checkout`, "POST", { tier: 3, coupon: regalo.code }), { url: null, paid: true });
+    assert.equal((await sesion(completo.url)).status, "expired");
+    const l = await organizador("cupon-l");
+    const rebajado = await l.owner.call(`/events/${l.evento.id}/checkout`, "POST", { tier: 0, coupon: (await createCoupon({ percentOff: 10 })).code });
+    const sinCupon = await l.owner.call(`/events/${l.evento.id}/checkout`, "POST", { tier: 0 });
+    assert.equal((await sesion(rebajado.url)).status, "expired");
+    assert.equal((await sesion(sinCupon.url)).status, "open");
+
+    // Con una sesión ya pagada sin webhook tampoco se abre otra sin cupón
+    await accion(sinCupon.url, "hold");
+    assert.equal((await pagar(l.owner, l.evento.id, 0)).status, 409);
+
+    // Un cupón que ya no vale no cierra la sesión abierta con él
+    const retirado = await createCoupon({ percentOff: 10 });
+    const m = await organizador("cupon-m");
+    const vigente = await m.owner.call(`/events/${m.evento.id}/checkout`, "POST", { tier: 0, coupon: retirado.code });
+    await setCouponActive(retirado.id, false);
+    assert.equal((await pagar(m.owner, m.evento.id, 0, retirado.code)).status, 422);
+    assert.equal((await sesion(vigente.url)).status, "open");
+
+    // Si Stripe falla al cerrar la sesión anterior, es un 503 y no un pago en curso
+    const n = await organizador("cupon-n");
+    const caida = await n.owner.call(`/events/${n.evento.id}/checkout`, "POST", { tier: 0 });
+    await accion(caida.url, "down");
+    assert.equal((await pagar(n.owner, n.evento.id, 0)).status, 503);
+
+    // Una sesión que Stripe ya no conoce no bloquea el evento
+    const o = await organizador("cupon-o");
+    const perdida = await o.owner.call(`/events/${o.evento.id}/checkout`, "POST", { tier: 0 });
+    await accion(perdida.url, "forget");
+    assert.equal((await pagar(o.owner, o.evento.id, 0)).status, 200);
+
+    // Dos pagos cruzados: al que sustituyen mientras Stripe abre su sesión no recibe enlace
+    const p = await organizador("cupon-p");
+    const lento = await p.owner.call("/events", "POST", eventPayload({ title: "QA · [lento]" }), 201);
+    const adelantado = pagar(p.owner, lento.id, 0);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const cruzados = await Promise.all([adelantado, pagar(p.owner, lento.id, 0)]);
+    assert.deepEqual(cruzados.map((r) => r.status), [409, 200]);
+    await accion(cruzados[1].data.url, "pay");
+    assert.equal((await p.owner.call(`/events/${lento.id}`)).paidTier, 0);
 
     // Un cupón caducado deja de valer
     const breve = await createCoupon({ percentOff: 10, expiresAt: new Date(Date.now() + 1000).toISOString() });

@@ -5,7 +5,9 @@
 //   GET  /pay/:id                página con «Pagar» y «Cancelar»
 //   POST /pay/:id                action=pay: webhook checkout.session.completed y vuelta a success_url;
 //                                action=cancel: vuelta a cancel_url; action=expire: la sesión caduca;
-//                                action=fail: un pago diferido rechazado; action=hold: pagado, sin webhook aún
+//                                action=fail: un pago diferido rechazado; action=hold: pagado, sin webhook aún;
+//                                action=forget: Stripe ya no la conoce (404); action=down: su API responde 500
+//   Un producto con «[lento]» en el nombre tarda en abrir su sesión: para probar peticiones cruzadas
 //   GET  /v1/checkout/sessions/:id         la sesión, con lo que recibió
 //   POST /v1/checkout/sessions/:id/expire  caduca una sesión abierta (si no, 400, como Stripe)
 import { createHmac, randomBytes } from "node:crypto";
@@ -68,6 +70,8 @@ createServer(async (req, res) => {
     const left = Number(params.get("expires_at")) - Date.now() / 1000;
     if (!STRIPE_LOCALES.has(params.get("locale"))) return json(400, { error: { message: "Invalid locale" } });
     if (!(left >= 30 * 60 && left <= 24 * 3600)) return json(400, { error: { message: "Invalid expires_at" } });
+    if (params.get("line_items[0][price_data][product_data][name]")?.includes("[lento]"))
+      await new Promise((resolve) => setTimeout(resolve, 800));
     const id = `cs_test_${randomBytes(16).toString("hex")}`;
     const session = {
       id,
@@ -85,6 +89,7 @@ createServer(async (req, res) => {
     if (req.headers.authorization !== `Bearer ${SECRET_KEY}`) return json(401, { error: { message: "Invalid API key" } });
     const found = sessions.get(api[1]);
     if (!found) return json(404, { error: { message: "No such session" } });
+    if (found.down) return json(500, { error: { message: "Internal error" } });
     const view = () => ({ ...found.view, status: found.status, locale: found.params.get("locale"), expires_at: Number(found.params.get("expires_at")), stripe_version: found.version });
     if (req.method === "GET" && !api[2]) return json(200, view());
     if (req.method === "POST" && api[2]) {
@@ -113,6 +118,8 @@ createServer(async (req, res) => {
       await sendWebhook(session, `checkout.session.${action === "fail" ? "async_payment_failed" : "expired"}`, "unpaid");
     }
     if (action === "hold") session.status = "complete";
+    if (action === "forget") sessions.delete(session.id);
+    if (action === "down") session.down = true;
     if (action === "pay") {
       session.status = "complete";
       await sendWebhook(session);

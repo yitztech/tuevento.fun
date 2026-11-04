@@ -60,6 +60,27 @@ Característica: Pagar un evento según su número de invitados
     Y veo el aviso "Pagado: hasta 50 invitados, con avisos por correo."
 
   @solo-web
+  Escenario: Si falla la recarga tras un cupón del 100 %, el pago se ve confirmado
+    Dado que tengo un evento creado sin escribir su dirección
+    Y que existe un cupón del 100 %
+    Cuando abro la página de pago de mi evento
+    Y aplico el cupón
+    Y falla la siguiente carga de mis eventos
+    Y pulso el primer botón "Activar gratis"
+    Entonces veo el aviso "Pago recibido. Tus invitados ya reciben los avisos por correo."
+
+  @solo-web
+  Escenario: Un cupón que deja de valer antes de pagar devuelve el precio completo
+    Dado que tengo un evento creado sin escribir su dirección
+    Y que existe un cupón del 50 %
+    Cuando abro la página de pago de mi evento
+    Y aplico el cupón
+    Y el administrador desactiva el cupón
+    Y pulso "Pagar $2.50"
+    Entonces veo el aviso "Ese cupón no es válido o ya no está disponible."
+    Y veo el botón "Pagar $5.00"
+
+  @solo-web
   Escenario: Quitar el cupón devuelve el precio completo
     Dado que tengo un evento creado sin escribir su dirección
     Y que existe un cupón del 50 %

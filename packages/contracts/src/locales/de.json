@@ -322,7 +322,7 @@
     "syncCursorExpired": "Deine Offline-Kopie ist zu alt: Sie muss noch einmal vollständig geladen werden.",
     "versionConflict": "Das wurde auf einem anderen Gerät geändert, während du es bearbeitet hast. Prüfe die aktuelle Version, bevor du speicherst.",
     "couponInvalid": "Dieser Gutschein ist ungültig oder nicht mehr verfügbar.",
-    "paymentInProgress": "Mit diesem Gutschein läuft bereits eine Zahlung. Warte, bis sie abgeschlossen ist, und versuche es noch einmal."
+    "paymentInProgress": "Es läuft bereits eine Zahlung. Warte, bis sie abgeschlossen ist, und versuche es noch einmal."
   },
   "events": {
     "actions": "Aktionen",
