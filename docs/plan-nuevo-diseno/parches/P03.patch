@@ -1,0 +1,212 @@
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index 0fcb533..7b6c74a 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -189,6 +189,7 @@ export const accountLimits = {
+   postalCode: 10,
+   /** Texto de la búsqueda de proveedores (sin columna: no se guarda). */
+   search: 100,
++  couponCode: 32,
+ } as const;
+ /** Punto en el mapa (WGS 84). */
+ export const geoPointSchema = z.strictObject({
+@@ -342,9 +343,19 @@ export const unsubscribeSchema = z.strictObject({
+   h: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
+   s: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
+ });
+-/** Pago de un evento: el tramo de invitados que se compra (posición en `guestTiers`). */
++/** Código de un cupón: se guarda en mayúsculas, con letras sin tilde, números y guiones. */
++const couponCode = z
++  .string()
++  .trim()
++  .toUpperCase()
++  .max(accountLimits.couponCode, "validation.maximum32Characters")
++  .regex(/^[A-Z0-9-]{3,}$/, "errors.couponInvalid");
++/** Comprobar un cupón antes de pagar. */
++export const couponCheckSchema = z.strictObject({ code: couponCode });
++/** Pago de un evento: el tramo de invitados que se compra (posición en `guestTiers`) y, si hay, el cupón. */
+ export const checkoutSchema = z.strictObject({
+   tier: z.number().int().min(0, "errors.paymentTierInvalid").max(3, "errors.paymentTierInvalid"),
++  coupon: couponCode.optional(),
+ });
+ /** Minutos de validez del enlace para restablecer la contraseña. */
+ export const PASSWORD_RESET_MINUTES = 60;
+diff --git a/packages/contracts/src/limits.test.ts b/packages/contracts/src/limits.test.ts
+index 12b2c2a..03ddac5 100644
+--- a/packages/contracts/src/limits.test.ts
++++ b/packages/contracts/src/limits.test.ts
+@@ -40,6 +40,7 @@ const columns: Record<string, [string, string][]> = {
+   city: [["provider_profiles", "city"]],
+   region: [["provider_profiles", "region"]],
+   postalCode: [["provider_profiles", "postal_code"]],
++  couponCode: [["coupons", "code"]],
+ };
+ 
+ test("accountLimits coincide con las restricciones CHECK de la base de datos", () => {
+diff --git a/packages/contracts/src/pricing.test.ts b/packages/contracts/src/pricing.test.ts
+index f9d9caf..ed544f5 100644
+--- a/packages/contracts/src/pricing.test.ts
++++ b/packages/contracts/src/pricing.test.ts
+@@ -1,6 +1,6 @@
+ import test from "node:test";
+ import assert from "node:assert/strict";
+-import { canAddGuests, guestTiers, tierForGuests, upgradeCents } from "./pricing";
++import { canAddGuests, discountedCents, guestTiers, MIN_CHARGE_CENTS, tierForGuests, upgradeCents } from "./pricing";
+ 
+ const usd = (guests: number) => tierForGuests(guests).usd;
+ 
+@@ -60,3 +60,24 @@ test("Pasar a un tramo mayor cobra solo la diferencia, en centavos", () => {
+   assert.equal(upgradeCents(2, 3), 1000);
+   assert.equal(upgradeCents(2, 1), 0, "un tramo menor que el pagado no cuesta nada");
+ });
++
++test("Un cupón descuenta un porcentaje o una cantidad", () => {
++  assert.equal(discountedCents(1000, { percentOff: 25, amountOffCents: null }), 750);
++  assert.equal(discountedCents(1000, { percentOff: null, amountOffCents: 300 }), 700);
++  // Redondea al centavo más cercano
++  assert.equal(discountedCents(500, { percentOff: 33, amountOffCents: null }), 335);
++});
++
++test("Un cupón que cubre todo deja el pago en 0", () => {
++  assert.equal(discountedCents(500, { percentOff: 100, amountOffCents: null }), 0);
++  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 500 }), 0);
++  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 9000 }), 0);
++});
++
++test("Un cupón no deja un cobro por debajo del mínimo de la tarjeta", () => {
++  assert.equal(discountedCents(500, { percentOff: 99, amountOffCents: null }), MIN_CHARGE_CENTS);
++  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 499 }), MIN_CHARGE_CENTS);
++  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 400 }), MIN_CHARGE_CENTS);
++  // Nunca cobra más que sin cupón
++  assert.equal(discountedCents(50, { percentOff: 10, amountOffCents: null }), 50);
++});
+diff --git a/packages/contracts/src/pricing.ts b/packages/contracts/src/pricing.ts
+index e18ba57..9dd3497 100644
+--- a/packages/contracts/src/pricing.ts
++++ b/packages/contracts/src/pricing.ts
+@@ -46,3 +46,22 @@ export function upgradeCents(paid: TierIndex | null, tier: TierIndex): number {
+   const already = paid === null ? 0 : guestTiers[paid].usd;
+   return Math.max(0, (guestTiers[tier].usd - already) * 100);
+ }
++
++/**
++ * Menor cobro con tarjeta: Stripe rechaza importes por debajo de su mínimo, que depende de la moneda
++ * en la que liquida la cuenta (0.50 USD o 10 MXN). Un dólar cabe en cualquiera de ellas.
++ */
++export const MIN_CHARGE_CENTS = 100;
++
++/** Lo que descuenta un cupón: un porcentaje o una cantidad en centavos, nunca los dos. */
++export type CouponDiscount = { percentOff: number | null; amountOffCents: number | null };
++
++/**
++ * Centavos que se cobran por `cents` con un cupón. 0 significa gratis: ese pago no pasa por Stripe.
++ * Un resultado por debajo del mínimo se sube al mínimo, sin pasar nunca del precio sin cupón.
++ */
++export function discountedCents(cents: number, { percentOff, amountOffCents }: CouponDiscount): number {
++  const off = percentOff !== null ? Math.round((cents * percentOff) / 100) : (amountOffCents ?? 0);
++  const final = Math.max(0, cents - off);
++  return final > 0 && final < MIN_CHARGE_CENTS ? Math.min(cents, MIN_CHARGE_CENTS) : final;
++}
+diff --git a/services/postgres/sql/admin-role.sql b/services/postgres/sql/admin-role.sql
+index db72745..e16239a 100644
+--- a/services/postgres/sql/admin-role.sql
++++ b/services/postgres/sql/admin-role.sql
+@@ -1,4 +1,4 @@
+--- Rol de solo lectura del panel de administración (servicio `admin`).
++-- Rol del panel de administración (servicio `admin`): lee y no escribe ninguna tabla.
+ -- Solo ve las columnas que muestra el panel: nunca password_hash, token_hash ni teléfonos.
+ -- Uso: psql -v ON_ERROR_STOP=1 -v admin_pw='…' -v db=tueventofun -f admin-role.sql (como el dueño, tuevento).
+ -- Es seguro repetirlo: crea el rol si falta (si no, solo cambia su contraseña) y deja sus permisos
+@@ -24,3 +24,9 @@ GRANT SELECT ON activity TO admin_ro;
+ GRANT SELECT ON events TO admin_ro;
+ GRANT SELECT (id, event_id) ON invitations TO admin_ro;
+ GRANT SELECT (invitation_id, status) ON members TO admin_ro;
++GRANT SELECT ON coupons TO admin_ro;
++GRANT SELECT (coupon_id, payment_id) ON coupon_redemptions TO admin_ro;
++GRANT SELECT (id, status) ON event_payments TO admin_ro;
++-- Lo único que escribe el panel: dos funciones que además dejan registro (migración 032)
++GRANT EXECUTE ON FUNCTION admin_create_coupon(text, bigint, bigint, timestamptz, bigint, text) TO admin_ro;
++GRANT EXECUTE ON FUNCTION admin_set_coupon_active(uuid, boolean, text) TO admin_ro;
+diff --git a/tests/db/specs/admin-role.test.js b/tests/db/specs/admin-role.test.js
+index fa0d756..30b9922 100644
+--- a/tests/db/specs/admin-role.test.js
++++ b/tests/db/specs/admin-role.test.js
+@@ -73,6 +73,34 @@ test("el panel no escribe nada", async () => {
+   await denegado("CREATE TABLE robado (x int)");
+ });
+ 
++test("los cupones se leen y solo se escriben con sus funciones, que dejan registro", async () => {
++  await lector.query("SELECT id, code, percent_off, amount_off_cents, expires_at, max_redemptions, active, created_at FROM coupons");
++  await lector.query("SELECT coupon_id, payment_id FROM coupon_redemptions");
++  await lector.query("SELECT id, status FROM event_payments");
++  await denegado("INSERT INTO coupons(code, percent_off) VALUES ('ROBADO', 100)");
++  await denegado("UPDATE coupons SET active = true");
++  await denegado("DELETE FROM coupons");
++  await denegado("INSERT INTO coupon_redemptions(payment_id, coupon_id, discount_cents) VALUES (gen_random_uuid(), gen_random_uuid(), 0)");
++  await denegado("UPDATE event_payments SET status = 'paid'");
++  await denegado("SELECT user_id FROM event_payments");
++  await denegado("SELECT * FROM admin_audit_log");
++  await denegado("INSERT INTO admin_audit_log(admin, action, target) VALUES ('x', 'x', 'x')");
++  const { rows: [{ id }] } = await lector.query("SELECT admin_create_coupon('PANEL-1', 10, NULL, NULL, NULL, 'admin-qa') AS id");
++  assert.equal((await lector.query("SELECT admin_set_coupon_active($1, false, 'admin-qa') AS ok", [id])).rows[0].ok, true);
++  assert.equal((await lector.query("SELECT active FROM coupons WHERE id=$1", [id])).rows[0].active, false);
++  assert.equal((await lector.query("SELECT admin_set_coupon_active(gen_random_uuid(), false, 'admin-qa') AS ok")).rows[0].ok, false);
++  const dueno = admin(base.nombre);
++  try {
++    const { rows } = await dueno.query("SELECT admin, action, target FROM admin_audit_log ORDER BY id");
++    assert.deepEqual(rows, [
++      { admin: "admin-qa", action: "coupon.create", target: "PANEL-1" },
++      { admin: "admin-qa", action: "coupon.deactivate", target: "PANEL-1" },
++    ]);
++  } finally {
++    await dueno.end();
++  }
++});
++
+ test("repetir el script con el rol ya creado y con permisos no falla: cambia la contraseña y deja los mismos permisos", async () => {
+   const otra = "otra-clave-de-prueba-admin";
+   const dueno = admin(base.nombre);
+diff --git a/tests/db/specs/db.test.js b/tests/db/specs/db.test.js
+index 1c93280..3570081 100644
+--- a/tests/db/specs/db.test.js
++++ b/tests/db/specs/db.test.js
+@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
+   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
+   assert.deepEqual(aplicadas, migraciones);
+   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
+-  assert.deepEqual(tablas, ["activity", "app_releases", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
++  assert.deepEqual(tablas, ["activity", "admin_audit_log", "app_releases", "coupon_redemptions", "coupons", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
+ });
+ 
+ test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
+@@ -290,6 +290,30 @@ test("Pagos: tramo, importe, moneda y estado acotados; borrar el evento o la cue
+   assert.equal((await uno("SELECT user_id FROM event_payments WHERE id=$1", [p.id])).user_id, null);
+ });
+ 
++test("Cupones: código y descuento acotados; un uso por cuenta; no se borran; la cuenta borrada conserva el uso (032)", async () => {
++  const cupon = (code, percent, amount, max = null) =>
++    db.query("INSERT INTO coupons(code,percent_off,amount_off_cents,max_redemptions) VALUES($1,$2,$3,$4) RETURNING id", [code, percent, amount, max]);
++  for (const [code, percent, amount, max] of [["ab", 10, null, null], ["minusculas", 10, null, null], ["CON ESPACIO", 10, null, null], ["A".repeat(33), 10, null, null], ["SIN-DESCUENTO", null, null, null], ["LOS-DOS", 10, 100, null], ["CERO", 0, null, null], ["MUCHO", 101, null, null], ["NEGATIVO", null, -1, null], ["SIN-USOS", 10, null, 0]])
++    assert.equal(await codigoError(() => cupon(code, percent, amount, max)), CHECK_VIOLATION, code);
++  const codigo = `DB-${Date.now()}`;
++  const { rows: [c] } = await cupon(codigo, 10, null);
++  assert.equal(await codigoError(() => cupon(codigo, 20, null)), UNIQUE_VIOLATION, "código único");
++  const dueno = await usuario(db);
++  const pago = async () => (await db.query("INSERT INTO event_payments(id,user_id,tier,amount_cents,currency) VALUES(gen_random_uuid(),$1,0,450,'usd') RETURNING id", [dueno])).rows[0].id;
++  const usar = (payment) => db.query("INSERT INTO coupon_redemptions(payment_id,coupon_id,user_id,discount_cents) VALUES($1,$2,$3,50)", [payment, c.id, dueno]);
++  const primero = await pago();
++  await usar(primero);
++  assert.equal(await codigoError(() => usar(primero)), UNIQUE_VIOLATION, "un pago, un cupón");
++  const segundo = await pago();
++  assert.equal(await codigoError(() => usar(segundo)), UNIQUE_VIOLATION, "un uso por cuenta");
++  assert.equal(await codigoError(() => db.query("INSERT INTO coupon_redemptions(payment_id,coupon_id,user_id,discount_cents) VALUES($1,$2,NULL,-1)", [segundo, c.id])), CHECK_VIOLATION, "descuento ≥ 0");
++  assert.equal(await codigoError(() => db.query("DELETE FROM coupons WHERE id=$1", [c.id])), FK_VIOLATION, "un cupón usado no se borra");
++  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
++  assert.equal((await uno("SELECT user_id FROM coupon_redemptions WHERE payment_id=$1", [primero])).user_id, null);
++  await db.query("DELETE FROM event_payments WHERE id=$1", [primero]);
++  assert.equal((await uno("SELECT count(*)::int n FROM coupon_redemptions WHERE payment_id=$1", [primero])).n, 0);
++});
++
+ test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; la caché del mapa solo admite sus tipos", async () => {
+   const dueno = await usuario(db);
+   const e = await uno("INSERT INTO events(id,user_id,title,slug,date,time_zone,location,theme,latitude,longitude) VALUES(gen_random_uuid(),$1,'E','e-'||md5(random()::text),now(),'UTC','L','gold',18.921831,-99.234567) RETURNING id, latitude, longitude", [dueno]);

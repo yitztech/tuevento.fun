@@ -1,0 +1,291 @@
+diff --git a/packages/app/src/pricing.tsx b/packages/app/src/pricing.tsx
+index 57b3c76..e74535a 100644
+--- a/packages/app/src/pricing.tsx
++++ b/packages/app/src/pricing.tsx
+@@ -1,16 +1,19 @@
+ import { useEffect, useState } from "react";
+-import { Link, useSearchParams } from "react-router-dom";
++import { Link, useNavigate, useSearchParams } from "react-router-dom";
+ import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+ import {
++  discountedCents,
+   guestTiers,
+   localizedPath,
+   upgradeCents,
++  type AppliedCoupon,
+   type Event,
+   type GuestTier,
+   type Locale,
+   type TierIndex,
+ } from "@tuevento/contracts";
+ import { Logo, Container, ErrorBox } from "./components";
++import { CouponField } from "./coupon";
+ import { errorText, useApp } from "./context";
+ import { LanguageSwitcher, tr, useLocale } from "./i18n";
+ import { Button } from "./ui/button";
+@@ -89,14 +92,24 @@ export const paymentPath = (eventId: string) => `/pago?evento=${eventId}`;
+ 
+ /** Tramos con su botón de pago: solo los mayores que el pagado que cubren a los invitados. */
+ function CheckoutTiers({ event }: { event: Event }) {
+-  const { api, runtime } = useApp(),
++  const { api, reload, runtime } = useApp(),
++    navigate = useNavigate(),
+     [busy, setBusy] = useState<number | null>(null),
+-    [error, setError] = useState("");
++    [error, setError] = useState(""),
++    [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+   const pay = async (tier: TierIndex) => {
+     setBusy(tier);
+     setError("");
+     try {
+-      const { url } = await api.checkout(event.id, tier);
++      const { url, paid } = await api.checkout(event.id, tier, coupon?.code);
++      // Un cupón que lo cubre todo no pasa por Stripe: el pago ya está confirmado
++      if (paid || !url) {
++        await reload();
++        setCoupon(null);
++        setBusy(null);
++        navigate(`${paymentPath(event.id)}&pagado=1`);
++        return;
++      }
+       // En la web, la página de Stripe sustituye a esta; en la app se abre en el navegador
+       if (runtime.platform && runtime.platform !== "web") runtime.openExternal(url);
+       else window.location.assign(url);
+@@ -105,10 +118,17 @@ function CheckoutTiers({ event }: { event: Event }) {
+       setBusy(null);
+     }
+   };
++  /** Texto del botón de un tramo, con el descuento del cupón si hay uno aplicado. */
++  const payLabel = (position: TierIndex) => {
++    const full = upgradeCents(event.paidTier, position);
++    const cents = coupon ? discountedCents(full, coupon) : full;
++    return cents === 0 ? tr("pricing.payFree") : tr("pricing.payTier", { price: price(cents / 100) });
++  };
+   if (event.paidTier === guestTiers.length - 1) return <p className="legal-intro">{tr("pricing.topTier")}</p>;
+   return (
+     <>
+       {event.paidTier !== null && <p>{tr("pricing.upgradeNote")}</p>}
++      <CouponField coupon={coupon} onChange={setCoupon} />
+       {error && <ErrorBox message={error} />}
+       <ul className="pricing-tiers" aria-label={tr("pricing.tiersLabel")}>
+         {guestTiers.map((tier, index) => {
+@@ -124,9 +144,7 @@ function CheckoutTiers({ event }: { event: Event }) {
+                 <small>{tr("pricing.tierTooSmall")}</small>
+               ) : (
+                 <Button disabled={busy !== null} onClick={() => void pay(position)}>
+-                  {busy === position
+-                    ? tr("pricing.goingToCheckout")
+-                    : tr("pricing.payTier", { price: price(upgradeCents(event.paidTier, position) / 100) })}
++                  {busy === position ? tr("pricing.goingToCheckout") : payLabel(position)}
+                 </Button>
+               )}
+             </li>
+diff --git a/packages/app/src/styles.css b/packages/app/src/styles.css
+index 4221ce2..ee9f22d 100644
+--- a/packages/app/src/styles.css
++++ b/packages/app/src/styles.css
+@@ -4465,6 +4465,30 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
+ .pricing-cta {
+   margin-top: 8px;
+ }
++.coupon-form {
++  display: grid;
++  gap: 8px;
++  margin: 24px 0 0;
++}
++.coupon-form-row {
++  display: flex;
++  gap: 8px;
++}
++.coupon-form small {
++  font-size: 12px;
++  color: #5b6478;
++}
++.coupon-applied {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  justify-content: space-between;
++  gap: 8px;
++  margin: 24px 0 0;
++}
++.coupon-applied .success-box {
++  margin: 0;
++}
+ .pricing-page h2 {
+   margin-top: 28px;
+ }
+diff --git a/packages/client/src/api.ts b/packages/client/src/api.ts
+index 610d74d..c248b5b 100644
+--- a/packages/client/src/api.ts
++++ b/packages/client/src/api.ts
+@@ -1,5 +1,6 @@
+ // Cliente HTTP de la API. Vive aparte de index.ts para que offline/ lo importe sin ciclos.
+ import type {
++  AppliedCoupon,
+   User,
+   Event,
+   EventInput,
+@@ -140,9 +141,12 @@ export class EventApi {
+       data,
+     );
+   deleteEvent = (id: string) => this.request(`/events/${id}`, "DELETE");
+-  /** Abre el pago del tramo de invitados `tier` de un evento: devuelve la URL de Stripe. */
+-  checkout = (eventId: string, tier: number) =>
+-    this.request<{ url: string }>(`/events/${eventId}/checkout`, "POST", { tier });
++  /** Abre el pago de un tramo: devuelve la URL de Stripe, o `paid` si un cupón lo cubre todo. */
++  checkout = (eventId: string, tier: number, coupon?: string) =>
++    this.request<{ url: string | null; paid: boolean }>(`/events/${eventId}/checkout`, "POST", { tier, coupon });
++  /** Comprueba un cupón antes de pagar y devuelve lo que descuenta. */
++  checkCoupon = (code: string) =>
++    this.request<AppliedCoupon>("/coupons/check", "POST", { code });
+   invitations = (id: string) =>
+     this.request<Invitation[]>(`/events/${id}/invitations`);
+   saveInvitation = (eventId: string, data: InvitationInput, id?: string) =>
+diff --git a/tests/e2e/features/pagos.feature b/tests/e2e/features/pagos.feature
+index 6942e46..32cd149 100644
+--- a/tests/e2e/features/pagos.feature
++++ b/tests/e2e/features/pagos.feature
+@@ -36,3 +36,64 @@ Característica: Pagar un evento según su número de invitados
+     Y veo el aviso "Incluido en tu pago"
+     Y veo el botón "Pagar $5.00"
+     Y veo el botón "Pagar $25.00"
++
++  @solo-web @smoke
++  Escenario: Un cupón baja el precio antes de pagar
++    Dado que tengo un evento creado sin escribir su dirección
++    Y que existe un cupón del 50 %
++    Cuando abro la página de pago de mi evento
++    Y aplico el cupón
++    Entonces veo que el cupón está aplicado
++    Y veo el botón "Pagar $2.50"
++    Cuando pulso "Pagar $2.50"
++    Y pago en la página de pago de prueba
++    Entonces veo el aviso "Pago recibido. Tus invitados ya reciben los avisos por correo."
++
++  @solo-web
++  Escenario: Un cupón del 100 % activa el evento sin pasar por la página de pago
++    Dado que tengo un evento creado sin escribir su dirección
++    Y que existe un cupón del 100 %
++    Cuando abro la página de pago de mi evento
++    Y aplico el cupón
++    Y pulso el primer botón "Activar gratis"
++    Entonces veo el aviso "Pago recibido. Tus invitados ya reciben los avisos por correo."
++    Y veo el aviso "Pagado: hasta 50 invitados, con avisos por correo."
++
++  @solo-web
++  Escenario: Quitar el cupón devuelve el precio completo
++    Dado que tengo un evento creado sin escribir su dirección
++    Y que existe un cupón del 50 %
++    Cuando abro la página de pago de mi evento
++    Y aplico el cupón
++    Y pulso "Quitar cupón"
++    Entonces veo el botón "Pagar $5.00"
++
++  @solo-web @validacion
++  Escenario: Un cupón que no existe muestra el error y no cambia el precio
++    Dado que tengo un evento creado sin escribir su dirección
++    Cuando abro la página de pago de mi evento
++    Y escribo el cupón "NO-EXISTE"
++    Y pulso "Aplicar"
++    Entonces veo el aviso "Ese cupón no es válido o ya no está disponible."
++    Y veo el botón "Pagar $5.00"
++
++  @solo-web @validacion
++  Escenario: El campo del cupón descarta lo que no es un código y dice por qué
++    Dado que tengo un evento creado sin escribir su dirección
++    Cuando abro la página de pago de mi evento
++    Y escribo el cupón "ab c-1!"
++    Entonces el cupón escrito es "ABC-1"
++    Y veo el aviso "Solo letras sin tilde, números y guiones."
++
++  @solo-web @i18n
++  Esquema del escenario: El campo del cupón está en el idioma de la página
++    Cuando abro la página de pago de un evento mío en "<idioma>"
++    Entonces veo el campo de cupón "<etiqueta>"
++
++    Ejemplos:
++      | idioma | etiqueta                 |
++      | es     | ¿Tienes un cupón?        |
++      | en     | Have a coupon?           |
++      | pt     | Tem um cupom?            |
++      | de     | Hast du einen Gutschein? |
++      | fr     | Tu as un code promo ?    |
+diff --git a/tests/e2e/steps/landing.js b/tests/e2e/steps/landing.js
+index 1dc76c6..0cd9369 100644
+--- a/tests/e2e/steps/landing.js
++++ b/tests/e2e/steps/landing.js
+@@ -7,7 +7,7 @@ const cabecera = { "x-tuevento-client": "1" };
+ const sitios = { es: baseURL, en: englishURL, pt: `${englishURL}/pt`, de: `${englishURL}/de`, fr: `${englishURL}/fr` };
+ 
+ /** Evento sin dirección escrita: la API la saca del título. */
+-const eventoNuevo = (titulo, date = fechaFutura) => ({
++export const eventoNuevo = (titulo, date = fechaFutura) => ({
+   title: titulo,
+   description: "",
+   date,
+diff --git a/tests/e2e/steps/pagos.js b/tests/e2e/steps/pagos.js
+index 7bdd5a0..fa87a51 100644
+--- a/tests/e2e/steps/pagos.js
++++ b/tests/e2e/steps/pagos.js
+@@ -1,5 +1,7 @@
+ import { expect } from "@playwright/test";
+-import { Given, When, Then } from "./fixtures.js";
++import { adminURL, baseURL, englishURL } from "../support/entorno.js";
++import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
++import { eventoNuevo } from "./landing.js";
+ 
+ const cabecera = { "X-TuEvento-Client": "1" };
+ 
+@@ -37,3 +39,51 @@ Given("que ya pagué el tramo de hasta {int} invitados", async ({ page, ctx }, i
+   const pagado = await page.request.post(url, { form: { action: "pay" }, maxRedirects: 0 });
+   expect(pagado.status()).toBe(303);
+ });
++
++// Los cupones los crea el administrador en su panel: aquí se usa la misma API
++Given("que existe un cupón del {int} %", async ({ page, ctx }, porcentaje) => {
++  const entrada = await page.request.post(`${adminURL}/api/login`, { data: { username: "admin-dev", password: "admin-dev-password" } });
++  expect(entrada.status()).toBe(200);
++  ctx.cupon = `QA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
++  const creado = await page.request.post(`${adminURL}/api/coupons`, { data: { code: ctx.cupon, percentOff: porcentaje } });
++  expect(creado.status()).toBe(201);
++});
++
++const campoCupon = (page) => page.getByRole("textbox", { name: /cup|coupon|gutschein|promo/i });
++
++When("escribo el cupón {string}", async ({ page }, codigo) => {
++  await campoCupon(page).pressSequentially(codigo);
++});
++
++When("aplico el cupón", async ({ page, ctx }) => {
++  await campoCupon(page).fill(ctx.cupon);
++  await page.getByRole("button", { name: "Aplicar", exact: true }).click();
++});
++
++Then("veo que el cupón está aplicado", async ({ page, ctx }) => {
++  await expect(page.getByRole("status")).toContainText(`Cupón ${ctx.cupon} aplicado.`);
++});
++
++Then("el cupón escrito es {string}", async ({ page }, valor) => {
++  await expect(campoCupon(page)).toHaveValue(valor);
++});
++
++When("pulso el primer botón {string}", async ({ page }, texto) => {
++  await page.getByRole("button", { name: texto, exact: true }).first().click();
++});
++
++// La sesión es de cada dominio: la cuenta se abre en el dominio del idioma
++When("abro la página de pago de un evento mío en {string}", async ({ page }, idioma) => {
++  const dominio = idioma === "es" ? baseURL : englishURL;
++  const raiz = ["pt", "de", "fr"].includes(idioma) ? `${dominio}/${idioma}` : dominio;
++  const registro = await page.request.post(`${dominio}/api/auth/register`, { headers: cabecera, data: nuevaCuenta() });
++  expect(registro.status()).toBe(201);
++  const evento = await page.request.post(`${dominio}/api/events`, { headers: cabecera, data: eventoNuevo(`Cena ${Date.now()}`) });
++  expect(evento.status()).toBe(201);
++  await page.goto(`${raiz}/pago?evento=${(await evento.json()).id}`);
++});
++
++Then("veo el campo de cupón {string}", async ({ page }, etiqueta) => {
++  // El francés lleva un espacio fino antes del signo de interrogación
++  await expect(page.getByLabel(etiqueta.replace(" ?", "\u202f?"), { exact: true })).toBeVisible();
++});

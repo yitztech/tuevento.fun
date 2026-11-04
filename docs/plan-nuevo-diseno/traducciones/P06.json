@@ -1,0 +1,51 @@
+{
+  "pricing.couponApplied": {
+    "es": "Cupón {{code}} aplicado.",
+    "en": "Coupon {{code}} applied.",
+    "pt": "Cupom {{code}} aplicado.",
+    "de": "Gutschein {{code}} eingelöst.",
+    "fr": "Code promo {{code}} appliqué."
+  },
+  "pricing.couponApply": {
+    "es": "Aplicar",
+    "en": "Apply",
+    "pt": "Aplicar",
+    "de": "Einlösen",
+    "fr": "Appliquer"
+  },
+  "pricing.couponChecking": {
+    "es": "Comprobando…",
+    "en": "Checking…",
+    "pt": "Verificando…",
+    "de": "Wird geprüft…",
+    "fr": "Vérification…"
+  },
+  "pricing.couponHint": {
+    "es": "Solo letras sin tilde, números y guiones.",
+    "en": "Only unaccented letters, numbers and hyphens.",
+    "pt": "Só letras sem acento, números e hifens.",
+    "de": "Nur Buchstaben ohne Akzent, Zahlen und Bindestriche.",
+    "fr": "Uniquement des lettres sans accent, des chiffres et des tirets."
+  },
+  "pricing.couponLabel": {
+    "es": "¿Tienes un cupón?",
+    "en": "Have a coupon?",
+    "pt": "Tem um cupom?",
+    "de": "Hast du einen Gutschein?",
+    "fr": "Tu as un code promo ?"
+  },
+  "pricing.couponRemove": {
+    "es": "Quitar cupón",
+    "en": "Remove coupon",
+    "pt": "Remover cupom",
+    "de": "Gutschein entfernen",
+    "fr": "Retirer le code promo"
+  },
+  "pricing.payFree": {
+    "es": "Activar gratis",
+    "en": "Activate for free",
+    "pt": "Ativar de graça",
+    "de": "Kostenlos aktivieren",
+    "fr": "Activer gratuitement"
+  }
+}

@@ -1,0 +1,84 @@
+diff --git a/packages/app/src/legal.tsx b/packages/app/src/legal.tsx
+index 22658aa..1369644 100644
+--- a/packages/app/src/legal.tsx
++++ b/packages/app/src/legal.tsx
+@@ -7,8 +7,9 @@ import {
+   type Locale,
+   type LocalizedPage,
+ } from "@tuevento/contracts";
+-import { Logo, Container } from "./components";
+-import { LanguageSwitcher, RichText, formatLocale, tr, useLocale } from "./i18n";
++import { Container } from "./components";
++import { RichText, formatLocale, tr, useLocale } from "./i18n";
++import { SiteLayout } from "./ui/site/site-layout";
+ import { legalTexts, type LegalContent } from "./legal-texts";
+ 
+ /**
+@@ -73,13 +74,10 @@ export function LegalPage({ page }: { page: LegalKind }) {
+     timeZone: "UTC",
+   }).format(new Date(`${LEGAL_UPDATED}T00:00:00Z`));
+   return (
++    <SiteLayout>
+     <div className="legal-page">
+       <Container width="prose">
+-        <header>
+-          <Logo />
+-          <LanguageSwitcher />
+-        </header>
+-        <main>
++        <div>
+           <Link to="/" className="text-link">
+             <ArrowLeft size={16} />
+             {tr("common.backHome")}
+@@ -100,9 +98,10 @@ export function LegalPage({ page }: { page: LegalKind }) {
+               {tr(other === "privacy" ? "legal.privacyPolicy" : "legal.termsOfUse")}
+             </Link>
+           </p>
+-        </main>
++        </div>
+       </Container>
+     </div>
++    </SiteLayout>
+   );
+ }
+ /** Enlaces a las páginas legales en el idioma del dominio, para pies y formularios. */
+diff --git a/packages/app/src/pricing.tsx b/packages/app/src/pricing.tsx
+index 57b3c76..33d5238 100644
+--- a/packages/app/src/pricing.tsx
++++ b/packages/app/src/pricing.tsx
+@@ -14,6 +14,7 @@ import { Logo, Container, ErrorBox } from "./components";
+ import { errorText, useApp } from "./context";
+ import { LanguageSwitcher, tr, useLocale } from "./i18n";
+ import { Button } from "./ui/button";
++import { SiteLayout } from "./ui/site/site-layout";
+ 
+ /** Ruta de la página de precios en un idioma (/precios, /pricing…). */
+ export const pricingPath = (locale: Locale) => localizedPath("pricing", locale);
+@@ -51,13 +52,10 @@ export function PricingPage() {
+     document.title = `${tr("pricing.title")} · TuEventoFun`;
+   }, [locale]);
+   return (
++    <SiteLayout>
+     <div className="legal-page pricing-page">
+       <Container width="prose">
+-        <header>
+-          <Logo />
+-          <LanguageSwitcher />
+-        </header>
+-        <main>
++        <div>
+           <Link to="/" className="text-link">
+             <ArrowLeft size={16} />
+             {tr("common.backHome")}
+@@ -69,9 +67,10 @@ export function PricingPage() {
+             {tr("pricing.buy")}
+             <ArrowRight size={18} />
+           </Link></Button>
+-        </main>
++        </div>
+       </Container>
+     </div>
++    </SiteLayout>
+   );
+ }
+ 
