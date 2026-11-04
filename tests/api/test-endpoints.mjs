@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
-import { base, client, account, cleanup, englishHost, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
+import { base, client, account, cleanup, createCoupon, englishHost, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -922,6 +922,28 @@ try {
     const r = await demo.raw(`/events/${demoEvent.id}/checkout`, { method: "POST", body: { tier: 3 } });
     assert.equal(r.status, 409);
     assert.equal(r.data.detail, translate("es", "errors.paymentDemo"));
+  });
+
+  await suite("POST /coupons/check responde en cada idioma y valida el código", async () => {
+    const owner = client();
+    await owner.call("/auth/register", "POST", account(P, "cupon"), 201);
+    const cupon = await createCoupon({ amountOffCents: 150 });
+    assert.deepEqual(await owner.call("/coupons/check", "POST", { code: ` ${cupon.code.toLowerCase()} ` }), { code: cupon.code, percentOff: null, amountOffCents: 150 });
+    const idiomas = [["es", {}], ["en", { Host: englishHost }]];
+    for (const [locale, headers] of idiomas) {
+      const r = await owner.raw("/coupons/check", { method: "POST", headers, body: { code: "NO-EXISTE" } });
+      assert.equal(r.status, 422, locale);
+      assert.equal(r.data.code, "coupon_invalid");
+      assert.equal(r.data.detail, translate(locale, "errors.couponInvalid"), locale);
+    }
+    const largo = await owner.raw("/coupons/check", { method: "POST", body: { code: "A".repeat(33) } });
+    assert.equal(largo.status, 422);
+    assert.equal(largo.data.errors[0].field, "code");
+    assert.equal(largo.data.errors[0].message, translate("es", "validation.maximum32Characters"));
+    for (const code of ["ab", "con espacio", "ÑANDÚ", 7, null]) {
+      const r = await owner.raw("/coupons/check", { method: "POST", body: { code } });
+      assert.equal(r.status, 422, String(code));
+    }
   });
 
   await suite("Model Context Protocol (MCP): Streamable HTTP, initialize, catálogo de herramientas y ejecución con confirmación", async () => {

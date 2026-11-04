@@ -7,6 +7,7 @@ import https from "node:https";
 import { deflateSync } from "node:zlib";
 
 export const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
+export const adminBase = process.env.TEST_ADMIN_URL || "http://127.0.0.1:8188";
 // Dominios de desarrollo: el idioma de la API depende del Host (gateway).
 export const englishHost = new URL(process.env.TEST_SITE_URL_EN || "http://yourevent.localhost:5187").hostname;
 export const spanishHost = new URL(process.env.TEST_SITE_URL_ES || "http://localhost:5187").hostname;
@@ -117,6 +118,41 @@ export function suiteRunner() {
       console.log("PASS", name);
     },
   };
+}
+
+const json = { "Content-Type": "application/json" };
+
+/** Sesión del panel de administración, para preparar cupones como lo haría el administrador. */
+async function adminCookie() {
+  const login = await send(`${adminBase}/api/login`, {
+    method: "POST",
+    headers: json,
+    body: JSON.stringify({ username: process.env.TEST_ADMIN_USER || "admin-dev", password: process.env.TEST_ADMIN_PASSWORD || "admin-dev-password" }),
+  });
+  assert.equal(login.status, 200, login.text);
+  return login.headers["set-cookie"][0].split(";")[0];
+}
+
+/** Crea un cupón con un código único y devuelve `{ code, id }`. */
+export async function createCoupon(fields) {
+  const code = `QA-${randomBytes(5).toString("hex").toUpperCase()}`;
+  const created = await send(`${adminBase}/api/coupons`, {
+    method: "POST",
+    headers: { ...json, Cookie: await adminCookie() },
+    body: JSON.stringify({ code, ...fields }),
+  });
+  assert.equal(created.status, 201, created.text);
+  return { code, ...JSON.parse(created.text) };
+}
+
+/** Activa o desactiva un cupón desde el panel. */
+export async function setCouponActive(id, active) {
+  const changed = await send(`${adminBase}/api/coupons/active`, {
+    method: "POST",
+    headers: { ...json, Cookie: await adminCookie() },
+    body: JSON.stringify({ id, active }),
+  });
+  assert.equal(changed.status, 200, changed.text);
 }
 
 /** Borra las cuentas de prueba (solo en local, contra el PostgreSQL de Docker; si no se puede, se ignora). */

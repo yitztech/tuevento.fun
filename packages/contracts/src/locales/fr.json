@@ -326,7 +326,8 @@
     "invalidSyncCursor": "Le curseur de synchronisation n’est pas valide.",
     "syncCursorExpired": "Ta copie hors ligne est trop ancienne : il faut la télécharger à nouveau en entier.",
     "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer.",
-    "couponInvalid": "Ce code promo n’est pas valide ou n’est plus disponible."
+    "couponInvalid": "Ce code promo n’est pas valide ou n’est plus disponible.",
+    "paymentInProgress": "Tu as déjà un paiement en cours avec ce code promo. Attends qu’il se termine et réessaie."
   },
   "events": {
     "actions": "Actions",

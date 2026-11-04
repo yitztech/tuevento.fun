@@ -125,6 +125,8 @@ export const limits = {
   verifyEmail: new RateLimit(3, minutes(60)),
   /** Abrir pagos por organizador: cada intento crea una sesión en Stripe. */
   checkout: new RateLimit(20, minutes(15)),
+  /** Comprobar cupones por organizador: frena a quien prueba códigos al azar. */
+  coupon: new RateLimit(10, minutes(15)),
   /** Recuperación de contraseña: por IP y por correo (este último sin revelar si la cuenta existe). */
   resetIp: new RateLimit(Number(process.env.RESET_MAX_PER_IP) || perIp(10), minutes(15)),
   resetAccount: new RateLimit(3, minutes(15)),

@@ -5,7 +5,7 @@
 //   GET  /pay/:id                página con «Pagar» y «Cancelar»
 //   POST /pay/:id                action=pay: webhook checkout.session.completed y vuelta a success_url;
 //                                action=cancel: vuelta a cancel_url; action=expire: la sesión caduca;
-//                                action=fail: un pago diferido rechazado
+//                                action=fail: un pago diferido rechazado; action=hold: pagado, sin webhook aún
 //   GET  /v1/checkout/sessions/:id         la sesión, con lo que recibió
 //   POST /v1/checkout/sessions/:id/expire  caduca una sesión abierta (si no, 400, como Stripe)
 import { createHmac, randomBytes } from "node:crypto";
@@ -112,6 +112,7 @@ createServer(async (req, res) => {
       session.status = action === "fail" ? "complete" : "expired";
       await sendWebhook(session, `checkout.session.${action === "fail" ? "async_payment_failed" : "expired"}`, "unpaid");
     }
+    if (action === "hold") session.status = "complete";
     if (action === "pay") {
       session.status = "complete";
       await sendWebhook(session);

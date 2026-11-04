@@ -1,18 +1,32 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { guestTiers, type Locale, type TierIndex, translate, upgradeCents } from "@tuevento/contracts";
+import { discountedCents, guestTiers, type Locale, type TierIndex, translate, upgradeCents } from "@tuevento/contracts";
 import { Database } from "./database";
 import { Updates } from "./events";
 import { CHECKOUT_MINUTES, paidTierSql, paymentsEnabled, stripeApiUrl, stripeHeaders, stripeLocale, webhookSecret } from "./payment-config";
+import { ProblemException } from "./problem";
 
 /**
  * Pago único por evento con Stripe Checkout: la API crea la sesión y el organizador paga en la
  * página de Stripe; el pago solo cuenta cuando llega el webhook firmado (nunca por la vuelta del
  * navegador). Sin STRIPE_SECRET_KEY los pagos están apagados y nada se limita por ellos. En las
  * pruebas, STRIPE_API_URL apunta al doble (services/payments-fake).
+ *
+ * Los cupones son propios: la API calcula el importe y Stripe cobra ese importe. Mientras el pago
+ * está pendiente, su fila de coupon_redemptions reserva el uso; si el pago se cancela, se libera.
  */
 /** Antigüedad máxima de un webhook: evita que se repita uno capturado (la que usa Stripe). */
 const SIGNATURE_TOLERANCE_S = 300;
+
+/** Una reserva cuenta mientras su sesión puede seguir abierta, con margen por si el webhook se retrasa. */
+const RESERVATION_MINUTES = CHECKOUT_MINUTES + 4;
+const UNIQUE_VIOLATION = "23505";
+
+/** La misma respuesta si el cupón no existe, caducó, se agotó o ya se usó: no da pistas a quien adivina. */
+const couponInvalid = () => new ProblemException({ status: 422, code: "coupon_invalid", detail: "errors.couponInvalid" });
+
+/** Ejecuta una consulta y devuelve sus filas: con el pool o dentro de una transacción. */
+type Rows = (sql: string, params: unknown[]) => Promise<Record<string, any>[]>;
 
 /** Comprueba la cabecera Stripe-Signature (`t=…,v1=…`): HMAC-SHA256 de `t.cuerpo` con la clave del webhook. */
 export function validStripeSignature(raw: string, header: string, secret: string, nowMs = Date.now()) {
@@ -35,9 +49,10 @@ export class PaymentsService {
 
   /**
    * Abre el pago del tramo `tier` para un evento del organizador y devuelve la URL de Stripe. Si el
-   * evento ya pagó un tramo menor, se cobra solo la diferencia.
+   * evento ya pagó un tramo menor, se cobra solo la diferencia. Un cupón descuenta sobre ese importe;
+   * si lo cubre todo, el pago queda confirmado sin pasar por Stripe (`url: null`, `paid: true`).
    */
-  async checkout(userId: string, eventId: string, tier: TierIndex, locale: Locale, site: string) {
+  async checkout(userId: string, eventId: string, tier: TierIndex, locale: Locale, site: string, coupon?: string) {
     if (!paymentsEnabled()) throw new NotFoundException("errors.paymentsUnavailable");
     const [event] = await this.db.query(
       `SELECT e.id, e.title, u.email, u.is_demo, ${paidTierSql} AS paid_tier,
@@ -54,11 +69,20 @@ export class PaymentsService {
     if (max !== null && event.people > max)
       throw new ConflictException("errors.paymentTierTooSmall");
     const id = randomUUID();
-    const cents = upgradeCents(paid, tier);
-    await this.db.query(
-      "INSERT INTO event_payments(id,event_id,user_id,tier,amount_cents,currency) VALUES($1,$2,$3,$4,$5,'usd')",
-      [id, eventId, userId, tier, cents],
-    );
+    const full = upgradeCents(paid, tier);
+    if (coupon) await this.releaseReservation(userId, coupon);
+    const cents = coupon
+      ? await this.reservePayment(id, eventId, userId, tier, full, coupon)
+      : full;
+    if (!coupon)
+      await this.db.query(
+        "INSERT INTO event_payments(id,event_id,user_id,tier,amount_cents,currency) VALUES($1,$2,$3,$4,$5,'usd')",
+        [id, eventId, userId, tier, cents],
+      );
+    if (cents === 0) {
+      this.updates.emit(userId);
+      return { url: null, paid: true };
+    }
     const back = `${site}/pago?evento=${eventId}`;
     const form = new URLSearchParams({
       mode: "payment",
@@ -80,6 +104,7 @@ export class PaymentsService {
       "metadata[payment_id]": id,
       "metadata[event_id]": eventId,
       "metadata[tier]": String(tier),
+      ...(coupon ? { "metadata[coupon]": coupon } : {}),
     });
     let session: { id?: string; url?: string };
     try {
@@ -98,10 +123,97 @@ export class PaymentsService {
       if (!response.ok || !session.id || !session.url) throw new Error(`Stripe respondió ${response.status}`);
     } catch (e) {
       this.logger.error(`No se pudo abrir el pago ${id}: ${(e as Error).message}`);
+      await this.cancelPayment(id);
       throw new ServiceUnavailableException("errors.paymentProviderUnavailable");
     }
     await this.db.query("UPDATE event_payments SET checkout_id=$1, updated_at=now() WHERE id=$2", [session.id, id]);
-    return { url: session.url };
+    return { url: session.url, paid: false };
+  }
+
+  /** Lo que descuenta un cupón, si esta cuenta aún puede usarlo. */
+  async checkCoupon(userId: string, code: string) {
+    if (!paymentsEnabled()) throw new NotFoundException("errors.paymentsUnavailable");
+    const coupon = await this.usableCoupon((sql, params) => this.db.query(sql, params), code, userId);
+    return { code: coupon.code, percentOff: coupon.percentOff, amountOffCents: coupon.amountOffCents };
+  }
+
+  /**
+   * Cupón activo que le queda algún uso y que esta cuenta no ha gastado. Las reservas propias no
+   * cuentan: el mismo organizador puede volver a intentarlo. Con `lock`, hasta el final de la
+   * transacción nadie más comprueba el mismo cupón: dos pagos no se llevan el último uso.
+   */
+  private async usableCoupon(rows: Rows, code: string, userId: string, lock = false) {
+    const [coupon] = await rows(
+      `SELECT id, code, percent_off::int AS "percentOff", amount_off_cents::int AS "amountOffCents",
+         max_redemptions::int AS "maxRedemptions"
+       FROM coupons WHERE code=$1 AND active AND (expires_at IS NULL OR expires_at > now())${lock ? " FOR UPDATE" : ""}`,
+      [code],
+    );
+    if (!coupon) throw couponInvalid();
+    const [uses] = await rows(
+      `SELECT count(*) FILTER (WHERE r.user_id=$2 AND p.status='paid')::int AS mine,
+         count(*) FILTER (WHERE p.status='paid'
+           OR (r.user_id IS DISTINCT FROM $2 AND p.created_at > now() - make_interval(mins => $3::int)))::int AS taken
+       FROM coupon_redemptions r JOIN event_payments p ON p.id=r.payment_id WHERE r.coupon_id=$1`,
+      [coupon.id, userId, RESERVATION_MINUTES],
+    );
+    if (uses?.mine || (coupon.maxRedemptions !== null && uses!.taken >= coupon.maxRedemptions)) throw couponInvalid();
+    return coupon as { id: string; code: string; percentOff: number | null; amountOffCents: number | null; maxRedemptions: number | null };
+  }
+
+  /** Crea el pago con su cupón y devuelve lo que se cobra. Si es 0, el pago nace confirmado. */
+  private async reservePayment(id: string, eventId: string, userId: string, tier: TierIndex, full: number, code: string) {
+    try {
+      return await this.db.transaction(async (client) => {
+        const rows: Rows = async (sql, params) => (await client.query(sql, params)).rows;
+        const coupon = await this.usableCoupon(rows, code, userId, true);
+        const cents = discountedCents(full, coupon);
+        await client.query(
+          `INSERT INTO event_payments(id,event_id,user_id,tier,amount_cents,currency,status,paid_at)
+           VALUES($1,$2,$3,$4,$5,'usd',$6,$7)`,
+          [id, eventId, userId, tier, cents, cents === 0 ? "paid" : "pending", cents === 0 ? new Date() : null],
+        );
+        await client.query(
+          "INSERT INTO coupon_redemptions(payment_id,coupon_id,user_id,discount_cents) VALUES($1,$2,$3,$4)",
+          [id, coupon.id, userId, full - cents],
+        );
+        return cents;
+      });
+    } catch (e) {
+      // Otra petición de la misma cuenta ganó la carrera por este cupón
+      if ((e as { code?: string }).code === UNIQUE_VIOLATION) throw couponInvalid();
+      throw e;
+    }
+  }
+
+  /** Quien vuelve a pagar con su cupón sustituye el intento anterior: esa sesión deja de poder pagarse. */
+  private async releaseReservation(userId: string, code: string) {
+    const pending = await this.db.query(
+      `SELECT p.id, p.checkout_id FROM coupon_redemptions r
+       JOIN coupons c ON c.id=r.coupon_id JOIN event_payments p ON p.id=r.payment_id
+       WHERE c.code=$1 AND r.user_id=$2 AND p.status='pending'`,
+      [code, userId],
+    );
+    for (const payment of pending) {
+      if (payment.checkout_id) await this.expireSession(payment.checkout_id);
+      await this.cancelPayment(payment.id);
+    }
+  }
+
+  /** Caduca una sesión abierta. Si ya no lo está y no caducó, ese pago sigue en curso: 409. */
+  private async expireSession(checkoutId: string) {
+    const url = `${stripeApiUrl()}/v1/checkout/sessions/${encodeURIComponent(checkoutId)}`;
+    try {
+      const expired = await fetch(`${url}/expire`, { method: "POST", headers: stripeHeaders(), signal: AbortSignal.timeout(30_000) });
+      if (expired.ok) return;
+      const response = await fetch(url, { headers: stripeHeaders(), signal: AbortSignal.timeout(30_000) });
+      const session = (await response.json()) as { status?: string };
+      if (session.status === "expired") return;
+    } catch (e) {
+      this.logger.error(`No se pudo caducar la sesión ${checkoutId}: ${(e as Error).message}`);
+      throw new ServiceUnavailableException("errors.paymentProviderUnavailable");
+    }
+    throw new ConflictException("errors.paymentInProgress");
   }
 
   /** Webhook de Stripe: firma comprobada e idempotente (un pago ya confirmado no cambia). */
@@ -132,10 +244,14 @@ export class PaymentsService {
     return { received: true };
   }
 
-  /** Cierra un pago pendiente que ya no se cobrará. Un pago confirmado no cambia. */
-  private async cancelPayment(paymentId: string, checkoutId: string) {
+  /** Cierra un pago pendiente que ya no se cobrará y libera su cupón. Un pago confirmado no cambia. */
+  private async cancelPayment(paymentId: string, checkoutId: string | null = null) {
     await this.db.query(
-      "UPDATE event_payments SET status='canceled', updated_at=now() WHERE id::text=$1 AND checkout_id=$2 AND status='pending'",
+      `WITH closed AS (
+         UPDATE event_payments SET status='canceled', updated_at=now()
+         WHERE id::text=$1 AND ($2::text IS NULL OR checkout_id=$2) AND status='pending' RETURNING id
+       )
+       DELETE FROM coupon_redemptions r USING closed WHERE r.payment_id=closed.id`,
       [paymentId, checkoutId],
     );
   }

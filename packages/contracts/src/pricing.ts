@@ -55,6 +55,8 @@ export const MIN_CHARGE_CENTS = 100;
 
 /** Lo que descuenta un cupón: un porcentaje o una cantidad en centavos, nunca los dos. */
 export type CouponDiscount = { percentOff: number | null; amountOffCents: number | null };
+/** Cupón aceptado antes de pagar. */
+export type AppliedCoupon = CouponDiscount & { code: string };
 
 /**
  * Centavos que se cobran por `cents` con un cupón. 0 significa gratis: ese pago no pasa por Stripe.

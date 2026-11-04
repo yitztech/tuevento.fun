@@ -326,7 +326,8 @@
     "invalidSyncCursor": "El cursor de sincronización no es válido.",
     "syncCursorExpired": "Tu copia sin conexión es demasiado antigua: hay que descargarla completa otra vez.",
     "versionConflict": "Esto cambió en otro dispositivo mientras lo editabas. Revisa la versión actual antes de guardar.",
-    "couponInvalid": "Ese cupón no es válido o ya no está disponible."
+    "couponInvalid": "Ese cupón no es válido o ya no está disponible.",
+    "paymentInProgress": "Ya tienes un pago en curso con ese cupón. Espera a que termine e inténtalo de nuevo."
   },
   "events": {
     "actions": "Acciones",
