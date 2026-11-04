@@ -1,5 +1,6 @@
 // Cliente HTTP de la API. Vive aparte de index.ts para que offline/ lo importe sin ciclos.
 import type {
+  AppliedCoupon,
   User,
   Event,
   EventInput,
@@ -140,9 +141,12 @@ export class EventApi {
       data,
     );
   deleteEvent = (id: string) => this.request(`/events/${id}`, "DELETE");
-  /** Abre el pago del tramo de invitados `tier` de un evento: devuelve la URL de Stripe. */
-  checkout = (eventId: string, tier: number) =>
-    this.request<{ url: string }>(`/events/${eventId}/checkout`, "POST", { tier });
+  /** Abre el pago de un tramo: devuelve la URL de Stripe, o `paid` si un cupón lo cubre todo. */
+  checkout = (eventId: string, tier: number, coupon?: string) =>
+    this.request<{ url: string | null; paid: boolean }>(`/events/${eventId}/checkout`, "POST", { tier, coupon });
+  /** Comprueba un cupón antes de pagar y devuelve lo que descuenta. */
+  checkCoupon = (code: string) =>
+    this.request<AppliedCoupon>("/coupons/check", "POST", { code });
   invitations = (id: string) =>
     this.request<Invitation[]>(`/events/${id}/invitations`);
   saveInvitation = (eventId: string, data: InvitationInput, id?: string) =>

@@ -894,7 +894,14 @@
     "payThisEvent": "Payer cet événement",
     "upgrade": "Passer à une formule plus grande",
     "goingToCheckout": "Nous t’emmenons vers la page de paiement…",
-    "tiersLabel": "Formules par nombre d’invités"
+    "tiersLabel": "Formules par nombre d’invités",
+    "couponApplied": "Code promo {{code}} appliqué.",
+    "couponApply": "Appliquer",
+    "couponChecking": "Vérification…",
+    "couponHint": "Uniquement des lettres sans accent, des chiffres et des tirets.",
+    "couponLabel": "Tu as un code promo ?",
+    "couponRemove": "Retirer le code promo",
+    "payFree": "Activer gratuitement"
   },
   "publicEvent": {
     "opening": "Ouverture de l’événement…",

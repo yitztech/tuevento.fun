@@ -894,7 +894,14 @@
     "payThisEvent": "Pagar este evento",
     "upgrade": "Passar para uma faixa maior",
     "goingToCheckout": "Levando você à página de pagamento…",
-    "tiersLabel": "Faixas de convidados"
+    "tiersLabel": "Faixas de convidados",
+    "couponApplied": "Cupom {{code}} aplicado.",
+    "couponApply": "Aplicar",
+    "couponChecking": "Verificando…",
+    "couponHint": "Só letras sem acento, números e hifens.",
+    "couponLabel": "Tem um cupom?",
+    "couponRemove": "Remover cupom",
+    "payFree": "Ativar de graça"
   },
   "publicEvent": {
     "opening": "Abrindo o evento…",

@@ -894,7 +894,14 @@
     "payThisEvent": "Diese Veranstaltung bezahlen",
     "upgrade": "Zu einer größeren Stufe wechseln",
     "goingToCheckout": "Wir bringen dich zur Zahlungsseite …",
-    "tiersLabel": "Gästestufen"
+    "tiersLabel": "Gästestufen",
+    "couponApplied": "Gutschein {{code}} eingelöst.",
+    "couponApply": "Einlösen",
+    "couponChecking": "Wird geprüft…",
+    "couponHint": "Nur Buchstaben ohne Akzent, Zahlen und Bindestriche.",
+    "couponLabel": "Hast du einen Gutschein?",
+    "couponRemove": "Gutschein entfernen",
+    "payFree": "Kostenlos aktivieren"
   },
   "publicEvent": {
     "opening": "Event wird geöffnet…",

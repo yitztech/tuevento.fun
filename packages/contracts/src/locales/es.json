@@ -894,7 +894,14 @@
     "payThisEvent": "Pagar este evento",
     "upgrade": "Pasar a un tramo mayor",
     "goingToCheckout": "Te llevamos a la página de pago…",
-    "tiersLabel": "Tramos de invitados"
+    "tiersLabel": "Tramos de invitados",
+    "couponApplied": "Cupón {{code}} aplicado.",
+    "couponApply": "Aplicar",
+    "couponChecking": "Comprobando…",
+    "couponHint": "Solo letras sin tilde, números y guiones.",
+    "couponLabel": "¿Tienes un cupón?",
+    "couponRemove": "Quitar cupón",
+    "payFree": "Activar gratis"
   },
   "publicEvent": {
     "opening": "Abriendo el evento…",

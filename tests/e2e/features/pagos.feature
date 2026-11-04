@@ -36,3 +36,64 @@ Característica: Pagar un evento según su número de invitados
     Y veo el aviso "Incluido en tu pago"
     Y veo el botón "Pagar $5.00"
     Y veo el botón "Pagar $25.00"
+
+  @solo-web @smoke
+  Escenario: Un cupón baja el precio antes de pagar
+    Dado que tengo un evento creado sin escribir su dirección
+    Y que existe un cupón del 50 %
+    Cuando abro la página de pago de mi evento
+    Y aplico el cupón
+    Entonces veo que el cupón está aplicado
+    Y veo el botón "Pagar $2.50"
+    Cuando pulso "Pagar $2.50"
+    Y pago en la página de pago de prueba
+    Entonces veo el aviso "Pago recibido. Tus invitados ya reciben los avisos por correo."
+
+  @solo-web
+  Escenario: Un cupón del 100 % activa el evento sin pasar por la página de pago
+    Dado que tengo un evento creado sin escribir su dirección
+    Y que existe un cupón del 100 %
+    Cuando abro la página de pago de mi evento
+    Y aplico el cupón
+    Y pulso el primer botón "Activar gratis"
+    Entonces veo el aviso "Pago recibido. Tus invitados ya reciben los avisos por correo."
+    Y veo el aviso "Pagado: hasta 50 invitados, con avisos por correo."
+
+  @solo-web
+  Escenario: Quitar el cupón devuelve el precio completo
+    Dado que tengo un evento creado sin escribir su dirección
+    Y que existe un cupón del 50 %
+    Cuando abro la página de pago de mi evento
+    Y aplico el cupón
+    Y pulso "Quitar cupón"
+    Entonces veo el botón "Pagar $5.00"
+
+  @solo-web @validacion
+  Escenario: Un cupón que no existe muestra el error y no cambia el precio
+    Dado que tengo un evento creado sin escribir su dirección
+    Cuando abro la página de pago de mi evento
+    Y escribo el cupón "NO-EXISTE"
+    Y pulso "Aplicar"
+    Entonces veo el aviso "Ese cupón no es válido o ya no está disponible."
+    Y veo el botón "Pagar $5.00"
+
+  @solo-web @validacion
+  Escenario: El campo del cupón descarta lo que no es un código y dice por qué
+    Dado que tengo un evento creado sin escribir su dirección
+    Cuando abro la página de pago de mi evento
+    Y escribo el cupón "ab c-1!"
+    Entonces el cupón escrito es "ABC-1"
+    Y veo el aviso "Solo letras sin tilde, números y guiones."
+
+  @solo-web @i18n
+  Esquema del escenario: El campo del cupón está en el idioma de la página
+    Cuando abro la página de pago de un evento mío en "<idioma>"
+    Entonces veo el campo de cupón "<etiqueta>"
+
+    Ejemplos:
+      | idioma | etiqueta                 |
+      | es     | ¿Tienes un cupón?        |
+      | en     | Have a coupon?           |
+      | pt     | Tem um cupom?            |
+      | de     | Hast du einen Gutschein? |
+      | fr     | Tu as un code promo ?    |

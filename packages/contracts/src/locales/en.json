@@ -894,7 +894,14 @@
     "payThisEvent": "Pay for this event",
     "upgrade": "Move to a bigger tier",
     "goingToCheckout": "Taking you to the payment page…",
-    "tiersLabel": "Guest tiers"
+    "tiersLabel": "Guest tiers",
+    "couponApplied": "Coupon {{code}} applied.",
+    "couponApply": "Apply",
+    "couponChecking": "Checking…",
+    "couponHint": "Only unaccented letters, numbers and hyphens.",
+    "couponLabel": "Have a coupon?",
+    "couponRemove": "Remove coupon",
+    "payFree": "Activate for free"
   },
   "publicEvent": {
     "opening": "Opening the event…",
