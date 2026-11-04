@@ -3,7 +3,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { guestTiers, type Locale, type TierIndex, translate, upgradeCents } from "@tuevento/contracts";
 import { Database } from "./database";
 import { Updates } from "./events";
-import { paidTierSql, paymentsEnabled, secretKey, stripeApiUrl, webhookSecret } from "./payment-config";
+import { CHECKOUT_MINUTES, paidTierSql, paymentsEnabled, stripeApiUrl, stripeHeaders, stripeLocale, webhookSecret } from "./payment-config";
 
 /**
  * Pago único por evento con Stripe Checkout: la API crea la sesión y el organizador paga en la
@@ -64,7 +64,8 @@ export class PaymentsService {
       mode: "payment",
       client_reference_id: id,
       customer_email: event.email,
-      locale,
+      locale: stripeLocale(locale),
+      expires_at: String(Math.floor(Date.now() / 1000) + CHECKOUT_MINUTES * 60),
       success_url: `${back}&pagado=1`,
       cancel_url: back,
       "line_items[0][quantity]": "1",
@@ -85,7 +86,7 @@ export class PaymentsService {
       const response = await fetch(`${stripeApiUrl()}/v1/checkout/sessions`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${secretKey()}`,
+          ...stripeHeaders(),
           "Content-Type": "application/x-www-form-urlencoded",
           // Un reintento con la misma clave no crea otra sesión (§21)
           "Idempotency-Key": id,
@@ -113,6 +114,11 @@ export class PaymentsService {
       data?: { object?: { id?: string; client_reference_id?: string; payment_status?: string; amount_total?: number; currency?: string } };
     };
     const session = event.data?.object;
+    // Sesión caducada o pago diferido rechazado: ese intento ya no se cobrará
+    if (["checkout.session.expired", "checkout.session.async_payment_failed"].includes(event.type ?? "")) {
+      await this.cancelPayment(session?.client_reference_id ?? "", session?.id ?? "");
+      return { received: true };
+    }
     const completed = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type ?? "");
     if (!completed || session?.payment_status !== "paid") return { received: true };
     // El importe y la sesión tienen que ser los que abrió la API: no se acepta otro pago
@@ -124,5 +130,13 @@ export class PaymentsService {
     );
     if (row?.user_id) this.updates.emit(row.user_id);
     return { received: true };
+  }
+
+  /** Cierra un pago pendiente que ya no se cobrará. Un pago confirmado no cambia. */
+  private async cancelPayment(paymentId: string, checkoutId: string) {
+    await this.db.query(
+      "UPDATE event_payments SET status='canceled', updated_at=now() WHERE id::text=$1 AND checkout_id=$2 AND status='pending'",
+      [paymentId, checkoutId],
+    );
   }
 }

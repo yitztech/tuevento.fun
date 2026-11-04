@@ -707,6 +707,20 @@ try {
       body: JSON.stringify({ type: "checkout.session.completed", data: { object: { payment_status: "paid" } } }),
     });
     assert.equal(falso.status, 400, falso.text);
+    // Una sesión que caduca o un pago diferido rechazado no pagan el evento y se puede volver a pagar
+    for (const action of ["expire", "fail"]) {
+      const otro = await owner.call("/events", "POST", eventPayload({ title: `QA · ${action}` }), 201);
+      const intento = await owner.call(`/events/${otro.id}/checkout`, "POST", { tier: 0 });
+      const cerrado = await send(intento.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `action=${action}`,
+      });
+      assert.equal(cerrado.status, 303, cerrado.text);
+      assert.equal((await owner.call(`/events/${otro.id}`)).paidTier, null);
+      await payEvent(owner, otro.id, 0);
+      assert.equal((await owner.call(`/events/${otro.id}`)).paidTier, 0);
+    }
     // Con un tramo pagado, el evento no pasa de su máximo de invitados
     const lleno = await owner.call("/events", "POST", eventPayload({ title: "QA · Tope" }), 201);
     await payEvent(owner, lleno.id, 0);

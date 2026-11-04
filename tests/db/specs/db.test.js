@@ -275,6 +275,13 @@ test("Pagos: tramo, importe, moneda y estado acotados; borrar el evento o la cue
   for (const [tier, cents, currency, status] of [[4, 500, "usd", "pending"], [-1, 500, "usd", "pending"], [0, 0, "usd", "pending"], [0, 500, "mxn", "pending"], [0, 500, "usd", "refunded"]])
     assert.equal(await codigoError(() => pago(tier, cents, currency, status)), CHECK_VIOLATION, `${tier} ${cents} ${currency} ${status}`);
   assert.equal(await codigoError(() => pago(0, 500, "usd", "pending", "x".repeat(256))), CHECK_VIOLATION, "checkout_id ≤ 255");
+  // Importe 0 solo en un pago ya confirmado que no pasó por Stripe (cupón del 100 %), 030
+  for (const [status, checkout] of [["pending", null], ["canceled", null], ["paid", "cs_test_0"]])
+    assert.equal(await codigoError(() => pago(0, 0, "usd", status, checkout)), CHECK_VIOLATION, `0 ${status} ${checkout}`);
+  await pago(0, 0, "usd", "paid", null);
+  await pago(0, 500, "usd", "canceled", "cs_test_2");
+  for (const nombre of ["event_payments_status_check", "event_payments_amount_cents_check"])
+    assert.equal((await uno("SELECT convalidated FROM pg_constraint WHERE conname=$1", [nombre])).convalidated, true, `la 031 valida ${nombre}`);
   const { rows: [p] } = await pago(0, 500, "usd", "paid", "cs_test_1");
   assert.equal(await codigoError(() => pago(1, 500, "usd", "pending", "cs_test_1")), UNIQUE_VIOLATION, "una sesión de Stripe, un pago");
   await db.query("DELETE FROM events WHERE id=$1", [e.id]);

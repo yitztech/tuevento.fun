@@ -891,6 +891,20 @@ try {
       assert.equal(pequeno.status, 409, locale);
       assert.equal(pequeno.data.detail, translate(locale, "errors.paymentTierTooSmall"), locale);
     }
+    // Stripe recibe el idioma de la petición, la versión fijada de su API y una caducidad de 31 minutos
+    const stripeLocales = { es: "es-419", en: "en", pt: "pt-BR", de: "de", fr: "fr" };
+    const otro = client();
+    await otro.call("/auth/register", "POST", account(P, "pago-idiomas"), 201);
+    const otroEvento = await otro.call("/events", "POST", eventData(), 201);
+    for (const [locale, headers] of locales) {
+      const abierto = await otro.raw(`/events/${otroEvento.id}/checkout`, { method: "POST", headers, body: { tier: 1 } });
+      assert.equal(abierto.status, 200, locale);
+      const sesion = abierto.data.url.replace("/pay/", "/v1/checkout/sessions/");
+      const leida = JSON.parse((await send(sesion, { headers: { Authorization: "Bearer sk_test_ci" } })).text);
+      assert.equal(leida.locale, stripeLocales[locale], locale);
+      assert.match(leida.stripe_version, /^\d{4}-\d{2}-\d{2}\.[a-z]+$/);
+      assert.ok(Math.abs(leida.expires_at - Date.now() / 1000 - 31 * 60) < 120, locale);
+    }
     const { url } = await owner.call(`/events/${event.id}/checkout`, "POST", { tier: 1 });
     assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/pay\/cs_test_/);
     await send(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "action=pay" });
