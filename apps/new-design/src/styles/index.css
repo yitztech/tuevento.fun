@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Sistema de diseño de TuEventoFun (prototipo). Tokens medidos sobre las referencias y ajustados
+   para contraste AA; ver docs/DESIGN-SYSTEM.md. */
+@theme {
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display Variable", Georgia, "Times New Roman", serif;
+  --font-script: "Great Vibes", "Snell Roundhand", cursive;
+
+  --color-background: #fff6f2;
+  --color-foreground: #3d2a25;
+  --color-title: #7a2a1b;
+  --color-muted: #f9e6dc;
+  --color-muted-foreground: #765f58;
+  --color-card: #ffffff;
+  --color-border: #f0d8cb;
+  --color-input: #ecd2c4;
+  --color-ring: #a63f30;
+
+  --color-primary: #a63f30;
+  --color-primary-hover: #8a3225;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #ea8659;
+  --color-accent: #f6c6a4;
+  --color-accent-soft: #fbe3d6;
+
+  --color-success: #16a34a;
+  --color-success-soft: #e7f5ec;
+  --color-success-foreground: #14532d;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fff1d6;
+  --color-warning-foreground: #7c4a03;
+  --color-destructive: #9c2020;
+  --color-destructive-soft: #fdeae8;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  --shadow-soft: 0 12px 32px -14px rgb(122 42 27 / 0.22);
+  --shadow-card: 0 2px 6px rgb(122 42 27 / 0.05), 0 18px 40px -22px rgb(122 42 27 / 0.28);
+
+  --container-page: 80rem;
+  --container-auth: 76rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-width: 320px;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    color: var(--color-title);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--color-ring) 55%, transparent);
+    outline-offset: 3px;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility display-title {
+  font-size: clamp(2.5rem, 1.6rem + 4.4vw, 4.75rem);
+  line-height: 1.02;
+  font-weight: 600;
+}
+@utility section-title {
+  font-size: clamp(1.75rem, 1.25rem + 1.9vw, 2.6rem);
+  line-height: 1.1;
+  font-weight: 600;
+}
+@utility eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+@utility page-wash {
+  background:
+    radial-gradient(60rem 36rem at 100% -4%, #f8d3bf 0%, transparent 60%),
+    radial-gradient(48rem 30rem at -6% 38%, #fbddd0 0%, transparent 62%),
+    var(--color-background);
+}
