@@ -7,7 +7,7 @@ const cabecera = { "x-tuevento-client": "1" };
 const sitios = { es: baseURL, en: englishURL, pt: `${englishURL}/pt`, de: `${englishURL}/de`, fr: `${englishURL}/fr` };
 
 /** Evento sin dirección escrita: la API la saca del título. */
-const eventoNuevo = (titulo, date = fechaFutura) => ({
+export const eventoNuevo = (titulo, date = fechaFutura) => ({
   title: titulo,
   description: "",
   date,

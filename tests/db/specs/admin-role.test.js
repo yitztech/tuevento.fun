@@ -73,6 +73,34 @@ test("el panel no escribe nada", async () => {
   await denegado("CREATE TABLE robado (x int)");
 });
 
+test("los cupones se leen y solo se escriben con sus funciones, que dejan registro", async () => {
+  await lector.query("SELECT id, code, percent_off, amount_off_cents, expires_at, max_redemptions, active, created_at FROM coupons");
+  await lector.query("SELECT coupon_id, payment_id FROM coupon_redemptions");
+  await lector.query("SELECT id, status FROM event_payments");
+  await denegado("INSERT INTO coupons(code, percent_off) VALUES ('ROBADO', 100)");
+  await denegado("UPDATE coupons SET active = true");
+  await denegado("DELETE FROM coupons");
+  await denegado("INSERT INTO coupon_redemptions(payment_id, coupon_id, discount_cents) VALUES (gen_random_uuid(), gen_random_uuid(), 0)");
+  await denegado("UPDATE event_payments SET status = 'paid'");
+  await denegado("SELECT user_id FROM event_payments");
+  await denegado("SELECT * FROM admin_audit_log");
+  await denegado("INSERT INTO admin_audit_log(admin, action, target) VALUES ('x', 'x', 'x')");
+  const { rows: [{ id }] } = await lector.query("SELECT admin_create_coupon('PANEL-1', 10, NULL, NULL, NULL, 'admin-qa') AS id");
+  assert.equal((await lector.query("SELECT admin_set_coupon_active($1, false, 'admin-qa') AS ok", [id])).rows[0].ok, true);
+  assert.equal((await lector.query("SELECT active FROM coupons WHERE id=$1", [id])).rows[0].active, false);
+  assert.equal((await lector.query("SELECT admin_set_coupon_active(gen_random_uuid(), false, 'admin-qa') AS ok")).rows[0].ok, false);
+  const dueno = admin(base.nombre);
+  try {
+    const { rows } = await dueno.query("SELECT admin, action, target FROM admin_audit_log ORDER BY id");
+    assert.deepEqual(rows, [
+      { admin: "admin-qa", action: "coupon.create", target: "PANEL-1" },
+      { admin: "admin-qa", action: "coupon.deactivate", target: "PANEL-1" },
+    ]);
+  } finally {
+    await dueno.end();
+  }
+});
+
 test("repetir el script con el rol ya creado y con permisos no falla: cambia la contraseña y deja los mismos permisos", async () => {
   const otra = "otra-clave-de-prueba-admin";
   const dueno = admin(base.nombre);

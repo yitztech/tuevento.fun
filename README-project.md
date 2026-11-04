@@ -139,14 +139,14 @@ Variables que pasa la plataforma (no se usan otros nombres):
 | `UMAMI_API_URL`, `UMAMI_API_USER`, `UMAMI_API_PASSWORD` | admin | API de Umami con un usuario de solo lectura, para los visitantes por país del panel. `UMAMI_WEBSITE_ID` (admin) toma por defecto el sitio único de los dos dominios |
 | `POSTGRES_PASSWORD` | postgres | Contraseña de superusuario `tuevento` |
 | `API_DB_PASSWORD` | api, postgres | Contraseña del rol `api` con el que conecta el backend |
-| `ADMIN_DB_PASSWORD` | admin, postgres | Contraseña del rol de solo lectura `admin_ro` del panel |
+| `ADMIN_DB_PASSWORD` | admin, postgres | Contraseña del rol `admin_ro` del panel |
 | `SEARCH_DB_PASSWORD` | search, postgres | Contraseña del rol `search_ro` del servicio de búsqueda (solo lee `provider_search`) |
 | `ADMIN_USER`, `ADMIN_PASSWORD_HASH` | admin | Usuario del panel y hash scrypt de su contraseña (ver [Panel de administración](#panel-de-administración)) |
 | `ADMIN_HOST` | gateway | Subdominio del panel (por defecto `admin.tuevento.fun`) |
 | `RELEASE_PUBLISH_TOKEN` | api | Lo genera la plataforma; también es el secreto de GitHub del catálogo |
 | `APP_SECRET` | api | 32+ caracteres aleatorios (`openssl rand -base64 48`). Cifra los enlaces de invitación guardados y firma los enlaces de los correos; sin ella la API no arranca. Si cambia, los enlaces de invitación existentes dejan de abrir |
 | `STRIPE_SECRET_KEY` | api | Opcional. Clave secreta de Stripe (`sk_live_…`; `sk_test_…` en pruebas). Vacía, los pagos están apagados: no se cobra y el plan gratuito no limita nada |
-| `STRIPE_WEBHOOK_SECRET` | api | Obligatoria con `STRIPE_SECRET_KEY` (`whsec_…`): firma del webhook `https://<dominio>/api/payments/webhook` (eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`). Sin ella la API no arranca |
+| `STRIPE_WEBHOOK_SECRET` | api | Obligatoria con `STRIPE_SECRET_KEY` (`whsec_…`): firma del webhook `https://<dominio>/api/payments/webhook` (eventos `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` y `checkout.session.expired`). Sin ella la API no arranca |
 | `GOOGLE_CLIENT_ID` | api | Opcional, cuando exista el cliente OAuth |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | api | Servidor SMTP común a los dos idiomas |
 | `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | api | Remitente en español (`no-reply@tuevento.fun`) |
@@ -212,7 +212,7 @@ Los enlaces compartidos apuntan al dominio desde el que se crean; `localhost` no
 
 ## Panel de administración
 
-`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y una interfaz en Angular 22 (componentes independientes, signals y sin zone.js; código en `apps/admin/src/web`, se compila con `npm run build -w @tuevento/admin` y la imagen la compila en su propia etapa) servidos por el mismo contenedor, responsivo para el móvil. Solo en español: el panel no está traducido a propósito. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Solo lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos). El país de cada visita no se guarda en la base: los visitantes por país salen de Umami (`https://stats.yunitztech.com`, un solo sitio para los dos dominios, datos desde el 19 de octubre de 2026). El panel entra con `POST /api/auth/login`, pide `GET /api/websites/<id>/metrics?type=country&startAt&endAt` (milisegundos) y guarda el resultado 5 minutos. La API de Umami solo responde al servidor de producción: en local, sin esas variables, el panel indica que Umami no está configurado.
+`services/admin` (`apps/admin`): panel del administrador del sitio, en `ADMIN_HOST`. Node sin framework y una interfaz en Angular 22 (componentes independientes, signals y sin zone.js; código en `apps/admin/src/web`, se compila con `npm run build -w @tuevento/admin` y la imagen la compila en su propia etapa) servidos por el mismo contenedor, responsivo para el móvil. Solo en español: el panel no está traducido a propósito. Muestra usuarios conectados (visitantes con actividad en los últimos 5 minutos), altas, sesiones, eventos, invitaciones y confirmaciones, actividad diaria y páginas más visitadas. Lee la base con el rol `admin_ro` (sin contraseñas, tokens ni teléfonos) y no escribe ninguna tabla: los cupones se crean y se desactivan con dos funciones de la migración 032, que dejan registro en `admin_audit_log`. El país de cada visita no se guarda en la base: los visitantes por país salen de Umami (`https://stats.yunitztech.com`, un solo sitio para los dos dominios, datos desde el 19 de octubre de 2026). El panel entra con `POST /api/auth/login`, pide `GET /api/websites/<id>/metrics?type=country&startAt&endAt` (milisegundos) y guarda el resultado 5 minutos. La API de Umami solo responde al servidor de producción: en local, sin esas variables, el panel indica que Umami no está configurado.
 
 Puesta en marcha en producción:
 

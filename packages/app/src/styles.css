@@ -4365,6 +4365,30 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .pricing-cta {
   margin-top: 8px;
 }
+.coupon-form {
+  display: grid;
+  gap: 8px;
+  margin: 24px 0 0;
+}
+.coupon-form-row {
+  display: flex;
+  gap: 8px;
+}
+.coupon-form small {
+  font-size: 12px;
+  color: #5b6478;
+}
+.coupon-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 24px 0 0;
+}
+.coupon-applied .success-box {
+  margin: 0;
+}
 .pricing-page h2 {
   margin-top: 28px;
 }

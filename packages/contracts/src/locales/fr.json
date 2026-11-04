@@ -320,7 +320,9 @@
     "invalidIfMatch": "L’en-tête If-Match doit contenir la version entre guillemets, par exemple « 3 ».",
     "invalidSyncCursor": "Le curseur de synchronisation n’est pas valide.",
     "syncCursorExpired": "Ta copie hors ligne est trop ancienne : il faut la télécharger à nouveau en entier.",
-    "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer."
+    "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer.",
+    "couponInvalid": "Ce code promo n’est pas valide ou n’est plus disponible.",
+    "paymentInProgress": "Tu as déjà un paiement en cours avec ce code promo. Attends qu’il se termine et réessaie."
   },
   "events": {
     "actions": "Actions",
@@ -839,7 +841,8 @@
     "serviceRadius": "Saisis une distance entre 0 et 500 km.",
     "invalidPrice": "Saisis un prix valide, sans symboles.",
     "invalidCurrency": "Choisis une devise dans la liste.",
-    "invalidPriceUnit": "Choisis pour quoi le prix est facturé."
+    "invalidPriceUnit": "Choisis pour quoi le prix est facturé.",
+    "maximum32Characters": "32 caractères maximum."
   },
   "pricing": {
     "title": "Tarifs",
@@ -868,7 +871,14 @@
     "payThisEvent": "Payer cet événement",
     "upgrade": "Passer à une formule plus grande",
     "goingToCheckout": "Nous t’emmenons vers la page de paiement…",
-    "tiersLabel": "Formules par nombre d’invités"
+    "tiersLabel": "Formules par nombre d’invités",
+    "couponApplied": "Code promo {{code}} appliqué.",
+    "couponApply": "Appliquer",
+    "couponChecking": "Vérification…",
+    "couponHint": "Uniquement des lettres sans accent, des chiffres et des tirets.",
+    "couponLabel": "Tu as un code promo ?",
+    "couponRemove": "Retirer le code promo",
+    "payFree": "Activer gratuitement"
   },
   "publicEvent": {
     "opening": "Ouverture de l’événement…",

@@ -4,6 +4,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import http from "node:http";
 import https from "node:https";
+import { client as clientWithRaw, createCoupon } from "./api.mjs";
 const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 // Dominio inglés de desarrollo (mismo valor que SITE_URL_EN del compose).
 const englishHost = new URL(
@@ -707,6 +708,20 @@ try {
       body: JSON.stringify({ type: "checkout.session.completed", data: { object: { payment_status: "paid" } } }),
     });
     assert.equal(falso.status, 400, falso.text);
+    // Una sesión que caduca o un pago diferido rechazado no pagan el evento y se puede volver a pagar
+    for (const action of ["expire", "fail"]) {
+      const otro = await owner.call("/events", "POST", eventPayload({ title: `QA · ${action}` }), 201);
+      const intento = await owner.call(`/events/${otro.id}/checkout`, "POST", { tier: 0 });
+      const cerrado = await send(intento.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `action=${action}`,
+      });
+      assert.equal(cerrado.status, 303, cerrado.text);
+      assert.equal((await owner.call(`/events/${otro.id}`)).paidTier, null);
+      await payEvent(owner, otro.id, 0);
+      assert.equal((await owner.call(`/events/${otro.id}`)).paidTier, 0);
+    }
     // Con un tramo pagado, el evento no pasa de su máximo de invitados
     const lleno = await owner.call("/events", "POST", eventPayload({ title: "QA · Tope" }), 201);
     await payEvent(owner, lleno.id, 0);
@@ -717,6 +732,89 @@ try {
     assert.match(extra.message, /máximo de invitados/);
     await payEvent(owner, lleno.id, 1);
     await owner.call(`/events/${lleno.id}/invitations`, "POST", { ...familia, members: people(1) }, 201);
+  });
+
+  await suite("Cupones: descuentan antes de pagar, una vez por cuenta y hasta su máximo", async () => {
+    const organizador = async (nombre) => {
+      const owner = clientWithRaw();
+      users.push((await owner.call("/auth/register", "POST", account(nombre), 201)).id);
+      return { owner, evento: await owner.call("/events", "POST", eventPayload({ title: `QA · ${nombre}` }), 201) };
+    };
+    const accion = (url, action) =>
+      send(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `action=${action}` });
+    const sesion = async (url) =>
+      JSON.parse((await send(url.replace("/pay/", "/v1/checkout/sessions/"), { headers: { Authorization: "Bearer sk_test_ci" } })).text);
+    const pagar = (owner, id, tier, coupon) => owner.raw(`/events/${id}/checkout`, { method: "POST", body: { tier, coupon } });
+
+    // Un porcentaje: se comprueba, se paga con descuento y no se puede volver a usar
+    const mitad = await createCoupon({ percentOff: 50 });
+    const a = await organizador("cupon-a");
+    assert.deepEqual(await a.owner.call("/coupons/check", "POST", { code: mitad.code.toLowerCase() }), { code: mitad.code, percentOff: 50, amountOffCents: null });
+    const abierto = await a.owner.call(`/events/${a.evento.id}/checkout`, "POST", { tier: 0, coupon: mitad.code });
+    assert.equal(abierto.paid, false);
+    assert.match((await send(abierto.url)).text, /\$2\.50 USD/);
+    await accion(abierto.url, "pay");
+    assert.equal((await a.owner.call(`/events/${a.evento.id}`)).paidTier, 0);
+    assert.equal((await a.owner.raw("/coupons/check", { method: "POST", body: { code: mitad.code } })).status, 422);
+    assert.equal((await pagar(a.owner, a.evento.id, 1, mitad.code)).status, 422);
+
+    // Una cantidad, sobre la diferencia del tramo: 10 − 5 − 2
+    const dos = await createCoupon({ amountOffCents: 200 });
+    const mejora = await a.owner.call(`/events/${a.evento.id}/checkout`, "POST", { tier: 1, coupon: dos.code });
+    assert.match((await send(mejora.url)).text, /\$3\.00 USD/);
+
+    // Un cupón que lo cubre todo no pasa por Stripe y el evento queda pagado al momento
+    const gratis = await createCoupon({ percentOff: 100 });
+    const b = await organizador("cupon-b");
+    assert.deepEqual(await b.owner.call(`/events/${b.evento.id}/checkout`, "POST", { tier: 3, coupon: gratis.code }), { url: null, paid: true });
+    assert.equal((await b.owner.call(`/events/${b.evento.id}`)).paidTier, 3);
+
+    // Por debajo del mínimo de la tarjeta se cobra el mínimo
+    const casi = await createCoupon({ percentOff: 99 });
+    const c = await organizador("cupon-c");
+    const minimo = await c.owner.call(`/events/${c.evento.id}/checkout`, "POST", { tier: 0, coupon: casi.code });
+    assert.match((await send(minimo.url)).text, /\$1\.00 USD/);
+
+    // Repetir con el mismo cupón sustituye el intento anterior: esa sesión caduca
+    const repetido = await createCoupon({ percentOff: 10 });
+    const d = await organizador("cupon-d");
+    const primero = await d.owner.call(`/events/${d.evento.id}/checkout`, "POST", { tier: 0, coupon: repetido.code });
+    const segundo = await d.owner.call(`/events/${d.evento.id}/checkout`, "POST", { tier: 1, coupon: repetido.code });
+    assert.equal((await sesion(primero.url)).status, "expired");
+    assert.match((await send(segundo.url)).text, /\$9\.00 USD/);
+    await accion(segundo.url, "pay");
+    assert.equal((await d.owner.call(`/events/${d.evento.id}`)).paidTier, 1);
+
+    // Si esa sesión ya se pagó y falta su webhook, no se abre otra
+    const enCurso = await createCoupon({ percentOff: 10 });
+    const e = await organizador("cupon-e");
+    const retenido = await e.owner.call(`/events/${e.evento.id}/checkout`, "POST", { tier: 0, coupon: enCurso.code });
+    await accion(retenido.url, "hold");
+    const conflicto = await pagar(e.owner, e.evento.id, 0, enCurso.code);
+    assert.equal(conflicto.status, 409, conflicto.text);
+    assert.match(conflicto.data.detail, /pago en curso/);
+
+    // Máximo de usos: una reserva lo ocupa, y caducar la sesión lo libera
+    const unico = await createCoupon({ percentOff: 10, maxRedemptions: 1 });
+    const f = await organizador("cupon-f");
+    const g = await organizador("cupon-g");
+    const reserva = await f.owner.call(`/events/${f.evento.id}/checkout`, "POST", { tier: 0, coupon: unico.code });
+    assert.equal((await pagar(g.owner, g.evento.id, 0, unico.code)).status, 422);
+    await accion(reserva.url, "expire");
+    assert.equal((await pagar(g.owner, g.evento.id, 0, unico.code)).status, 200);
+
+    // Dos organizadores a la vez por el último uso: solo uno lo consigue
+    const ultimo = await createCoupon({ percentOff: 10, maxRedemptions: 1 });
+    const h = await organizador("cupon-h");
+    const i = await organizador("cupon-i");
+    const carrera = await Promise.all([pagar(h.owner, h.evento.id, 0, ultimo.code), pagar(i.owner, i.evento.id, 0, ultimo.code)]);
+    assert.deepEqual(carrera.map((r) => r.status).sort(), [200, 422]);
+
+    // Un cupón caducado deja de valer
+    const breve = await createCoupon({ percentOff: 10, expiresAt: new Date(Date.now() + 1000).toISOString() });
+    const j = await organizador("cupon-j");
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    assert.equal((await j.owner.raw("/coupons/check", { method: "POST", body: { code: breve.code } })).status, 422);
   });
 
   await suite("Newsletter responde en el idioma del dominio", async () => {

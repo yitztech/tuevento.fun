@@ -57,3 +57,15 @@ export interface EventRow {
   invitations: number;
   accepted: number;
 }
+
+export interface CouponRow {
+  id: string;
+  code: string;
+  percentOff: number | null;
+  amountOffCents: number | null;
+  expiresAt: string | null;
+  maxRedemptions: number | null;
+  active: boolean;
+  createdAt: string;
+  used: number;
+}

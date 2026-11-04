@@ -1,6 +1,6 @@
-# Pagos: estado y pendientes (27-oct-2026)
+# Pagos: estado y pendientes (3-nov-2026)
 
-Ya está la maqueta de pagos: el flujo completo funciona contra un doble de Stripe que hace de pasarela falsa, sin cuentas reales. Está subida a la rama `fix/seguridad-abuso` (commit `ccc7188`). En producción no cambia nada hasta que se definan las claves de Stripe: sin ellas no se cobra ni se limita nada.
+El flujo completo de pagos y cupones funciona contra un doble de Stripe (`services/payments-fake`), sin cuentas reales. Nunca se ha probado contra Stripe de verdad. En producción no cambia nada hasta que se definan las claves de Stripe: sin ellas no se cobra ni se limita nada.
 
 ## Cómo funciona
 
@@ -10,12 +10,24 @@ Ya está la maqueta de pagos: el flujo completo funciona contra un doble de Stri
 - **Evento pagado:** sus invitados reciben los avisos por correo, y el número de invitados queda topado en el máximo de su tramo, también en las invitaciones abiertas.
 - **Plan gratuito:** incluye todo menos los correos a invitados.
 - **Demostración:** sus eventos no se pueden pagar.
+- **Intentos sin cobrar:** una sesión de Stripe caduca a los 31 minutos. Al caducar, o si se rechaza un pago diferido, el pago pasa a `canceled` y se libera su cupón.
+
+## Cupones
+
+- **Son propios, no los de Stripe:** la API calcula el importe y Stripe cobra ese importe. Así el organizador ve el precio antes de pagar y el webhook sigue comprobando que el importe es el que abrió la API.
+- **Dónde se gestionan:** en la pestaña «Cupones» del panel de administración. Se crean y se desactivan; no se borran. Cada cambio queda en `admin_audit_log`.
+- **Qué descuentan:** un porcentaje o una cantidad en dólares, sobre lo que se cobraría; al subir de tramo, sobre la diferencia.
+- **Límites:** caducidad y máximo de usos opcionales, y un uso por cuenta. Un pago pendiente reserva el uso hasta que su sesión caduca.
+- **Cobro mínimo:** si el descuento deja menos de $1.00, se cobra $1.00 (`MIN_CHARGE_CENTS`). Stripe exige un mínimo que depende de la moneda en la que liquida la cuenta: 0.50 USD o 10 MXN.
+- **Cupón del 100 %:** el pago queda confirmado sin pasar por Stripe, con importe 0.
 
 ## Supuestos que tomé (cámbialos si no te sirven)
 
-- El proveedor es **Stripe**.
 - Los precios van en **USD**, porque así están ya en la página de precios.
 - Dentro de la app móvil, el pago se abre en el navegador, y la vuelta tras pagar llega a la web, no a la app.
+- **Reembolsos y disputas** se hacen a mano en el panel de Stripe, y el evento sigue pagado: la API no atiende esos eventos.
+- **Impuestos y facturas** no están resueltos: la API no calcula IVA ni emite facturas. Decídelo con tu contador antes de cobrar.
+- **iOS:** el pago de un servicio digital fuera de la app puede chocar con las reglas de Apple. Revísalo antes de publicar la app de iOS, hoy aparcada.
 
 ## Pruebas
 
@@ -52,11 +64,35 @@ Para el correo:
 6. **SPF, DKIM y DMARC** en `tuevento.fun` y `yourevent.fun`. Gmail y Yahoo los exigen para que los avisos no acaben en spam.
 7. **Avisos de rebotes y quejas de spam** del proveedor de SMTP (un webhook o un buzón). Es lo que falta para dar de baja automáticamente las direcciones que rebotan.
 
-No hacen falta contenedores nuevos en producción: el doble de Stripe solo existe en las pruebas. Las migraciones 023 a 026 se aplican solas al arrancar la API. Tampoco hay que tocar la política de seguridad de contenido (CSP), porque Checkout es una redirección a la página de Stripe.
+No hacen falta contenedores nuevos en producción: el doble de Stripe solo existe en las pruebas. Las migraciones se aplican solas al arrancar la API. Tampoco hay que tocar la política de seguridad de contenido (CSP), porque Checkout es una redirección a la página de Stripe.
 
-## Pendiente para mañana, con la cuenta de Stripe
+## Probar en local con Stripe de verdad
 
-- [ ] Crear el webhook en el panel de Stripe, con los eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`.
-- [ ] Poner las claves de prueba (`sk_test_…`).
-- [ ] Hacer un pago real de prueba.
-- [ ] Pasar a las claves de producción.
+Solo con claves de prueba (`sk_test_…`): no se mueve dinero.
+
+1. Instala la [CLI de Stripe](https://docs.stripe.com/stripe-cli) y entra con `stripe login`.
+2. Reenvía los webhooks a la pila de desarrollo. El comando imprime el secreto `whsec_…`:
+
+   ```bash
+   stripe listen --forward-to localhost:5187/api/payments/webhook \
+     --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired
+   ```
+
+3. Pon `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET` en `.env`, nunca en un archivo versionado, y reinicia con `docker compose up -d api`.
+4. Paga un evento con estas [tarjetas de prueba](https://docs.stripe.com/testing), con cualquier fecha futura y cualquier CVC:
+
+   | Tarjeta | Resultado |
+   |---|---|
+   | `4242 4242 4242 4242` | Pago correcto |
+   | `4000 0025 0000 3155` | Pide autenticación 3D Secure |
+   | `4000 0000 0000 0002` | Rechazada |
+
+5. Comprueba: el evento queda pagado, el idioma de la página de Stripe es el del sitio, un cupón baja el importe en Stripe y repetir un pago con el mismo cupón caduca la sesión anterior.
+
+## Pendiente, con la cuenta de Stripe
+
+- [ ] Crear la cuenta y completar sus datos de negocio y de cobro.
+- [ ] Hacer la prueba local de arriba.
+- [ ] Crear en Stripe el webhook de `https://tuevento.fun/api/payments/webhook`, con la versión de API `2026-10-28.endive` y los eventos `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` y `checkout.session.expired`.
+- [ ] Poner las claves de producción en Coolify (puntos 2 a 5 de arriba).
+- [ ] Hacer un pago real pequeño con un cupón y reembolsarlo desde Stripe.

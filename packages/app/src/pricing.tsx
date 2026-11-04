@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import {
+  discountedCents,
   guestTiers,
   localizedPath,
   upgradeCents,
+  type AppliedCoupon,
   type Event,
   type GuestTier,
   type Locale,
   type TierIndex,
 } from "@tuevento/contracts";
 import { Logo, Container, ErrorBox } from "./components";
+import { CouponField } from "./coupon";
 import { errorText, useApp } from "./context";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { Button } from "./ui/button";
@@ -88,14 +91,24 @@ export const paymentPath = (eventId: string) => `/pago?evento=${eventId}`;
 
 /** Tramos con su botón de pago: solo los mayores que el pagado que cubren a los invitados. */
 function CheckoutTiers({ event }: { event: Event }) {
-  const { api, runtime } = useApp(),
+  const { api, reload, runtime } = useApp(),
+    navigate = useNavigate(),
     [busy, setBusy] = useState<number | null>(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
   const pay = async (tier: TierIndex) => {
     setBusy(tier);
     setError("");
     try {
-      const { url } = await api.checkout(event.id, tier);
+      const { url, paid } = await api.checkout(event.id, tier, coupon?.code);
+      // Un cupón que lo cubre todo no pasa por Stripe: el pago ya está confirmado
+      if (paid || !url) {
+        await reload();
+        setCoupon(null);
+        setBusy(null);
+        navigate(`${paymentPath(event.id)}&pagado=1`);
+        return;
+      }
       // En la web, la página de Stripe sustituye a esta; en la app se abre en el navegador
       if (runtime.platform && runtime.platform !== "web") runtime.openExternal(url);
       else window.location.assign(url);
@@ -104,10 +117,17 @@ function CheckoutTiers({ event }: { event: Event }) {
       setBusy(null);
     }
   };
+  /** Texto del botón de un tramo, con el descuento del cupón si hay uno aplicado. */
+  const payLabel = (position: TierIndex) => {
+    const full = upgradeCents(event.paidTier, position);
+    const cents = coupon ? discountedCents(full, coupon) : full;
+    return cents === 0 ? tr("pricing.payFree") : tr("pricing.payTier", { price: price(cents / 100) });
+  };
   if (event.paidTier === guestTiers.length - 1) return <p className="legal-intro">{tr("pricing.topTier")}</p>;
   return (
     <>
       {event.paidTier !== null && <p>{tr("pricing.upgradeNote")}</p>}
+      <CouponField coupon={coupon} onChange={setCoupon} />
       {error && <ErrorBox message={error} />}
       <ul className="pricing-tiers" aria-label={tr("pricing.tiersLabel")}>
         {guestTiers.map((tier, index) => {
@@ -123,9 +143,7 @@ function CheckoutTiers({ event }: { event: Event }) {
                 <small>{tr("pricing.tierTooSmall")}</small>
               ) : (
                 <Button disabled={busy !== null} onClick={() => void pay(position)}>
-                  {busy === position
-                    ? tr("pricing.goingToCheckout")
-                    : tr("pricing.payTier", { price: price(upgradeCents(event.paidTier, position) / 100) })}
+                  {busy === position ? tr("pricing.goingToCheckout") : payLabel(position)}
                 </Button>
               )}
             </li>

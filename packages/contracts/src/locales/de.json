@@ -320,7 +320,9 @@
     "invalidIfMatch": "Der Header If-Match muss die Version in Anführungszeichen enthalten, zum Beispiel \"3\".",
     "invalidSyncCursor": "Der Synchronisierungs-Cursor ist ungültig.",
     "syncCursorExpired": "Deine Offline-Kopie ist zu alt: Sie muss noch einmal vollständig geladen werden.",
-    "versionConflict": "Das wurde auf einem anderen Gerät geändert, während du es bearbeitet hast. Prüfe die aktuelle Version, bevor du speicherst."
+    "versionConflict": "Das wurde auf einem anderen Gerät geändert, während du es bearbeitet hast. Prüfe die aktuelle Version, bevor du speicherst.",
+    "couponInvalid": "Dieser Gutschein ist ungültig oder nicht mehr verfügbar.",
+    "paymentInProgress": "Mit diesem Gutschein läuft bereits eine Zahlung. Warte, bis sie abgeschlossen ist, und versuche es noch einmal."
   },
   "events": {
     "actions": "Aktionen",
@@ -839,7 +841,8 @@
     "serviceRadius": "Gib eine Entfernung zwischen 0 und 500 km ein.",
     "invalidPrice": "Gib einen gültigen Preis ohne Zeichen ein.",
     "invalidCurrency": "Wähle eine Währung aus der Liste.",
-    "invalidPriceUnit": "Wähle, wofür der Preis gilt."
+    "invalidPriceUnit": "Wähle, wofür der Preis gilt.",
+    "maximum32Characters": "Höchstens 32 Zeichen."
   },
   "pricing": {
     "title": "Preise",
@@ -868,7 +871,14 @@
     "payThisEvent": "Diese Veranstaltung bezahlen",
     "upgrade": "Zu einer größeren Stufe wechseln",
     "goingToCheckout": "Wir bringen dich zur Zahlungsseite …",
-    "tiersLabel": "Gästestufen"
+    "tiersLabel": "Gästestufen",
+    "couponApplied": "Gutschein {{code}} eingelöst.",
+    "couponApply": "Einlösen",
+    "couponChecking": "Wird geprüft…",
+    "couponHint": "Nur Buchstaben ohne Akzent, Zahlen und Bindestriche.",
+    "couponLabel": "Hast du einen Gutschein?",
+    "couponRemove": "Gutschein entfernen",
+    "payFree": "Kostenlos aktivieren"
   },
   "publicEvent": {
     "opening": "Event wird geöffnet…",

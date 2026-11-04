@@ -150,3 +150,35 @@ When("recargo el panel", async ({ page }) => {
 Then("veo el formulario de entrada del panel", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Entrar al panel", exact: true })).toBeVisible();
 });
+
+const filaCupon = (page, codigo) => page.getByRole("row").filter({ hasText: codigo });
+
+async function rellenarCupon(page, codigo, porcentaje) {
+  await page.getByLabel("Código", { exact: true }).fill(codigo);
+  await page.getByLabel("Descuento", { exact: true }).fill(String(porcentaje));
+  await page.getByRole("button", { name: "Crear cupón", exact: true }).click();
+}
+
+When("creo un cupón nuevo del {int} % en el panel", async ({ page, ctx }, porcentaje) => {
+  ctx.cupon = { codigo: `QA-${Date.now()}-${Math.floor(Math.random() * 1000)}`, porcentaje };
+  await rellenarCupon(page, ctx.cupon.codigo, porcentaje);
+  await expect(filaCupon(page, ctx.cupon.codigo)).toBeVisible();
+});
+
+When("repito el cupón nuevo en el panel", async ({ page, ctx }) => {
+  await rellenarCupon(page, ctx.cupon.codigo, ctx.cupon.porcentaje);
+});
+
+Then("veo el cupón nuevo en el panel con {string} y {string}", async ({ page, ctx }, descuento, estado) => {
+  const fila = filaCupon(page, ctx.cupon.codigo);
+  await expect(fila).toContainText(descuento);
+  await expect(fila).toContainText(estado);
+});
+
+When("desactivo el cupón nuevo en el panel", async ({ page, ctx }) => {
+  await page.getByRole("button", { name: `Desactivar ${ctx.cupon.codigo}`, exact: true }).click();
+});
+
+When("pido los cupones del panel sin haber entrado", async ({ page, ctx }) => {
+  ctx.estado = (await page.request.get(`${adminURL}/api/coupons`)).status();
+});

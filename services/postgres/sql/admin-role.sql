@@ -1,4 +1,4 @@
--- Rol de solo lectura del panel de administración (servicio `admin`).
+-- Rol del panel de administración (servicio `admin`): lee y no escribe ninguna tabla.
 -- Solo ve las columnas que muestra el panel: nunca password_hash, token_hash ni teléfonos.
 -- Uso: psql -v ON_ERROR_STOP=1 -v admin_pw='…' -v db=tueventofun -f admin-role.sql (como el dueño, tuevento).
 -- Es seguro repetirlo: crea el rol si falta (si no, solo cambia su contraseña) y deja sus permisos
@@ -24,3 +24,9 @@ GRANT SELECT ON activity TO admin_ro;
 GRANT SELECT ON events TO admin_ro;
 GRANT SELECT (id, event_id) ON invitations TO admin_ro;
 GRANT SELECT (invitation_id, status) ON members TO admin_ro;
+GRANT SELECT ON coupons TO admin_ro;
+GRANT SELECT (coupon_id, payment_id) ON coupon_redemptions TO admin_ro;
+GRANT SELECT (id, status) ON event_payments TO admin_ro;
+-- Lo único que escribe el panel: dos funciones que además dejan registro (migración 032)
+GRANT EXECUTE ON FUNCTION admin_create_coupon(text, bigint, bigint, timestamptz, bigint, text) TO admin_ro;
+GRANT EXECUTE ON FUNCTION admin_set_coupon_active(uuid, boolean, text) TO admin_ro;

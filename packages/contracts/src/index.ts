@@ -189,6 +189,7 @@ export const accountLimits = {
   postalCode: 10,
   /** Texto de la búsqueda de proveedores (sin columna: no se guarda). */
   search: 100,
+  couponCode: 32,
 } as const;
 /** Punto en el mapa (WGS 84). */
 export const geoPointSchema = z.strictObject({
@@ -342,9 +343,19 @@ export const unsubscribeSchema = z.strictObject({
   h: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
   s: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "errors.unsubscribeLinkInvalid"),
 });
-/** Pago de un evento: el tramo de invitados que se compra (posición en `guestTiers`). */
+/** Código de un cupón: se guarda en mayúsculas, con letras sin tilde, números y guiones. */
+const couponCode = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .max(accountLimits.couponCode, "validation.maximum32Characters")
+  .regex(/^[A-Z0-9-]{3,}$/, "errors.couponInvalid");
+/** Comprobar un cupón antes de pagar. */
+export const couponCheckSchema = z.strictObject({ code: couponCode });
+/** Pago de un evento: el tramo de invitados que se compra (posición en `guestTiers`) y, si hay, el cupón. */
 export const checkoutSchema = z.strictObject({
   tier: z.number().int().min(0, "errors.paymentTierInvalid").max(3, "errors.paymentTierInvalid"),
+  coupon: couponCode.optional(),
 });
 /** Minutos de validez del enlace para restablecer la contraseña. */
 export const PASSWORD_RESET_MINUTES = 60;

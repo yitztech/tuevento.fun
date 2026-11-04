@@ -40,6 +40,7 @@ import {
   unsubscribeSchema,
   verifyEmailSchema,
   checkoutSchema,
+  couponCheckSchema,
   localePrefix,
   type TierIndex,
   eventSlugPattern,
@@ -391,9 +392,15 @@ export class OrganizerController {
     @Body() body: unknown,
   ) {
     limits.checkout.hit(req.user.id);
-    const { tier } = parse(checkoutSchema, body, req);
+    const { tier, coupon } = parse(checkoutSchema, body, req);
+    if (coupon) limits.coupon.hit(req.user.id);
     const locale = requestLocale(req);
-    return this.payments.checkout(req.user.id, id, tier as TierIndex, locale, returnSite(req, locale));
+    return this.payments.checkout(req.user.id, id, tier as TierIndex, locale, returnSite(req, locale), coupon);
+  }
+  @Post("coupons/check") @HttpCode(200) checkCoupon(@Req() req: AuthedRequest, @Body() body: unknown) {
+    limits.coupon.hit(req.user.id);
+    const { code } = parse(couponCheckSchema, body, req);
+    return this.payments.checkCoupon(req.user.id, code);
   }
   @Delete("events/:id") remove(
     @Req() req: AuthedRequest,

@@ -3,7 +3,7 @@
 // cabeceras y límites. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { client, account, cleanup, send, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
+import { adminBase, client, account, cleanup, createCoupon, send, setCouponActive, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-sec";
@@ -288,6 +288,48 @@ try {
     assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0, amount: 1 } })).status, 422);
     // Sin la cabecera propia, abrir un pago es una escritura más: 403
     assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0 }, csrf: false })).status, 403);
+  });
+
+  await suite("Cupones: exigen sesión, no dan pistas, frenan a quien adivina y solo el panel los crea", async () => {
+    const body = { code: "NO-EXISTE" };
+    assert.equal((await guest.raw("/coupons/check", { method: "POST", body })).status, 401);
+    assert.equal((await a.raw("/coupons/check", { method: "POST", body, csrf: false })).status, 403);
+    assert.equal((await a.raw("/coupons/check", { method: "POST", body: { ...body, percentOff: 100 } })).status, 422);
+    for (const code of ["' OR 1=1 --", "<script>alert(1)</script>"])
+      assert.equal((await a.raw("/coupons/check", { method: "POST", body: { code } })).status, 422, code);
+    // Inexistente, desactivado y agotado responden igual
+    const sinId = ({ requestId, ...resto }) => resto;
+    const desactivado = await createCoupon({ percentOff: 100 });
+    await setCouponActive(desactivado.id, false);
+    const agotado = await createCoupon({ percentOff: 100, maxRedemptions: 1 });
+    const c = client();
+    await c.call("/auth/register", "POST", account(P, "cupon-c"), 201);
+    const eventoC = await c.call("/events", "POST", eventData(), 201);
+    await c.call(`/events/${eventoC.id}/checkout`, "POST", { tier: 0, coupon: agotado.code });
+    const respuestas = [];
+    for (const code of ["NO-EXISTE", desactivado.code, agotado.code]) respuestas.push(await b.raw("/coupons/check", { method: "POST", body: { code } }));
+    for (const r of respuestas) {
+      assert.equal(r.status, 422);
+      assert.deepEqual(sinId(r.data), sinId(respuestas[0].data));
+    }
+    // IDOR: un cupón no abre el pago de un evento ajeno ni se gasta en el intento
+    const propio = await createCoupon({ percentOff: 100 });
+    assert.equal((await b.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0, coupon: propio.code } })).status, 404);
+    assert.equal((await a.call("/coupons/check", "POST", { code: propio.code })).code, propio.code);
+    // El importe no se elige desde el cuerpo
+    assert.equal((await a.raw(`/events/${evento.id}/checkout`, { method: "POST", body: { tier: 0, coupon: propio.code, amountCents: 1 } })).status, 422);
+    // Quien prueba códigos al azar recibe 429 con Retry-After
+    const d = client();
+    await d.call("/auth/register", "POST", account(P, "cupon-d"), 201);
+    let frenado;
+    for (let i = 0; i < 11; i++) frenado = await d.raw("/coupons/check", { method: "POST", body: { code: `AZAR-${i}` } });
+    assert.equal(frenado.status, 429);
+    assert.ok(Number(frenado.headers["retry-after"]) > 0);
+    // El panel: sin su sesión no se lee ni se escribe, y la sesión de la app no le sirve
+    const json = { "Content-Type": "application/json" };
+    assert.equal((await send(`${adminBase}/api/coupons`)).status, 401);
+    assert.equal((await send(`${adminBase}/api/coupons`, { method: "POST", headers: { ...json, Cookie: a.cookie() }, body: JSON.stringify({ code: "ROBADO", percentOff: 100 }) })).status, 401);
+    assert.equal((await send(`${adminBase}/api/coupons/active`, { method: "POST", headers: json, body: JSON.stringify({ id: UUID, active: true }) })).status, 401);
   });
 
   await suite("Sin enumeración de cuentas: misma respuesta exista o no el correo", async () => {

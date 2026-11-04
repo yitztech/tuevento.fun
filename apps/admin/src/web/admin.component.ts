@@ -2,10 +2,10 @@ import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Component, DestroyRef, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
-import type { Countries, EventRow, Page, Stats, UserRow } from "./api";
+import type { Countries, CouponRow, EventRow, Page, Stats, UserRow } from "./api";
 
 type Session = "checking" | "out" | "in";
-type Tab = "summary" | "users" | "events";
+type Tab = "summary" | "users" | "events" | "coupons";
 
 const REFRESH_MS = 60 * 1000;
 const PLATFORMS: Record<string, string> = { web: "Web", android: "Android", ios: "iOS" };
@@ -19,6 +19,9 @@ const MESSAGES = {
   blocked: "Demasiados intentos. Espera unos minutos.",
   error: "No se pudieron cargar los datos.",
   countries: "No se pudo consultar Umami.",
+  couponDuplicate: "Ya existe un cupón con ese código.",
+  couponInvalid: "Revisa los datos del cupón.",
+  couponError: "No se pudo guardar el cupón.",
 };
 const REGIONS = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["es"], { type: "region" }) : null;
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -48,7 +51,10 @@ export class AdminComponent {
   readonly events = signal<Page<EventRow> | null>(null);
   readonly countries = signal<Countries | null>(null);
   readonly countriesError = signal("");
+  readonly coupons = signal<Page<CouponRow> | null>(null);
+  readonly couponError = signal("");
   credentials = { username: "", password: "" };
+  couponForm = { code: "", kind: "percent", value: null as number | null, expires: "", maxRedemptions: null as number | null };
 
   constructor() {
     // Actualiza el resumen cada minuto para ver a los conectados avanzar.
@@ -92,6 +98,10 @@ export class AdminComponent {
   date(value: string | null) {
     if (!value) return "";
     return new Date(value).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  couponDiscount(coupon: CouponRow) {
+    return coupon.percentOff !== null ? `${coupon.percentOff} %` : `$${((coupon.amountOffCents ?? 0) / 100).toFixed(2)}`;
   }
 
   // ── Gráficas: barras proporcionales, sin librerías ──────────────────────
@@ -156,6 +166,7 @@ export class AdminComponent {
         this.stats.set(null);
         this.users.set(null);
         this.events.set(null);
+        this.coupons.set(null);
         this.countries.set(null);
       });
   }
@@ -206,9 +217,56 @@ export class AdminComponent {
         () => undefined,
       );
     }
+    if (this.tab() === "coupons") {
+      return this.request<Page<CouponRow>>(`/api/coupons?page=${this.page()}`).then(
+        (data) => this.coupons.set(data),
+        () => undefined,
+      );
+    }
     return this.request<Page<EventRow>>(`/api/events?page=${this.page()}`).then(
       (data) => this.events.set(data),
       () => undefined,
     );
+  }
+
+  createCoupon() {
+    const { code, kind, value, expires, maxRedemptions } = this.couponForm;
+    const body = {
+      code,
+      percentOff: kind === "percent" ? value : null,
+      amountOffCents: kind === "amount" && value !== null ? Math.round(value * 100) : null,
+      // La fecha elegida entra entera: el cupón caduca al final de ese día, en la hora de quien lo crea
+      expiresAt: expires ? new Date(`${expires}T23:59:59`).toISOString() : null,
+      maxRedemptions,
+    };
+    this.couponError.set("");
+    this.busy.set(true);
+    firstValueFrom(this.http.post("/api/coupons", body, { headers: JSON_HEADERS })).then(
+      () => {
+        this.busy.set(false);
+        this.couponForm = { code: "", kind: "percent", value: null, expires: "", maxRedemptions: null };
+        this.reload();
+      },
+      (error: unknown) => this.couponFailed(error),
+    );
+  }
+
+  setCouponActive(coupon: CouponRow, active: boolean) {
+    this.couponError.set("");
+    this.busy.set(true);
+    firstValueFrom(this.http.post("/api/coupons/active", { id: coupon.id, active }, { headers: JSON_HEADERS })).then(
+      () => {
+        this.busy.set(false);
+        this.reload();
+      },
+      (error: unknown) => this.couponFailed(error),
+    );
+  }
+
+  private couponFailed(error: unknown) {
+    this.busy.set(false);
+    const status = statusOf(error);
+    if (status === 401) return this.session.set("out");
+    this.couponError.set(status === 409 ? MESSAGES.couponDuplicate : status === 422 ? MESSAGES.couponInvalid : MESSAGES.couponError);
   }
 }

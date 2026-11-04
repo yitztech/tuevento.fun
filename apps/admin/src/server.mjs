@@ -3,6 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { dirname, extname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createAuth } from "./auth.mjs";
+import { parseCoupon, parseCouponState } from "./coupons.mjs";
 import { createDatabase } from "./db.mjs";
 import { isPasswordHash } from "./password.mjs";
 import * as stats from "./stats.mjs";
@@ -14,6 +15,7 @@ const PAGE_SIZE = 25;
 const COOKIE = "admin_session";
 const MAX_BODY = 2048;
 const HEALTH_TIMEOUT_MS = 900;
+const UNIQUE_VIOLATION = "23505";
 
 const required = (name) => {
   const value = process.env[name];
@@ -102,8 +104,9 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
   if (!isPasswordHash(passwordHash)) {
     throw new Error("ADMIN_PASSWORD_HASH no es un hash válido: genéralo con `npm run hash-password -w @tuevento/admin` y pégalo entero");
   }
+  const adminUser = required("ADMIN_USER");
   const auth = createAuth({
-    username: required("ADMIN_USER"),
+    username: adminUser,
     passwordHash,
     maxFailures: Number(process.env.ADMIN_MAX_FAILURES || 10),
   });
@@ -174,6 +177,31 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
       const page = intParam(url.searchParams.get("page"), 1, 10_000, 1);
       const rows = await stats.events(db, { offset: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE });
       return json(res, 200, { page, pageSize: PAGE_SIZE, rows });
+    },
+    "GET /api/coupons": async (req, res, url) => {
+      if (!requireSession(req, res)) return;
+      const page = intParam(url.searchParams.get("page"), 1, 10_000, 1);
+      const rows = await stats.coupons(db, { offset: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE });
+      return json(res, 200, { page, pageSize: PAGE_SIZE, rows });
+    },
+    "POST /api/coupons": async (req, res) => {
+      if (!requireSession(req, res)) return;
+      const coupon = parseCoupon(await readJson(req));
+      try {
+        const [{ id }] = await db.query("SELECT admin_create_coupon($1, $2, $3, $4, $5, $6) AS id", [
+          coupon.code, coupon.percentOff, coupon.amountOffCents, coupon.expiresAt, coupon.maxRedemptions, adminUser,
+        ]);
+        return json(res, 201, { id });
+      } catch (error) {
+        if (error.code === UNIQUE_VIOLATION) return json(res, 409, { error: "duplicate" });
+        throw error;
+      }
+    },
+    "POST /api/coupons/active": async (req, res) => {
+      if (!requireSession(req, res)) return;
+      const { id, active } = parseCouponState(await readJson(req));
+      const [{ ok }] = await db.query("SELECT admin_set_coupon_active($1, $2, $3) AS ok", [id, active, adminUser]);
+      return ok ? json(res, 200, { ok }) : json(res, 404, { error: "notFound" });
     },
   };
 

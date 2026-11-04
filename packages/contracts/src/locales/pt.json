@@ -320,7 +320,9 @@
     "invalidIfMatch": "O cabeçalho If-Match precisa ter a versão entre aspas, por exemplo \"3\".",
     "invalidSyncCursor": "O cursor de sincronização não é válido.",
     "syncCursorExpired": "Sua cópia offline está antiga demais: é preciso baixá-la inteira de novo.",
-    "versionConflict": "Isso mudou em outro dispositivo enquanto você editava. Confira a versão atual antes de salvar."
+    "versionConflict": "Isso mudou em outro dispositivo enquanto você editava. Confira a versão atual antes de salvar.",
+    "couponInvalid": "Esse cupom não é válido ou não está mais disponível.",
+    "paymentInProgress": "Você já tem um pagamento em andamento com esse cupom. Espere terminar e tente de novo."
   },
   "events": {
     "actions": "Ações",
@@ -839,7 +841,8 @@
     "serviceRadius": "Digite uma distância entre 0 e 500 km.",
     "invalidPrice": "Digite um preço válido, sem símbolos.",
     "invalidCurrency": "Escolha uma moeda da lista.",
-    "invalidPriceUnit": "Escolha pelo que o preço é cobrado."
+    "invalidPriceUnit": "Escolha pelo que o preço é cobrado.",
+    "maximum32Characters": "Máximo de 32 caracteres."
   },
   "pricing": {
     "title": "Preços",
@@ -868,7 +871,14 @@
     "payThisEvent": "Pagar este evento",
     "upgrade": "Passar para uma faixa maior",
     "goingToCheckout": "Levando você à página de pagamento…",
-    "tiersLabel": "Faixas de convidados"
+    "tiersLabel": "Faixas de convidados",
+    "couponApplied": "Cupom {{code}} aplicado.",
+    "couponApply": "Aplicar",
+    "couponChecking": "Verificando…",
+    "couponHint": "Só letras sem acento, números e hifens.",
+    "couponLabel": "Tem um cupom?",
+    "couponRemove": "Remover cupom",
+    "payFree": "Ativar de graça"
   },
   "publicEvent": {
     "opening": "Abrindo o evento…",

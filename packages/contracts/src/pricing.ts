@@ -46,3 +46,24 @@ export function upgradeCents(paid: TierIndex | null, tier: TierIndex): number {
   const already = paid === null ? 0 : guestTiers[paid].usd;
   return Math.max(0, (guestTiers[tier].usd - already) * 100);
 }
+
+/**
+ * Menor cobro con tarjeta: Stripe rechaza importes por debajo de su mínimo, que depende de la moneda
+ * en la que liquida la cuenta (0.50 USD o 10 MXN). Un dólar cabe en cualquiera de ellas.
+ */
+export const MIN_CHARGE_CENTS = 100;
+
+/** Lo que descuenta un cupón: un porcentaje o una cantidad en centavos, nunca los dos. */
+export type CouponDiscount = { percentOff: number | null; amountOffCents: number | null };
+/** Cupón aceptado antes de pagar. */
+export type AppliedCoupon = CouponDiscount & { code: string };
+
+/**
+ * Centavos que se cobran por `cents` con un cupón. 0 significa gratis: ese pago no pasa por Stripe.
+ * Un resultado por debajo del mínimo se sube al mínimo, sin pasar nunca del precio sin cupón.
+ */
+export function discountedCents(cents: number, { percentOff, amountOffCents }: CouponDiscount): number {
+  const off = percentOff !== null ? Math.round((cents * percentOff) / 100) : (amountOffCents ?? 0);
+  const final = Math.max(0, cents - off);
+  return final > 0 && final < MIN_CHARGE_CENTS ? Math.min(cents, MIN_CHARGE_CENTS) : final;
+}

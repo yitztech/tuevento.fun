@@ -44,6 +44,7 @@
         <button type="button" role="tab" [class.active]="tab() === 'summary'" (click)="show('summary')">Resumen</button>
         <button type="button" role="tab" [class.active]="tab() === 'users'" (click)="show('users')">Usuarios</button>
         <button type="button" role="tab" [class.active]="tab() === 'events'" (click)="show('events')">Eventos</button>
+        <button type="button" role="tab" [class.active]="tab() === 'coupons'" (click)="show('coupons')">Cupones</button>
       </nav>
 
       @if (error()) {
@@ -279,6 +280,75 @@
             <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
             <span>Página {{ page() }}</span>
             <button type="button" class="ghost" [disabled]="events.rows.length < events.pageSize" (click)="go(page() + 1)">Siguiente</button>
+          </nav>
+        </section>
+      }
+
+      <!-- Cupones -->
+      @if (tab() === 'coupons' && coupons(); as coupons) {
+        <section>
+          <form class="coupon-form card" (ngSubmit)="createCoupon()">
+            <h2>Nuevo cupón</h2>
+            <label>
+              <span>Código</span>
+              <input type="text" name="code" maxlength="32" pattern="[A-Za-z0-9\-]{3,32}" autocapitalize="characters" spellcheck="false" [(ngModel)]="couponForm.code" required>
+            </label>
+            <label>
+              <span>Tipo de descuento</span>
+              <select name="kind" [(ngModel)]="couponForm.kind">
+                <option value="percent">Porcentaje</option>
+                <option value="amount">Cantidad en dólares</option>
+              </select>
+            </label>
+            <label>
+              <span>Descuento</span>
+              <input type="number" name="value" min="0.01" [attr.max]="couponForm.kind === 'percent' ? 100 : 1000" [attr.step]="couponForm.kind === 'percent' ? 1 : 0.01" [(ngModel)]="couponForm.value" required>
+            </label>
+            <label>
+              <span>Caduca (opcional)</span>
+              <input type="date" name="expires" [(ngModel)]="couponForm.expires">
+            </label>
+            <label>
+              <span>Máximo de usos (opcional)</span>
+              <input type="number" name="maxRedemptions" min="1" max="100000" step="1" [(ngModel)]="couponForm.maxRedemptions">
+            </label>
+            @if (couponError()) {
+              <p class="error" role="alert">{{ couponError() }}</p>
+            }
+            <button type="submit" class="primary" [disabled]="busy()">Crear cupón</button>
+          </form>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descuento</th>
+                <th>Usos</th>
+                <th>Caduca</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of coupons.rows; track c.id) {
+                <tr>
+                  <td data-label="Código">{{ c.code }}</td>
+                  <td data-label="Descuento">{{ couponDiscount(c) }}</td>
+                  <td data-label="Usos">{{ c.used }}{{ c.maxRedemptions !== null ? ' de ' + c.maxRedemptions : '' }}</td>
+                  <td data-label="Caduca">{{ c.expiresAt ? date(c.expiresAt) : 'Sin caducidad' }}</td>
+                  <td data-label="Estado">{{ c.active ? 'Activo' : 'Desactivado' }}</td>
+                  <td data-label="Acción">
+                    <button type="button" class="ghost" [disabled]="busy()" [attr.aria-label]="(c.active ? 'Desactivar ' : 'Activar ') + c.code" (click)="setCouponActive(c, !c.active)">{{ c.active ? 'Desactivar' : 'Activar' }}</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="muted">Sin cupones todavía.</td></tr>
+              }
+            </tbody>
+          </table>
+          <nav class="pager">
+            <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
+            <span>Página {{ page() }}</span>
+            <button type="button" class="ghost" [disabled]="coupons.rows.length < coupons.pageSize" (click)="go(page() + 1)">Siguiente</button>
           </nav>
         </section>
       }
