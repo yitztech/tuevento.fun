@@ -3,7 +3,8 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Globe, Mail, MapPin, MessageCircle, Phone, Share2 } from "lucide-react";
 import { ApiError } from "@tuevento/client";
 import { providerCategoryLabels, providerPath, type ProviderImage, type ProviderPublic } from "@tuevento/contracts";
-import { getLocale, LanguageSwitcher, tr } from "./i18n";
+import { getLocale, tr } from "./i18n";
+import { SiteLayout } from "./ui/site/site-layout";
 import { errorText, useApp } from "./context";
 import { ErrorBox, Logo, Modal } from "./components";
 import { MapLinks, MapView } from "./location";
@@ -100,12 +101,9 @@ export function ProviderPage() {
 
 function ProviderView({ profile: p }: { profile: ProviderPublic }) {
   return (
+    <SiteLayout>
     <div className="provider-page">
-      <header className="provider-page-top">
-        <Logo />
-        <LanguageSwitcher />
-      </header>
-      <main>
+      <div>
         <ProviderDetails profile={p} />
         <aside className="provider-own">
           <p>{tr("providerPage.ownBusiness")}</p>
@@ -113,8 +111,9 @@ function ProviderView({ profile: p }: { profile: ProviderPublic }) {
             {tr("providerPage.ownBusinessLink")}
           </Link></Button>
         </aside>
-      </main>
+      </div>
     </div>
+    </SiteLayout>
   );
 }
 

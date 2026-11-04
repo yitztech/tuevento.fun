@@ -1,5 +1,5 @@
 import { validationOptions } from "@tuevento/contracts";
-import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
+import { tr, getLocale } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -36,11 +36,12 @@ import {
 } from "lucide-react";
 import { useApp, errorText } from "./context";
 import { NeedsConnection } from "./offline";
-import { Logo, Field, ErrorBox, Avatar, Container } from "./components";
+import { Field, ErrorBox, Avatar, Container } from "./components";
 import { AuthLegalNotice } from "./legal";
 import { PhoneField } from "./phone-field";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { SiteAuthShell, type AuthSide } from "./ui/site/auth-shell";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
   const challenge = query.get("appChallenge");
@@ -63,45 +64,13 @@ async function readAvatar(file: File): Promise<string> {
   });
 }
 /** Marco común de las pantallas de acceso: historia a la izquierda, formulario a la derecha. */
-function AuthShell({ children }: { children: React.ReactNode }) {
+function AuthShell({ side = "login", children }: { side?: AuthSide; children: React.ReactNode }) {
   return (
-    <div className="auth-layout">
-      <section className="auth-story">
-        <Logo />
-        <div>
-          <span className="auth-heart">
-            <Heart size={30} />
-          </span>
-          <h1>
-            <Lines k="account.heroTitle" />
-          </h1>
-          <p>
-            {tr("account.inviteGatherCelebrate")}
-            <br />
-            {tr("account.memoriesStartHere")}
-          </p>
-        </div>
-        <img
-          src="/images/gold.jpg"
-          alt={tr("account.flowersGlassesTableSet")}
-        />
-        <span className="auth-story-footer">
-          {tr("account.tueventofunMadeSharedMoments")}
-        </span>
-      </section>
-      <section className="auth-form-wrap">
-        <div className="auth-language">
-          <LanguageSwitcher />
-        </div>
-        <Link className="back-link" to="/">
-          <ArrowLeft size={16} />
-          {tr("common.backHome")}
-        </Link>
-        <Container width="auth" className="auth-form">
-          {children}
-        </Container>
-      </section>
-    </div>
+    <SiteAuthShell side={side}>
+      <Container width="auth" className="auth-form">
+        {children}
+      </Container>
+    </SiteAuthShell>
   );
 }
 const filterInput =
@@ -155,7 +124,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     }
   });
   return (
-    <AuthShell>
+    <AuthShell side={registerMode ? "register" : "login"}>
           <h2>
             {registerMode
               ? tr("account.startSomethingWonderful")
@@ -341,7 +310,7 @@ export function ForgotPasswordPage() {
     }
   });
   return (
-    <AuthShell>
+    <AuthShell side="recover">
       <h2>{tr("account.getBackIntoAccount")}</h2>
       <p>
         {tr(
@@ -414,7 +383,7 @@ export function ResetPasswordPage() {
   });
   const invalid = !/^[A-Za-z0-9_-]{43}$/.test(token);
   return (
-    <AuthShell>
+    <AuthShell side="recover">
       <h2>{tr("account.chooseNewPassword")}</h2>
       {invalid ? (
         <>

@@ -28,7 +28,7 @@ Registro con avatar, sesiones y Google; múltiples eventos; dieciséis temas; fa
 
 ## Brand Commitments
 
-Fondo blanco puro (#FFFFFF), elegante, colorido y acogedor. Paleta activa: Terracota Festivo (#882D17), Ámbar Caléndula (#FFCA66), Lino Cálido Marfil (#FDF8F5) y Granada (#E25C80), implementada con variables CSS flexibles que admiten variantes como Cassis y Buganvilla. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio: YunitzTech; contacto: contacto@tuevento.fun.
+Panel con fondo blanco puro (#FFFFFF) y sitio público con fondo durazno (ver «Sitio público» en DESIGN.md), elegante, colorido y acogedor. Paleta activa: Terracota Festivo (#882D17), Ámbar Caléndula (#FFCA66), Lino Cálido Marfil (#FDF8F5) y Granada (#E25C80), implementada con variables CSS flexibles que admiten variantes como Cassis y Buganvilla. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio: YunitzTech; contacto: contacto@tuevento.fun.
 
 ## Evidence on Hand
 

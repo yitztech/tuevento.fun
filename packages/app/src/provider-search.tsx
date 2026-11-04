@@ -15,9 +15,10 @@ import {
   type ProviderSearchResult,
   type SearchSort,
 } from "@tuevento/contracts";
-import { formatLocale, getLocale, LanguageSwitcher, tr, useLocale } from "./i18n";
+import { formatLocale, getLocale, tr, useLocale } from "./i18n";
+import { SiteLayout } from "./ui/site/site-layout";
 import { errorText, useApp } from "./context";
-import { Field, Logo } from "./components";
+import { Field } from "./components";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { NativeSelect } from "./ui/native-select";
@@ -500,16 +501,14 @@ export function ProviderSearchPage() {
   const [filters, setFilters] = useState(fromUrl);
   useEffect(() => setFilters(fromUrl), [fromUrl]);
   return (
+    <SiteLayout>
     <div className="provider-page provider-search-page">
-      <header className="provider-page-top">
-        <Logo />
-        <LanguageSwitcher />
-      </header>
-      <main>
+      <div>
         <Link to="/" className="text-link">
           <ArrowLeft size={16} aria-hidden="true" />
           {tr("common.backHome")}
         </Link>
+        <p className="eyebrow">{tr("site.providersHeroEyebrow")}</p>
         <h1>{tr("providerSearch.title")}</h1>
         <p className="provider-headline">{tr("providerSearch.intro")}</p>
         <ProviderSearch
@@ -525,7 +524,8 @@ export function ProviderSearchPage() {
             <Link to="/registro?tipo=proveedor">{tr("providerPage.ownBusinessLink")}</Link>
           </Button>
         </aside>
-      </main>
+      </div>
     </div>
+    </SiteLayout>
   );
 }

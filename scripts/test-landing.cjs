@@ -166,9 +166,15 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(
       page.getByRole("link", { name: "Create with this design" }),
     ).toHaveAttribute("href", "/registro?tema=tropical");
-    await expect(
-      page.locator(".landing-invitation-preview img"),
-    ).toHaveAttribute("src", "/images/tropical.jpg");
+    // El diseño elegido se marca en su tarjeta, que muestra la foto del tema
+    const chosen = page
+      .getByRole("group", { name: "Choose a sample design" })
+      .getByRole("button", { name: "Tropical", exact: true });
+    await expect(chosen).toHaveAttribute("aria-pressed", "true");
+    await expect(chosen.locator("img")).toHaveAttribute(
+      "src",
+      "/images/tropical.jpg",
+    );
     await page.getByRole("link", { name: "Create with this design" }).click();
     await expect(page).toHaveURL(/\/registro\?tema=tropical$/);
     const unique = Date.now(),

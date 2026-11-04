@@ -71,6 +71,12 @@
   --ice: var(--surface-soft);
 
   --radius: 14px;
+  --r-xs: 5px;
+  --r-sm: 8px;
+  --r-md: 9px;
+  --r-lg: 13px;
+  --r-xl: 14px;
+  --r-2xl: 16px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Contenedores y elevación suave (Arquitectura micitaentiempo.online) */
@@ -1965,70 +1971,6 @@
   font-size: 10px;
   color: #747881;
 }
-.auth-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
-}
-.auth-story {
-  background: var(--blue);
-  color: #fff;
-  padding: 35px 50px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 100vh;
-}
-.auth-story .logo {
-  color: #fff;
-  z-index: 2;
-}
-.auth-story .logo-mark {
-  color: var(--pink);
-}
-.auth-story > div {
-  margin: 70px 0 45px;
-  z-index: 1;
-}
-.auth-story h1 {
-  font-size: clamp(40px, 4.7vw, 70px);
-  line-height: 1.04;
-  letter-spacing: -2px;
-  font-weight: 500;
-  margin: 21px 0;
-}
-.auth-story > div p {
-  font-size: 14px;
-  color: #d8dce7;
-  margin-top: 20px;
-}
-.auth-heart {
-  display: flex;
-  color: var(--pink);
-}
-.auth-story > img {
-  width: calc(100% + 100px);
-  max-width: none;
-  margin: 0 -50px -35px;
-  height: 320px;
-  flex: 1;
-  max-height: 520px;
-}
-.auth-story-footer {
-  position: absolute;
-  bottom: 24px;
-  left: 30px;
-  background: #fff;
-  padding: 9px 14px;
-  border-radius: 6px;
-  color: var(--blue);
-  font-size: 10px;
-}
-.auth-form-wrap {
-  padding: 35px 55px;
-  min-width: 0;
-}
 .auth-form {
   max-width: 440px;
   margin: 42px auto;
@@ -2835,21 +2777,6 @@
   .rsvp-layout {
     gap: 50px;
   }
-  .auth-form-wrap {
-    padding: 30px 35px;
-  }
-  .auth-story {
-    padding-left: 35px;
-    padding-right: 35px;
-  }
-  .auth-story > img {
-    width: calc(100% + 70px);
-    margin-left: -35px;
-    margin-right: -35px;
-  }
-  .auth-story h1 {
-    letter-spacing: -1.5px;
-  }
 }
 @media (max-width: 1000px) {
   .sidebar {
@@ -3074,12 +3001,6 @@
   }
   .profile-identity > .upload-button {
     margin-left: auto;
-  }
-  .auth-story h1 {
-    font-size: 45px;
-  }
-  .auth-form-wrap {
-    padding: 30px;
   }
   .auth-form h2 {
     font-size: 31px;
@@ -3432,24 +3353,12 @@
   .directory-members {
     font-size: 10px;
   }
-  .auth-layout {
-    grid-template-columns: 1fr;
-  }
-  .auth-story {
-    display: none;
-  }
-  .auth-form-wrap {
-    padding: 25px 28px;
-  }
   .auth-form {
     max-width: 430px;
     margin: 18px auto 25px;
   }
   .auth-form h2 {
     font-size: 35px;
-  }
-  .auth-form-wrap > .back-link {
-    margin-bottom: 24px;
   }
   .auth-form .field > :is(span:first-child, [data-slot="label"]) {
     font-size: 12px;
@@ -3984,9 +3893,6 @@
     font-size: 11px;
     width: max-content;
   }
-  .auth-form-wrap {
-    padding: 25px 24px;
-  }
   .auth-form h2 {
     font-size: 33px;
   }
@@ -4286,11 +4192,6 @@
   display: flex;
   gap: 8px;
 }
-.auth-language {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
 .public-header .language-switcher {
   margin-left: auto;
   margin-right: 25px;
@@ -4418,7 +4319,6 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .legal-page p a {text-decoration:underline;text-underline-offset:2px;}
 .auth-legal {margin-top:18px;font-size:12px;color:var(--muted);line-height:1.5;}
 .auth-legal a {color:var(--primary);text-decoration:underline;text-underline-offset:2px;}
-.landing-legal-links {display:contents;}
 @media(max-width:767px){.legal-page{padding:24px 0 56px}.legal-page header{margin-bottom:32px}}
 .auth-forgot {margin:-6px 0 16px;text-align:right;font-size:12px;}
 .auth-forgot > a {color:var(--primary);font-weight:650;text-decoration:underline;text-underline-offset:3px;}
@@ -5085,13 +4985,6 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   max-width: 1040px;
   margin: 0 auto;
   padding: 16px 16px 48px;
-}
-.provider-page-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
 }
 .provider-hero {
   display: grid;

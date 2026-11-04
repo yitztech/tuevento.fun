@@ -1,6 +1,7 @@
 import "./errors";
 import "@tuevento/app/styles.css";
 import "@tuevento/app/tailwind.css";
+import "@tuevento/app/site.css";
 import ReactDOM from "react-dom/client";
 import type { ReactNode } from "react";
 import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";

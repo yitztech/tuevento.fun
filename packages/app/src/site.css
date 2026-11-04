@@ -1,0 +1,92 @@
+/* Sitio público: tokens del diseño nuevo solo dentro de .site-surface. El panel no cambia. */
+@font-face {
+  font-family: "Playfair Display Variable";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Playfair Display Variable";
+  font-style: italic;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("@fontsource-variable/playfair-display/files/playfair-display-latin-wght-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Great Vibes";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("@fontsource/great-vibes/files/great-vibes-latin-400-normal.woff2") format("woff2");
+}
+.site-surface {
+  --primary: #a63f30;
+  --primary-hover: #8a3225;
+  --primary-text: #ffffff;
+  --ink: #3d2a25;
+  --muted: #765f58;
+  --line: #f0d8cb;
+  --line-strong: #ecd2c4;
+  --surface-soft: #f9e6dc;
+  --surface-soft-hover: #fbe3d6;
+  --site-bg: #fff6f2;
+  --site-title: #7a2a1b;
+  --site-peach: #f6c6a4;
+  --site-coral: #ea8659;
+  --site-accent-soft: #fbe3d6;
+  --site-note: #fbe7da;
+  --site-band: #d6694f;
+  --site-phone: #2a1a15;
+  --site-shade: #3a1a12;
+  --site-success: #16a34a;
+  --site-success-soft: #e7f5ec;
+  --site-success-foreground: #14532d;
+  --site-warning: #f59e0b;
+  --site-warning-soft: #fff1d6;
+  --site-warning-foreground: #7c4a03;
+  --site-shadow-soft: 0 12px 32px -14px rgb(122 42 27 / 0.22);
+  --site-shadow-card: 0 2px 6px rgb(122 42 27 / 0.05), 0 18px 40px -22px rgb(122 42 27 / 0.28);
+  --r-sm: 0.5rem;
+  --r-md: 0.75rem;
+  --r-lg: 1rem;
+  --r-xl: 1.5rem;
+  --r-2xl: 2rem;
+  min-height: 100dvh;
+  color: var(--ink);
+  line-height: 1.6;
+  overflow-x: clip;
+}
+@layer base {
+  .site-surface :where(h1, h2, h3) {
+    font-family: "Playfair Display Variable", Georgia, serif;
+    color: var(--site-title);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .site-surface :where(ul, ol) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .site-surface :where(button) {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .site-surface :where(fieldset) {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .site-surface :where(figure, blockquote) {
+    margin: 0;
+  }
+}
+
+/* Títulos de las páginas antiguas dentro del sitio: sus reglas no tienen capa y ganan a @layer base */
+.site-surface :is(.legal-page, .downloads-page, .provider-page) :is(h1, h2) {
+  font-family: "Playfair Display Variable", Georgia, serif;
+  color: var(--site-title);
+  letter-spacing: -0.01em;
+}
