@@ -17,6 +17,7 @@ import { CouponField } from "./coupon";
 import { errorText, useApp } from "./context";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { Button } from "./ui/button";
+import { SiteLayout } from "./ui/site/site-layout";
 
 /** Ruta de la página de precios en un idioma (/precios, /pricing…). */
 export const pricingPath = (locale: Locale) => localizedPath("pricing", locale);
@@ -54,13 +55,10 @@ export function PricingPage() {
     document.title = `${tr("pricing.title")} · TuEventoFun`;
   }, [locale]);
   return (
+    <SiteLayout>
     <div className="legal-page pricing-page">
       <Container width="prose">
-        <header>
-          <Logo />
-          <LanguageSwitcher />
-        </header>
-        <main>
+        <div>
           <Link to="/" className="text-link">
             <ArrowLeft size={16} />
             {tr("common.backHome")}
@@ -72,9 +70,10 @@ export function PricingPage() {
             {tr("pricing.buy")}
             <ArrowRight size={18} />
           </Link></Button>
-        </main>
+        </div>
       </Container>
     </div>
+    </SiteLayout>
   );
 }
 

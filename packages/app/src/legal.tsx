@@ -7,8 +7,9 @@ import {
   type Locale,
   type LocalizedPage,
 } from "@tuevento/contracts";
-import { Logo, Container } from "./components";
-import { LanguageSwitcher, RichText, formatLocale, tr, useLocale } from "./i18n";
+import { Container } from "./components";
+import { RichText, formatLocale, tr, useLocale } from "./i18n";
+import { SiteLayout } from "./ui/site/site-layout";
 import { legalTexts, type LegalContent } from "./legal-texts";
 
 /**
@@ -73,13 +74,10 @@ export function LegalPage({ page }: { page: LegalKind }) {
     timeZone: "UTC",
   }).format(new Date(`${LEGAL_UPDATED}T00:00:00Z`));
   return (
+    <SiteLayout>
     <div className="legal-page">
       <Container width="prose">
-        <header>
-          <Logo />
-          <LanguageSwitcher />
-        </header>
-        <main>
+        <div>
           <Link to="/" className="text-link">
             <ArrowLeft size={16} />
             {tr("common.backHome")}
@@ -100,9 +98,10 @@ export function LegalPage({ page }: { page: LegalKind }) {
               {tr(other === "privacy" ? "legal.privacyPolicy" : "legal.termsOfUse")}
             </Link>
           </p>
-        </main>
+        </div>
       </Container>
     </div>
+    </SiteLayout>
   );
 }
 /** Enlaces a las páginas legales en el idioma del dominio, para pies y formularios. */

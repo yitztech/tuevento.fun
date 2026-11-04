@@ -69,7 +69,8 @@ misma especificidad que tenía `.button`).
 - **Las clases de Tailwind solo se escriben en `src/ui`** (y `src/lib`): `tailwind.css` solo genera
   utilidades de esas carpetas (`source(none)`). Las pantallas usan los componentes, sus variantes y su CSS
   propio. Si un componente necesita otra variante, se añade en su archivo de `src/ui`.
-- **Sin preflight.** El reinicio base sigue siendo el de `styles.css`.
+- **Sin preflight.** El reinicio base sigue siendo el de `styles.css`; `site.css` añade el del sitio público solo dentro de `.site-surface`.
+- **Sitio público.** `.site-surface` redefine las variables que usan los colores de Tailwind, así que los componentes cambian de aspecto sin variantes nuevas. Sus piezas viven en `src/ui/site/`.
 - Modo oscuro: la web no lo tiene; las clases `dark:` de los componentes no se activan.
 
 ## Accesibilidad y pruebas

@@ -129,7 +129,7 @@ El lino cálido marfil (`--surface-soft: #fdf8f5`) identifica navegación activa
 
 ### Neutral
 
-- **Blanco puro** (`#ffffff`): superficie principal innegociable y campos.
+- **Blanco puro** (`#ffffff`): superficie principal innegociable del panel y campos. El sitio público usa el fondo durazno de «Sitio público».
 - **Café tostado** (`#261c18`): lectura principal de alto contraste.
 - **Arcilla suave** (`#6e5f5a`): texto secundario accesible.
 - **Línea arena** (`#efe6e1`): bordes y divisores suaves.
@@ -233,7 +233,7 @@ Deuda observada, no convertida en regla: microtextos de 9–10 px y el kicker de
 
 ### Do:
 
-- **Do** conservar el fondo blanco puro y los acentos definidos.
+- **Do** conservar el fondo blanco puro y los acentos definidos en el panel; el sitio público sigue «Sitio público».
 - **Do** mostrar nombres de estados además de su color.
 - **Do** traducir los textos de interfaz y conservar intacto el contenido escrito por usuarios.
 - **Do** mantener imágenes reales, fuentes locales y foco visible.
@@ -242,3 +242,14 @@ Deuda observada, no convertida en regla: microtextos de 9–10 px y el kicker de
 - **Don't** presentar datos de demostración como eventos reales del usuario.
 - **Don't** sustituir fotografías por degradados o texturas simuladas.
 - **Don't** fijar anchos de texto que corten las traducciones.
+
+## Sitio público
+
+La portada, el acceso, la búsqueda y la página de proveedores, los precios, las descargas y las páginas legales usan una superficie propia. El panel, la invitación y las pantallas de pago conservan el resto de este documento.
+
+- **Ámbito:** la clase `.site-surface` (`packages/app/src/site.css`) cambia los tokens solo dentro de ella, y los componentes de `src/ui` se adaptan solos. Nada del sitio toca `:root`.
+- **Color:** fondo durazno `#fff6f2` con el degradado `page-wash`, acción `#a63f30`, títulos `#7a2a1b`, texto `#3d2a25`, texto secundario `#765f58`, bordes `#f0d8cb`, acentos `#f6c6a4`, `#ea8659` y `#fbe3d6`.
+- **Tipografía:** Playfair Display para títulos, con cursiva en la segunda línea del titular; Manrope para el resto; Great Vibes solo en notas decorativas, nunca en texto que haya que leer para actuar.
+- **Forma:** radios de 8 a 32 px (`--r-*`), paneles translúcidos con borde blanco y las sombras `shadow-site-soft` y `shadow-site-card`.
+- **Componentes:** `src/ui/site/`. Las fotografías viven en una sola tabla, `src/ui/site/photos.ts`.
+- **Apps:** dentro de Capacitor, `SiteLayout` cambia la cabecera y el pie por una barra con logo e idioma. El icono de las apps no cambia.
