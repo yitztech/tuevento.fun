@@ -1,5 +1,8 @@
 # Plan: sitio público nuevo, Stripe y cupones
 
+> Documento histórico: el sitio y los pagos se integraron en los PR #59, #60 y #61.
+> Las instrucciones, estados y parches siguientes reflejan el momento del plan y no deben ejecutarse sin revisión.
+
 Este plan lo ejecutan modelos económicos: casi todo el trabajo ya está hecho y probado aquí, y cada tarea es
 aplicarlo, comprobarlo y hacer commit. Tiene dos partes independientes, cada una con su rama y su PR:
 
