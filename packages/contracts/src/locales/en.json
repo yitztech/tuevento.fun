@@ -1231,6 +1231,26 @@
     "usedSaved": "The saved version was kept."
   },
   "site": {
-    "confirmAttendance": "Confirm attendance"
+    "catAnniversaries": "Anniversaries",
+    "catAnniversariesText": "Raise a glass to life",
+    "catBaptisms": "Baptisms",
+    "catBaptismsText": "One-of-a-kind moments",
+    "catBirthdays": "Birthdays",
+    "catBirthdaysText": "For every age",
+    "categoriesLabel": "Event types",
+    "catMore": "And more",
+    "catMoreText": "Any occasion",
+    "catSpecial": "Special events",
+    "catSpecialText": "Graduations, reunions…",
+    "catWeddings": "Weddings",
+    "catWeddingsText": "Celebrate love",
+    "confirmAttendance": "Confirm attendance",
+    "heroEyebrow": "Invitations that spark excitement",
+    "heroLead": "Create one-of-a-kind digital invitations, share them with the people you love and enjoy every special moment the easy way.",
+    "heroRibbon": "Designs that tell your story",
+    "heroTitle": "The joy is <em>being together.</em>",
+    "phonePreview": "Preview of an invitation on a phone",
+    "trustNoAccount": "Guests reply without an account",
+    "trustOnePlace": "Everything in one place"
   }
 }

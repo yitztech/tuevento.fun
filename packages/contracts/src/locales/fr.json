@@ -1231,6 +1231,26 @@
     "usedSaved": "La version enregistrée a été conservée."
   },
   "site": {
-    "confirmAttendance": "Confirmer ma présence"
+    "catAnniversaries": "Noces",
+    "catAnniversariesText": "Trinque à la vie",
+    "catBaptisms": "Baptêmes",
+    "catBaptismsText": "Des moments uniques",
+    "catBirthdays": "Anniversaires",
+    "catBirthdaysText": "Pour tous les âges",
+    "categoriesLabel": "Types d’événement",
+    "catMore": "Et plus encore",
+    "catMoreText": "Toutes les occasions",
+    "catSpecial": "Événements spéciaux",
+    "catSpecialText": "Remises de diplômes, retrouvailles…",
+    "catWeddings": "Mariages",
+    "catWeddingsText": "Célèbre l’amour",
+    "confirmAttendance": "Confirmer ma présence",
+    "heroEyebrow": "Des invitations qui donnent envie",
+    "heroLead": "Crée des invitations numériques uniques, partage-les avec ceux que tu aimes et vis chaque moment spécial en toute simplicité.",
+    "heroRibbon": "Des modèles qui racontent ton histoire",
+    "heroTitle": "Le bonheur, c’est <em>d’être ensemble.</em>",
+    "phonePreview": "Aperçu d’une invitation sur un téléphone",
+    "trustNoAccount": "Tes invités répondent sans compte",
+    "trustOnePlace": "Tout au même endroit"
   }
 }

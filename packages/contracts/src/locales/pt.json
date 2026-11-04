@@ -1231,6 +1231,26 @@
     "usedSaved": "A versão salva foi mantida."
   },
   "site": {
-    "confirmAttendance": "Confirmar presença"
+    "catAnniversaries": "Bodas",
+    "catAnniversariesText": "Brinde à vida",
+    "catBaptisms": "Batizados",
+    "catBaptismsText": "Momentos únicos",
+    "catBirthdays": "Aniversários",
+    "catBirthdaysText": "Para todas as idades",
+    "categoriesLabel": "Tipos de evento",
+    "catMore": "E mais",
+    "catMoreText": "Qualquer ocasião",
+    "catSpecial": "Eventos especiais",
+    "catSpecialText": "Formaturas, reencontros…",
+    "catWeddings": "Casamentos",
+    "catWeddingsText": "Celebre o amor",
+    "confirmAttendance": "Confirmar presença",
+    "heroEyebrow": "Convites que empolgam",
+    "heroLead": "Crie convites digitais únicos, compartilhe com quem você mais gosta e viva cada momento especial de um jeito simples.",
+    "heroRibbon": "Modelos que contam a sua história",
+    "heroTitle": "O bom é <em>estar juntos.</em>",
+    "phonePreview": "Prévia de um convite em um celular",
+    "trustNoAccount": "Seus convidados respondem sem conta",
+    "trustOnePlace": "Tudo em um só lugar"
   }
 }

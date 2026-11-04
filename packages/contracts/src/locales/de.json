@@ -1231,6 +1231,26 @@
     "usedSaved": "Die gespeicherte Version bleibt."
   },
   "site": {
-    "confirmAttendance": "Teilnahme bestätigen"
+    "catAnniversaries": "Jahrestage",
+    "catAnniversariesText": "Stoß auf das Leben an",
+    "catBaptisms": "Taufen",
+    "catBaptismsText": "Einzigartige Momente",
+    "catBirthdays": "Geburtstage",
+    "catBirthdaysText": "Für jedes Alter",
+    "categoriesLabel": "Eventarten",
+    "catMore": "Und mehr",
+    "catMoreText": "Jeder Anlass",
+    "catSpecial": "Besondere Events",
+    "catSpecialText": "Abschlussfeiern, Treffen …",
+    "catWeddings": "Hochzeiten",
+    "catWeddingsText": "Feiere die Liebe",
+    "confirmAttendance": "Teilnahme bestätigen",
+    "heroEyebrow": "Einladungen, die Vorfreude wecken",
+    "heroLead": "Gestalte einzigartige digitale Einladungen, teile sie mit deinen Liebsten und erlebe jeden besonderen Moment ganz unkompliziert.",
+    "heroRibbon": "Designs, die deine Geschichte erzählen",
+    "heroTitle": "Das Schönste ist <em>das Zusammensein.</em>",
+    "phonePreview": "Vorschau einer Einladung auf einem Smartphone",
+    "trustNoAccount": "Gäste antworten ohne Konto",
+    "trustOnePlace": "Alles an einem Ort"
   }
 }

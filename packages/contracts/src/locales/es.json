@@ -1231,6 +1231,26 @@
     "usedSaved": "Se quedó la versión guardada."
   },
   "site": {
-    "confirmAttendance": "Confirmar asistencia"
+    "catAnniversaries": "Aniversarios",
+    "catAnniversariesText": "Brinda por la vida",
+    "catBaptisms": "Bautizos",
+    "catBaptismsText": "Momentos únicos",
+    "catBirthdays": "Cumpleaños",
+    "catBirthdaysText": "Para todas las edades",
+    "categoriesLabel": "Tipos de evento",
+    "catMore": "Y más",
+    "catMoreText": "Cualquier ocasión",
+    "catSpecial": "Eventos especiales",
+    "catSpecialText": "Graduaciones, reuniones…",
+    "catWeddings": "Bodas",
+    "catWeddingsText": "Celebra el amor",
+    "confirmAttendance": "Confirmar asistencia",
+    "heroEyebrow": "Invitaciones que ilusionan",
+    "heroLead": "Crea invitaciones digitales únicas, compártelas con quienes más quieres y vive cada momento especial de una forma sencilla.",
+    "heroRibbon": "Diseños que cuentan tu historia",
+    "heroTitle": "Lo bonito es <em>estar juntos.</em>",
+    "phonePreview": "Vista previa de una invitación en un teléfono",
+    "trustNoAccount": "Tus invitados responden sin cuenta",
+    "trustOnePlace": "Todo en un solo lugar"
   }
 }
