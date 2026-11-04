@@ -1,0 +1,24 @@
+# Gitleaks (https://github.com/gitleaks/gitleaks): reglas por defecto más estas excepciones.
+# Comprobar en local: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo --no-banner
+title = "tuevento.fun"
+
+[extend]
+useDefault = true
+
+# Pruebas: contraseñas y claves inventadas para los escenarios, la API falsa y las suites.
+# Un secreto real nunca va en estas rutas (van en variables de entorno, AGENTS §31).
+[[allowlists]]
+description = "Credenciales simuladas de las pruebas"
+paths = [
+  '''(^|/)(tests?|__tests__|fixtures|testdata)/''',
+  '''(^|/)scripts/test-[^/]*\.mjs$''',
+  '''\.(test|spec)\.[cm]?[jt]sx?$''',
+  '''(^|/)fake-[^/]*\.[cm]?[jt]s$''',
+]
+
+# Claves del catálogo de traducciones junto a un campo «password» (p. ej.
+# `accountLimits.password, "validation.maximum128Characters"`): no son secretos.
+[[allowlists]]
+description = "Claves de traducción de validación"
+regexTarget = "secret"
+regexes = ['''^validation\.[A-Za-z0-9]+$''']
