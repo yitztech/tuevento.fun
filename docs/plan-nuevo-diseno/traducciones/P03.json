@@ -1,0 +1,16 @@
+{
+  "errors.couponInvalid": {
+    "es": "Ese cupón no es válido o ya no está disponible.",
+    "en": "That coupon isn't valid or is no longer available.",
+    "pt": "Esse cupom não é válido ou não está mais disponível.",
+    "de": "Dieser Gutschein ist ungültig oder nicht mehr verfügbar.",
+    "fr": "Ce code promo n’est pas valide ou n’est plus disponible."
+  },
+  "validation.maximum32Characters": {
+    "es": "Máximo 32 caracteres.",
+    "en": "Maximum 32 characters.",
+    "pt": "Máximo de 32 caracteres.",
+    "de": "Höchstens 32 Zeichen.",
+    "fr": "32 caractères maximum."
+  }
+}

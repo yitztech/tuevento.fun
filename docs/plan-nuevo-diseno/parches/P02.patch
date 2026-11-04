@@ -1,0 +1,292 @@
+diff --git a/apps/api/src/payment-config.ts b/apps/api/src/payment-config.ts
+index 8e87d1e..0681a40 100644
+--- a/apps/api/src/payment-config.ts
++++ b/apps/api/src/payment-config.ts
+@@ -1,3 +1,5 @@
++import type { Locale } from "@tuevento/contracts";
++
+ /**
+  * Configuración de los pagos, aparte de PaymentsService para que EventsService la use sin
+  * importarlo (PaymentsService depende de Updates, que vive en events.ts).
+@@ -7,6 +9,18 @@ export const webhookSecret = () => process.env.STRIPE_WEBHOOK_SECRET || "";
+ export const stripeApiUrl = () => (process.env.STRIPE_API_URL || "https://api.stripe.com").replace(/\/+$/, "");
+ export const paymentsEnabled = () => !!secretKey();
+ 
++/** Versión de la API de Stripe con la que se escribió esta integración: un cambio de la cuenta no la altera. */
++export const STRIPE_VERSION = "2026-10-28.endive";
++/** Cabeceras de toda petición a Stripe. */
++export const stripeHeaders = () => ({ Authorization: `Bearer ${secretKey()}`, "Stripe-Version": STRIPE_VERSION });
++
++/** Minutos que una sesión de Checkout sigue abierta: Stripe exige al menos 30 (y como máximo 24 horas). */
++export const CHECKOUT_MINUTES = 31;
++
++/** Idioma de la página de Stripe: español de América y portugués de Brasil, como la app. */
++const stripeLocales: Record<Locale, string> = { es: "es-419", en: "en", pt: "pt-BR", de: "de", fr: "fr" };
++export const stripeLocale = (locale: Locale) => stripeLocales[locale];
++
+ /** Con la clave de Stripe, la del webhook es obligatoria (§20): sin ella ningún pago se confirmaría. */
+ export function assertPaymentsConfig() {
+   if (paymentsEnabled() && !webhookSecret()) throw new Error("STRIPE_WEBHOOK_SECRET is required with STRIPE_SECRET_KEY");
+diff --git a/apps/api/src/payments.test.ts b/apps/api/src/payments.test.ts
+index 852252e..75ca1a3 100644
+--- a/apps/api/src/payments.test.ts
++++ b/apps/api/src/payments.test.ts
+@@ -1,6 +1,8 @@
+ import assert from "node:assert/strict";
+ import { createHmac, randomBytes } from "node:crypto";
+ import test from "node:test";
++import { supportedLocales } from "@tuevento/contracts";
++import { CHECKOUT_MINUTES, stripeLocale } from "./payment-config";
+ import { validStripeSignature } from "./payments";
+ 
+ const secret = `whsec_${randomBytes(24).toString("hex")}`;
+@@ -26,3 +28,13 @@ test("Un webhook de hace más de 5 minutos se rechaza: no se puede repetir uno c
+   assert.equal(validStripeSignature(body, sign(now / 1000 - 301), secret, now), false);
+   assert.equal(validStripeSignature(body, sign(now / 1000 - 299), secret, now), true);
+ });
++
++test("Cada idioma de la app tiene su idioma en la página de Stripe", () => {
++  // Lista de `locale` de la API de Checkout: es-419 y pt-BR son las variantes de la app
++  const stripe = ["de", "en", "es-419", "fr", "pt-BR"];
++  assert.deepEqual(supportedLocales.map(stripeLocale).sort(), stripe);
++});
++
++test("La sesión de Checkout caduca dentro del margen que acepta Stripe", () => {
++  assert.ok(CHECKOUT_MINUTES > 30 && CHECKOUT_MINUTES < 24 * 60);
++});
+diff --git a/apps/api/src/payments.ts b/apps/api/src/payments.ts
+index b2acbeb..cdb5234 100644
+--- a/apps/api/src/payments.ts
++++ b/apps/api/src/payments.ts
+@@ -3,7 +3,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+ import { guestTiers, type Locale, type TierIndex, translate, upgradeCents } from "@tuevento/contracts";
+ import { Database } from "./database";
+ import { Updates } from "./events";
+-import { paidTierSql, paymentsEnabled, secretKey, stripeApiUrl, webhookSecret } from "./payment-config";
++import { CHECKOUT_MINUTES, paidTierSql, paymentsEnabled, stripeApiUrl, stripeHeaders, stripeLocale, webhookSecret } from "./payment-config";
+ 
+ /**
+  * Pago único por evento con Stripe Checkout: la API crea la sesión y el organizador paga en la
+@@ -64,7 +64,8 @@ export class PaymentsService {
+       mode: "payment",
+       client_reference_id: id,
+       customer_email: event.email,
+-      locale,
++      locale: stripeLocale(locale),
++      expires_at: String(Math.floor(Date.now() / 1000) + CHECKOUT_MINUTES * 60),
+       success_url: `${back}&pagado=1`,
+       cancel_url: back,
+       "line_items[0][quantity]": "1",
+@@ -85,7 +86,7 @@ export class PaymentsService {
+       const response = await fetch(`${stripeApiUrl()}/v1/checkout/sessions`, {
+         method: "POST",
+         headers: {
+-          Authorization: `Bearer ${secretKey()}`,
++          ...stripeHeaders(),
+           "Content-Type": "application/x-www-form-urlencoded",
+           // Un reintento con la misma clave no crea otra sesión (§21)
+           "Idempotency-Key": id,
+@@ -113,6 +114,11 @@ export class PaymentsService {
+       data?: { object?: { id?: string; client_reference_id?: string; payment_status?: string; amount_total?: number; currency?: string } };
+     };
+     const session = event.data?.object;
++    // Sesión caducada o pago diferido rechazado: ese intento ya no se cobrará
++    if (["checkout.session.expired", "checkout.session.async_payment_failed"].includes(event.type ?? "")) {
++      await this.cancelPayment(session?.client_reference_id ?? "", session?.id ?? "");
++      return { received: true };
++    }
+     const completed = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type ?? "");
+     if (!completed || session?.payment_status !== "paid") return { received: true };
+     // El importe y la sesión tienen que ser los que abrió la API: no se acepta otro pago
+@@ -125,4 +131,12 @@ export class PaymentsService {
+     if (row?.user_id) this.updates.emit(row.user_id);
+     return { received: true };
+   }
++
++  /** Cierra un pago pendiente que ya no se cobrará. Un pago confirmado no cambia. */
++  private async cancelPayment(paymentId: string, checkoutId: string) {
++    await this.db.query(
++      "UPDATE event_payments SET status='canceled', updated_at=now() WHERE id::text=$1 AND checkout_id=$2 AND status='pending'",
++      [paymentId, checkoutId],
++    );
++  }
+ }
+diff --git a/compose.yml b/compose.yml
+index 04d8aaf..474047c 100644
+--- a/compose.yml
++++ b/compose.yml
+@@ -64,6 +64,9 @@ services:
+       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+       RELEASE_PUBLISH_TOKEN: ${RELEASE_PUBLISH_TOKEN:-dev-release-token}
+       APP_SECRET: ${APP_SECRET:-dev-app-secret-solo-para-desarrollo-local}
++      # Vacías, los pagos siguen apagados. Con las claves de prueba de Stripe y `stripe listen`: docs/PAGOS-PENDIENTES.md
++      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
++      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+       RELEASE_DOWNLOAD_HOSTS: ${RELEASE_DOWNLOAD_HOSTS:-github.com,apps.apple.com,testflight.apple.com,play.google.com}
+       DEMO_ENABLED: ${DEMO_ENABLED:-true}
+       # Las suites de la API piden restablecer contraseña muchas veces desde la misma IP
+diff --git a/services/payments-fake/server.mjs b/services/payments-fake/server.mjs
+index 5a3b164..afc3623 100644
+--- a/services/payments-fake/server.mjs
++++ b/services/payments-fake/server.mjs
+@@ -4,12 +4,17 @@
+ //   POST /v1/checkout/sessions   crea la sesión (Bearer = SECRET_KEY; Idempotency-Key repetida = la misma)
+ //   GET  /pay/:id                página con «Pagar» y «Cancelar»
+ //   POST /pay/:id                action=pay: webhook checkout.session.completed y vuelta a success_url;
+-//                                action=cancel: vuelta a cancel_url
++//                                action=cancel: vuelta a cancel_url; action=expire: la sesión caduca;
++//                                action=fail: un pago diferido rechazado
++//   GET  /v1/checkout/sessions/:id         la sesión, con lo que recibió
++//   POST /v1/checkout/sessions/:id/expire  caduca una sesión abierta (si no, 400, como Stripe)
+ import { createHmac, randomBytes } from "node:crypto";
+ import { createServer } from "node:http";
+ 
+ const { SECRET_KEY = "", WEBHOOK_SECRET = "", WEBHOOK_URL = "", PUBLIC_URL = "http://127.0.0.1:8099" } = process.env;
+ const sessions = new Map();
++// Idiomas que acepta la API de Checkout (los que usa la app y sus variantes)
++const STRIPE_LOCALES = new Set(["auto", "de", "en", "en-GB", "es", "es-419", "fr", "fr-CA", "pt", "pt-BR"]);
+ const byIdempotencyKey = new Map();
+ 
+ const readBody = (req) =>
+@@ -20,16 +25,16 @@ const readBody = (req) =>
+   });
+ const escape = (text) => String(text).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+ 
+-async function sendWebhook(session) {
++async function sendWebhook(session, type = "checkout.session.completed", paymentStatus = "paid") {
+   const body = JSON.stringify({
+     id: `evt_${randomBytes(12).toString("hex")}`,
+-    type: "checkout.session.completed",
++    type,
+     data: {
+       object: {
+         id: session.id,
+         object: "checkout.session",
+         client_reference_id: session.params.get("client_reference_id"),
+-        payment_status: "paid",
++        payment_status: paymentStatus,
+         amount_total: Number(session.params.get("line_items[0][price_data][unit_amount]")),
+         currency: session.params.get("line_items[0][price_data][currency]"),
+         metadata: { payment_id: session.params.get("metadata[payment_id]") },
+@@ -59,12 +64,36 @@ createServer(async (req, res) => {
+     const key = req.headers["idempotency-key"];
+     const existing = key && byIdempotencyKey.get(key);
+     if (existing) return json(200, existing.view);
++    // Stripe rechaza estos valores: el doble también, para que las pruebas lo noten
++    const left = Number(params.get("expires_at")) - Date.now() / 1000;
++    if (!STRIPE_LOCALES.has(params.get("locale"))) return json(400, { error: { message: "Invalid locale" } });
++    if (!(left >= 30 * 60 && left <= 24 * 3600)) return json(400, { error: { message: "Invalid expires_at" } });
+     const id = `cs_test_${randomBytes(16).toString("hex")}`;
+-    const session = { id, params, view: { id, object: "checkout.session", url: `${PUBLIC_URL}/pay/${id}` } };
++    const session = {
++      id,
++      params,
++      status: "open",
++      version: req.headers["stripe-version"],
++      view: { id, object: "checkout.session", url: `${PUBLIC_URL}/pay/${id}` },
++    };
+     sessions.set(id, session);
+     if (key) byIdempotencyKey.set(key, session);
+     return json(200, session.view);
+   }
++  const api = url.pathname.match(/^\/v1\/checkout\/sessions\/(cs_test_[0-9a-f]+)(\/expire)?$/);
++  if (api) {
++    if (req.headers.authorization !== `Bearer ${SECRET_KEY}`) return json(401, { error: { message: "Invalid API key" } });
++    const found = sessions.get(api[1]);
++    if (!found) return json(404, { error: { message: "No such session" } });
++    const view = () => ({ ...found.view, status: found.status, locale: found.params.get("locale"), expires_at: Number(found.params.get("expires_at")), stripe_version: found.version });
++    if (req.method === "GET" && !api[2]) return json(200, view());
++    if (req.method === "POST" && api[2]) {
++      if (found.status !== "open") return json(400, { error: { message: "Only Checkout Sessions with a status in [\"open\"] can be expired" } });
++      found.status = "expired";
++      await sendWebhook(found, "checkout.session.expired", "unpaid");
++      return json(200, view());
++    }
++  }
+   const pay = url.pathname.match(/^\/pay\/(cs_test_[0-9a-f]+)$/);
+   const session = pay && sessions.get(pay[1]);
+   if (pay && !session) return json(404, { error: "no existe" });
+@@ -79,7 +108,14 @@ createServer(async (req, res) => {
+   }
+   if (session && req.method === "POST") {
+     const action = (await readBody(req)).get("action");
+-    if (action === "pay") await sendWebhook(session);
++    if (action === "expire" || action === "fail") {
++      session.status = action === "fail" ? "complete" : "expired";
++      await sendWebhook(session, `checkout.session.${action === "fail" ? "async_payment_failed" : "expired"}`, "unpaid");
++    }
++    if (action === "pay") {
++      session.status = "complete";
++      await sendWebhook(session);
++    }
+     const back = session.params.get(action === "pay" ? "success_url" : "cancel_url");
+     res.writeHead(303, { Location: back.replace("{CHECKOUT_SESSION_ID}", session.id) });
+     return res.end();
+diff --git a/tests/api/test-api.mjs b/tests/api/test-api.mjs
+index c87328e..cf88bfc 100644
+--- a/tests/api/test-api.mjs
++++ b/tests/api/test-api.mjs
+@@ -707,6 +707,20 @@ try {
+       body: JSON.stringify({ type: "checkout.session.completed", data: { object: { payment_status: "paid" } } }),
+     });
+     assert.equal(falso.status, 400, falso.text);
++    // Una sesión que caduca o un pago diferido rechazado no pagan el evento y se puede volver a pagar
++    for (const action of ["expire", "fail"]) {
++      const otro = await owner.call("/events", "POST", eventPayload({ title: `QA · ${action}` }), 201);
++      const intento = await owner.call(`/events/${otro.id}/checkout`, "POST", { tier: 0 });
++      const cerrado = await send(intento.url, {
++        method: "POST",
++        headers: { "Content-Type": "application/x-www-form-urlencoded" },
++        body: `action=${action}`,
++      });
++      assert.equal(cerrado.status, 303, cerrado.text);
++      assert.equal((await owner.call(`/events/${otro.id}`)).paidTier, null);
++      await payEvent(owner, otro.id, 0);
++      assert.equal((await owner.call(`/events/${otro.id}`)).paidTier, 0);
++    }
+     // Con un tramo pagado, el evento no pasa de su máximo de invitados
+     const lleno = await owner.call("/events", "POST", eventPayload({ title: "QA · Tope" }), 201);
+     await payEvent(owner, lleno.id, 0);
+diff --git a/tests/api/test-endpoints.mjs b/tests/api/test-endpoints.mjs
+index cf8230d..bd227f7 100644
+--- a/tests/api/test-endpoints.mjs
++++ b/tests/api/test-endpoints.mjs
+@@ -891,6 +891,20 @@ try {
+       assert.equal(pequeno.status, 409, locale);
+       assert.equal(pequeno.data.detail, translate(locale, "errors.paymentTierTooSmall"), locale);
+     }
++    // Stripe recibe el idioma de la petición, la versión fijada de su API y una caducidad de 31 minutos
++    const stripeLocales = { es: "es-419", en: "en", pt: "pt-BR", de: "de", fr: "fr" };
++    const otro = client();
++    await otro.call("/auth/register", "POST", account(P, "pago-idiomas"), 201);
++    const otroEvento = await otro.call("/events", "POST", eventData(), 201);
++    for (const [locale, headers] of locales) {
++      const abierto = await otro.raw(`/events/${otroEvento.id}/checkout`, { method: "POST", headers, body: { tier: 1 } });
++      assert.equal(abierto.status, 200, locale);
++      const sesion = abierto.data.url.replace("/pay/", "/v1/checkout/sessions/");
++      const leida = JSON.parse((await send(sesion, { headers: { Authorization: "Bearer sk_test_ci" } })).text);
++      assert.equal(leida.locale, stripeLocales[locale], locale);
++      assert.match(leida.stripe_version, /^\d{4}-\d{2}-\d{2}\.[a-z]+$/);
++      assert.ok(Math.abs(leida.expires_at - Date.now() / 1000 - 31 * 60) < 120, locale);
++    }
+     const { url } = await owner.call(`/events/${event.id}/checkout`, "POST", { tier: 1 });
+     assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/pay\/cs_test_/);
+     await send(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "action=pay" });
+diff --git a/tests/db/specs/db.test.js b/tests/db/specs/db.test.js
+index b4016ad..1c93280 100644
+--- a/tests/db/specs/db.test.js
++++ b/tests/db/specs/db.test.js
+@@ -275,6 +275,13 @@ test("Pagos: tramo, importe, moneda y estado acotados; borrar el evento o la cue
+   for (const [tier, cents, currency, status] of [[4, 500, "usd", "pending"], [-1, 500, "usd", "pending"], [0, 0, "usd", "pending"], [0, 500, "mxn", "pending"], [0, 500, "usd", "refunded"]])
+     assert.equal(await codigoError(() => pago(tier, cents, currency, status)), CHECK_VIOLATION, `${tier} ${cents} ${currency} ${status}`);
+   assert.equal(await codigoError(() => pago(0, 500, "usd", "pending", "x".repeat(256))), CHECK_VIOLATION, "checkout_id ≤ 255");
++  // Importe 0 solo en un pago ya confirmado que no pasó por Stripe (cupón del 100 %), 030
++  for (const [status, checkout] of [["pending", null], ["canceled", null], ["paid", "cs_test_0"]])
++    assert.equal(await codigoError(() => pago(0, 0, "usd", status, checkout)), CHECK_VIOLATION, `0 ${status} ${checkout}`);
++  await pago(0, 0, "usd", "paid", null);
++  await pago(0, 500, "usd", "canceled", "cs_test_2");
++  for (const nombre of ["event_payments_status_check", "event_payments_amount_cents_check"])
++    assert.equal((await uno("SELECT convalidated FROM pg_constraint WHERE conname=$1", [nombre])).convalidated, true, `la 031 valida ${nombre}`);
+   const { rows: [p] } = await pago(0, 500, "usd", "paid", "cs_test_1");
+   assert.equal(await codigoError(() => pago(1, 500, "usd", "pending", "cs_test_1")), UNIQUE_VIOLATION, "una sesión de Stripe, un pago");
+   await db.query("DELETE FROM events WHERE id=$1", [e.id]);

@@ -3,6 +3,7 @@
 # es fiable aquí: en la pila de desarrollo fallan indexación, pagos y páginas de proveedor.
 #   bash docs/plan-nuevo-diseno/herramientas/pila-ci.sh sube          # apaga desarrollo y la levanta
 #   bash docs/plan-nuevo-diseno/herramientas/pila-ci.sh e2e "@sitio"  # escenarios con ese filtro
+#   bash docs/plan-nuevo-diseno/herramientas/pila-ci.sh api           # flujos, endpoints y seguridad de la API
 #   bash docs/plan-nuevo-diseno/herramientas/pila-ci.sh todo          # toda la suite web y de navegador
 #   bash docs/plan-nuevo-diseno/herramientas/pila-ci.sh baja          # la apaga y vuelve a desarrollo
 set -uo pipefail
@@ -21,6 +22,12 @@ case "${1:-}" in
   sube) dev stop && ci up -d --build --wait ;;
   baja) ci down && dev up -d --build --wait ;;
   e2e) e2e "${2:-}" ;;
+  api)
+    # Los límites de peticiones viven en memoria: sin reiniciar, repetir la suite daría 429
+    ci restart api > /dev/null && ci up -d --wait api > /dev/null
+    npm run test:api && npm run test:endpoints && npm run test:security || { echo "FALLÓ LA API"; exit 1; }
+    echo "API CORRECTA"
+    ;;
   todo)
     fallos=""
     e2e "" || fallos="$fallos e2e"
@@ -33,5 +40,5 @@ case "${1:-}" in
     if [ -n "$fallos" ]; then echo "FALLARON:$fallos"; exit 1; fi
     echo "TODO CORRECTO"
     ;;
-  *) echo "Uso: pila-ci.sh sube|e2e [filtro]|todo|baja" >&2; exit 2 ;;
+  *) echo "Uso: pila-ci.sh sube|e2e [filtro]|api|todo|baja" >&2; exit 2 ;;
 esac

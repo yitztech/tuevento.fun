@@ -124,5 +124,40 @@
     "borrar": [
       "packages/app/.impeccable/surfaces/landing-page.md"
     ]
+  },
+  "P02": {
+    "nuevos": [
+      "apps/api/migrations/030_payment_states.sql",
+      "apps/api/migrations/031_payment_states_validate.sql"
+    ],
+    "parche": "P02.patch"
+  },
+  "P03": {
+    "nuevos": [
+      "apps/api/migrations/032_coupons.sql"
+    ],
+    "parche": "P03.patch",
+    "claves": "P03.json"
+  },
+  "P04": {
+    "nuevos": [
+      "apps/admin/src/coupons.mjs",
+      "apps/admin/src/coupons.test.mjs"
+    ],
+    "parche": "P04.patch"
+  },
+  "P05": {
+    "parche": "P05.patch",
+    "claves": "P05.json"
+  },
+  "P06": {
+    "nuevos": [
+      "packages/app/src/coupon.tsx"
+    ],
+    "parche": "P06.patch",
+    "claves": "P06.json"
+  },
+  "P07": {
+    "parche": "P07.patch"
   }
 }

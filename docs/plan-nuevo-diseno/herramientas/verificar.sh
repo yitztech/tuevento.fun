@@ -13,6 +13,7 @@ paso() {
   fi
 }
 paso "Contratos" npm run build -w @tuevento/contracts
+paso "Cliente" npm run build -w @tuevento/client
 paso "Lint" npm run lint
 paso "Tipos" npm run typecheck
 paso "Unitarias" npm run test:unit
