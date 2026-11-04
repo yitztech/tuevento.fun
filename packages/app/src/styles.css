@@ -71,6 +71,12 @@
   --ice: var(--surface-soft);
 
   --radius: 14px;
+  --r-xs: 5px;
+  --r-sm: 8px;
+  --r-md: 9px;
+  --r-lg: 13px;
+  --r-xl: 14px;
+  --r-2xl: 16px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Contenedores y elevación suave (Arquitectura micitaentiempo.online) */
