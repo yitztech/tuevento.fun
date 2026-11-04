@@ -1229,5 +1229,8 @@
     "emptyValue": "(empty)",
     "keptMine": "We sent your version.",
     "usedSaved": "The saved version was kept."
+  },
+  "site": {
+    "confirmAttendance": "Confirm attendance"
   }
 }

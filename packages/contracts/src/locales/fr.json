@@ -1229,5 +1229,8 @@
     "emptyValue": "(vide)",
     "keptMine": "Nous avons envoyé ta version.",
     "usedSaved": "La version enregistrée a été conservée."
+  },
+  "site": {
+    "confirmAttendance": "Confirmer ma présence"
   }
 }

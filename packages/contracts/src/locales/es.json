@@ -1229,5 +1229,8 @@
     "emptyValue": "(vacío)",
     "keptMine": "Enviamos tu versión.",
     "usedSaved": "Se quedó la versión guardada."
+  },
+  "site": {
+    "confirmAttendance": "Confirmar asistencia"
   }
 }

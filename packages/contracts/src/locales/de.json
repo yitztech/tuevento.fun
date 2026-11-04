@@ -1229,5 +1229,8 @@
     "emptyValue": "(leer)",
     "keptMine": "Wir haben deine Version gesendet.",
     "usedSaved": "Die gespeicherte Version bleibt."
+  },
+  "site": {
+    "confirmAttendance": "Teilnahme bestätigen"
   }
 }
