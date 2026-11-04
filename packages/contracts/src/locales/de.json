@@ -325,7 +325,8 @@
     "invalidIfMatch": "Der Header If-Match muss die Version in Anführungszeichen enthalten, zum Beispiel \"3\".",
     "invalidSyncCursor": "Der Synchronisierungs-Cursor ist ungültig.",
     "syncCursorExpired": "Deine Offline-Kopie ist zu alt: Sie muss noch einmal vollständig geladen werden.",
-    "versionConflict": "Das wurde auf einem anderen Gerät geändert, während du es bearbeitet hast. Prüfe die aktuelle Version, bevor du speicherst."
+    "versionConflict": "Das wurde auf einem anderen Gerät geändert, während du es bearbeitet hast. Prüfe die aktuelle Version, bevor du speicherst.",
+    "couponInvalid": "Dieser Gutschein ist ungültig oder nicht mehr verfügbar."
   },
   "events": {
     "actions": "Aktionen",
@@ -862,7 +863,8 @@
     "serviceRadius": "Gib eine Entfernung zwischen 0 und 500 km ein.",
     "invalidPrice": "Gib einen gültigen Preis ohne Zeichen ein.",
     "invalidCurrency": "Wähle eine Währung aus der Liste.",
-    "invalidPriceUnit": "Wähle, wofür der Preis gilt."
+    "invalidPriceUnit": "Wähle, wofür der Preis gilt.",
+    "maximum32Characters": "Höchstens 32 Zeichen."
   },
   "pricing": {
     "title": "Preise",
@@ -1229,5 +1231,6 @@
     "emptyValue": "(leer)",
     "keptMine": "Wir haben deine Version gesendet.",
     "usedSaved": "Die gespeicherte Version bleibt."
-  }
+  },
+  "site": {}
 }

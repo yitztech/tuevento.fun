@@ -325,7 +325,8 @@
     "invalidIfMatch": "L’en-tête If-Match doit contenir la version entre guillemets, par exemple « 3 ».",
     "invalidSyncCursor": "Le curseur de synchronisation n’est pas valide.",
     "syncCursorExpired": "Ta copie hors ligne est trop ancienne : il faut la télécharger à nouveau en entier.",
-    "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer."
+    "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer.",
+    "couponInvalid": "Ce code promo n’est pas valide ou n’est plus disponible."
   },
   "events": {
     "actions": "Actions",
@@ -862,7 +863,8 @@
     "serviceRadius": "Saisis une distance entre 0 et 500 km.",
     "invalidPrice": "Saisis un prix valide, sans symboles.",
     "invalidCurrency": "Choisis une devise dans la liste.",
-    "invalidPriceUnit": "Choisis pour quoi le prix est facturé."
+    "invalidPriceUnit": "Choisis pour quoi le prix est facturé.",
+    "maximum32Characters": "32 caractères maximum."
   },
   "pricing": {
     "title": "Tarifs",
@@ -1229,5 +1231,6 @@
     "emptyValue": "(vide)",
     "keptMine": "Nous avons envoyé ta version.",
     "usedSaved": "La version enregistrée a été conservée."
-  }
+  },
+  "site": {}
 }

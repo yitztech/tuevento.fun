@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "app_releases", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
+  assert.deepEqual(tablas, ["activity", "admin_audit_log", "app_releases", "coupon_redemptions", "coupons", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -288,6 +288,30 @@ test("Pagos: tramo, importe, moneda y estado acotados; borrar el evento o la cue
   assert.equal((await uno("SELECT event_id FROM event_payments WHERE id=$1", [p.id])).event_id, null);
   await db.query("DELETE FROM users WHERE id=$1", [dueno]);
   assert.equal((await uno("SELECT user_id FROM event_payments WHERE id=$1", [p.id])).user_id, null);
+});
+
+test("Cupones: código y descuento acotados; un uso por cuenta; no se borran; la cuenta borrada conserva el uso (032)", async () => {
+  const cupon = (code, percent, amount, max = null) =>
+    db.query("INSERT INTO coupons(code,percent_off,amount_off_cents,max_redemptions) VALUES($1,$2,$3,$4) RETURNING id", [code, percent, amount, max]);
+  for (const [code, percent, amount, max] of [["ab", 10, null, null], ["minusculas", 10, null, null], ["CON ESPACIO", 10, null, null], ["A".repeat(33), 10, null, null], ["SIN-DESCUENTO", null, null, null], ["LOS-DOS", 10, 100, null], ["CERO", 0, null, null], ["MUCHO", 101, null, null], ["NEGATIVO", null, -1, null], ["SIN-USOS", 10, null, 0]])
+    assert.equal(await codigoError(() => cupon(code, percent, amount, max)), CHECK_VIOLATION, code);
+  const codigo = `DB-${Date.now()}`;
+  const { rows: [c] } = await cupon(codigo, 10, null);
+  assert.equal(await codigoError(() => cupon(codigo, 20, null)), UNIQUE_VIOLATION, "código único");
+  const dueno = await usuario(db);
+  const pago = async () => (await db.query("INSERT INTO event_payments(id,user_id,tier,amount_cents,currency) VALUES(gen_random_uuid(),$1,0,450,'usd') RETURNING id", [dueno])).rows[0].id;
+  const usar = (payment) => db.query("INSERT INTO coupon_redemptions(payment_id,coupon_id,user_id,discount_cents) VALUES($1,$2,$3,50)", [payment, c.id, dueno]);
+  const primero = await pago();
+  await usar(primero);
+  assert.equal(await codigoError(() => usar(primero)), UNIQUE_VIOLATION, "un pago, un cupón");
+  const segundo = await pago();
+  assert.equal(await codigoError(() => usar(segundo)), UNIQUE_VIOLATION, "un uso por cuenta");
+  assert.equal(await codigoError(() => db.query("INSERT INTO coupon_redemptions(payment_id,coupon_id,user_id,discount_cents) VALUES($1,$2,NULL,-1)", [segundo, c.id])), CHECK_VIOLATION, "descuento ≥ 0");
+  assert.equal(await codigoError(() => db.query("DELETE FROM coupons WHERE id=$1", [c.id])), FK_VIOLATION, "un cupón usado no se borra");
+  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
+  assert.equal((await uno("SELECT user_id FROM coupon_redemptions WHERE payment_id=$1", [primero])).user_id, null);
+  await db.query("DELETE FROM event_payments WHERE id=$1", [primero]);
+  assert.equal((await uno("SELECT count(*)::int n FROM coupon_redemptions WHERE payment_id=$1", [primero])).n, 0);
 });
 
 test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; la caché del mapa solo admite sus tipos", async () => {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAddGuests, guestTiers, tierForGuests, upgradeCents } from "./pricing";
+import { canAddGuests, discountedCents, guestTiers, MIN_CHARGE_CENTS, tierForGuests, upgradeCents } from "./pricing";
 
 const usd = (guests: number) => tierForGuests(guests).usd;
 
@@ -59,4 +59,25 @@ test("Pasar a un tramo mayor cobra solo la diferencia, en centavos", () => {
   assert.equal(upgradeCents(0, 2), 1500);
   assert.equal(upgradeCents(2, 3), 1000);
   assert.equal(upgradeCents(2, 1), 0, "un tramo menor que el pagado no cuesta nada");
+});
+
+test("Un cupón descuenta un porcentaje o una cantidad", () => {
+  assert.equal(discountedCents(1000, { percentOff: 25, amountOffCents: null }), 750);
+  assert.equal(discountedCents(1000, { percentOff: null, amountOffCents: 300 }), 700);
+  // Redondea al centavo más cercano
+  assert.equal(discountedCents(500, { percentOff: 33, amountOffCents: null }), 335);
+});
+
+test("Un cupón que cubre todo deja el pago en 0", () => {
+  assert.equal(discountedCents(500, { percentOff: 100, amountOffCents: null }), 0);
+  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 500 }), 0);
+  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 9000 }), 0);
+});
+
+test("Un cupón no deja un cobro por debajo del mínimo de la tarjeta", () => {
+  assert.equal(discountedCents(500, { percentOff: 99, amountOffCents: null }), MIN_CHARGE_CENTS);
+  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 499 }), MIN_CHARGE_CENTS);
+  assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 400 }), MIN_CHARGE_CENTS);
+  // Nunca cobra más que sin cupón
+  assert.equal(discountedCents(50, { percentOff: 10, amountOffCents: null }), 50);
 });

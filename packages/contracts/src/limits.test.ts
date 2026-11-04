@@ -40,6 +40,7 @@ const columns: Record<string, [string, string][]> = {
   city: [["provider_profiles", "city"]],
   region: [["provider_profiles", "region"]],
   postalCode: [["provider_profiles", "postal_code"]],
+  couponCode: [["coupons", "code"]],
 };
 
 test("accountLimits coincide con las restricciones CHECK de la base de datos", () => {

@@ -325,7 +325,8 @@
     "invalidIfMatch": "The If-Match header must contain the version in quotes, for example \"3\".",
     "invalidSyncCursor": "The sync cursor isn't valid.",
     "syncCursorExpired": "Your offline copy is too old: it needs to be downloaded in full again.",
-    "versionConflict": "This changed on another device while you were editing it. Check the current version before saving."
+    "versionConflict": "This changed on another device while you were editing it. Check the current version before saving.",
+    "couponInvalid": "That coupon isn't valid or is no longer available."
   },
   "events": {
     "actions": "Actions",
@@ -862,7 +863,8 @@
     "serviceRadius": "Enter a distance between 0 and 500 km.",
     "invalidPrice": "Enter a valid price, without symbols.",
     "invalidCurrency": "Choose a currency from the list.",
-    "invalidPriceUnit": "Choose what the price is charged per."
+    "invalidPriceUnit": "Choose what the price is charged per.",
+    "maximum32Characters": "Maximum 32 characters."
   },
   "pricing": {
     "title": "Pricing",
@@ -1229,5 +1231,6 @@
     "emptyValue": "(empty)",
     "keptMine": "We sent your version.",
     "usedSaved": "The saved version was kept."
-  }
+  },
+  "site": {}
 }

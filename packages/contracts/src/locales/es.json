@@ -325,7 +325,8 @@
     "invalidIfMatch": "La cabecera If-Match debe llevar la versión entre comillas, por ejemplo \"3\".",
     "invalidSyncCursor": "El cursor de sincronización no es válido.",
     "syncCursorExpired": "Tu copia sin conexión es demasiado antigua: hay que descargarla completa otra vez.",
-    "versionConflict": "Esto cambió en otro dispositivo mientras lo editabas. Revisa la versión actual antes de guardar."
+    "versionConflict": "Esto cambió en otro dispositivo mientras lo editabas. Revisa la versión actual antes de guardar.",
+    "couponInvalid": "Ese cupón no es válido o ya no está disponible."
   },
   "events": {
     "actions": "Acciones",
@@ -862,7 +863,8 @@
     "serviceRadius": "Escribe una distancia entre 0 y 500 km.",
     "invalidPrice": "Escribe un precio válido, sin signos.",
     "invalidCurrency": "Elige una moneda de la lista.",
-    "invalidPriceUnit": "Elige por qué se cobra el precio."
+    "invalidPriceUnit": "Elige por qué se cobra el precio.",
+    "maximum32Characters": "Máximo 32 caracteres."
   },
   "pricing": {
     "title": "Precios",
@@ -1229,5 +1231,6 @@
     "emptyValue": "(vacío)",
     "keptMine": "Enviamos tu versión.",
     "usedSaved": "Se quedó la versión guardada."
-  }
+  },
+  "site": {}
 }
