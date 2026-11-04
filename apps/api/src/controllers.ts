@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -399,6 +400,8 @@ export class OrganizerController {
   }
   @Post("coupons/check") @HttpCode(200) checkCoupon(@Req() req: AuthedRequest, @Body() body: unknown) {
     limits.coupon.hit(req.user.id);
+    // Las demostraciones no pagan, y crearlas sin límite daría intentos nuevos a quien adivina códigos
+    if (req.user.isDemo) throw new ConflictException("errors.paymentDemo");
     const { code } = parse(couponCheckSchema, body, req);
     return this.payments.checkCoupon(req.user.id, code);
   }

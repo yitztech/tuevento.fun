@@ -12,6 +12,7 @@ import {
   type Locale,
   type TierIndex,
 } from "@tuevento/contracts";
+import { ApiError } from "@tuevento/client";
 import { Logo, Container, ErrorBox } from "./components";
 import { CouponField } from "./coupon";
 import { errorText, useApp } from "./context";
@@ -103,7 +104,8 @@ function CheckoutTiers({ event }: { event: Event }) {
       const { url, paid } = await api.checkout(event.id, tier, coupon?.code);
       // Un cupón que lo cubre todo no pasa por Stripe: el pago ya está confirmado
       if (paid || !url) {
-        await reload();
+        // Si la recarga falla, el pago sigue hecho: la página de vuelta lo comprueba sola
+        await reload().catch(() => undefined);
         setCoupon(null);
         setBusy(null);
         navigate(`${paymentPath(event.id)}&pagado=1`);
@@ -113,6 +115,8 @@ function CheckoutTiers({ event }: { event: Event }) {
       if (runtime.platform && runtime.platform !== "web") runtime.openExternal(url);
       else window.location.assign(url);
     } catch (e) {
+      // El cupón dejó de valer entre aplicarlo y pagar: vuelven los precios completos
+      if (e instanceof ApiError && e.code === "coupon_invalid") setCoupon(null);
       setError(errorText(e));
       setBusy(null);
     }

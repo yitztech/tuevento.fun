@@ -23,6 +23,22 @@ test("Un cupón con datos no válidos se rechaza", () => {
   rejected(() => parseCoupon({ code: "USOS", percentOff: 10, maxRedemptions: 0 }));
   rejected(() => parseCoupon({ code: "PASADO", percentOff: 10, expiresAt: "2020-01-01T00:00:00Z" }));
   rejected(() => parseCoupon({ code: "FECHA", percentOff: 10, expiresAt: "mañana" }));
+  for (const expiresAt of ["Dec 25 2099 (x)", "+012099-01-01T00:00:00.000Z", 4102444800000])
+    rejected(() => parseCoupon({ code: "FORMATO", percentOff: 10, expiresAt }));
+});
+
+test("La fecha llega a la base de datos en UTC y con un solo formato", () => {
+  const { expiresAt } = parseCoupon({ code: "FEBRERO", percentOff: 10, expiresAt: "2099-02-28T23:59:59-06:00" });
+  assert.equal(expiresAt, "2099-03-01T05:59:59.000Z");
+});
+
+test("Un cuerpo que no es un objeto o trae campos desconocidos se rechaza", () => {
+  for (const body of [null, [], "cupón", 7]) {
+    rejected(() => parseCoupon(body));
+    rejected(() => parseCouponState(body));
+  }
+  rejected(() => parseCoupon({ code: "EXTRA", percentOff: 10, active: true }));
+  rejected(() => parseCouponState({ id: "0195f0a0-1234-7abc-8def-0123456789ab", active: true, admin: "x" }));
 });
 
 test("Activar o desactivar exige un id y un valor booleano", () => {

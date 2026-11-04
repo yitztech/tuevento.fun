@@ -55,6 +55,14 @@ test("accountLimits coincide con las restricciones CHECK de la base de datos", (
   }
 });
 
+test("El panel de administración, que no usa este paquete, repite el máximo del código de cupón", () => {
+  const admin = join(__dirname, "../../../apps/admin/src");
+  const rule = /\{3,(\d+)\}/.exec(readFileSync(join(admin, "coupons.mjs"), "utf8"));
+  const field = /name="code" maxlength="(\d+)"/.exec(readFileSync(join(admin, "web/admin.component.html"), "utf8"));
+  assert.equal(Number(rule?.[1]), accountLimits.couponCode);
+  assert.equal(Number(field?.[1]), accountLimits.couponCode);
+});
+
 test("Todo límite de accountLimits está en la base de datos o declarado sin columna", () => {
   // La contraseña se guarda como hash; el texto de la postal vive dentro del JSON del diseño,
   // que la base de datos acota en tamaño ('postcards_design_size') y la API valida por texto.

@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { discountedCents, guestTiers, type Locale, type TierIndex, translate, upgradeCents } from "@tuevento/contracts";
+import { isUniqueViolation } from "./auth";
 import { Database } from "./database";
 import { Updates } from "./events";
 import { CHECKOUT_MINUTES, paidTierSql, paymentsEnabled, stripeApiUrl, stripeHeaders, stripeLocale, webhookSecret } from "./payment-config";
@@ -20,7 +21,6 @@ const SIGNATURE_TOLERANCE_S = 300;
 
 /** Una reserva cuenta mientras su sesión puede seguir abierta, con margen por si el webhook se retrasa. */
 const RESERVATION_MINUTES = CHECKOUT_MINUTES + 4;
-const UNIQUE_VIOLATION = "23505";
 
 /** La misma respuesta si el cupón no existe, caducó, se agotó o ya se usó: no da pistas a quien adivina. */
 const couponInvalid = () => new ProblemException({ status: 422, code: "coupon_invalid", detail: "errors.couponInvalid" });
@@ -51,6 +51,7 @@ export class PaymentsService {
    * Abre el pago del tramo `tier` para un evento del organizador y devuelve la URL de Stripe. Si el
    * evento ya pagó un tramo menor, se cobra solo la diferencia. Un cupón descuenta sobre ese importe;
    * si lo cubre todo, el pago queda confirmado sin pasar por Stripe (`url: null`, `paid: true`).
+   * Cada evento tiene un solo intento abierto: el nuevo cierra los anteriores, para no cobrar dos veces.
    */
   async checkout(userId: string, eventId: string, tier: TierIndex, locale: Locale, site: string, coupon?: string) {
     if (!paymentsEnabled()) throw new NotFoundException("errors.paymentsUnavailable");
@@ -70,7 +71,9 @@ export class PaymentsService {
       throw new ConflictException("errors.paymentTierTooSmall");
     const id = randomUUID();
     const full = upgradeCents(paid, tier);
-    if (coupon) await this.releaseReservation(userId, coupon);
+    // Con un cupón que no vale no se toca nada: el intento abierto sigue pudiéndose pagar
+    if (coupon) await this.checkCoupon(userId, coupon);
+    await this.releasePending(userId, eventId, coupon);
     const cents = coupon
       ? await this.reservePayment(id, eventId, userId, tier, full, coupon)
       : full;
@@ -126,7 +129,15 @@ export class PaymentsService {
       await this.cancelPayment(id);
       throw new ServiceUnavailableException("errors.paymentProviderUnavailable");
     }
-    await this.db.query("UPDATE event_payments SET checkout_id=$1, updated_at=now() WHERE id=$2", [session.id, id]);
+    const [open] = await this.db.query(
+      "UPDATE event_payments SET checkout_id=$1, updated_at=now() WHERE id=$2 AND status='pending' RETURNING id",
+      [session.id, id],
+    );
+    if (!open) {
+      // Otra petición sustituyó este intento mientras Stripe abría la sesión: nadie debe poder pagarla
+      await this.expireSession(session.id!);
+      throw new ConflictException("errors.paymentInProgress");
+    }
     return { url: session.url, paid: false };
   }
 
@@ -181,18 +192,19 @@ export class PaymentsService {
       });
     } catch (e) {
       // Otra petición de la misma cuenta ganó la carrera por este cupón
-      if ((e as { code?: string }).code === UNIQUE_VIOLATION) throw couponInvalid();
+      if (isUniqueViolation(e)) throw couponInvalid();
       throw e;
     }
   }
 
-  /** Quien vuelve a pagar con su cupón sustituye el intento anterior: esa sesión deja de poder pagarse. */
-  private async releaseReservation(userId: string, code: string) {
+  /** El intento nuevo sustituye a los pendientes del evento y a la reserva de su cupón: esas sesiones dejan de poder pagarse. */
+  private async releasePending(userId: string, eventId: string, code?: string) {
     const pending = await this.db.query(
-      `SELECT p.id, p.checkout_id FROM coupon_redemptions r
-       JOIN coupons c ON c.id=r.coupon_id JOIN event_payments p ON p.id=r.payment_id
-       WHERE c.code=$1 AND r.user_id=$2 AND p.status='pending'`,
-      [code, userId],
+      `SELECT p.id, p.checkout_id FROM event_payments p
+       LEFT JOIN coupon_redemptions r ON r.payment_id=p.id
+       LEFT JOIN coupons c ON c.id=r.coupon_id
+       WHERE p.status='pending' AND (p.event_id=$1 OR (c.code=$2 AND r.user_id=$3))`,
+      [eventId, code ?? null, userId],
     );
     for (const payment of pending) {
       if (payment.checkout_id) await this.expireSession(payment.checkout_id);
@@ -200,15 +212,19 @@ export class PaymentsService {
     }
   }
 
-  /** Caduca una sesión abierta. Si ya no lo está y no caducó, ese pago sigue en curso: 409. */
+  /** Caduca una sesión abierta. Si ya se completó, ese pago sigue en curso: 409. Si no se sabe, 503. */
   private async expireSession(checkoutId: string) {
     const url = `${stripeApiUrl()}/v1/checkout/sessions/${encodeURIComponent(checkoutId)}`;
     try {
       const expired = await fetch(`${url}/expire`, { method: "POST", headers: stripeHeaders(), signal: AbortSignal.timeout(30_000) });
       if (expired.ok) return;
       const response = await fetch(url, { headers: stripeHeaders(), signal: AbortSignal.timeout(30_000) });
-      const session = (await response.json()) as { status?: string };
-      if (session.status === "expired") return;
+      // Stripe ya no la conoce (p. ej. se cambiaron las claves): nadie puede pagarla
+      if (response.status === 404) return;
+      if (!response.ok) throw new Error(`Stripe respondió ${response.status}`);
+      const { status } = (await response.json()) as { status?: string };
+      if (status === "expired") return;
+      if (status !== "complete") throw new Error(`La sesión sigue en estado ${status}`);
     } catch (e) {
       this.logger.error(`No se pudo caducar la sesión ${checkoutId}: ${(e as Error).message}`);
       throw new ServiceUnavailableException("errors.paymentProviderUnavailable");
@@ -241,7 +257,14 @@ export class PaymentsService {
       [session.client_reference_id ?? "", session.id ?? "", session.amount_total ?? -1, session.currency ?? ""],
     );
     if (row?.user_id) this.updates.emit(row.user_id);
+    if (!row) await this.reportUnmatched(session?.client_reference_id ?? "", session?.id ?? "");
     return { received: true };
+  }
+
+  /** Stripe cobró una sesión que no corresponde a un pago abierto: hay que revisarla a mano. Un webhook repetido no avisa. */
+  private async reportUnmatched(paymentId: string, checkoutId: string) {
+    const [paid] = await this.db.query("SELECT 1 FROM event_payments WHERE id::text=$1 AND checkout_id=$2 AND status='paid'", [paymentId, checkoutId]);
+    if (!paid) this.logger.error(`Stripe cobró la sesión ${checkoutId}, que no coincide con ningún pago abierto`);
   }
 
   /** Cierra un pago pendiente que ya no se cobrará y libera su cupón. Un pago confirmado no cambia. */

@@ -47,6 +47,16 @@ Given("que existe un cupón del {int} %", async ({ page, ctx }, porcentaje) => {
   ctx.cupon = `QA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const creado = await page.request.post(`${adminURL}/api/coupons`, { data: { code: ctx.cupon, percentOff: porcentaje } });
   expect(creado.status()).toBe(201);
+  ctx.cuponId = (await creado.json()).id;
+});
+
+When("el administrador desactiva el cupón", async ({ page, ctx }) => {
+  const cambio = await page.request.post(`${adminURL}/api/coupons/active`, { data: { id: ctx.cuponId, active: false } });
+  expect(cambio.status()).toBe(200);
+});
+
+When("falla la siguiente carga de mis eventos", async ({ page }) => {
+  await page.route("**/api/events", (route) => route.abort(), { times: 1 });
 });
 
 const campoCupon = (page) => page.getByRole("textbox", { name: /cup|coupon|gutschein|promo/i });

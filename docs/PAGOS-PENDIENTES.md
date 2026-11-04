@@ -11,6 +11,8 @@ El flujo completo de pagos y cupones funciona contra un doble de Stripe (`servic
 - **Plan gratuito:** incluye todo menos los correos a invitados.
 - **Demostración:** sus eventos no se pueden pagar.
 - **Intentos sin cobrar:** una sesión de Stripe caduca a los 31 minutos. Al caducar, o si se rechaza un pago diferido, el pago pasa a `canceled` y se libera su cupón.
+- **Un intento abierto por evento:** abrir otro pago cierra la sesión anterior, para que no se cobre dos veces. Si esa sesión ya se completó y falta su webhook, responde 409 hasta que llegue.
+- **Cobros sin pago abierto:** si Stripe cobra una sesión que no coincide con ningún pago pendiente, la API lo registra como error (`Stripe cobró la sesión …`). Revísalo y reembólsalo a mano.
 
 ## Cupones
 
@@ -93,6 +95,7 @@ Solo con claves de prueba (`sk_test_…`): no se mueve dinero.
 
 - [ ] Crear la cuenta y completar sus datos de negocio y de cobro.
 - [ ] Hacer la prueba local de arriba.
+- [ ] Dejar activos solo métodos de pago inmediatos (tarjeta, Apple Pay, Google Pay). La reserva de un cupón dura 35 minutos: con un método diferido, como una transferencia, otra cuenta podría gastar el último uso antes de que se confirme.
 - [ ] Crear en Stripe el webhook de `https://tuevento.fun/api/payments/webhook`, con la versión de API `2026-10-28.endive` y los eventos `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` y `checkout.session.expired`.
 - [ ] Poner las claves de producción en Coolify (puntos 2 a 5 de arriba).
 - [ ] Hacer un pago real pequeño con un cupón y reembolsarlo desde Stripe.
