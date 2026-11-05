@@ -58,4 +58,6 @@ cabeceras de seguridad y `no-store`; los cuerpos enormes y los avatares no váli
 - El flujo real de Google (necesita credenciales de Google): solo se prueba que rechaza credenciales falsas.
 - El puente de autenticación móvil (App Link + PKCE) dentro de las apps; lo cubre `test:platform` solo en la API.
 - Los escenarios `@perfil` y la sesión en las apps móviles.
-- `test:browser` y `test:landing` son scripts largos anteriores a los escenarios Gherkin; falta migrarlos a `.feature`.
+- `test:browser` y `test:landing` son scripts largos anteriores a los escenarios Gherkin, migrados a `.feature` por partes:
+  - Migrado (5-nov-2026): el ejemplo de asistencia de la portada, las preguntas frecuentes y el acceso directo a crear un evento (`portada.feature`), y la privacidad de las notas y la respuesta por integrante en la invitación (`invitacion-rsvp.feature`).
+  - Queda por migrar del recorrido: el evento de la demostración con métricas, el cambio de idioma que conserva la ruta del panel, las capturas de desbordamiento/imágenes y las comprobaciones de `pageerror` (evidencia de QA que hoy solo hace el script), la sesión independiente por dominio y el modo pantalla a 1920 px con pantalla completa.
