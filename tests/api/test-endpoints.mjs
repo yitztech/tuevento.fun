@@ -1399,6 +1399,7 @@ try {
       ...(p.provider ? [`provider:${p.provider.id}`] : []),
     ]);
   const cursorCon = (s, t) => Buffer.from(JSON.stringify({ v: 1, s, t })).toString("base64url");
+  const secuenciaDe = (cursor) => JSON.parse(Buffer.from(cursor, "base64url").toString()).s;
 
   await suite("Sincronización: sin cursor, todo por páginas sin huecos ni duplicados; después, solo lo cambiado y lo borrado", async () => {
     const org = client();
@@ -1425,7 +1426,8 @@ try {
     // Con el cursor final, nada nuevo
     const quieto = await org.call(`/sync/changes?cursor=${cursor}`);
     assert.deepEqual([quieto.events, quieto.invitations, quieto.notifications, quieto.deleted, quieto.hasMore], [[], [], [], [], false]);
-    assert.equal(quieto.nextCursor, cursor);
+    // Solo la secuencia: el cursor lleva el segundo en que se emite y cambia entre dos llamadas
+    assert.equal(secuenciaDe(quieto.nextCursor), secuenciaDe(cursor));
     assert.match(quieto.nextCursor, /^[A-Za-z0-9_-]+$/);
 
     // Un cambio del organizador: solo ese evento, con la versión siguiente
