@@ -137,12 +137,16 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const toast = useCallback((text: string) => {
     showToast(text, { id: "app", duration: 5000 });
   }, []);
+  // `offline` cambia con cada lectura de la cola: si `reload` dependiera de él, cada recarga
+  // provocaría otra y las apps no pararían de pedir datos
+  const offlineRef = useRef(offline);
+  offlineRef.current = offline;
   const reload = useCallback(async () => {
     const [e, n] = await Promise.all([api.events(), api.notifications()]);
     setEvents(e);
     setNotifications(n);
-    await offline?.refresh();
-  }, [api, offline, locale]);
+    await offlineRef.current?.refresh();
+  }, [api, locale]);
   reloadRef.current = reload;
   useEffect(() => {
     let alive = true;

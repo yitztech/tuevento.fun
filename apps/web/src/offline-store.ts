@@ -139,9 +139,10 @@ async function clear(): Promise<void> {
 export const openOfflineStore = (userId: string): Promise<OfflineStore> => serial(() => open(userId));
 
 async function open(userId: string): Promise<OfflineStore> {
-  const owner = (await SecureStorage.getItem(OWNER).catch(() => null)) as string | null;
+  // Un fallo al leer el llavero no es «sin clave»: se propaga, para no borrar la copia ni la cola
+  const owner = (await SecureStorage.getItem(OWNER)) as string | null;
   if (owner !== userId) await clear();
-  const saved = (await SecureStorage.getItem(keyName(userId)).catch(() => null)) as string | null;
+  const saved = (await SecureStorage.getItem(keyName(userId))) as string | null;
   let key: CryptoKey;
   if (saved) key = await importRecordKey(saved);
   else {

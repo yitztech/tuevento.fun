@@ -123,6 +123,7 @@ export function uiIos(driver, { teclado }) {
           }, email),
         "La copia local no terminó de guardarse",
       ),
+    peticiones: () => driver.execute(() => window.tueventoPruebasPeticiones()),
     async reabrir() {
       await driver.execute(() => window.location.reload());
       await driver.waitUntil(() => driver.execute(() => document.readyState === "complete" && !!document.querySelector("#root *")), {

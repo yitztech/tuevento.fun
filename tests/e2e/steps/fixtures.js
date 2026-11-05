@@ -86,6 +86,8 @@ const conAndroid = {
         teclado,
         android,
         sinRed: (activar) => dispositivo.shell(`cmd connectivity airplane-mode ${activar ? "enable" : "disable"}`),
+        // Abre un enlace en la app, como el App Link que llega desde el navegador
+        abrirEnlace: (url) => dispositivo.shell(`am start -W -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d '${url}' ${paquete}`),
       }),
     ),
 };

@@ -11,6 +11,9 @@ Característica: Trabajar sin conexión en la app
     Dado que tengo un evento con una invitación para "Familia Pérez" creados por la API
     Y entro en la app con esa cuenta
 
+  Escenario: Con la app abierta y sin tocarla, no repite peticiones
+    Entonces la app en reposo no repite peticiones
+
   Escenario: Sin red, la app arranca y muestra mis eventos guardados
     Cuando me quedo sin conexión
     Y cierro y vuelvo a abrir la app

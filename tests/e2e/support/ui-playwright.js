@@ -4,7 +4,7 @@ import { expect } from "@playwright/test";
  * Acciones de interfaz sobre un `page` de Playwright (web y WebView de Android).
  * Los pasos solo conocen esta interfaz; iOS la implementa en ui-ios.js con Appium.
  */
-export function uiPlaywright(page, { abrir, teclado, android = false, sinRed }) {
+export function uiPlaywright(page, { abrir, teclado, android = false, sinRed, abrirEnlace }) {
   const campo = (etiqueta) => page.getByLabel(etiqueta, { exact: true });
   return {
     abrir,
@@ -33,7 +33,18 @@ export function uiPlaywright(page, { abrir, teclado, android = false, sinRed }) 
         hay ? 1 : 0,
       ),
     /** Espera a que la copia local tenga a esa cuenta y una sincronización (build de pruebas de las apps). */
-    esperarCopiaLocal: (email) => page.waitForFunction((e) => window.tueventoPruebasCopiaLista?.(e), email),
+    esperarCopiaLocal: (email) =>
+      // `evaluate` espera a la promesa del build de pruebas; `waitForFunction` la daría por cumplida
+      expect.poll(() => page.evaluate((e) => window.tueventoPruebasCopiaLista(e), email), { timeout: 60_000 }).toBe(true),
+    abrirEnlace,
+    /** Verificador PKCE guardado en el Keystore mientras dura el acceso con el navegador. */
+    verificadorPkce: () =>
+      page.evaluate(
+        async () =>
+          (await window.Capacitor.Plugins.SecureStorage.internalGetItem({ prefixedKey: "capacitor-storage_tueventofun:pkce", sync: false })).data,
+      ),
+    /** Peticiones enviadas por la app desde que arrancó (build de pruebas de las apps). */
+    peticiones: () => page.evaluate(() => window.tueventoPruebasPeticiones()),
     /** Cierra y vuelve a abrir la app: la página se carga de nuevo con lo guardado en el teléfono. */
     async reabrir() {
       await page.reload();
@@ -46,7 +57,11 @@ export function uiPlaywright(page, { abrir, teclado, android = false, sinRed }) 
       // En el WebView, el teclado y las animaciones mueven el botón mientras Playwright lo busca,
       // y el clic cae fuera. El evento `click` del propio botón envía el formulario igual.
       const boton = page.getByRole("button", { name: nombre, exact: true });
-      if (android) return boton.dispatchEvent("click");
+      if (android) {
+        // `dispatchEvent` no espera a nada, y en un botón desactivado el clic se pierde sin error
+        await expect(boton).toBeEnabled();
+        return boton.dispatchEvent("click");
+      }
       return boton.click();
     },
     pausar: (ms) => page.waitForTimeout(ms).catch(() => {}),
