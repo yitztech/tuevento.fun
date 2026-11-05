@@ -103,8 +103,8 @@ npm run e2e:android:ver                 # igual, a ritmo humano (E2E_TECLADO / E
   reintentar sale como «inestable» en `npm run e2e:summary`.
 - `AVD=Pixel_10_Pro bash scripts/mobile-test-android.sh` usa otro emulador. No está en CI: un
   emulador en GitHub Actions necesitaría un job aparte.
-- Los escenarios de perfil (`@perfil`) no llevan `@movil`: dependen de abrir sesión por la API
-  del navegador, y la app nativa gestiona la sesión de otra forma.
+- Los escenarios de perfil que dependen de la sesión del navegador (`perfil.feature`) no llevan
+  `@movil`; dentro de la app se cubren con `perfil-movil.feature`, que entra por el formulario de acceso.
 
 ## App móvil iOS (simulador, iPhone y iPad)
 

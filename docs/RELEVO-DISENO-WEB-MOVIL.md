@@ -1,6 +1,6 @@
 # Relevo: unificar el nuevo diseño en web, Android e iOS
 
-Fecha del relevo actualizado: 2026-11-04. Estado: **migración unificada completada en web, panel compartido, administración y recursos móviles; verificada con pruebas unitarias, E2E de navegador y compilaciones nativas Debug/Simulador (pendiente commit/push, firma de distribución y validación en dispositivos físicos)**.
+Fecha del relevo actualizado: 2026-11-05. Estado: **migración unificada completada, mezclada (PR #65) y desplegada en producción; verificada con pruebas unitarias, E2E de navegador y compilaciones nativas Debug/Simulador. Quedan pendientes la firma de distribución y la validación en dispositivos físicos**.
 
 ## Encargo y alcance
 
@@ -8,10 +8,8 @@ La persona propietaria pidió que el diseño aprobado en `apps/new-design` sea e
 
 ## Estado exacto del código
 
-- Rama local: `feature/diseno-unificado-web-movil`, creada desde `373cd77` (`mejora/new-design-experiencia`).
-- PR previo del prototipo: https://github.com/yitztech/tuevento.fun/pull/64 (`BLOCKED`; contiene únicamente el prototipo previo y no esta migración).
-- Todos los cambios continúan **locales, sin commit y sin push**, incluyendo los **30 archivos `.webp` nuevos** en `apps/web/public/site/photos/` y los recursos nativos regenerados en `apps/web/android/` y `apps/web/ios/`.
-- Para compartir o respaldar esta rama, recordar incluir tanto los archivos modificados como los archivos nuevos sin seguimiento (`git status --short --branch`).
+- Rama de trabajo: `feature/diseno-unificado-web-movil`, creada desde `373cd77` (`mejora/new-design-experiencia`), mezclada en `main` con el PR #65 (`db02f6a`).
+- Los 30 archivos `.webp` de `apps/web/public/site/photos/` y los recursos nativos regenerados (`apps/web/android/`, `apps/web/ios/`) están versionados y desplegados.
 
 ## Trabajo completado en esta rama
 
@@ -47,4 +45,3 @@ La persona propietaria pidió que el diseño aprobado en `apps/new-design` sea e
 ## Pendientes fuera de la compilación local
 
 1. **Dispositivos físicos y distribución móvil:** las compilaciones verificadas aquí son el APK Debug de Android y el `.app` de simulador iOS. Para distribución pública o TestFlight se requiere compilar con `VITE_PUBLIC_ORIGIN` de producción y credenciales de firma (`keystore` de release en Android; certificado de distribución y perfil de aprovisionamiento en iOS según `docs/MOBILE-CICD.md`), además de validación visual y funcional en dispositivos físicos.
-2. **Control de versiones y PR:** revisar `git status --short --branch` y `git diff`, añadir los 30 archivos `.webp` de `apps/web/public/site/photos/` junto con los cambios de código y crear el commit/push o PR cuando la persona propietaria lo indique.

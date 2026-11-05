@@ -56,6 +56,8 @@ cabeceras de seguridad y `no-store`; los cuerpos enormes y los avatares no váli
 ## Qué no cubren (y conviene saberlo)
 
 - El flujo real de Google (necesita credenciales de Google): solo se prueba que rechaza credenciales falsas.
-- El puente de autenticación móvil (App Link + PKCE) dentro de las apps; lo cubre `test:platform` solo en la API.
-- Los escenarios `@perfil` y la sesión en las apps móviles.
-- `test:browser` y `test:landing` son scripts largos anteriores a los escenarios Gherkin; falta migrarlos a `.feature`.
+- El puente de autenticación móvil (App Link + PKCE) **dentro de las apps**: el intercambio de código con PKCE de un solo uso lo cubre `test:platform` en la API; el regreso a la app vía App Link/Universal Link sigue pendiente porque exige credenciales de Google y la infraestructura de enlaces profundos de las tiendas.
+- Los escenarios `@perfil` y la sesión en las apps móviles quedan cubiertos por `perfil-movil.feature` (entran por el formulario de acceso, no por la API del navegador), verificado en Android e iOS.
+- `test:browser` y `test:landing` son scripts largos anteriores a los escenarios Gherkin, migrados a `.feature` por partes:
+  - Migrado (5-nov-2026): el ejemplo de asistencia de la portada, las preguntas frecuentes y el acceso directo a crear un evento (`portada.feature`); la privacidad de las notas y la respuesta por integrante (`invitacion-rsvp.feature`); los eventos de ejemplo de la demostración (`demo-evento.feature`); la sesión independiente por dominio (`sesion-dominio.feature`); y el modo pantalla (`panel-evento.feature`).
+  - Queda por migrar del recorrido: el enlace de idioma que conserva la ruta del panel, y la evidencia de QA que solo produce el script (capturas por ancho, desbordamiento horizontal, imágenes rotas y `pageerror === 0`).

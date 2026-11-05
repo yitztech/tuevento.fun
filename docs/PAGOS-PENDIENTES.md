@@ -63,7 +63,7 @@ Para los pagos, cuando tengas la cuenta de Stripe:
 
 Para el correo:
 
-6. **SPF, DKIM y DMARC** en `tuevento.fun` y `yourevent.fun`. Gmail y Yahoo los exigen para que los avisos no acaben en spam.
+6. **SPF, DKIM y DMARC** en `tuevento.fun` y `yourevent.fun`. Gmail y Yahoo los exigen para que los avisos no acaben en spam. _Actualizado 5-nov-2026:_ SPF (`v=spf1 include:spf.yunitztech.com -all`) y DMARC (`p=reject`) ya están publicados en los dos dominios; queda confirmar el selector de DKIM del proveedor SMTP.
 7. **Avisos de rebotes y quejas de spam** del proveedor de SMTP (un webhook o un buzón). Es lo que falta para dar de baja automáticamente las direcciones que rebotan.
 
 No hacen falta contenedores nuevos en producción: el doble de Stripe solo existe en las pruebas. Las migraciones se aplican solas al arrancar la API. Tampoco hay que tocar la política de seguridad de contenido (CSP), porque Checkout es una redirección a la página de Stripe.

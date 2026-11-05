@@ -51,9 +51,11 @@ La prueba de persistencia encontró un 502 por dirección obsoleta de la API en 
 
 ## Pendientes externos
 
-- Configurar `GOOGLE_CLIENT_ID` y probar inicio de sesión con el proyecto Google del usuario.
-- Publicación: dominio, HTTPS y operación del servicio. Los enlaces localhost no se abren desde otros dispositivos.
-- Empaquetar un host Electron/Tauri si se desea una app nativa; los paquetes y la entrada reutilizable ya están preparados.
+_Actualizado el 5-nov-2026:_ el dominio (`tuevento.fun` y `yourevent.fun`), el repositorio (`yitztech/tuevento.fun`) y la cuenta del dueño ya existen, y `GOOGLE_CLIENT_ID` está configurado en producción. Sigue pendiente:
+
+- Probar el inicio de sesión real con la cuenta Google del dueño (el cliente OAuth está configurado; falta la prueba de extremo a extremo con la cuenta real).
+- Firma y publicación de las apps móviles (Android/iOS) y validación en dispositivos físicos (ver `docs/MOBILE-CICD.md`).
+- Empaquetar un host Electron/Tauri si se desea una app de escritorio; los paquetes y la entrada reutilizable ya están preparados.
 
 ## Landing de captación
 
@@ -69,9 +71,9 @@ Resultados: `qa-artifacts/landing-results.json`. Capturas: `landing-desktop.png`
 - Navegador: 16 recorridos del panel y 8 de landing, ES/EN, sin errores ni overflow. Administración y descargas: 1512 y 390 px, filtro de periodo, rol dueño, estado sin publicaciones y traducción EN.
 - Android: `assembleDebug` completado con JDK 21/SDK 36. Artefacto local de prueba, no distribución firmada.
 - iOS: `xcodebuild ... -sdk iphonesimulator ... CODE_SIGNING_ALLOWED=NO build` completado. No prueba de dispositivo físico ni firma de distribución.
-- Workflows validados con `actionlint`; todavía no ejecutados en GitHub.
+- Workflows validados con `actionlint` y ejecutados en GitHub (CI en verde; despliegues en Coolify).
 - `npm audit`: el `uuid` transitivo obsoleto del parser Xcode se sustituye por ^14.0.3 y `shell-quote` (de Appium) por ^1.12.0, ambos con `overrides`. `npm run check:audit` falla con cualquier vulnerabilidad alta o crítica salvo las excepciones con fecha de `scripts/check-audit.mjs` (hoy no hay ninguna).
-- Pendientes externos confirmados: dominio HTTPS, repositorio, cuenta dueña, firma Android/Apple, credenciales Google, huella SHA-256 del certificado Android, Team ID y capacidad Associated Domains en el perfil de distribución iOS. No hay descargas públicas ni aprobación de tiendas.
+- Pendientes externos confirmados: firma Android/Apple, huella SHA-256 del certificado Android, Team ID y capacidad Associated Domains en el perfil de distribución iOS. Hay una APK Android publicada (1.0.5); iOS no tiene publicación todavía.
 
 ## Adaptación a la plataforma yitztech — 2026-10-14
 
@@ -87,4 +89,4 @@ Infraestructura verificada en local con Docker, sin acceso a Coolify ni a los do
 - `compose.yml` de desarrollo: dos dominios locales (español e inglés). `test:api` 17/17 directo y vía gateway (incluido SSE), `test:platform` 9/9.
 - `actionlint` sin errores en los cuatro workflows.
 
-No verificado: el despliegue real en Coolify, la subred real de Traefik, los workflows ejecutándose en GitHub y la API con el límite de 256 MB procesando un avatar grande.
+No verificado: el despliegue real en Coolify y la subred real de Traefik ya operan en producción (verificado el 5-nov-2026). Sigue sin verificarse la API con el límite de 256 MB procesando un avatar grande.
