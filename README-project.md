@@ -1,6 +1,6 @@
 # TuEventoFun
 
-Aplicación en español e inglés para organizar celebraciones, crear invitaciones y confirmar asistencia por persona. Fondo blanco, fotografías, verde botella, rosa peonía y amarillo suave. Incluye una demostración aislada y registro real con espacio vacío.
+Aplicación en español, inglés, portugués, alemán y francés para organizar celebraciones, crear invitaciones y confirmar asistencia por persona. Fotografías y una paleta cálida de terracota, durazno y ámbar (ver [DESIGN.md](DESIGN.md)). Incluye una demostración aislada y registro real con espacio vacío.
 
 ## Abrir
 
@@ -40,7 +40,7 @@ docker compose start                # Volver a arrancar
 
 ## Landing de captación
 
-La entrada `/` presenta TuEventoFun en español e inglés con fotografías, llamadas al registro, seis diseños interactivos, un ejemplo familiar de RSVP y preguntas frecuentes. El panel está en `/app`; si no hay sesión y la demo está habilitada, se crea una demostración aislada al entrar allí, no al visitar la landing. El diseño elegido se conserva en el editor después del registro o inicio de sesión. Los CTA generales abren el editor para crear el primer evento.
+La entrada `/` presenta TuEventoFun en los cinco idiomas con fotografías, llamadas al registro, seis diseños interactivos, un ejemplo familiar de RSVP y preguntas frecuentes. El panel está en `/app`; si no hay sesión y la demo está habilitada, se crea una demostración aislada al entrar allí, no al visitar la landing. El diseño elegido se conserva en el editor después del registro o inicio de sesión. Los CTA generales abren el editor para crear el primer evento.
 
 ## Qué puedes hacer
 
