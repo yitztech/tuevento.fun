@@ -17,16 +17,15 @@ Se pueden hacer en cualquier orden, pero una después de otra: las dos usan la p
 
 ## Estado
 
-El código de las dos partes ya está aplicado: el usuario prefirió conservar lo probado en vez de repetirlo. **No
-ejecutes T01–T16 ni P01–P07.**
+El código de las dos partes ya está aplicado y los PR quedaron mezclados. **No ejecutes T01–T16 ni P01–P07.**
 
-| Parte | PR | Lo que queda |
+| Parte | PR | Estado |
 |---|---|---|
-| A | [#59](https://github.com/yitztech/tuevento.fun/pull/59), en borrador | T17 y la revisión de diseño |
-| B | [#60](https://github.com/yitztech/tuevento.fun/pull/60), en borrador | P08 y la revisión de `payments.ts` |
+| A | [#59](https://github.com/yitztech/tuevento.fun/pull/59) | Mezclado. El diseño del sitio se integró y luego se unificó en web, panel y apps (PR #64 y #65) |
+| B | [#60](https://github.com/yitztech/tuevento.fun/pull/60) | Mezclado. Stripe real y cupones; conectarlos sigue en `docs/PAGOS-PENDIENTES.md` |
 
-Las tareas siguen aquí como registro de lo que se hizo y por si hay que rehacer una. T17 y P08 quitan su material,
-pero en estas ramas nunca entró: omite ese paso.
+T17 y P08 pedían borrar el material del plan (`tareas/`, `fuentes/`, `parches/`, `traducciones/`,
+`herramientas/`): se quitó el 5-nov-2026 y aquí solo quedan este README y `ENSAYO.md` como registro histórico.
 
 # Parte A: el sitio público
 
@@ -205,20 +204,9 @@ Cada tarea trae su mensaje. Termínalo con la línea de atribución que te indiq
 
 ## Qué hay en esta carpeta
 
-| Ruta | Para qué |
-|---|---|
-| `tareas/` | Una tarea por archivo |
-| `fuentes/` | Archivos finales, con la misma ruta que tendrán en el repositorio |
-| `parches/` | Cambios a archivos que ya existen |
-| `traducciones/` | Textos nuevos en los cinco idiomas, uno por tarea |
-| `herramientas/aplicar.mjs` | Aplica una tarea según `tareas.json` |
-| `herramientas/verificar.sh` | Contratos, cliente, lint, tipos y unitarias |
-| `herramientas/pila-ci.sh` | Levanta la pila de CI y ejecuta los escenarios o las pruebas de API |
-| `herramientas/capturas.mjs` | Capturas a tres anchos, desbordes e imágenes rotas |
-| `herramientas/add-keys.mjs`, `prune-keys.mjs`, `quitar-css.mjs` | Las usa `aplicar.mjs` |
-
-T17 y P08 borran esta carpeta en su rama, salvo este README y `ENSAYO.md`. Cada rama tiene su copia: borrarla en una
-no afecta a la otra.
+Solo quedan `README.md` y `ENSAYO.md` como registro histórico. El material de ejecución
+(`tareas/`, `fuentes/`, `parches/`, `traducciones/` y `herramientas/`) se borró el 5-nov-2026
+(T17 y P08). Si alguna vez hay que rehacer una tarea, se recupera del historial de git.
 
 ## Cómo se comprobó
 
