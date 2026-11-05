@@ -34,6 +34,14 @@ Given("entro en la app con esa cuenta", async ({ ui, ctx }) => {
   await ui.esperarCopiaLocal(ctx.cuenta.email);
 });
 
+// Hay un sondeo cada 10 s (dos peticiones); un bucle de recargas envía decenas en este tiempo
+Then("la app en reposo no repite peticiones", async ({ ui }) => {
+  await ui.pausar(3000); // termina la sincronización del arranque
+  const antes = await ui.peticiones();
+  await ui.pausar(5000);
+  expect((await ui.peticiones()) - antes).toBeLessThanOrEqual(4);
+});
+
 When("me quedo sin conexión", async ({ ui }) => {
   await ui.sinRed(true);
 });

@@ -55,7 +55,7 @@ cabeceras de seguridad y `no-store`; los cuerpos enormes y los avatares no váli
 
 ## Qué no cubren (y conviene saberlo)
 
-- El flujo real de Google (necesita credenciales de Google): solo se prueba que rechaza credenciales falsas.
-- El puente de autenticación móvil (App Link + PKCE) dentro de las apps; lo cubre `test:platform` solo en la API.
+- El flujo real de Google (necesita una cuenta real): solo se prueba que rechaza credenciales falsas.
+- El puente de autenticación móvil (App Link + PKCE) en iOS: necesita `apple-app-site-association`, que no existe hasta publicar la app. En Android lo cubre `regreso-app.feature`, sin la parte del navegador.
 - Los escenarios `@perfil` y la sesión en las apps móviles.
 - `test:browser` y `test:landing` son scripts largos anteriores a los escenarios Gherkin; falta migrarlos a `.feature`.

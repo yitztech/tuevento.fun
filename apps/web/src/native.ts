@@ -15,6 +15,8 @@ declare const __PRUEBAS__: boolean;
 // Solo pruebas: sin red simulada (el simulador de iOS no puede quitarse la red por línea de comandos)
 const SIN_RED='tueventofun:pruebas-sin-red';
 const sinRedSimulada=()=>__PRUEBAS__&&localStorage.getItem(SIN_RED)==='1';
+// Solo pruebas: peticiones enviadas, para comprobar que la app en reposo no repite peticiones
+let peticiones=0;
 // Verificador PKCE del acceso con navegador: vive en el llavero de iOS o el Keystore de Android
 // solo mientras dura el flujo (FE-03), nunca en localStorage.
 const PKCE_KEY='tueventofun:pkce';
@@ -26,6 +28,7 @@ export async function nativeRuntime():Promise<Runtime> {
  const transport:typeof fetch=async(input,init)=>{
   const url=String(input);if(!url.startsWith(`${origin.origin}/api/`))throw new Error('Blocked API origin');
   if(sinRedSimulada())throw new TypeError('Failed to fetch');
+  if(__PRUEBAS__)peticiones++;
   const headers=Object.fromEntries(new Headers(init?.headers).entries());
   const result=await CapacitorHttp.request({url,method:init?.method||'GET',headers,data:init?.body?JSON.parse(String(init.body)):undefined,responseType:'json',connectTimeout:15000,readTimeout:30000,disableRedirects:true});
   // CapacitorHttp solo interpreta como JSON `application/json`: un error en `application/problem+json` llega como texto
@@ -65,6 +68,7 @@ export async function nativeRuntime():Promise<Runtime> {
  const network={online,onChange:(listener:(online:boolean)=>void)=>{networkListeners.add(listener);return ()=>{networkListeners.delete(listener)}}};
  if(__PRUEBAS__)Object.assign(window,{
   tueventoPruebasSinRed:(sinRed:boolean)=>{if(sinRed)localStorage.setItem(SIN_RED,'1');else localStorage.removeItem(SIN_RED);notify()},
+  tueventoPruebasPeticiones:()=>peticiones,
   // La copia local ya tiene el usuario y una sincronización completa: se puede quitar la red
   tueventoPruebasCopiaLista:async(email:string)=>{const owner=await offlineOwner();if(!owner)return false;const store=await openOfflineStore(owner);return (await store.get<{email:string}>('meta','user'))?.email===email&&!!(await store.get('meta','sync-last'))},
  });
