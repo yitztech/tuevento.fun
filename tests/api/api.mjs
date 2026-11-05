@@ -1,6 +1,6 @@
 // Cliente mínimo para las pruebas de la API (test-endpoints.mjs, test-security.mjs).
 import assert from "node:assert/strict";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createPrivateKey, randomBytes, sign } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import http from "node:http";
 import https from "node:https";
@@ -128,10 +128,21 @@ export const mcpTokenRequest = async (fields, host) => {
   const r = await send(`${base}/mcp/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", ...(host ? { Host: host } : {}) },
-    body: new URLSearchParams({ client_id: mcpOAuth.clientId, ...fields }).toString(),
+    body: new URLSearchParams(Object.entries({ client_id: mcpOAuth.clientId, ...fields }).filter(([, value]) => value !== undefined)).toString(),
   });
   return { status: r.status, data: JSON.parse(r.text || "{}") };
 };
+
+/** Aserción `private_key_jwt` del cliente de pruebas; la semilla es la de `testJwtClient` en la API. */
+export function mcpClientAssertion(audience, jti = randomBytes(8).toString("hex")) {
+  const clientId = "tuevento-pruebas-jwt";
+  const seed = createHash("sha256").update(clientId).digest();
+  const key = createPrivateKey({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), seed]), format: "der", type: "pkcs8" });
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const now = Math.floor(Date.now() / 1000);
+  const body = `${encode({ alg: "EdDSA", typ: "JWT" })}.${encode({ iss: clientId, sub: clientId, aud: audience, jti, iat: now, exp: now + 60 })}`;
+  return `${body}.${sign(null, Buffer.from(body), key).toString("base64url")}`;
+}
 
 /** Flujo completo: consentimiento aceptado y código cambiado por tokens. */
 export async function mcpConnect(user, overrides) {

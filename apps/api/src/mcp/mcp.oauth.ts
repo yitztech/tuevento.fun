@@ -1,4 +1,4 @@
-import { createPublicKey, createPrivateKey, hkdfSync } from "node:crypto";
+import { createHash, createPublicKey, createPrivateKey, hkdfSync } from "node:crypto";
 import { Injectable, NotFoundException, type OnModuleInit } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { isLocale, localePrefix, localesOfSite, siteLocale, type Locale, type McpScope } from "@tuevento/contracts";
@@ -53,12 +53,29 @@ const TEST_CLIENT = {
 const derive = (purpose: string) =>
   Buffer.from(hkdfSync("sha256", process.env.APP_SECRET as string, "", `tuevento:mcp-oauth:${purpose}`, 32));
 
+const ed25519 = (seed: Buffer) =>
+  createPrivateKey({
+    key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), seed]),
+    format: "der",
+    type: "pkcs8",
+  });
+
 /** Clave Ed25519 estable por entorno. Los tokens son opacos: solo firma lo que publica el emisor. */
 function signingKey() {
-  const pkcs8 = Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), derive("signing-key")]);
-  const key = createPrivateKey({ key: pkcs8, format: "der", type: "pkcs8" });
+  const key = ed25519(derive("signing-key"));
   return { ...key.export({ format: "jwk" }), ...createPublicKey(key).export({ format: "jwk" }), use: "sig" };
 }
+
+/** Igual que ChatGPT, se autentica con `private_key_jwt`. La semilla es pública: solo vale en pruebas. */
+const testJwtClient = () => ({
+  ...TEST_CLIENT,
+  client_id: "tuevento-pruebas-jwt",
+  token_endpoint_auth_method: "private_key_jwt",
+  token_endpoint_auth_signing_alg: "EdDSA",
+  jwks: {
+    keys: [createPublicKey(ed25519(createHash("sha256").update("tuevento-pruebas-jwt").digest())).export({ format: "jwk" })],
+  },
+});
 
 type Provider = InstanceType<typeof import("oidc-provider").default>;
 type Site = { issuer: string; resource: string; origin: string; provider: Provider };
@@ -82,7 +99,7 @@ export class McpOAuth implements OnModuleInit {
       const resource = `${origin}/api/mcp`;
       const provider = new Provider(issuer, {
         adapter: oauthAdapter(this.db, issuer) as never,
-        clients: mcpTestMode() ? [TEST_CLIENT as never] : [],
+        clients: mcpTestMode() ? [TEST_CLIENT as never, testJwtClient() as never] : [],
         cookies: {
           keys: [derive("cookies").toString("base64url")],
           names: { session: "mcp_session", interaction: "mcp_interaction", resume: "mcp_resume" },

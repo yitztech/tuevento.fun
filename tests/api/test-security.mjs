@@ -3,7 +3,7 @@
 // cabeceras y límites. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { mcpAuthorizeUrl, mcpCall, mcpConnect, mcpStartConsent, adminBase, client, account, cleanup, createCoupon, send, setCouponActive, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
+import { mcpAuthorizeUrl, mcpCall, mcpClientAssertion, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, adminBase, client, account, cleanup, createCoupon, send, setCouponActive, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-sec";
@@ -739,6 +739,32 @@ try {
     const asked = await mcpConnect(organizer, { scope: "mcp:read mcp:write" });
     assert.equal(asked.tokens.scope, "mcp:read");
     assert.ok(!(await mcpCall(asked.tokens.access_token, "tools/list")).body.result.tools.some((tool) => tool.name === "events_create"));
+
+    // private_key_jwt, el método de ChatGPT: sin aserción, con otro destinatario o repetida, no hay token
+    const signed = await mcpStartConsent(organizer, { client_id: "tuevento-pruebas-jwt" });
+    const signedDecision = await organizer.call(`/mcp/oauth/interaction/${signed.uid}/decision`, "POST", { allow: true });
+    const signedCode = (await mcpFollowToClient(organizer, signedDecision.redirectTo)).get("code");
+    const issuer = `${mcpOAuth.resource}/oauth`;
+    const exchange = (fields) =>
+      mcpTokenRequest({
+        client_id: "tuevento-pruebas-jwt",
+        grant_type: "authorization_code",
+        code: signedCode,
+        code_verifier: signed.verifier,
+        redirect_uri: mcpOAuth.redirectUri,
+        resource: mcpOAuth.resource,
+        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        ...fields,
+      });
+    assert.equal((await exchange({ client_assertion: undefined, client_assertion_type: undefined })).data.error, "invalid_client");
+    assert.equal((await exchange({ client_assertion: mcpClientAssertion("https://atacante.example") })).data.error, "invalid_client");
+    const assertion = mcpClientAssertion(issuer);
+    const accepted = await exchange({ client_assertion: assertion });
+    assert.equal(accepted.status, 200, JSON.stringify(accepted.data));
+    assert.equal(accepted.data.scope, "mcp:read");
+    assert.equal((await mcpCall(accepted.data.access_token, "tools/list")).status, 200);
+    const renewal = await mcpTokenRequest({ client_id: "tuevento-pruebas-jwt", grant_type: "refresh_token", refresh_token: accepted.data.refresh_token, resource: mcpOAuth.resource, client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer", client_assertion: assertion });
+    assert.equal(renewal.data.error, "invalid_client");
 
     // El consentimiento exige sesión, cabecera propia, origen permitido y el navegador del flujo
     const flow = await mcpStartConsent(organizer);
