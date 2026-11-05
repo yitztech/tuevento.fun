@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { accountLimits } from "@tuevento/contracts";
 import { cn } from "cn";
 import { tr, useLocale } from "../../i18n";
@@ -53,6 +53,12 @@ export function HomeNewsletter() {
           <p className="mt-2 text-sm text-white/90">{tr("landing.getCelebrationIdeasExclusive")}</p>
         </div>
         <div className="mt-6 lg:mt-0 lg:pr-24">
+          <Button asChild size="lg" className="mb-5 max-w-full whitespace-normal bg-white px-3 text-center text-primary hover:bg-accent-soft">
+            <Link to="/registro?empezar=evento">
+              {tr("common.createFirstEvent")}
+              <ArrowRight aria-hidden />
+            </Link>
+          </Button>
           <form onSubmit={subscribe} className="w-full">
             <div className="flex flex-col gap-2 sm:flex-row">
               <input

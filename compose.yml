@@ -252,6 +252,9 @@ services:
         - path: apps/web/src
           target: /app/apps/web/src
           action: sync
+        - path: apps/web/public
+          target: /app/apps/web/public
+          action: sync
         - path: packages/app/src
           target: /app/packages/app/src
           action: sync

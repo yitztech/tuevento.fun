@@ -41,7 +41,7 @@ export function RsvpCard({ className }: { className?: string }) {
               <span className="text-sm font-bold text-foreground">{person.name}</span>
               <span className="ml-auto text-xs text-muted-foreground">{tr(person.kind)}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2" role="group" aria-label={tr("landing.replyFromName", { name: person.name })}>
+            <fieldset className="grid grid-cols-3 gap-2" aria-label={tr("landing.replyFromName", { name: person.name })}>
               {options.map((option) => {
                 const on = answers[index] === option.value;
                 return (
@@ -51,7 +51,7 @@ export function RsvpCard({ className }: { className?: string }) {
                     aria-pressed={on}
                     onClick={() => setAnswers((previous) => previous.map((answer, i) => (i === index ? option.value : answer)))}
                     className={cn(
-                      "flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-1.5 text-[0.72rem] font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                      "flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-1.5 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
                       on ? option.on : "border-border bg-card text-muted-foreground hover:bg-accent-soft/60",
                     )}
                   >
@@ -60,7 +60,7 @@ export function RsvpCard({ className }: { className?: string }) {
                   </button>
                 );
               })}
-            </div>
+            </fieldset>
           </li>
         ))}
       </ul>

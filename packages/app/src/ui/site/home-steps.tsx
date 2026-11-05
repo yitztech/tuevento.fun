@@ -2,7 +2,7 @@ import { ChartColumn, Pencil, Send } from "lucide-react";
 import type { MessageKey } from "@tuevento/contracts";
 import { cn } from "cn";
 import { tr } from "../../i18n";
-import { panel, wrap } from "./home-shared";
+import { wrap } from "./home-shared";
 import { SectionHeading } from "./section-heading";
 
 const steps: [typeof Pencil, MessageKey, MessageKey][] = [
@@ -13,8 +13,8 @@ const steps: [typeof Pencil, MessageKey, MessageKey][] = [
 
 export function HomeSteps() {
   return (
-    <section id="como-funciona" aria-labelledby="pasos-title" className={cn(wrap, "scroll-mt-24 pt-4")}>
-      <div className={cn(panel, "grid gap-6 p-5 sm:p-7 md:grid-cols-3 lg:grid-cols-[minmax(0,17rem)_repeat(3,minmax(0,1fr))] lg:items-center lg:gap-6")}>
+    <section id="como-funciona" aria-labelledby="pasos-title" className={cn(wrap, "scroll-mt-24 py-12 lg:py-16")}>
+      <div className="grid gap-6 px-2 sm:px-4 md:grid-cols-3 lg:grid-cols-[minmax(0,17rem)_repeat(3,minmax(0,1fr))] lg:items-center lg:gap-6">
         <SectionHeading
           size="sm"
           id="pasos-title"

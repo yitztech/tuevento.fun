@@ -8,12 +8,14 @@ import { FloralCorner } from "./decorative-background";
 import { wrap } from "./home-shared";
 import { PhoneInvitation } from "./phone-invitation";
 import { ThemeCard } from "./theme-card";
+import { SitePhoto } from "./site-photo";
 
 const theme = (id: string) => themes.find((t) => t.id === id) ?? themes[0];
 
 function HeroComposition() {
   return (
     <div className="relative mx-auto aspect-[1.08/1] w-full max-w-[40rem] lg:max-w-none">
+      <SitePhoto name="hero" eager className="absolute inset-0 -z-10 rounded-[3rem] opacity-30 [mask-image:radial-gradient(closest-side,#000_40%,transparent)]" />
       <div aria-hidden className="absolute top-[16%] left-[3%] w-[27%]">
         <ThemeCard theme={theme("kids")} tilt={-10} eager />
       </div>

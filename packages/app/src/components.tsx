@@ -52,12 +52,11 @@ export function Logo({
   return (
     <Link to={to} className="logo" aria-label={tr("common.tueventofunHome")}>
       <span className="logo-mark">
-        <PartyPopper size={23} />
+        <img src="/site/branding/logo-mark.svg" alt="" width={35} height={35} />
       </span>
       {!compact && (
         <span>
           TuEvento<span className="logo-fun">Fun</span>
-          <i />
         </span>
       )}
     </Link>

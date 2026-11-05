@@ -30,7 +30,7 @@ export function HomeFamily() {
               {tr("site.familyNote")}
             </p>
           </div>
-          <div className="relative z-10 p-6 sm:p-8 lg:max-w-[48%] lg:p-10">
+          <div className="relative z-10 p-6 sm:p-8 lg:max-w-[58%] lg:p-8">
             <SectionHeading
               size="sm"
               id="familia-title"

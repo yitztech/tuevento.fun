@@ -19,4 +19,4 @@ Los iconos y splash de `apps/web/android/app/src/main/res` y `apps/web/ios/App/A
 
 ## Sitio público
 
-Los SVG de `apps/web/public/site/` (logo, adornos y fondo de la banda final) son propios. Las fotografías del sitio se eligen en `packages/app/src/ui/site/photos.ts`: hoy son las de la tabla de arriba. Las fotografías del prototipo `feat/new-design` son recortes provisionales sin licencia y no se publican.
+Los SVG de `apps/web/public/site/` (logo, adornos y fondo de la banda final) son propios. Las fotografías ilustrativas del sitio se eligen en `packages/app/src/ui/site/photos.ts` y se sirven desde `apps/web/public/site/photos/`. Se generaron con la herramienta integrada de imágenes de OpenAI para el prototipo; no representan proveedores ni eventos reales. Sus originales y su inventario están en `apps/new-design/photos-src/` y `apps/new-design/docs/assets-manifest.md`. Las imágenes de la tabla anterior siguen siendo utilizadas por los temas de invitación existentes.
