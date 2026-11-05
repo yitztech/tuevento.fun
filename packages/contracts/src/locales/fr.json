@@ -1277,5 +1277,13 @@
     "tagParty": "Fête",
     "trustNoAccount": "Tes invités répondent sans compte",
     "trustOnePlace": "Tout au même endroit"
+  },
+  "assistantConnect": {
+    "allow": "Autoriser l’accès",
+    "deny": "Ne pas autoriser",
+    "expired": "Ce lien de connexion a expiré ou n’est pas valide. Recommence depuis ton assistant.",
+    "intro": "{{client}} souhaite accéder à ton compte TuEventoFun.",
+    "readOnly": "Il pourra seulement consulter tes données. Il ne pourra rien créer, modifier ni supprimer.",
+    "title": "Connecte ton assistant"
   }
 }

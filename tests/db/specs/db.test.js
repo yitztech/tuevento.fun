@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "admin_audit_log", "app_releases", "coupon_redemptions", "coupons", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
+  assert.deepEqual(tablas, ["activity", "admin_audit_log", "app_releases", "coupon_redemptions", "coupons", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_oauth_records", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "schema_migrations", "sessions", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -31,7 +31,7 @@ test("El correo electrónico es el identificador: users no tiene nombre de usuar
 });
 
 test("Ni contraseñas ni tokens se guardan en claro: solo hashes", async () => {
-  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"], ["email_verifications", "token_hash"], ["mcp_tokens", "token_hash"]]) {
+  for (const [tabla, hash] of [["users", "password_hash"], ["sessions", "token_hash"], ["password_resets", "token_hash"], ["mobile_auth_codes", "code_hash"], ["trusted_devices", "token_hash"], ["email_verifications", "token_hash"], ["mcp_tokens", "token_hash"], ["mcp_oauth_records", "record_hash"]]) {
     const cols = await columnas(tabla);
     assert.ok(cols.includes(hash), `${tabla}.${hash}`);
     assert.ok(!cols.includes("password") && !cols.includes("token") && !cols.includes("code"), `${tabla} guarda un secreto en claro`);
@@ -411,3 +411,17 @@ test("MCP: tokens de acceso con actor_type acotado y borrado en cascada con su u
   assert.equal((await uno("SELECT count(*)::int AS n FROM mcp_tokens WHERE token_hash='hash-inv'")).n, 0);
 });
 
+test("OAuth de MCP: longitudes, obligatorios y borrado en cascada con la cuenta", async () => {
+  const cuenta = { id: await usuario(db) };
+  const nuevo = (hash, model = "AccessToken", extra = "now()+interval '1 hour'") =>
+    db.query(`INSERT INTO mcp_oauth_records(record_hash,model,user_id,payload,expires_at) VALUES($1,$2,$3,'{}',${extra})`, [hash, model, cuenta.id]);
+
+  await nuevo("registro-1");
+  assert.equal(await codigoError(() => nuevo("registro-1")), "23505");
+  assert.equal(await codigoError(() => nuevo("x".repeat(129))), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => nuevo("registro-2", "x".repeat(51))), CHECK_VIOLATION);
+  assert.equal(await codigoError(() => nuevo("registro-3", "AccessToken", "NULL")), "23502");
+
+  await db.query("DELETE FROM users WHERE id=$1", [cuenta.id]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM mcp_oauth_records WHERE record_hash='registro-1'")).n, 0);
+});

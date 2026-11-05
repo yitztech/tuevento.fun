@@ -16,9 +16,9 @@ import { PostcardsService } from "./postcards";
 import { GeoController, GeoService } from "./geo";
 import { ProviderPagesController } from "./provider-pages";
 import { ProviderController, ProviderImagesController, ProvidersService } from "./providers";
-import { McpController, McpService } from "./mcp";
+import { McpConsentController, McpController, McpDiscoveryController, McpOAuth, McpService } from "./mcp";
 @Module({
-  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController, McpController, SyncController],
+  controllers: [PlatformController, PublicController, OrganizerController, AccountController, GeoController, ProviderController, ProviderImagesController, ProviderPagesController, McpController, McpConsentController, McpDiscoveryController, SyncController],
   providers: [
     Database,
     AuthService,
@@ -35,6 +35,7 @@ import { McpController, McpService } from "./mcp";
     GeoService,
     ProvidersService,
     McpService,
+    McpOAuth,
     SyncService,
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],

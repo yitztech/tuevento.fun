@@ -46,8 +46,12 @@ for (const file of prohibidos) {
 for (const file of prohibidos)
   if (readFileSync(file, "utf8").includes("VITE_TEST_BUILD")) errores.push(`${file} activa VITE_TEST_BUILD (solo para pruebas)`);
 
+// Las escrituras MCP y su cliente OAuth fijo solo se abren en las pruebas (compose.yml, compose.ci.yml)
+for (const file of prohibidos)
+  if (readFileSync(file, "utf8").includes("MCP_TEST_MODE")) errores.push(`${file} activa MCP_TEST_MODE (solo para pruebas)`);
+
 if (errores.length) {
   console.error(errores.map((e) => `✗ ${e}`).join("\n"));
   process.exit(1);
 }
-console.log(`✓ Servicios solo de pruebas aislados de producción (${[...soloPruebas, ...soloPruebasCi].join(", ")}; VITE_TEST_BUILD)`);
+console.log(`✓ Servicios solo de pruebas aislados de producción (${[...soloPruebas, ...soloPruebasCi].join(", ")}; VITE_TEST_BUILD, MCP_TEST_MODE)`);

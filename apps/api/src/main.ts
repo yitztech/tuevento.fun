@@ -12,6 +12,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { AppModule } from "./app.module";
+import { isOAuthRoute, McpOAuth, OAUTH_PATH } from "./mcp";
 import { LocaleExceptionFilter } from "./locale.filter";
 import { JsonLogger, loggerOptions } from "./logger";
 import { sendProblem } from "./problem";
@@ -31,8 +32,11 @@ const uploadRoutes = new Set(["/api/profile/avatar", "/api/events/:id/postcard/i
 const ONE_CLICK_UNSUBSCRIBE = "/api/mail/unsubscribe";
 /** Webhook de Stripe: llega de su servidor, sin Origin ni cabecera propia; lo protege su firma. */
 const PAYMENT_WEBHOOK = "/api/payments/webhook";
-/** Protocolo MCP (Streamable HTTP y tokens de cliente MCP): lo autentica el token Bearer o sesión. */
-const isMcpRoute = (url: string) => url.startsWith("/api/mcp");
+/**
+ * Protocolo MCP (Streamable HTTP y OAuth): lo autentica el token Bearer. El consentimiento es de la
+ * propia web, con sesión por cookie: sigue la comprobación de origen de las demás rutas.
+ */
+const isMcpRoute = (url: string) => url.startsWith("/api/mcp") && !url.startsWith(`${OAUTH_PATH}/interaction/`);
 /** `X-Request-ID` del cliente o del gateway si es razonable; si no, uno nuevo. */
 const requestIdPattern = /^[A-Za-z0-9._-]{8,128}$/;
 
@@ -66,6 +70,7 @@ async function bootstrap() {
     rawBody: true,
   });
   app.setGlobalPrefix("api");
+  const oauth = app.get(McpOAuth);
   // También pasan por aquí los errores de Fastify (cuerpo demasiado grande, JSON mal formado,
   // límite global de peticiones) y las rutas inexistentes: Nest los envía a los filtros globales
   app.useGlobalFilters(new LocaleExceptionFilter());
@@ -92,6 +97,7 @@ async function bootstrap() {
     exposedHeaders: ["X-Request-ID", "Retry-After", "Idempotency-Replayed"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
+  const oauthLimit = fastify.rateLimit();
   fastify.addHook("onRequest", async (req: FastifyRequest, reply: FastifyReply) => {
     reply.header("X-Request-ID", req.id);
     if (req.url.startsWith("/api")) {
@@ -113,6 +119,12 @@ async function bootstrap() {
           code: "origin_not_allowed",
           detail: "errors.requestOriginNotAllowed",
         });
+    }
+    // Antes de leer el cuerpo: lo lee `oidc-provider`. No lleva cookies de sesión de la web
+    if (isOAuthRoute(pathWithoutQuery)) {
+      // Fuera de las rutas de Nest no aplica el límite global
+      await oauthLimit.call(fastify, req, reply);
+      if (reply.sent || oauth.handle(req, reply)) return;
     }
     if (isMcpRoute(pathWithoutQuery) && req.headers.origin && !origins.includes(req.headers.origin)) {
       return sendProblem(req, reply, {

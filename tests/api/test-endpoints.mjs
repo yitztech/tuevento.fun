@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
-import { base, client, account, cleanup, createCoupon, englishHost, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
+import { base, client, account, cleanup, createCoupon, englishHost, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -946,22 +946,139 @@ try {
     }
   });
 
+  await suite("MCP OAuth: descubrimiento, código con PKCE, solo lectura, renovación, revocación y un emisor por dominio", async () => {
+    // Descubrimiento: el 401 lleva al recurso, y el recurso al servidor de autorización
+    const unauthorized = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize" }),
+    });
+    assert.equal(unauthorized.status, 401);
+    assert.match(unauthorized.headers["www-authenticate"], /^Bearer resource_metadata="[^"]+\/\.well-known\/oauth-protected-resource\/api\/mcp", scope="mcp:read"$/);
+
+    const resource = await guest.call("/.well-known/oauth-protected-resource");
+    assert.equal(resource.resource, mcpOAuth.resource);
+    assert.deepEqual(resource.scopes_supported, ["mcp:read"]);
+    assert.deepEqual(resource.authorization_servers, [`${mcpOAuth.resource}/oauth`]);
+    const english = await guest.call("/.well-known/oauth-protected-resource", "GET", undefined, 200, { Host: englishHost });
+    assert.notEqual(english.resource, resource.resource);
+
+    const server = await guest.call("/mcp/oauth/.well-known/openid-configuration");
+    assert.equal(server.issuer, resource.authorization_servers[0]);
+    assert.deepEqual(server.code_challenge_methods_supported, ["S256"]);
+    assert.deepEqual(server.response_types_supported, ["code"]);
+    assert.deepEqual(server.token_endpoint_auth_methods_supported, ["none", "private_key_jwt"]);
+    assert.equal(server.client_id_metadata_document_supported, true);
+    assert.equal(server.authorization_response_iss_parameter_supported, true);
+    assert.ok(!server.scopes_supported.includes("mcp:write"));
+
+    // Flujo completo de un organizador
+    const org = client();
+    await org.call("/auth/register", "POST", account(P, "mcp-oauth-org"), 201);
+    const flow = await mcpStartConsent(org);
+    const details = await org.call(`/mcp/oauth/interaction/${flow.uid}/details`);
+    assert.deepEqual(details, { clientName: "Cliente de pruebas", scopes: ["mcp:read"] });
+    const { redirectTo } = await org.call(`/mcp/oauth/interaction/${flow.uid}/decision`, "POST", { allow: true });
+    const callback = await mcpFollowToClient(org, redirectTo);
+    assert.equal(callback.get("state"), flow.state);
+    assert.equal(callback.get("iss"), server.issuer);
+
+    const exchange = { grant_type: "authorization_code", code: callback.get("code"), redirect_uri: mcpOAuth.redirectUri, resource: mcpOAuth.resource };
+    // Sin el verificador de PKCE, o con otro, no hay token
+    assert.equal((await mcpTokenRequest({ ...exchange, code_verifier: "x".repeat(43) })).data.error, "invalid_grant");
+    const connected = await mcpConnect(org);
+    assert.equal(connected.tokens.token_type.toLowerCase(), "bearer");
+    assert.equal(connected.tokens.scope, "mcp:read");
+    assert.equal(connected.tokens.expires_in, 3600);
+    assert.ok(connected.tokens.refresh_token);
+
+    // Volver a conectar con la sesión OAuth abierta en el mismo navegador
+    assert.equal((await mcpConnect(org)).tokens.scope, "mcp:read");
+
+    // Un código solo vale una vez
+    const reused = await mcpTokenRequest({
+      grant_type: "authorization_code",
+      code: connected.params.get("code"),
+      code_verifier: connected.verifier,
+      redirect_uri: mcpOAuth.redirectUri,
+      resource: mcpOAuth.resource,
+    });
+    assert.equal(reused.data.error, "invalid_grant");
+    // Y repetirlo revoca lo que se emitió con él: alguien más pudo haberlo robado
+    assert.equal((await mcpCall(connected.tokens.access_token, "tools/list")).status, 401);
+
+    // Solo lectura: las herramientas de escritura ni aparecen ni responden
+    const active = await mcpConnect(org);
+    const access = active.tokens.access_token;
+    const init = await mcpCall(access, "initialize", { protocolVersion: "2025-06-18" });
+    assert.equal(init.body.result.protocolVersion, "2025-06-18");
+    assert.equal((await mcpCall(access, "initialize", { protocolVersion: "1999-01-01" })).body.result.protocolVersion, "2025-11-25");
+    const tools = (await mcpCall(access, "tools/list")).body.result.tools;
+    assert.ok(tools.some((tool) => tool.name === "events_list"));
+    assert.ok(!tools.some((tool) => tool.name === "events_create"));
+    for (const tool of tools) {
+      assert.deepEqual(tool.securitySchemes, [{ type: "oauth2", scopes: ["mcp:read"] }]);
+      assert.deepEqual(tool._meta.securitySchemes, tool.securitySchemes);
+      assert.equal(tool.annotations.readOnlyHint, true);
+    }
+    const write = await mcpCall(access, "tools/call", { name: "events_create", arguments: {} });
+    assert.equal(write.body.result.isError, true);
+    assert.match(write.body.result.content[0].text, /mcp:write/);
+    assert.ok(Array.isArray(JSON.parse((await mcpCall(access, "tools/call", { name: "events_list", arguments: {} })).body.result.content[0].text).events));
+
+    // Una notificación no lleva respuesta
+    const notification = await send(`${base}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${access}` },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+    });
+    assert.equal(notification.status, 202);
+
+    // Un token solo vale en el dominio que lo emitió
+    const otherDomain = await mcpCall(access, "tools/list", undefined, englishHost);
+    assert.equal(otherDomain.status, 401);
+    assert.match(otherDomain.headers["www-authenticate"], /error="invalid_token"/);
+
+    // Renovar da un token nuevo y sigue siendo de solo lectura
+    const refreshed = await mcpTokenRequest({ grant_type: "refresh_token", refresh_token: active.tokens.refresh_token, resource: mcpOAuth.resource });
+    assert.equal(refreshed.status, 200, JSON.stringify(refreshed.data));
+    assert.equal(refreshed.data.scope, "mcp:read");
+    assert.equal((await mcpCall(refreshed.data.access_token, "tools/list")).status, 200);
+
+    // Revocar corta el acceso
+    const revocation = await send(`${base}/mcp/oauth/token/revocation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: mcpOAuth.clientId, token: refreshed.data.access_token }).toString(),
+    });
+    assert.equal(revocation.status, 200);
+    assert.equal((await mcpCall(refreshed.data.access_token, "tools/list")).status, 401);
+
+    // Un proveedor también se conecta, con sus herramientas de lectura
+    const provider = client();
+    await provider.call("/auth/register", "POST", account(P, "mcp-oauth-prov", { accountType: "provider" }), 201);
+    const providerTools = (await mcpCall((await mcpConnect(provider)).tokens.access_token, "tools/list")).body.result.tools.map((tool) => tool.name);
+    assert.deepEqual(providerTools.sort(), ["provider_profile_get", "provider_services_list"]);
+
+    // Rechazar vuelve al cliente con access_denied y sin código
+    const denied = await mcpStartConsent(org);
+    const refused = await org.call(`/mcp/oauth/interaction/${denied.uid}/decision`, "POST", { allow: false });
+    const deniedCallback = await mcpFollowToClient(org, refused.redirectTo);
+    assert.equal(deniedCallback.get("error"), "access_denied");
+    assert.equal(deniedCallback.get("code"), null);
+  });
+
   await suite("Model Context Protocol (MCP): Streamable HTTP, initialize, catálogo de herramientas y ejecución con confirmación", async () => {
-    // 1. Estado y metadatos RFC 8414
+    // 1. Estado
     const status = await guest.call("/mcp");
     assert.equal(status.status, "ok");
     assert.equal(status.service, "tuevento-mcp");
-    assert.equal(status.protocolVersion, "2024-11-05");
-
-    const metadata = await guest.call("/mcp/oauth/metadata");
-    assert.match(metadata.authorization_endpoint, /\/api\/mcp\/oauth\/authorize$/);
-    assert.match(metadata.token_endpoint, /\/api\/mcp\/oauth\/token$/);
-    assert.deepEqual(metadata.scopes_supported, ["mcp:read", "mcp:write"]);
+    assert.equal(status.protocolVersion, "2025-11-25");
 
     // 2. Organizador: emitir token MCP
     const org = client();
     await org.call("/auth/register", "POST", account(P, "mcp-org"), 201);
-    const orgAuth = await org.call("/mcp/oauth/authorize", "POST", { client_name: "Claude Test", scopes: ["mcp:read", "mcp:write"] });
+    const orgAuth = await org.call("/mcp/tokens", "POST", { client_name: "Claude Test", scopes: ["mcp:read", "mcp:write"] });
     assert.match(orgAuth.access_token, /^mcp_/);
     assert.equal(orgAuth.actor_type, "organizer");
     assert.equal(orgAuth.token_type, "Bearer");
@@ -982,7 +1099,7 @@ try {
     // 3. Negociación: initialize y ping
     const initRes = await mcpOrg("initialize");
     assert.equal(initRes.status, 200);
-    assert.equal(initRes.body.result.protocolVersion, "2024-11-05");
+    assert.equal(initRes.body.result.protocolVersion, "2025-11-25");
     assert.equal(initRes.body.result.serverInfo.name, "tuevento-mcp");
 
     const pingRes = await mcpOrg("ping");
@@ -1136,7 +1253,7 @@ try {
     // 7. Flujo de Proveedor: perfil y servicios
     const prov = client();
     await prov.call("/auth/register", "POST", account(P, "mcp-prov", { accountType: "provider" }), 201);
-    const provAuth = await prov.call("/mcp/oauth/authorize", "POST", { client_name: "Claude Provider" });
+    const provAuth = await prov.call("/mcp/tokens", "POST", { client_name: "Claude Provider" });
     const mcpProv = async (method, params) => {
       const res = await send(`${base}/mcp`, {
         method: "POST",
