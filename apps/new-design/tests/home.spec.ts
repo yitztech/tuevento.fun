@@ -48,3 +48,26 @@ test("newsletter: valida el correo y confirma la simulación", async ({ page }) 
   await page.getByRole("button", { name: "Suscribirme" }).click();
   await expect(page.getByRole("status")).toContainText("Listo");
 });
+
+test("abrir un diseño desde la portada lo selecciona en la demostración", async ({ page }) => {
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: /invitación tan especial/ });
+  await gallery.getByRole("link", { name: /Cumpleaños con globos/ }).click();
+  await expect(page).toHaveURL(/\/demo\?design=cumpleanos-globos/);
+  await expect(page.getByRole("button", { name: /Cumpleaños con globos/ })).toHaveAttribute("aria-pressed", "true");
+});
+
+
+test("las categorías abren la demo con el filtro apropiado", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /Cumpleaños Para todas las edades/ }).click();
+  await expect(page.getByRole("button", { name: "Cumpleaños", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /Cumpleaños con globos/ })).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/");
+  await page.getByRole("link", { name: /Bautizos Momentos únicos/ }).click();
+  await expect(page.getByText("No hay diseños de este estilo todavía.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Siguiente" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Personaliza/ })).toBeDisabled();
+  await page.getByRole("button", { name: "Todos", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Siguiente" })).toBeEnabled();
+});

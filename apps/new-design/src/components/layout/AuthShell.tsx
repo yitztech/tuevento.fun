@@ -21,7 +21,7 @@ export function AuthShell({ photo, quote, children, benefits, help }: Props) {
         <section className="mx-auto w-full max-w-xl p-6 sm:p-10 lg:flex lg:max-w-none lg:flex-col lg:justify-center lg:p-14 xl:px-20">
           <div className="w-full lg:max-w-md">{children}</div>
         </section>
-        <aside className="relative order-first h-56 overflow-hidden sm:h-72 lg:order-last lg:h-auto lg:min-h-[44rem] lg:p-5 lg:pl-0">
+        <aside className="relative hidden overflow-hidden lg:order-last lg:block lg:h-auto lg:min-h-[44rem] lg:p-5 lg:pl-0">
           <div className="relative size-full overflow-hidden lg:rounded-[2rem] lg:rounded-l-[7rem]">
             <Photo name={photo} eager sizes="(min-width:1024px) 45vw, 100vw" />
             <div aria-hidden className="absolute inset-0 bg-linear-to-t from-[#3a1a12]/35 via-transparent to-transparent lg:from-transparent" />

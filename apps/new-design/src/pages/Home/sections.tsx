@@ -20,7 +20,7 @@ import type { PhotoKey } from "@/lib/photos";
 import type { InvitationTag, RsvpStatus } from "@/types";
 
 const wrap = "mx-auto w-full max-w-page px-4 sm:px-6 lg:px-8";
-const panel = "rounded-2xl border border-white/70 bg-card/70 shadow-card backdrop-blur-sm";
+const panel = "rounded-2xl bg-card/70 shadow-card";
 
 /* 1 · Hero ------------------------------------------------------------------- */
 export function Hero() {
@@ -120,7 +120,7 @@ export function DesignsGallery() {
       <div className={cn(panel, "grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] lg:gap-8")}>
         <div className="flex flex-col items-start">
           <SectionHeading size="sm" id="disenos-title" eyebrow={copy.designs.eyebrow} title={copy.designs.title} text={copy.designs.text} />
-          <Button asChild size="lg" className="mt-6">
+          <Button asChild size="lg" className="mt-6 max-w-full whitespace-normal px-3 text-center">
             <Link to="/demo">
               {copy.designs.all}
               <ArrowRight aria-hidden />
@@ -128,14 +128,14 @@ export function DesignsGallery() {
           </Button>
         </div>
         <div className="min-w-0">
-          <div role="group" aria-label={copy.designs.filters} className="-mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="group" aria-label={copy.designs.filters} className="mb-3 flex flex-wrap gap-1.5">
             {tagKeys.map((k) => (
               <button
                 key={k}
                 type="button"
                 aria-pressed={tag === k}
                 onClick={() => setTag(k)}
-                className={cn("min-h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40", tag === k ? "bg-primary text-primary-foreground" : "text-foreground/85 hover:bg-accent-soft")}
+                className={cn("min-h-11 cursor-pointer rounded-full px-3.5 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40", tag === k ? "bg-primary text-primary-foreground" : "text-foreground/85 hover:bg-accent-soft")}
               >
                 {copy.designs.tags[k]}
               </button>
@@ -152,8 +152,8 @@ export function DesignsGallery() {
 export function Steps() {
   const icons = [Pencil, Send, ChartColumn];
   return (
-    <section id="como-funciona" aria-labelledby="pasos-title" className={cn(wrap, "scroll-mt-24 pt-4")}>
-      <div className={cn(panel, "grid gap-6 p-5 sm:p-7 md:grid-cols-3 lg:grid-cols-[minmax(0,17rem)_repeat(3,minmax(0,1fr))] lg:items-center lg:gap-6")}>
+    <section id="como-funciona" aria-labelledby="pasos-title" className={cn(wrap, "scroll-mt-24 py-12 lg:py-16")}>
+      <div className="grid gap-6 px-2 sm:px-4 md:grid-cols-3 lg:grid-cols-[minmax(0,17rem)_repeat(3,minmax(0,1fr))] lg:items-center lg:gap-6">
         <SectionHeading size="sm" id="pasos-title" eyebrow={copy.steps.eyebrow} title={copy.steps.title} className="md:col-span-3 lg:col-span-1" />
         {copy.steps.items.map((s, i) => {
           const Icon = icons[i];
@@ -193,7 +193,7 @@ export function FamilyRsvp() {
               {copy.family.card}
             </p>
           </div>
-          <div className="relative z-10 p-6 sm:p-8 lg:max-w-[48%] lg:p-10">
+          <div className="relative z-10 p-6 sm:p-8 lg:max-w-[58%] lg:p-8">
             <SectionHeading size="sm" id="familia-title" eyebrow={copy.family.eyebrow} title={copy.family.title} text={copy.family.text} />
             <ul className="mt-5 space-y-2.5">
               {copy.family.bullets.map((b) => (
@@ -228,8 +228,8 @@ const teaserTiles: { key: PhotoKey; label: string }[] = [
 
 export function ProvidersTeaser() {
   return (
-    <section aria-labelledby="prov-title" className={cn(wrap, "pt-4")}>
-      <div className={cn(panel, "grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] lg:items-center lg:gap-6")}>
+    <section aria-labelledby="prov-title" className={cn(wrap, "py-12 lg:py-16")}>
+      <div className="grid gap-6 px-2 sm:px-4 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
         <div className="flex flex-col items-start">
           <SectionHeading size="sm" id="prov-title" eyebrow={copy.providersTeaser.eyebrow} title={copy.providersTeaser.title} text={copy.providersTeaser.text} />
           <Button asChild size="lg" className="mt-5">
@@ -303,6 +303,7 @@ export function FinalCta() {
           <p className="mt-2 text-sm text-white/90">{copy.newsletter.text}</p>
         </div>
         <div className="mt-6 lg:mt-0 lg:pr-24">
+          <Button asChild size="lg" className="mb-5 max-w-full whitespace-normal px-3 text-center bg-white text-primary hover:bg-accent-soft"><Link to="/registro">{copy.hero.primary}<ArrowRight aria-hidden /></Link></Button>
           <NewsletterForm />
         </div>
       </div>

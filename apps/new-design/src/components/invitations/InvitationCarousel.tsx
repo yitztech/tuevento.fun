@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 import { InvitationCard } from "@/components/invitations/InvitationCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -53,15 +54,15 @@ export function InvitationCarousel({ designs, selectedId, onSelect, className, i
                 <InvitationCard design={d} />
               </button>
             ) : (
-              <InvitationCard design={d} />
+              <Link to={`/demo?design=${encodeURIComponent(d.id)}`} className="block rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"><InvitationCard design={d} /></Link>
             )}
           </li>
         ))}
       </ul>
-      <Button variant="light" size="icon" onClick={() => page(1)} aria-label={copy.designs.next} className="absolute top-1/2 -right-3 hidden -translate-y-1/2 shadow-soft sm:inline-flex">
+      <Button variant="light" size="icon" onClick={() => page(1)} aria-label={copy.designs.next} className="absolute top-1/2 -right-3 inline-flex -translate-y-1/2 shadow-soft">
         <ChevronRight />
       </Button>
-      <Button variant="light" size="icon" onClick={() => page(-1)} aria-label={copy.designs.prev} className="absolute top-1/2 -left-3 hidden -translate-y-1/2 shadow-soft sm:inline-flex">
+      <Button variant="light" size="icon" onClick={() => page(-1)} aria-label={copy.designs.prev} className="absolute top-1/2 -left-3 inline-flex -translate-y-1/2 shadow-soft">
         <ChevronLeft />
       </Button>
     </div>
