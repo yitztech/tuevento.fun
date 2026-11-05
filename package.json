@@ -60,6 +60,8 @@
     "body-parser": "^2.4.0",
     "@appium/support": {
       "shell-quote": "^1.12.0"
-    }
+    },
+    "glob": "^14.0.3",
+    "minimatch": "^11.0.4"
   }
 }

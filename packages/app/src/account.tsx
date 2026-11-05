@@ -46,6 +46,8 @@ function usePostAuthTarget() {
   const [query] = useSearchParams();
   const challenge = query.get("appChallenge");
   if (challenge && /^[A-Za-z0-9_-]{43}$/.test(challenge)) return `/conectar-app?challenge=${challenge}`;
+  const assistant = query.get("asistente");
+  if (assistant && /^[A-Za-z0-9_-]+$/.test(assistant)) return `/conectar-asistente?uid=${assistant}`;
   const theme = query.get("tema");
   if (theme && (themeIds as readonly string[]).includes(theme))
     return `/eventos/nuevo?tema=${theme}`;

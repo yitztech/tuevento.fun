@@ -46,6 +46,14 @@ export interface McpToolDefinition {
   name: McpToolName;
   description: string;
   inputSchema: Record<string, unknown>;
+  annotations: { readOnlyHint: boolean };
+  securitySchemes: McpSecurityScheme[];
+  _meta: { securitySchemes: McpSecurityScheme[] };
+}
+
+export interface McpSecurityScheme {
+  type: "oauth2";
+  scopes: McpScope[];
 }
 
 export interface McpToolCallResult {

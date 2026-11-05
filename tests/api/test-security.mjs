@@ -3,7 +3,7 @@
 // cabeceras y límites. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { adminBase, client, account, cleanup, createCoupon, send, setCouponActive, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
+import { mcpAuthorizeUrl, mcpCall, mcpClientAssertion, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, adminBase, client, account, cleanup, createCoupon, send, setCouponActive, base, suiteRunner, eventData, invitationData, password, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-sec";
@@ -622,7 +622,7 @@ try {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
     });
     assert.equal(unauth.status, 401);
-    assert.match(unauth.headers["www-authenticate"], /Bearer error="unauthorized"/);
+    assert.match(unauth.headers["www-authenticate"], /^Bearer resource_metadata="[^"]+", scope="mcp:read"$/);
 
     const badToken = await send(`${base}/mcp`, {
       method: "POST",
@@ -630,12 +630,12 @@ try {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
     });
     assert.equal(badToken.status, 401);
-    assert.match(badToken.headers["www-authenticate"], /Bearer error="invalid_token"/);
+    assert.match(badToken.headers["www-authenticate"], /^Bearer resource_metadata="[^"]+", scope="mcp:read", error="invalid_token"$/);
 
     // 2. Revocación de token
     const org = client();
     await org.call("/auth/register", "POST", account(P, "mcp-sec-org"), 201);
-    const tokenData = await org.call("/mcp/oauth/authorize", "POST", { client_name: "Revoke Test" });
+    const tokenData = await org.call("/mcp/tokens", "POST", { client_name: "Revoke Test" });
     const token = tokenData.access_token;
 
     // Con token válido funciona
@@ -647,7 +647,7 @@ try {
     assert.equal(okRes.status, 200);
 
     // Revocar
-    await org.call("/mcp/oauth/revoke", "POST", { token });
+    await org.call("/mcp/tokens/revoke", "POST", { token });
 
     // Ahora responde 401
     const revokedRes = await send(`${base}/mcp`, {
@@ -656,15 +656,15 @@ try {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
     });
     assert.equal(revokedRes.status, 401);
-    assert.match(revokedRes.headers["www-authenticate"], /Bearer error="invalid_token"/);
+    assert.match(revokedRes.headers["www-authenticate"], /^Bearer resource_metadata="[^"]+", scope="mcp:read", error="invalid_token"$/);
 
     // 3. Aislamiento entre cuentas (Organizador A vs Organizador B)
     const orgA = client();
     const orgB = client();
     await orgA.call("/auth/register", "POST", account(P, "mcp-sec-a"), 201);
     await orgB.call("/auth/register", "POST", account(P, "mcp-sec-b"), 201);
-    const tokenA = (await orgA.call("/mcp/oauth/authorize", "POST", {})).access_token;
-    const tokenB = (await orgB.call("/mcp/oauth/authorize", "POST", {})).access_token;
+    const tokenA = (await orgA.call("/mcp/tokens", "POST", {})).access_token;
+    const tokenB = (await orgB.call("/mcp/tokens", "POST", {})).access_token;
 
     const eventoB = await orgB.call("/events", "POST", eventData(), 201);
 
@@ -681,7 +681,7 @@ try {
     // 4. Aislamiento de proveedor: no puede llamar herramientas de organizador ni ver invitados
     const prov = client();
     await prov.call("/auth/register", "POST", account(P, "mcp-sec-prov", { accountType: "provider" }), 201);
-    const tokenProv = (await prov.call("/mcp/oauth/authorize", "POST", {})).access_token;
+    const tokenProv = (await prov.call("/mcp/tokens", "POST", {})).access_token;
 
     const provCallOrg = await send(`${base}/mcp`, {
       method: "POST",
@@ -693,7 +693,7 @@ try {
     assert.match(provCallOrgData.result.content[0].text, /permiso/i);
 
     // 5. Restricción de permisos (scopes): token con solo mcp:read no puede escribir
-    const readOnlyToken = (await orgA.call("/mcp/oauth/authorize", "POST", { scopes: ["mcp:read"] })).access_token;
+    const readOnlyToken = (await orgA.call("/mcp/tokens", "POST", { scopes: ["mcp:read"] })).access_token;
     const writeAttempt = await send(`${base}/mcp`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${readOnlyToken}` },
@@ -710,6 +710,94 @@ try {
     const writeData = JSON.parse(writeAttempt.text);
     assert.equal(writeData.result.isError, true);
     assert.match(writeData.result.content[0].text, /mcp:write/);
+  });
+
+  await suite("MCP OAuth Seguridad: PKCE obligatorio, CIMD con lista blanca, recurso, consentimiento y datos guardados", async () => {
+    const organizer = client();
+    await organizer.call("/auth/register", "POST", account(P, "mcp-oauth-sec"), 201);
+
+    // Sin PKCE, con `plain`, con otro recurso o con otro redirect_uri, no se empieza
+    for (const [name, overrides] of [
+      ["sin PKCE", { code_challenge: undefined, code_challenge_method: undefined }],
+      ["PKCE plain", { code_challenge_method: "plain" }],
+      ["otro recurso", { resource: "https://atacante.example/api/mcp" }],
+      ["otro redirect_uri", { redirect_uri: "https://atacante.example/callback" }],
+      ["otro tipo de respuesta", { response_type: "token" }],
+    ]) {
+      const r = await organizer.raw(mcpAuthorizeUrl(overrides).path);
+      assert.ok(!/\/interaction\//.test(r.headers.location ?? ""), name);
+    }
+
+    // CIMD: una URL fuera de la lista blanca no se descarga ni se admite
+    for (const clientId of ["https://atacante.example/oauth/client.json", "https://chatgpt.com.atacante.example/oauth/client.json", "http://chatgpt.com/oauth/client.json", "https://chatgpt.com/otra/client.json"]) {
+      const r = await organizer.raw(mcpAuthorizeUrl({ client_id: clientId }).path);
+      assert.equal(r.status, 400, clientId);
+      assert.equal(r.data.error, "invalid_client", clientId);
+    }
+
+    // No se concede mcp:write aunque se pida
+    const asked = await mcpConnect(organizer, { scope: "mcp:read mcp:write" });
+    assert.equal(asked.tokens.scope, "mcp:read");
+    assert.ok(!(await mcpCall(asked.tokens.access_token, "tools/list")).body.result.tools.some((tool) => tool.name === "events_create"));
+
+    // private_key_jwt, el método de ChatGPT: sin aserción, con otro destinatario o repetida, no hay token
+    const signed = await mcpStartConsent(organizer, { client_id: "tuevento-pruebas-jwt" });
+    const signedDecision = await organizer.call(`/mcp/oauth/interaction/${signed.uid}/decision`, "POST", { allow: true });
+    const signedCode = (await mcpFollowToClient(organizer, signedDecision.redirectTo)).get("code");
+    const issuer = `${mcpOAuth.resource}/oauth`;
+    const exchange = (fields) =>
+      mcpTokenRequest({
+        client_id: "tuevento-pruebas-jwt",
+        grant_type: "authorization_code",
+        code: signedCode,
+        code_verifier: signed.verifier,
+        redirect_uri: mcpOAuth.redirectUri,
+        resource: mcpOAuth.resource,
+        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        ...fields,
+      });
+    assert.equal((await exchange({ client_assertion: undefined, client_assertion_type: undefined })).data.error, "invalid_client");
+    assert.equal((await exchange({ client_assertion: mcpClientAssertion("https://atacante.example") })).data.error, "invalid_client");
+    const assertion = mcpClientAssertion(issuer);
+    const accepted = await exchange({ client_assertion: assertion });
+    assert.equal(accepted.status, 200, JSON.stringify(accepted.data));
+    assert.equal(accepted.data.scope, "mcp:read");
+    assert.equal((await mcpCall(accepted.data.access_token, "tools/list")).status, 200);
+    const renewal = await mcpTokenRequest({ client_id: "tuevento-pruebas-jwt", grant_type: "refresh_token", refresh_token: accepted.data.refresh_token, resource: mcpOAuth.resource, client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer", client_assertion: assertion });
+    assert.equal(renewal.data.error, "invalid_client");
+
+    // El consentimiento exige sesión, cabecera propia, origen permitido y el navegador del flujo
+    const flow = await mcpStartConsent(organizer);
+    const decision = `/mcp/oauth/interaction/${flow.uid}/decision`;
+    assert.equal((await organizer.raw(decision, { method: "POST", body: { allow: true }, csrf: false })).status, 403);
+    assert.equal((await organizer.raw(decision, { method: "POST", body: { allow: true }, headers: { Origin: "https://atacante.example" } })).status, 403);
+    assert.equal((await organizer.raw(decision, { method: "POST", body: { allow: true, scope: "mcp:write" } })).status, 422);
+    assert.equal((await client().raw(decision, { method: "POST", body: { allow: true } })).status, 401);
+    assert.equal((await client().raw(`/mcp/oauth/interaction/${flow.uid}/details`)).status, 401);
+    const other = client();
+    await other.call("/auth/register", "POST", account(P, "mcp-oauth-sec-b"), 201);
+    assert.equal((await other.raw(decision, { method: "POST", body: { allow: true } })).status, 404);
+    assert.equal((await other.raw("/mcp/oauth/interaction/inventado/details")).status, 404);
+
+    // La cuenta de demostración no autoriza clientes
+    const demo = client();
+    await demo.call("/auth/register", "POST", account(P, "mcp-oauth-demo"), 201);
+    await demo.call("/auth/demo", "POST", {}, 201);
+    const demoFlow = await mcpStartConsent(demo);
+    assert.equal((await demo.raw(`/mcp/oauth/interaction/${demoFlow.uid}/decision`, { method: "POST", body: { allow: true } })).status, 403);
+
+    // Un token OAuth inventado no entra, y el 401 lo dice
+    const invented = await mcpCall("token-inventado", "tools/list");
+    assert.equal(invented.status, 401);
+    assert.match(invented.headers["www-authenticate"], /error="invalid_token"/);
+
+    // Una cabecera X-Forwarded-Host no cambia las URL del flujo
+    const forged = await organizer.raw(mcpAuthorizeUrl().path, { headers: { "X-Forwarded-Host": "atacante.example" } });
+    assert.ok(!/atacante/.test(forged.headers.location ?? ""), forged.headers.location);
+
+    // Los endpoints antiguos ya no existen: emitían tokens sin PKCE
+    assert.notEqual((await organizer.raw("/mcp/oauth/authorize", { method: "POST", body: {} })).status, 200);
+    assert.notEqual((await organizer.raw("/mcp/oauth/metadata")).status, 200);
   });
 
   await suite("Errores: Problem Details con requestId y X-Request-ID", async () => {

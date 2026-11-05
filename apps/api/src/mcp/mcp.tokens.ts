@@ -80,7 +80,8 @@ export async function verifyMcpToken(
     userId: row.user_id ?? undefined,
     invitationId: row.invitation_id ?? undefined,
     clientName: row.client_name,
-    scopes: row.scopes,
+    // Las escrituras siguen cerradas fuera de las pruebas, aunque el token las tenga
+    scopes: process.env.MCP_TEST_MODE === "true" ? row.scopes : row.scopes.filter((scope) => scope === "mcp:read"),
     locale,
   };
 }

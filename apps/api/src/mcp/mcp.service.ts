@@ -30,6 +30,12 @@ import type {
   McpToolCallResult,
 } from "./mcp.types";
 
+/** Versiones del protocolo admitidas, de la más nueva a la más antigua. */
+export const mcpProtocolVersions = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+/** Responde con la versión del cliente si se admite; si no, con la más nueva. */
+const negotiateProtocol = (requested: unknown) =>
+  mcpProtocolVersions.find((version) => version === requested) ?? mcpProtocolVersions[0];
+
 @Injectable()
 export class McpService {
   private readonly logger = new Logger(McpService.name);
@@ -62,7 +68,7 @@ export class McpService {
             jsonrpc: "2.0",
             id,
             result: {
-              protocolVersion: "2024-11-05",
+              protocolVersion: negotiateProtocol(req.params?.protocolVersion),
               capabilities: {
                 tools: { listChanged: false },
                 resources: { listChanged: false },

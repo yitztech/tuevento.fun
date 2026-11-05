@@ -121,6 +121,23 @@ server {
         proxy_pass http://api_upstream/api/.well-known/apple-app-site-association;
     }
 
+    # Descubrimiento OAuth de MCP (RFC 9728 y RFC 8414), en cualquier dominio
+    location = /.well-known/oauth-protected-resource {
+        add_header X-Robots-Tag "noindex" always;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/.well-known/oauth-protected-resource;
+    }
+    location = /.well-known/oauth-protected-resource/api/mcp {
+        add_header X-Robots-Tag "noindex" always;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/.well-known/oauth-protected-resource;
+    }
+    location = /.well-known/oauth-authorization-server/api/mcp/oauth {
+        add_header X-Robots-Tag "noindex" always;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_pass http://api_upstream/api/mcp/oauth/.well-known/openid-configuration;
+    }
+
     # Recursos con hash en el nombre (inmutables): candidatos a caché en el gateway
     location /assets/ {
         include /etc/nginx/snippets/proxy-headers.conf;

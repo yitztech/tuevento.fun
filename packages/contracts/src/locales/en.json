@@ -1277,5 +1277,13 @@
     "tagParty": "Party",
     "trustNoAccount": "Guests reply without an account",
     "trustOnePlace": "Everything in one place"
+  },
+  "assistantConnect": {
+    "allow": "Allow access",
+    "deny": "Don't allow",
+    "expired": "This connection link has expired or isn't valid. Start again from your assistant.",
+    "intro": "{{client}} wants to access your TuEventoFun account.",
+    "readOnly": "It will only be able to view your data. It can't create, change or delete anything.",
+    "title": "Connect your assistant"
   }
 }

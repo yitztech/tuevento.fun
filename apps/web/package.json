@@ -23,7 +23,7 @@
     "@capacitor/ios": "^8.5.3",
     "@capacitor/network": "^8.0.1",
     "@capacitor/share": "^8.0.3",
-    "@sentry/react": "^11.10.0",
+    "@sentry/react": "^11.11.0",
     "@tuevento/app": "1.0.0",
     "@tuevento/client": "1.0.0",
     "@tuevento/contracts": "1.0.0",

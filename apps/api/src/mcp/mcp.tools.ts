@@ -4,6 +4,7 @@ import {
   type McpActorType,
   type McpToolName,
   mcpToolNames,
+  mcpToolScopeMatrix,
 } from "@tuevento/contracts";
 import type { McpToolDefinition } from "./mcp.types";
 
@@ -514,9 +515,16 @@ export function getToolsForActor(
     return true;
   });
 
-  return allowedToolNames.map((name) => ({
-    name,
-    description: toolDescriptions[name][locale] || toolDescriptions[name].es,
-    inputSchema: toolInputSchemas[name],
-  }));
+  return allowedToolNames.map((name) => {
+    const securitySchemes = [{ type: "oauth2" as const, scopes: [mcpToolScopeMatrix[name]] }];
+    return {
+      name,
+      description: toolDescriptions[name][locale] || toolDescriptions[name].es,
+      inputSchema: toolInputSchemas[name],
+      annotations: { readOnlyHint: mcpToolScopeMatrix[name] === "mcp:read" },
+      securitySchemes,
+      // Algunos clientes solo lo leen de `_meta`
+      _meta: { securitySchemes },
+    };
+  });
 }

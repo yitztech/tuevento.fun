@@ -1,6 +1,6 @@
 // Cliente mínimo para las pruebas de la API (test-endpoints.mjs, test-security.mjs).
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { createHash, createPrivateKey, randomBytes, sign } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import http from "node:http";
 import https from "node:https";
@@ -74,6 +74,100 @@ export function client() {
     setCookie: load,
   };
   return api;
+}
+
+/** Cliente OAuth fijo de pruebas (`MCP_TEST_MODE`) y recurso MCP del dominio principal. */
+export const mcpOAuth = {
+  clientId: "tuevento-pruebas",
+  redirectUri: "http://127.0.0.1/callback",
+  resource: `${process.env.TEST_SITE_URL_ES || "http://tuevento.localhost:5187"}/api/mcp`,
+};
+
+/** URL de autorización con PKCE; `overrides` cambia o quita (undefined) parámetros. */
+export function mcpAuthorizeUrl(overrides = {}) {
+  const verifier = randomBytes(32).toString("base64url");
+  const params = {
+    client_id: mcpOAuth.clientId,
+    redirect_uri: mcpOAuth.redirectUri,
+    response_type: "code",
+    scope: "mcp:read",
+    resource: mcpOAuth.resource,
+    state: randomBytes(8).toString("hex"),
+    code_challenge: createHash("sha256").update(verifier).digest("base64url"),
+    code_challenge_method: "S256",
+    ...overrides,
+  };
+  const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined));
+  return { path: `/mcp/oauth/auth?${query}`, verifier, state: params.state };
+}
+
+/** Abre la autorización como el navegador de `user` y devuelve el paso de consentimiento. */
+export async function mcpStartConsent(user, overrides) {
+  const flow = mcpAuthorizeUrl(overrides);
+  const start = await user.raw(flow.path);
+  assert.equal(start.status, 303, start.text.slice(0, 200));
+  const uid = /\/interaction\/([^/?]+)/.exec(start.headers.location)?.[1];
+  assert.ok(uid, start.headers.location);
+  return { ...flow, uid };
+}
+
+/** Sigue las redirecciones de la API hasta la del cliente y devuelve sus parámetros. */
+export async function mcpFollowToClient(user, location) {
+  for (let hops = 0; hops < 5; hops += 1) {
+    if (location.startsWith(mcpOAuth.redirectUri)) return new URL(location).searchParams;
+    const { pathname, search } = new URL(location, base);
+    const next = await user.raw(`${pathname.replace(/^\/api/, "")}${search}`);
+    assert.equal(next.status, 303, next.text.slice(0, 200));
+    location = next.headers.location;
+  }
+  throw new Error("Demasiadas redirecciones");
+}
+
+/** Pide el token del cliente fijo; devuelve la respuesta sin interpretar. */
+export const mcpTokenRequest = async (fields, host) => {
+  const r = await send(`${base}/mcp/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", ...(host ? { Host: host } : {}) },
+    body: new URLSearchParams(Object.entries({ client_id: mcpOAuth.clientId, ...fields }).filter(([, value]) => value !== undefined)).toString(),
+  });
+  return { status: r.status, data: JSON.parse(r.text || "{}") };
+};
+
+/** Aserción `private_key_jwt` del cliente de pruebas; la semilla es la de `testJwtClient` en la API. */
+export function mcpClientAssertion(audience, jti = randomBytes(8).toString("hex")) {
+  const clientId = "tuevento-pruebas-jwt";
+  const seed = createHash("sha256").update(clientId).digest();
+  const key = createPrivateKey({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), seed]), format: "der", type: "pkcs8" });
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const now = Math.floor(Date.now() / 1000);
+  const body = `${encode({ alg: "EdDSA", typ: "JWT" })}.${encode({ iss: clientId, sub: clientId, aud: audience, jti, iat: now, exp: now + 60 })}`;
+  return `${body}.${sign(null, Buffer.from(body), key).toString("base64url")}`;
+}
+
+/** Flujo completo: consentimiento aceptado y código cambiado por tokens. */
+export async function mcpConnect(user, overrides) {
+  const flow = await mcpStartConsent(user, overrides);
+  const { redirectTo } = await user.call(`/mcp/oauth/interaction/${flow.uid}/decision`, "POST", { allow: true });
+  const params = await mcpFollowToClient(user, redirectTo);
+  const tokens = await mcpTokenRequest({
+    grant_type: "authorization_code",
+    code: params.get("code"),
+    code_verifier: flow.verifier,
+    redirect_uri: mcpOAuth.redirectUri,
+    resource: mcpOAuth.resource,
+  });
+  assert.equal(tokens.status, 200, JSON.stringify(tokens.data));
+  return { ...flow, params, tokens: tokens.data };
+}
+
+/** Llamada JSON-RPC a `/mcp` con un token. */
+export async function mcpCall(token, method, params, host) {
+  const r = await send(`${base}/mcp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(host ? { Host: host } : {}) },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  });
+  return { status: r.status, headers: r.headers, body: JSON.parse(r.text || "{}") };
 }
 
 export const unique = Date.now();

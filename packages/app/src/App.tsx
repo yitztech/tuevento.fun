@@ -42,6 +42,7 @@ import {
 } from "./dashboard";
 import { EventEditor, EventDetail, TvPage } from "./event-pages";
 import { MobileConnect } from "./mobile-connect";
+import { AssistantConnect } from "./assistant-connect";
 import { ProviderBusinessPage, ProviderPhotosPage, ProviderServicesPage } from "./provider";
 import { OwnerDashboard } from "./owner";
 import {
@@ -287,7 +288,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
           registerMode={location.pathname === "/registro"}
         />
       ) : !user ? (
-        <Navigate to="/acceso" replace />
+        <Navigate to={location.pathname === "/conectar-asistente" ? `/acceso?asistente=${new URLSearchParams(location.search).get("uid") ?? ""}` : "/acceso"} replace />
       ) : location.pathname === "/pago" ? (
         <PaymentPage />
       ) : location.pathname.endsWith("/pantalla") ? (
@@ -450,6 +451,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   <Route path="/negocio/servicios" element={<ProviderServicesPage />} />
                   <Route path="/negocio/fotos" element={<ProviderPhotosPage />} />
                   <Route path="/conectar-app" element={<MobileConnect />} />
+                  <Route path="/conectar-asistente" element={<AssistantConnect />} />
                   <Route path="/perfil" element={<ProfilePage />} />
                   <Route path="/ayuda" element={<HelpPage />} />
                   {/* Eventos, invitados y diseños son de quien organiza: el proveedor vuelve a su inicio */}
@@ -460,6 +462,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <Route path="/" element={<Navigate to="/app" replace />} />
                 <Route path="/app" element={<Dashboard />} />
                 <Route path="/conectar-app" element={<MobileConnect />} />
+                <Route path="/conectar-asistente" element={<AssistantConnect />} />
                 <Route path="/administracion" element={<OwnerDashboard />} />
                 <Route path="/eventos" element={<EventsPage />} />
                 <Route path="/eventos/nuevo" element={<EventEditor />} />

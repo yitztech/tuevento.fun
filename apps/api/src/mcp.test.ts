@@ -19,6 +19,9 @@ import {
   toolDescriptions,
   verifyConfirmationToken,
 } from "./mcp/mcp.tools";
+import { clientMetadataAllowed, consentLocale, isOAuthRoute } from "./mcp/mcp.oauth";
+import { verifyMcpToken } from "./mcp/mcp.tokens";
+import type { Database } from "./database";
 
 test("MCP: esquema de herramientas valida entradas correctas y rechaza campos inválidos", () => {
   // events_create
@@ -212,4 +215,58 @@ test("MCP: mensajes de error y descripciones en los cinco idiomas", () => {
       assert.ok(desc && desc.length > 5, `${locale}: descripción de ${tool}`);
     }
   }
+});
+
+test("MCP OAuth: solo se descarga el documento de cliente de ChatGPT", () => {
+  assert.ok(clientMetadataAllowed("https://chatgpt.com/oauth/client.json"));
+  assert.ok(clientMetadataAllowed("https://chatgpt.com/oauth/abc_123-X/client.json"));
+  for (const url of [
+    "http://chatgpt.com/oauth/client.json",
+    "https://chatgpt.com.example/oauth/client.json",
+    "https://example.com/https://chatgpt.com/oauth/client.json",
+    "https://chatgpt.com/oauth/../client.json",
+    "https://chatgpt.com/oauth/a/b/client.json",
+    "https://chatgpt.com/oauth/client.json?x=1",
+    "https://user@chatgpt.com/oauth/client.json",
+  ])
+    assert.equal(clientMetadataAllowed(url), false, url);
+});
+
+test("MCP OAuth: el consentimiento queda fuera del servidor OAuth, con la protección de origen", () => {
+  assert.ok(isOAuthRoute("/api/mcp/oauth/token"));
+  assert.ok(isOAuthRoute("/api/mcp/oauth/.well-known/openid-configuration"));
+  assert.equal(isOAuthRoute("/api/mcp/oauth/interaction/abc/decision"), false);
+  assert.equal(isOAuthRoute("/api/mcp"), false);
+  assert.equal(isOAuthRoute("/api/mcp/oauthx"), false);
+});
+
+test("MCP: fuera del modo de pruebas, un token con mcp:write solo conserva la lectura", async () => {
+  process.env.APP_SECRET ??= "secreto-de-prueba-unitaria-con-longitud-suficiente";
+  const row = { actor_type: "organizer", user_id: "u1", invitation_id: null, client_name: "c", scopes: ["mcp:read", "mcp:write"], expires_at: new Date(Date.now() + 60_000), revoked_at: null };
+  const db = { query: async () => [row] } as unknown as Database;
+  const previous = process.env.MCP_TEST_MODE;
+  try {
+    delete process.env.MCP_TEST_MODE;
+    assert.deepEqual((await verifyMcpToken(db, "mcp_x", "es"))?.scopes, ["mcp:read"]);
+    process.env.MCP_TEST_MODE = "true";
+    assert.deepEqual((await verifyMcpToken(db, "mcp_x", "es"))?.scopes, ["mcp:read", "mcp:write"]);
+  } finally {
+    if (previous === undefined) delete process.env.MCP_TEST_MODE;
+    else process.env.MCP_TEST_MODE = previous;
+  }
+});
+
+test("MCP OAuth: el consentimiento sale en un idioma que el dominio aloja", () => {
+  assert.equal(consentLocale("en", "pt-BR en"), "pt");
+  assert.equal(consentLocale("en", "de"), "de");
+  assert.equal(consentLocale("en", "FR-ca"), "fr");
+  // ui_locales manda sobre la cuenta, y la cuenta sobre el dominio
+  assert.equal(consentLocale("en", "de", "pt"), "de");
+  assert.equal(consentLocale("en", undefined, "fr"), "fr");
+  assert.equal(consentLocale("en", "ja", "pt"), "pt");
+  assert.equal(consentLocale("en", undefined, null), "en");
+  // Cada dominio solo aloja los suyos
+  assert.equal(consentLocale("es", "pt"), "es");
+  assert.equal(consentLocale("es", undefined, "de"), "es");
+  assert.equal(consentLocale("en", "es", "es"), "en");
 });
