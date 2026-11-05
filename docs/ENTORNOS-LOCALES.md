@@ -20,13 +20,15 @@ Los dominios `*.localhost` los resuelve el navegador a `127.0.0.1` sin configura
 
 ```bash
 bash scripts/local-env.sh limpio        # levanta el entorno sin usuarios
-bash scripts/local-env.sh demo          # levanta, siembra e imprime la contraseña
+bash scripts/local-env.sh demo          # levanta, siembra, imprime la contraseña y queda vigilando el código
 bash scripts/local-env.sh parar demo    # detiene sin borrar datos (también: parar limpio)
 bash scripts/local-env.sh borrar demo   # borra contenedores, volúmenes, imágenes y .env.demo
 bash scripts/local-env.sh estado
 ```
 
 Requiere Docker Compose 2.24 o más (el demo usa `!override` en los puertos).
+
+`demo` se queda en primer plano aplicando los cambios del código (`docker compose watch`). Ctrl+C deja de vigilar, pero el entorno sigue arriba: para detenerlo, `parar demo`.
 
 ## El demo
 

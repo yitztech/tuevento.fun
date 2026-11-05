@@ -4,7 +4,7 @@
 #   demo    compose.yml + compose.demo.yml  con 20 organizadores, sus eventos y 20 proveedores
 #                                           · web 5287, API 3187, correos 8126
 # Cada uno es un proyecto de Compose aparte (tueventofun y tueventofun-demo): pueden correr a la vez.
-#   bash scripts/local-env.sh limpio | demo           levanta (y siembra, en demo)
+#   bash scripts/local-env.sh limpio | demo           levanta; demo además siembra y queda vigilando el código
 #   bash scripts/local-env.sh parar  limpio | demo    detiene sin borrar datos
 #   bash scripts/local-env.sh borrar limpio | demo    borra contenedores, volúmenes e imágenes
 #   bash scripts/local-env.sh estado
@@ -42,6 +42,8 @@ case "$command" in
     printf '\nEntorno demo: http://tuevento.localhost:%s (es) · http://yourevent.localhost:%s (en) · correos http://127.0.0.1:8126\n' "$port" "$port"
     printf 'Cuentas: demo-organizador-01..20@example.invalid y demo-proveedor-01..20@example.invalid\n'
     printf 'Contraseña de todas (guardada en .env.demo): %s\n' "$(var DEMO_PASSWORD)"
+    printf '\nVigilando el código: los cambios se aplican solos. Ctrl+C deja de vigilar y el entorno sigue arriba.\n'
+    compose_demo watch --no-up
     ;;
   parar | borrar)
     action=(stop)
