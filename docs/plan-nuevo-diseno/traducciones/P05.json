@@ -1,9 +1,0 @@
-{
-  "errors.paymentInProgress": {
-    "es": "Ya tienes un pago en curso con ese cupón. Espera a que termine e inténtalo de nuevo.",
-    "en": "You already have a payment in progress with that coupon. Wait for it to finish and try again.",
-    "pt": "Você já tem um pagamento em andamento com esse cupom. Espere terminar e tente de novo.",
-    "de": "Mit diesem Gutschein läuft bereits eine Zahlung. Warte, bis sie abgeschlossen ist, und versuche es noch einmal.",
-    "fr": "Tu as déjà un paiement en cours avec ce code promo. Attends qu’il se termine et réessaie."
-  }
-}

@@ -70,7 +70,7 @@ La integración usa Google Identity Services en la web y `google-auth-library` p
 3. Pon su ID público en `.env`: `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`. En producción lo pasa la plataforma.
 4. Ejecuta `docker compose up -d --force-recreate api` y recarga la web.
 
-No hace falta un client secret para este flujo. Sin ID configurado, el botón informa que el acceso aún no está habilitado. **La autenticación real con una cuenta Google está pendiente de tus credenciales y de una prueba con tu proyecto.**
+No hace falta un client secret para este flujo. Sin ID configurado, el botón informa que el acceso aún no está habilitado. En producción `GOOGLE_CLIENT_ID` ya está configurado; queda pendiente la prueba de extremo a extremo con una cuenta Google real del dueño.
 
 Referencias: [botón Google Identity Services](https://developers.google.com/identity/gsi/web/guides/display-button), [verificación de ID tokens](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token), [Fastify en NestJS](https://docs.nestjs.com/techniques/performance).
 
