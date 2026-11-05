@@ -12,4 +12,4 @@ Característica: Volver a la app después de entrar en el navegador
     Dado que tengo un evento con una invitación para "Familia Pérez" creados por la API
     Cuando empiezo a entrar con Google desde la app
     Y el navegador devuelve a la app el enlace de regreso
-    Entonces entro en la app con mi cuenta
+    Entonces la app abre la sesión de mi cuenta

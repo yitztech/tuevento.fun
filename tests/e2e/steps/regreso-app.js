@@ -18,7 +18,7 @@ When("el navegador devuelve a la app el enlace de regreso", async ({ ui, request
   await ui.abrirEnlace(`https://localhost:8443/app-link/auth?code=${code}`);
 });
 
-Then("entro en la app con mi cuenta", async ({ ui, ctx }) => {
+Then("la app abre la sesión de mi cuenta", async ({ ui, ctx }) => {
   await ui.esperarUrl(/\/app$/);
   await ui.esperarTexto(ctx.titulo);
   expect(await ui.verificadorPkce()).toBeNull();
