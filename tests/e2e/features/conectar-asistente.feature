@@ -24,3 +24,22 @@ Característica: Conectar un asistente a la cuenta
     Dado que abro un enlace de conexión de asistente que ya no vale
     Cuando entro con mi cuenta para conectar el asistente
     Entonces veo el texto "Este enlace de conexión caducó o no es válido"
+
+  @i18n
+  Esquema del escenario: El consentimiento sale en el idioma que pide el asistente
+    Dado que tengo sesión en el dominio de "<idioma>"
+    Cuando un asistente pide acceso en "<idioma>"
+    Entonces veo el consentimiento en "<ruta>" con el título "<titulo>"
+
+    Ejemplos:
+      | idioma | ruta                       | titulo                      |
+      | es     | /conectar-asistente        | Conecta tu asistente        |
+      | en     | /conectar-asistente        | Connect your assistant      |
+      | pt     | /pt/conectar-asistente     | Conecte seu assistente      |
+      | de     | /de/conectar-asistente     | Verbinde deinen Assistenten |
+      | fr     | /fr/conectar-asistente     | Connecte ton assistant      |
+
+  @i18n
+  Escenario: Sin sesión, el acceso también sale en el idioma pedido y vuelve al consentimiento
+    Dado que un asistente pide acceso en "pt" sin que yo haya entrado
+    Entonces veo el acceso en "/pt/acceso" para conectar el asistente

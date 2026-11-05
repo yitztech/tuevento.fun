@@ -1,7 +1,7 @@
 import { createPublicKey, createPrivateKey, hkdfSync } from "node:crypto";
 import { Injectable, NotFoundException, type OnModuleInit } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { siteLocale, type Locale, type McpScope } from "@tuevento/contracts";
+import { isLocale, localePrefix, localesOfSite, siteLocale, type Locale, type McpScope } from "@tuevento/contracts";
 import { Database } from "../database";
 import { localeEnv } from "../locale-env";
 import { requestLocale } from "../request-locale";
@@ -24,6 +24,19 @@ const REFRESH_TOKEN_TTL = 30 * 24 * 3600;
  */
 const CLIENT_METADATA = /^https:\/\/chatgpt\.com\/oauth\/(?:[A-Za-z0-9_-]+\/)?client\.json$/;
 export const clientMetadataAllowed = (clientId: string) => CLIENT_METADATA.test(clientId);
+
+/**
+ * Idioma del consentimiento: el primero de `ui_locales` (OIDC, admite `pt-BR`) que aloje este dominio;
+ * si no, el de la cuenta con sesión; si no, el del dominio. Un dominio no aloja los idiomas del otro.
+ */
+export function consentLocale(domain: Locale, uiLocales: unknown, accountLocale?: string | null): Locale {
+  const hosted = localesOfSite(domain);
+  const requested = typeof uiLocales === "string" ? uiLocales.split(/\s+/).map((tag) => tag.split("-")[0].toLowerCase()) : [];
+  const match = [...requested, accountLocale].find(
+    (tag): tag is Locale => typeof tag === "string" && isLocale(tag) && hosted.includes(tag),
+  );
+  return match ?? domain;
+}
 
 /** Solo pruebas: cliente fijo, escrituras y `POST /api/mcp/tokens`. Nunca en compose.prod.yml. */
 export const mcpTestMode = () => process.env.MCP_TEST_MODE === "true";
@@ -174,6 +187,17 @@ export class McpOAuth implements OnModuleInit {
     const user = await this.account(access.accountId);
     if (!user || !scopes.length) return null;
     return { actorType: user.account_type, userId: user.id, clientName: access.clientId ?? "", scopes, locale };
+  }
+
+  /** Página de consentimiento en el idioma de quien entra. Un paso caducado también la abre: ahí lo explica. */
+  async consentPage(req: FastifyRequest, reply: FastifyReply, uid: string, accountLocale?: string | null) {
+    const site = this.required(req);
+    const uiLocales = await this.interaction(site, req, reply).then(
+      ({ params }) => params.ui_locales,
+      () => undefined,
+    );
+    const locale = consentLocale(siteLocale(requestLocale(req)), uiLocales, accountLocale);
+    return `${localePrefix(locale)}/conectar-asistente?uid=${encodeURIComponent(uid)}`;
   }
 
   /** Datos que muestra la pantalla de consentimiento. */

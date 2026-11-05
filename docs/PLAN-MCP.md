@@ -109,9 +109,10 @@ Decidido el 2026-11-05. Un asistente como ChatGPT se conecta con el consentimien
 - **Alcance:** solo `mcp:read`, lo pida quien lo pida. El servidor no conoce el plan del usuario en ChatGPT: la lectura es una regla de este servidor para todos los clientes. Un `mcp:write` guardado en un token antiguo se ignora.
 - **Clientes:** CIMD con lista blanca (`clientMetadataAllowed`: `https://chatgpt.com/oauth/client.json` y `https://chatgpt.com/oauth/<id>/client.json`). Sin registro dinámico. Autenticación `none` o `private_key_jwt`, PKCE S256 obligatorio.
 - **Flujo:** `401` con `resource_metadata` → `/.well-known/oauth-protected-resource/api/mcp` → `/.well-known/oauth-authorization-server/api/mcp/oauth` → `/api/mcp/oauth/auth` → `/conectar-asistente` → código → `/api/mcp/oauth/token`. Token de acceso opaco de 1 hora y renovación de 30 días.
+- **Idioma:** un emisor por dominio, no por idioma. El consentimiento se abre en el primer idioma de `ui_locales` que aloje el dominio; si no, en el de la cuenta con sesión; si no, en el del dominio (`/pt/conectar-asistente`). Sin sesión, `/pt/acceso` conserva el paso.
 - **Datos:** tabla `mcp_oauth_records` (migración 033). Guarda el HMAC de cada identificador, no el token. La sesión del flujo conserva el suyo: `findByUid` lo necesita, solo sirve con la cookie firmada y dura 10 minutos.
 - **Claves:** las cookies y la clave Ed25519 se derivan de `APP_SECRET`: no hay variables nuevas en producción. Cambiar `APP_SECRET` invalida los tokens OAuth.
 - **`_meta["mcp/www_authenticate"]`:** no se envía en las herramientas de escritura. Haría que el cliente pidiera volver a conectar para un permiso que aquí no se concede.
 - **Pruebas:** `MCP_TEST_MODE=true` (solo `compose.yml` y `compose.ci.yml`; `scripts/check-test-only.mjs` falla si llega a producción) abre las escrituras, el cliente fijo `tuevento-pruebas` y `POST /api/mcp/tokens`.
 
-Pendiente: conectar ChatGPT de verdad, con un dominio público y la cuenta del usuario; decidir si se abren las escrituras; textos de la pantalla de consentimiento en `pt`, `de` y `fr` cuando la persona entra por `yourevent.fun`, que hoy ve la de su dominio.
+Pendiente: conectar ChatGPT de verdad, con un dominio público y la cuenta del usuario; decidir si se abren las escrituras.

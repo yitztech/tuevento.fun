@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
-import { base, client, account, cleanup, createCoupon, englishHost, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
+import { base, client, account, cleanup, createCoupon, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -960,8 +960,8 @@ try {
     assert.equal(resource.resource, mcpOAuth.resource);
     assert.deepEqual(resource.scopes_supported, ["mcp:read"]);
     assert.deepEqual(resource.authorization_servers, [`${mcpOAuth.resource}/oauth`]);
-    const english = await guest.call("/.well-known/oauth-protected-resource", "GET", undefined, 200, { Host: englishHost });
-    assert.notEqual(english.resource, resource.resource);
+    const englishMetadata = await guest.call("/.well-known/oauth-protected-resource", "GET", undefined, 200, { Host: englishHost });
+    assert.notEqual(englishMetadata.resource, resource.resource);
 
     const server = await guest.call("/mcp/oauth/.well-known/openid-configuration");
     assert.equal(server.issuer, resource.authorization_servers[0]);
@@ -1059,6 +1059,22 @@ try {
     await provider.call("/auth/register", "POST", account(P, "mcp-oauth-prov", { accountType: "provider" }), 201);
     const providerTools = (await mcpCall((await mcpConnect(provider)).tokens.access_token, "tools/list")).body.result.tools.map((tool) => tool.name);
     assert.deepEqual(providerTools.sort(), ["provider_profile_get", "provider_services_list"]);
+
+    // El consentimiento sale en el idioma pedido, en el de la cuenta o en el del dominio
+    const english = { Host: englishHost };
+    const consentRedirect = async (user, query, headers) => {
+      const start = await user.raw(mcpAuthorizeUrl(query).path, { headers });
+      const uid = /\/interaction\/([^/?]+)/.exec(start.headers.location)?.[1];
+      assert.ok(uid, start.text.slice(0, 200));
+      return (await user.raw(`/mcp/oauth/interaction/${uid}`, { headers })).headers.location.split("?")[0];
+    };
+    const englishResource = { resource: englishMetadata.resource };
+    for (const [locale, page] of [["en", "/conectar-asistente"], ["pt", "/pt/conectar-asistente"], ["de", "/de/conectar-asistente"], ["fr", "/fr/conectar-asistente"], ["pt-BR", "/pt/conectar-asistente"], ["es", "/conectar-asistente"]])
+      assert.equal(await consentRedirect(client(), { ...englishResource, ui_locales: locale }, english), page, locale);
+    assert.equal(await consentRedirect(client(), { ui_locales: "pt" }), "/conectar-asistente");
+    const french = client();
+    await french.call("/auth/register", "POST", account(P, "mcp-oauth-fr"), 201, { ...english, "X-App-Locale": "fr" });
+    assert.equal(await consentRedirect(french, englishResource, english), "/fr/conectar-asistente");
 
     // Rechazar vuelve al cliente con access_denied y sin código
     const denied = await mcpStartConsent(org);

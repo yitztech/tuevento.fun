@@ -221,8 +221,9 @@ export class McpConsentController {
 
   /** Entrada desde `oidc-provider`: la cookie del paso solo viaja a estas rutas. */
   @Get(":uid")
-  open(@Param("uid") uid: string, @Res() reply: FastifyReply) {
-    return reply.redirect(`/conectar-asistente?uid=${encodeURIComponent(uid)}`, 303);
+  async open(@Req() req: FastifyRequest, @Param("uid") uid: string, @Res() reply: FastifyReply) {
+    const user = await this.auth.current(req).catch(() => null);
+    return reply.redirect(await this.oauth.consentPage(req, reply, uid, user?.locale), 303);
   }
 
   @Get(":uid/details")

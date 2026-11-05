@@ -1,10 +1,23 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect } from "@playwright/test";
 import { Given, When, Then } from "./fixtures.js";
+import { baseURL as spanishURL, englishURL } from "../support/entorno.js";
 
 // Conectar un asistente (conectar-asistente.feature). El cliente fijo vuelve a una URL local que no
 // existe: se lee de la petición lo que recibiría el asistente (`page.route` no ve las redirecciones).
 const callback = "http://127.0.0.1/callback";
+const dominio = (idioma) => (idioma === "es" ? spanishURL : englishURL);
+
+const autorizacion = (idioma) =>
+  `${dominio(idioma)}/api/mcp/oauth/auth?${new URLSearchParams({
+    client_id: "tuevento-pruebas",
+    redirect_uri: callback,
+    response_type: "code",
+    scope: "mcp:read",
+    ui_locales: idioma,
+    code_challenge: createHash("sha256").update(randomBytes(32).toString("base64url")).digest("base64url"),
+    code_challenge_method: "S256",
+  })}`;
 
 Given("que un asistente pide acceso a mi cuenta sin que yo haya entrado", async ({ page, ctx, baseURL }) => {
   page.on("request", (peticion) => {
@@ -48,6 +61,38 @@ Then("veo que {string} solo podrá consultar mis datos", async ({ ui, ctx }, cli
   await ui.esperarTexto(`${cliente} quiere acceder a tu cuenta de TuEventoFun.`);
   await ui.esperarTexto("Solo podrá consultar tus datos. No podrá crear, cambiar ni borrar nada.");
   await ui.esperarTexto(ctx.correoAsistente);
+});
+
+Given("que tengo sesión en el dominio de {string}", async ({ page }, idioma) => {
+  const origen = dominio(idioma);
+  const alta = await page.request.post(`${origen}/api/auth/register`, {
+    headers: { "x-tuevento-client": "1", origin: origen },
+    data: {
+      firstName: "Ana",
+      lastName: "Prueba",
+      email: `asistente-${randomBytes(6).toString("hex")}@example.invalid`,
+      phone: "+527770000000",
+      password: randomBytes(16).toString("hex"),
+    },
+  });
+  expect(alta.status()).toBe(201);
+});
+
+When("un asistente pide acceso en {string}", async ({ page }, idioma) => {
+  await page.goto(autorizacion(idioma));
+});
+
+Given("que un asistente pide acceso en {string} sin que yo haya entrado", async ({ page }, idioma) => {
+  await page.goto(autorizacion(idioma));
+});
+
+Then("veo el consentimiento en {string} con el título {string}", async ({ page }, ruta, titulo) => {
+  await expect(page).toHaveURL((url) => url.pathname === ruta);
+  await expect(page.getByRole("heading", { name: titulo, exact: true })).toBeVisible();
+});
+
+Then("veo el acceso en {string} para conectar el asistente", async ({ page }, ruta) => {
+  await expect(page).toHaveURL((url) => url.pathname === ruta && url.searchParams.has("asistente"));
 });
 
 /** Parámetros con los que el navegador vuelve al asistente. */

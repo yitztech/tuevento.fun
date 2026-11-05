@@ -19,7 +19,7 @@ import {
   toolDescriptions,
   verifyConfirmationToken,
 } from "./mcp/mcp.tools";
-import { clientMetadataAllowed, isOAuthRoute } from "./mcp/mcp.oauth";
+import { clientMetadataAllowed, consentLocale, isOAuthRoute } from "./mcp/mcp.oauth";
 import { verifyMcpToken } from "./mcp/mcp.tokens";
 import type { Database } from "./database";
 
@@ -254,4 +254,19 @@ test("MCP: fuera del modo de pruebas, un token con mcp:write solo conserva la le
     if (previous === undefined) delete process.env.MCP_TEST_MODE;
     else process.env.MCP_TEST_MODE = previous;
   }
+});
+
+test("MCP OAuth: el consentimiento sale en un idioma que el dominio aloja", () => {
+  assert.equal(consentLocale("en", "pt-BR en"), "pt");
+  assert.equal(consentLocale("en", "de"), "de");
+  assert.equal(consentLocale("en", "FR-ca"), "fr");
+  // ui_locales manda sobre la cuenta, y la cuenta sobre el dominio
+  assert.equal(consentLocale("en", "de", "pt"), "de");
+  assert.equal(consentLocale("en", undefined, "fr"), "fr");
+  assert.equal(consentLocale("en", "ja", "pt"), "pt");
+  assert.equal(consentLocale("en", undefined, null), "en");
+  // Cada dominio solo aloja los suyos
+  assert.equal(consentLocale("es", "pt"), "es");
+  assert.equal(consentLocale("es", undefined, "de"), "es");
+  assert.equal(consentLocale("en", "es", "es"), "en");
 });
