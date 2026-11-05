@@ -122,7 +122,9 @@ export function Dashboard() {
         </div>
         <div className="welcome-photo">
           <img
-            src="/images/gold.jpg"
+            src="/site/photos/events/mesa-gracias-960.webp"
+            srcSet="/site/photos/events/mesa-gracias-480.webp 480w, /site/photos/events/mesa-gracias-960.webp 960w"
+            sizes="(min-width: 1024px) 40vw, 100vw"
             alt={tr(
               "dashboard.celebrationTableColorfulFlowers",
             )}

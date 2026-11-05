@@ -43,7 +43,7 @@ export function SiteAuthShell({ side, children }: { side: AuthSide; children: Re
             </Link>
             <div className="w-full lg:max-w-md">{children}</div>
           </section>
-          <aside className="relative order-first hidden h-56 overflow-hidden sm:block sm:h-72 lg:order-last lg:h-auto lg:min-h-[44rem] lg:p-5 lg:pl-0">
+          <aside className="relative hidden overflow-hidden lg:order-last lg:block lg:h-auto lg:min-h-[44rem] lg:p-5 lg:pl-0">
             <div className="relative size-full overflow-hidden lg:rounded-[2rem] lg:rounded-l-[7rem]">
               <SitePhoto name={photo} eager />
               <div aria-hidden className="absolute inset-0 bg-linear-to-t from-shade/35 via-transparent to-transparent lg:from-transparent" />

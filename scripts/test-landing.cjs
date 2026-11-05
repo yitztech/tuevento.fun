@@ -216,9 +216,12 @@ fs.mkdirSync(artifacts, { recursive: true });
       "Panel en /app accesible después de la captación, con cuenta vacía",
     );
     await page.goto(targetEn);
-    await page
-      .getByRole("link", { name: "Create my first event", exact: true })
-      .click();
+    const createFirstEventLinks = page.getByRole("link", {
+      name: "Create my first event",
+      exact: true,
+    });
+    await expect(createFirstEventLinks).toHaveCount(2);
+    await createFirstEventLinks.first().click();
     await expect(page).toHaveURL(/\/registro\?empezar=evento$/);
     await page.getByRole("link", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL(/\/acceso\?empezar=evento$/);

@@ -62,13 +62,13 @@ export function MapView({
         if (approximate) {
           instance.on("load", () => {
             instance.addSource("area", { type: "geojson", data: circle(point, 1000) });
-            instance.addLayer({ id: "area", type: "fill", source: "area", paint: { "fill-color": "#882d17", "fill-opacity": 0.15 } });
-            instance.addLayer({ id: "area-line", type: "line", source: "area", paint: { "line-color": "#882d17", "line-width": 2 } });
+            instance.addLayer({ id: "area", type: "fill", source: "area", paint: { "fill-color": "#a63f30", "fill-opacity": 0.15 } });
+            instance.addLayer({ id: "area-line", type: "line", source: "area", paint: { "line-color": "#a63f30", "line-width": 2 } });
           });
           map.current = instance;
           return;
         }
-        const pin = new maplibre.Marker({ color: "#882d17", draggable: !!moved.current })
+        const pin = new maplibre.Marker({ color: "#a63f30", draggable: !!moved.current })
           .setLngLat([point.lng, point.lat])
           .addTo(instance);
         pin.on("dragend", () => {

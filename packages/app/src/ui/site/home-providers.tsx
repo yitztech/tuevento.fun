@@ -4,24 +4,26 @@ import { localizedPath, providerCategoryLabels, type ProviderCategory } from "@t
 import { cn } from "cn";
 import { tr, useLocale } from "../../i18n";
 import { Button } from "../button";
-import { panel, wrap } from "./home-shared";
+import { wrap } from "./home-shared";
 import { SectionHeading } from "./section-heading";
+import { SitePhoto } from "./site-photo";
+import type { SitePhotoName } from "./photos";
 
-const tiles: [ProviderCategory, typeof Store][] = [
-  ["venue", Store],
-  ["catering", UtensilsCrossed],
-  ["photo-video", Camera],
-  ["decoration", Sparkles],
-  ["live-music", Music],
-  ["entertainment", PartyPopper],
+const tiles: [ProviderCategory, typeof Store, SitePhotoName][] = [
+  ["venue", Store, "venue"],
+  ["catering", UtensilsCrossed, "catering"],
+  ["photo-video", Camera, "photography"],
+  ["decoration", Sparkles, "decoration"],
+  ["live-music", Music, "music"],
+  ["entertainment", PartyPopper, "experiences"],
 ];
 
 export function HomeProviders() {
   const { locale } = useLocale();
   const search = localizedPath("providers", locale);
   return (
-    <section aria-labelledby="prov-title" className={cn(wrap, "pt-4")}>
-      <div className={cn(panel, "grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] lg:items-center lg:gap-6")}>
+    <section aria-labelledby="prov-title" className={cn(wrap, "py-12 lg:py-16")}>
+      <div className="grid gap-6 px-2 sm:px-4 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
         <div className="flex flex-col items-start">
           <SectionHeading
             size="sm"
@@ -38,11 +40,11 @@ export function HomeProviders() {
           </Button>
         </div>
         <ul aria-label={tr("site.providersList")} className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-          {tiles.map(([code, Icon]) => (
+          {tiles.map(([code, _Icon, photo]) => (
             <li key={code}>
               <Link to={`${search}?cat=${code}`} className="group block rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
-                <span className="grid aspect-square place-items-center rounded-lg bg-accent-soft text-primary shadow-site-soft transition-colors group-hover:bg-peach/60">
-                  <Icon aria-hidden className="size-8" />
+                <span className="block aspect-square overflow-hidden rounded-lg shadow-site-soft">
+                  <SitePhoto name={photo} className="transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />
                 </span>
                 <span className="mt-2 block text-center text-[0.82rem] font-bold text-title">{tr(providerCategoryLabels[code])}</span>
               </Link>

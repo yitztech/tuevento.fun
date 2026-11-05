@@ -75,7 +75,7 @@ export function HomeDesigns() {
           </Button>
         </div>
         <div className="min-w-0">
-          <div role="group" aria-label={tr("site.designFilters")} className="-mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <fieldset aria-label={tr("site.designFilters")} className="mb-3 flex flex-wrap gap-1.5">
             {(Object.keys(tagLabels) as Tag[]).map((k) => (
               <button
                 key={k}
@@ -83,15 +83,15 @@ export function HomeDesigns() {
                 aria-pressed={tag === k}
                 onClick={() => chooseTag(k)}
                 className={cn(
-                  "min-h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+                  "min-h-11 cursor-pointer rounded-full px-3.5 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
                   tag === k ? "bg-primary text-primary-foreground" : "text-foreground/85 hover:bg-accent-soft",
                 )}
               >
                 {tr(tagLabels[k])}
               </button>
             ))}
-          </div>
-          <div className="relative" role="group" aria-label={tr("landing.chooseSampleDesign")}>
+          </fieldset>
+          <fieldset className="relative" aria-label={tr("landing.chooseSampleDesign")}>
             <ul ref={track} className="-mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {shown.map((t) => (
                 <li key={t.id} className="w-[42%] shrink-0 snap-start sm:w-[28%] md:w-[22%] lg:w-[18.5%]">
@@ -109,13 +109,13 @@ export function HomeDesigns() {
                 </li>
               ))}
             </ul>
-            <Button variant="light" size="round" onClick={() => page(1)} aria-label={tr("site.moreDesigns")} className="absolute top-1/2 -right-3 hidden -translate-y-1/2 shadow-site-soft sm:inline-flex">
+            <Button variant="light" size="round" onClick={() => page(1)} aria-label={tr("site.moreDesigns")} className="absolute top-1/2 -right-3 inline-flex -translate-y-1/2 shadow-site-soft">
               <ChevronRight aria-hidden />
             </Button>
-            <Button variant="light" size="round" onClick={() => page(-1)} aria-label={tr("site.previousDesigns")} className="absolute top-1/2 -left-3 hidden -translate-y-1/2 shadow-site-soft sm:inline-flex">
+            <Button variant="light" size="round" onClick={() => page(-1)} aria-label={tr("site.previousDesigns")} className="absolute top-1/2 -left-3 inline-flex -translate-y-1/2 shadow-site-soft">
               <ChevronLeft aria-hidden />
             </Button>
-          </div>
+          </fieldset>
         </div>
       </div>
     </section>

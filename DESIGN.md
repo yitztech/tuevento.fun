@@ -2,25 +2,25 @@
 name: TuEventoFun
 description: Un espacio blanco y colorido para organizar celebraciones.
 colors:
-  primary: "#882d17"
-  primary-deep: "#68200f"
+  primary: "#a63f30"
+  primary-deep: "#8a3225"
   celebrate: "#ffca66"
-  accent-secondary: "#e25c80"
+  accent-secondary: "#ea8659"
   ground: "#ffffff"
-  ink: "#261c18"
-  muted: "#6e5f5a"
-  line: "#efe6e1"
-  surface-soft: "#fdf8f5"
+  ink: "#3d2a25"
+  muted: "#765f58"
+  line: "#f0d8cb"
+  surface-soft: "#f9e6dc"
   error: "#9c2020"
 typography:
   headline:
-    fontFamily: "Bricolage Grotesque Variable, Manrope Variable, sans-serif"
+    fontFamily: "Playfair Display Variable, Georgia, serif"
     fontSize: "36px"
     fontWeight: 650
     lineHeight: 1.15
     letterSpacing: "-1.1px"
   title:
-    fontFamily: "Bricolage Grotesque Variable, Manrope Variable, sans-serif"
+    fontFamily: "Playfair Display Variable, Georgia, serif"
     fontSize: "23px"
     fontWeight: 600
     lineHeight: 1.25
@@ -33,6 +33,10 @@ typography:
     fontSize: "13px"
     fontWeight: 700
     lineHeight: 1.3
+  script:
+    fontFamily: "Great Vibes, Pacifico, cursive"
+  postcard:
+    fontFamily: "Bricolage Grotesque Variable, Manrope Variable, sans-serif"
 rounded:
   control: "8px"
   button: "9px"
@@ -114,26 +118,26 @@ La personalidad editorial se concentra en titulares, cifras e invitaciones. Los 
 
 ## Colors
 
-El sistema utiliza variables CSS flexibles en `:root` que permiten conmutar temas (p. ej. mediante `data-theme`). La paleta activa es **Terracota Festivo & Ámbar**: el terracota noble (`--primary: #882d17`) identifica acciones principales y enlaces destacados, mientras que el ámbar caléndula (`--celebrate: #ffca66`) y la granada cálida (`--accent-secondary: #e25c80`) distinguen momentos de celebración y detalles festivos.
+El sistema utiliza variables CSS flexibles en `:root` que unifican el sitio público, el panel compartido, las páginas públicas de invitación y las aplicaciones móviles. La paleta activa es **Terracota Festivo & Durazno Cálido**: el terracota principal (`--primary: #a63f30`) y el terracota profundo (`--primary-deep: #8a3225`) identifican acciones principales y enlaces destacados, mientras que el ámbar caléndula (`--celebrate: #ffca66`), el coral cálido (`--accent-secondary: #ea8659`) y el durazno suave (`#f6c6a4`) distinguen momentos de celebración y detalles festivos.
 
-El lino cálido marfil (`--surface-soft: #fdf8f5`) identifica navegación activa y superficies de soporte sobre el fondo blanco puro innegociable (`--ground: #ffffff`). La tinta café tostado (`--ink: #261c18`) y el texto secundario cálido (`--muted: #6e5f5a`) garantizan lecturas con ratios de contraste superiores a 16:1 y 6:1 (WCAG AAA).
+El lino durazno suave (`--surface-soft: #f9e6dc`) identifica navegación activa y superficies de soporte sobre el fondo blanco puro de tarjetas y campos (`--ground: #ffffff`) y el fondo cálido del sitio (`#fff6f2`). La tinta café cálida (`--ink: #3d2a25`) y el texto secundario cálido (`--muted: #765f58`) garantizan lecturas accesibles (WCAG AA/AAA).
 
 ### Primary
 
-- **Terracota noble** (`#882d17`) y **terracota profundo** (`#68200f`): acción principal y su respuesta al pasar el puntero.
+- **Terracota principal** (`#a63f30`) y **terracota profundo** (`#8a3225`): acción principal y su respuesta al pasar el puntero.
 
 ### Secondary
 
 - **Ámbar caléndula** (`#ffca66`): acciones celebratorias y botones de demostración.
-- **Granada cálida** (`#e25c80`): acentos festivos y detalles de composición.
+- **Coral cálido** (`#ea8659`) y **durazno suave** (`#f6c6a4`): acentos festivos y detalles de composición.
 
 ### Neutral
 
-- **Blanco puro** (`#ffffff`): superficie principal innegociable del panel y campos. El sitio público usa el fondo durazno de «Sitio público».
-- **Café tostado** (`#261c18`): lectura principal de alto contraste.
-- **Arcilla suave** (`#6e5f5a`): texto secundario accesible.
-- **Línea arena** (`#efe6e1`): bordes y divisores suaves.
-- **Lino marfil** (`#fdf8f5`): navegación seleccionada y superficies de apoyo.
+- **Blanco puro** (`#ffffff`): superficie principal de tarjetas, modales y campos. El lienzo de página usa el fondo durazno cálido (`#fff6f2`).
+- **Café cálido** (`#3d2a25`): lectura principal de alto contraste.
+- **Arcilla suave** (`#765f58`): texto secundario accesible.
+- **Línea durazno** (`#f0d8cb`): bordes y divisores suaves.
+- **Lino durazno** (`#f9e6dc`): navegación seleccionada y superficies de apoyo.
 
 ### Estados de Asistencia (RSVP)
 
@@ -141,15 +145,15 @@ El **carmesí accesible** (`#9c2020` sobre `#fdeae8`) expresa rechazo y acciones
 
 El verde y el azul quedan fuera de los colores principales de interfaz por decisión del producto; las fotografías conservan sus colores naturales.
 
-**The White Ground Rule.** La superficie principal permanece blanca; los bloques de color tienen una función concreta y límites visibles.
+**The Warm Surface & White Card Rule.** Las tarjetas y controles principales conservan superficies limpias con límites visibles sobre el lienzo cálido `#fff6f2`.
 
 ## Typography
 
-Manrope Variable se usa en controles y texto. Bricolage Grotesque Variable se reserva para titulares, títulos de eventos y cifras protagonistas. Ambas fuentes se sirven localmente. Los encabezados usan balance de líneas y un interletrado ligeramente negativo; el texto de lectura conserva un ritmo holgado.
+Manrope Variable se usa en controles y texto. Playfair Display Variable se reserva para titulares, títulos de eventos y encabezados de página; Great Vibes se usa únicamente en acentos decorativos puntuales; Bricolage Grotesque Variable permanece disponible como opción tipográfica en el editor de postales. Todas las fuentes se sirven localmente. Los encabezados usan balance de líneas y un interletrado ligeramente negativo; el texto de lectura conserva un ritmo holgado.
 
 Los tamaños base de titulares y títulos están en el frontmatter. La cabecera de página usa una variante de 32 px; el título de tarjeta usa 16 px y las cifras del resumen, 30 px con números tabulares. El cuerpo no tiene un tamaño global explícito: cada contexto fija su densidad, por lo que no se declara una escala de cuerpo inventada. En móvil los títulos y composiciones se adaptan mediante las reglas del stylesheet.
 
-**The Task and Celebration Rule.** Manrope sostiene lectura y controles; Bricolage aporta la voz expresiva de títulos y cifras.
+**The Task and Celebration Rule.** Manrope sostiene lectura y controles; Playfair Display aporta la voz editorial de títulos y encabezados.
 
 ## Layout
 
@@ -169,15 +173,15 @@ Controles y botones tienen esquinas suaves de 8 y 9 px. La superficie reutilizab
 
 ### Buttons
 
-Botón principal azul; secundario blanco con borde; acción celebratoria rosa. Existen variantes destructivas roja y blanca con borde rojizo. La base de botones y campos tiene una altura mínima de 44 px; algunas variantes compactas la reducen. El hover base del botón eleva 1 px y cambia el fondo en 180 ms. Foco visible de 3 px con separación de 3 px. La preferencia de movimiento reducido elimina animaciones no esenciales.
+Botón principal terracota (`#a63f30`); secundario blanco con borde cálido; acción celebratoria ámbar/durazno. Existen variantes destructivas roja y blanca con borde rojizo. La base de botones y campos tiene una altura mínima de 44 px; algunas variantes compactas la reducen. El hover base del botón eleva 1 px y cambia el fondo en 180 ms. Foco visible de 3 px con separación de 3 px. La preferencia de movimiento reducido elimina animaciones no esenciales.
 
 ### Inputs / Fields
 
-Los campos mantienen etiqueta independiente, ayuda y error vinculados mediante `aria-describedby`. Fondo blanco, borde gris frío suave, padding de 12 px y esquinas de control. La búsqueda agrupa icono y campo y muestra su propio contorno al recibir foco.
+Los campos mantienen etiqueta independiente, ayuda y error vinculados mediante `aria-describedby`. Fondo blanco, borde cálido suave (`--line: #f0d8cb`), padding de 12 px y esquinas de control. La búsqueda agrupa icono y campo y muestra su propio contorno al recibir foco.
 
 ### Navigation
 
-La navegación lateral combina icono, etiqueta y contadores. La selección usa hielo, azul y un peso de 800; el hover usa un fondo azul muy claro. Las acciones destructivas conservan su color rojo al interactuar. El aviso de demostración permanece visible en el panel móvil. El selector de idioma es un `select` nativo de al menos 44 px, visible en panel, acceso, registro, RSVP y pantalla.
+La navegación lateral combina icono, etiqueta y contadores. La selección usa `--surface-soft` (`#f9e6dc`), `--primary` (`#a63f30`) y un peso de 800; el hover usa un fondo cálido suave. Las acciones destructivas conservan su color rojo al interactuar. El aviso de demostración permanece visible en el panel móvil. El selector de idioma es un control accesible de al menos 44 px, visible en panel, acceso, registro, RSVP y pantalla.
 
 ### Chips
 
@@ -243,13 +247,13 @@ Deuda observada, no convertida en regla: microtextos de 9–10 px y el kicker de
 - **Don't** sustituir fotografías por degradados o texturas simuladas.
 - **Don't** fijar anchos de texto que corten las traducciones.
 
-## Sitio público
+## Sitio público y diseño unificado
 
-La portada, el acceso, la búsqueda y la página de proveedores, los precios, las descargas y las páginas legales usan una superficie propia. El panel, la invitación y las pantallas de pago conservan el resto de este documento.
+La portada, el acceso, la búsqueda y la página de proveedores, los precios, las descargas y las páginas legales utilizan `.site-surface` (`packages/app/src/site.css`), mientras que el panel de anfitriones y proveedores, las invitaciones públicas, las pantallas de pago, la administración (`apps/admin`) y las aplicaciones móviles comparten los mismos tokens cálidos en `:root` (`packages/app/src/styles.css`).
 
-- **Ámbito:** la clase `.site-surface` (`packages/app/src/site.css`) cambia los tokens solo dentro de ella, y los componentes de `src/ui` se adaptan solos. Nada del sitio toca `:root`.
+- **Ámbito:** `:root` y `.site-surface` comparten la misma paleta terracota y durazno (`--primary: #a63f30`, `--ink: #3d2a25`, `--muted: #765f58`, `--line: #f0d8cb`, `--surface-soft: #f9e6dc`), y los componentes de `src/ui` se adaptan de forma uniforme.
 - **Color:** fondo durazno `#fff6f2` con el degradado `page-wash`, acción `#a63f30`, títulos `#7a2a1b`, texto `#3d2a25`, texto secundario `#765f58`, bordes `#f0d8cb`, acentos `#f6c6a4`, `#ea8659` y `#fbe3d6`.
 - **Tipografía:** Playfair Display para títulos, con cursiva en la segunda línea del titular; Manrope para el resto; Great Vibes solo en notas decorativas, nunca en texto que haya que leer para actuar.
 - **Forma:** radios de 8 a 32 px (`--r-*`), paneles translúcidos con borde blanco y las sombras `shadow-site-soft` y `shadow-site-card`.
 - **Componentes:** `src/ui/site/`. Las fotografías viven en una sola tabla, `src/ui/site/photos.ts`.
-- **Apps:** dentro de Capacitor, `SiteLayout` cambia la cabecera y el pie por una barra con logo e idioma. El icono de las apps no cambia.
+- **Apps:** dentro de Capacitor, `SiteLayout` cambia la cabecera y el pie por una barra con logo e idioma, y los recursos nativos (`favicon.svg`, `scripts/native-assets.mjs`, `index.html`) usan el emblema terracota cálido y fondo `#fff6f2`.
