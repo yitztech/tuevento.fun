@@ -67,7 +67,7 @@ export function RSVPCard({ guests, onChange, title, hint, className, showHeader 
                     <label
                       key={o.value}
                       className={cn(
-                        "relative flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-1.5 text-[0.72rem] font-semibold transition-colors has-focus-visible:ring-[3px] has-focus-visible:ring-ring/40 sm:text-xs",
+                        "relative flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-1.5 text-xs font-semibold transition-colors has-focus-visible:ring-[3px] has-focus-visible:ring-ring/40 sm:text-xs",
                         checked ? o.on : "border-border bg-card text-muted-foreground hover:bg-accent-soft/60",
                       )}
                     >

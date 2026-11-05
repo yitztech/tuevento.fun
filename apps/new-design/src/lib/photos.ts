@@ -32,7 +32,7 @@ export const photoSlots: Record<PhotoKey, Slot> = {
   "providers/coordinacion": { w: 960, h: 720, alt: "Coordinación de un evento" },
   "events/auth-login": { w: 1000, h: 1250, alt: "Arreglo de flores con velas" },
   "events/auth-registro": { w: 1000, h: 1250, alt: "Persona sonriendo ante su portátil durante una celebración" },
-  "events/auth-recuperar": { w: 1000, h: 1250, alt: "Sobre con un corazón sobre flores" },
+  "events/auth-recuperar": { w: 1000, h: 1250, alt: "Sobre sellado sobre una mesa con flores" },
 };
 
 const widths = [480, 960, 1600];

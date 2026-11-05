@@ -4,7 +4,7 @@ export type RsvpStatus = "attending" | "waiting" | "declined";
 
 export type Guest = { id: string; name: string; kind: "adult" | "child"; status: RsvpStatus };
 
-export type InvitationTag = "bodas" | "cumpleanos" | "infantil" | "minimalista" | "floral" | "elegante" | "celebracion";
+export type InvitationTag = "bodas" | "cumpleanos" | "bautizos" | "aniversarios" | "infantil" | "minimalista" | "floral" | "elegante" | "celebracion";
 
 export type InvitationDesign = {
   id: string;

@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Copy, Link2, Mail, MessageCircle, QrCode, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FormField } from "@/components/forms/FormField";
 import { FormNotice } from "@/components/forms/FormNotice";
 import { InvitationCard } from "@/components/invitations/InvitationCard";
@@ -20,12 +20,14 @@ import { shortDate } from "@/lib/format";
 import type { InvitationTag, RsvpStatus } from "@/types";
 
 const wrap = "mx-auto w-full max-w-page px-4 sm:px-6 lg:px-8";
-const tagKeys = (Object.keys(copy.designs.tags) as (InvitationTag | "todos")[]).filter((k) => k !== "elegante" && k !== "celebracion");
+const tagKeys = Object.keys(copy.designs.tags) as (InvitationTag | "todos")[];
 
 export function Demo() {
+  const [params] = useSearchParams();
   const [step, setStep] = useState(0);
-  const [designId, setDesignId] = useState(designs[0].id);
-  const [tag, setTag] = useState<InvitationTag | "todos">("todos");
+  const initialTag = tagKeys.find((key) => key === params.get("category")) ?? "todos";
+  const [designId, setDesignId] = useState(() => designs.find((d) => d.id === params.get("design"))?.id ?? designs.find((d) => initialTag === "todos" || d.tags.includes(initialTag))?.id ?? designs[0].id);
+  const [tag, setTag] = useState<InvitationTag | "todos">(initialTag);
   const [details, setDetails] = useState<Details>(defaultDetails);
   const [errors, setErrors] = useState<Partial<Record<keyof Details, string>>>({});
   const [guests, setGuests] = useState(sampleGuests);
@@ -59,6 +61,7 @@ export function Demo() {
     setStep(0);
     setDetails(defaultDetails);
     setDesignId(designs[0].id);
+    setTag("todos");
     setGuests(sampleGuests());
     setStatus("");
     setErrors({});
@@ -75,10 +78,10 @@ export function Demo() {
     <>
       <section aria-labelledby="demo-title" className="relative isolate overflow-hidden">
         <DecorativeBackground piece="balloons" className="-z-10 hidden lg:block" />
-        <div className={cn(wrap, "grid items-center gap-6 pt-8 pb-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:pt-12")}>
+        <div className={cn(wrap, "grid items-center gap-4 pt-4 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:pt-12")}>
           <div className="max-w-xl">
             <p className="eyebrow mb-3">{copy.demo.eyebrow}</p>
-            <h1 id="demo-title" className="display-title !text-[clamp(2.2rem,1.5rem+3.2vw,3.9rem)]">
+            <h1 id="demo-title" className="display-title !text-[clamp(1.9rem,1.4rem+3.2vw,3.9rem)]">
               {copy.demo.title}
             </h1>
             <p className="mt-4 max-w-lg text-base text-foreground/90">{copy.demo.text}</p>
@@ -107,8 +110,9 @@ export function Demo() {
               <button
                 type="button"
                 aria-current={step === i ? "step" : undefined}
+                disabled={step === 0 && !shown.length && i > 0}
                 onClick={() => setStep(i)}
-                className={cn("flex min-h-12 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.7rem] font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 sm:flex-row sm:gap-2.5 sm:px-3 sm:text-sm", step === i ? "bg-accent-soft text-primary" : "text-muted-foreground hover:bg-accent-soft/50")}
+                className={cn("flex min-h-12 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.7rem] font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-row sm:gap-2.5 sm:px-3 sm:text-sm", step === i ? "bg-accent-soft text-primary" : "text-muted-foreground hover:bg-accent-soft/50")}
               >
                 <span className={cn("grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold", step >= i ? "bg-primary text-primary-foreground" : "bg-muted text-primary")}>{i + 1}</span>
                 <span className="text-center leading-tight">{label}</span>
@@ -128,9 +132,9 @@ export function Demo() {
 
             {step === 0 && (
               <div className="grid gap-4 md:grid-cols-[9rem_minmax(0,1fr)]">
-                <div role="group" aria-label={copy.designs.filters} className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-col md:overflow-visible [&::-webkit-scrollbar]:hidden">
+                <div role="group" aria-label={copy.designs.filters} className="flex flex-wrap gap-1.5 md:flex-col">
                   {tagKeys.map((k) => (
-                    <button key={k} type="button" aria-pressed={tag === k} onClick={() => setTag(k)} className={cn("min-h-10 shrink-0 cursor-pointer rounded-md px-3 text-left text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40", tag === k ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent-soft")}>
+                    <button key={k} type="button" aria-pressed={tag === k} onClick={() => { setTag(k); const first = designs.find((d) => k === "todos" || d.tags.includes(k)); if (first) setDesignId(first.id); }} className={cn("min-h-10 shrink-0 cursor-pointer rounded-md px-3 text-left text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40", tag === k ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent-soft")}>
                       {copy.designs.tags[k]}
                     </button>
                   ))}
@@ -216,7 +220,7 @@ export function Demo() {
                 {copy.demo.back}
               </Button>
               {step < 3 ? (
-                <Button onClick={next}>
+                <Button onClick={next} disabled={step === 0 && !shown.length}>
                   {copy.demo.next}
                   <ArrowRight aria-hidden />
                 </Button>
@@ -229,7 +233,7 @@ export function Demo() {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[15rem] lg:sticky lg:top-24 lg:self-start">
+          <div className={cn("mx-auto w-full max-w-[15rem] lg:sticky lg:top-24 lg:self-start", step === 0 && !shown.length && "hidden")}>
             <PhoneInvitation design={design} title={step === 0 ? undefined : details.name || undefined} caption={step === 0 ? undefined : shortDate(details.date)} place={step === 0 ? undefined : details.place} label={copy.demo.previewLabel} />
           </div>
         </div>

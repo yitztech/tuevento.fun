@@ -7,7 +7,7 @@ actual (fondo blanco, sin azul ni verde); si se adopta, habrá que reconciliar l
 ## Decisiones acordadas
 
 - **Solo español.** Excepción solo para este prototipo (como el panel admin). Todo el texto está en `src/lib/copy.ts`; ningún componente lleva texto fijo, así que pasarlo a un catálogo por idioma es mecánico.
-- **Fotografías**: se pidió Unsplash/Pexels, pero no fue posible consultarlos; se usan recortes de las referencias (provisional).
+- **Fotografías**: escenas ilustrativas generadas con la herramienta integrada de imágenes de OpenAI; no representan proveedores ni eventos reales.
 - **Componentes estilo shadcn/ui escritos a mano** (`src/components/ui`: button, input, label, checkbox, accordion, textarea) sobre `radix-ui` y `class-variance-authority`, con el mismo patrón que `packages/app/src/ui`. No se usó la CLI de shadcn porque el registro no es accesible desde el sandbox. A diferencia de la web actual, las clases de Tailwind también aparecen en `components/` y `pages/` para componer maquetación.
 
 ## Tokens (`src/styles/index.css`)
@@ -55,6 +55,4 @@ npm run shots -w @tuevento/new-design    # capturas en artifacts/screenshots/{mo
 
 ## Fotografías
 
-Provisionales: recortes de las referencias (`npm run assets` los procesa desde `photos-src/`; ver `assets-manifest.md`).
-Para sustituirlas guarda cada original con el mismo nombre (`photos-src/salones.jpg`; el script prefiere `.jpg`, `.jpeg`,
-`.png` y `.webp` en ese orden de extensión) y ejecuta `npm run assets -w @tuevento/new-design`. Anota autor y URL en el inventario.
+Las 14 imágenes originales generadas están en `photos-src/`; el inventario y su procedencia se describen en `assets-manifest.md`. Ejecuta `npm run assets` para regenerar las variantes WebP.
