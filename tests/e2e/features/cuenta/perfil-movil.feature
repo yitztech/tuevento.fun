@@ -8,6 +8,7 @@ Característica: El perfil dentro de la app
     Dado que tengo una cuenta creada por la API sin sesión en el navegador
     Y entro en la app con mi cuenta
     Cuando abro la página "/perfil"
+    Y elijo editar mi información
     Y escribo "Lucía" en el campo "Nombre"
     Y guardo los cambios del perfil
     Entonces veo el aviso "Tu perfil está actualizado."

@@ -71,9 +71,11 @@ function SelectPhoneField({
   value,
   onChange,
   placeholder,
+  readOnly,
 }: {
   label: string;
   placeholder?: string;
+  readOnly?: boolean;
   error?: string;
   value: string;
   onChange: (value: string) => void;
@@ -108,6 +110,7 @@ function SelectPhoneField({
         <NativeSelect
           aria-label={tr("common.country")}
           value={parts.iso}
+          disabled={readOnly}
           onChange={(event) => update({ ...parts, iso: event.target.value })}
         >
           {options.map(({ iso, dial: optionDial, name }) => (
@@ -122,6 +125,7 @@ function SelectPhoneField({
           inputMode="tel"
           autoComplete="tel-national"
           placeholder={placeholder}
+          readOnly={readOnly}
           maxLength={accountLimits.phone}
           value={parts.national}
           aria-invalid={!!error}
@@ -238,6 +242,8 @@ type PhoneFieldProps = {
   placeholder?: string;
   /** El código de país se escribe a mano en vez de elegirlo de la lista. */
   manualCode?: boolean;
+  /** Solo se muestra: el campo no se puede editar (solo con el selector de país). */
+  readOnly?: boolean;
 };
 
 export function PhoneField({ manualCode, ...props }: PhoneFieldProps) {

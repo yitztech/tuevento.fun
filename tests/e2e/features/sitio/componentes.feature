@@ -13,7 +13,8 @@ Característica: Componentes de la interfaz
 
   Escenario: El aviso se cierra con su botón
     Dado que tengo una cuenta creada y abro mi perfil
-    Cuando guardo los cambios del perfil
+    Cuando elijo editar mi información
+    Y guardo los cambios del perfil
     Entonces veo el aviso "Tu perfil está actualizado."
     Cuando pulso el botón "Cerrar aviso"
     Entonces no veo el texto "Tu perfil está actualizado."

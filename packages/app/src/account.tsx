@@ -532,6 +532,7 @@ function GoogleLogin({ onError }: { onError: (error: string) => void }) {
 export function ProfilePage() {
   const { user, api, setUser, toast, online } = useApp(),
     [error, setError] = useState(""),
+    [editing, setEditing] = useState(false),
     [uploading, setUploading] = useState(false);
   const form = useForm<ProfileInput>({
     resolver: zodResolver(
@@ -549,6 +550,7 @@ export function ProfilePage() {
     setError("");
     try {
       setUser(await api.profile(data));
+      setEditing(false);
       toast(tr("account.profileUpdated"));
     } catch (e) {
       setError(errorText(e));
@@ -598,7 +600,14 @@ export function ProfilePage() {
           <small>{tr("account.jpgPngWebp2")}</small>
         </aside>
         <form onSubmit={submit} className="form-panel" noValidate>
-          <h2>{tr("account.yourInformation")}</h2>
+          <div className="form-panel-heading">
+            <h2>{tr("account.yourInformation")}</h2>
+            {!editing && (
+              <Button type="button" variant="link" disabled={!online} onClick={() => setEditing(true)}>
+                {tr("account.editInformation")}
+              </Button>
+            )}
+          </div>
           <div className="form-row">
             <Field
               label={tr("common.firstName")}
@@ -606,6 +615,7 @@ export function ProfilePage() {
             >
               <Input
                 maxLength={accountLimits.personName}
+                readOnly={!editing}
                 {...form.register("firstName", { onChange: onlyNameChars })}
               />
             </Field>
@@ -615,6 +625,7 @@ export function ProfilePage() {
             >
               <Input
                 maxLength={accountLimits.personName}
+                readOnly={!editing}
                 {...form.register("lastName", { onChange: onlyNameChars })}
               />
             </Field>
@@ -628,6 +639,7 @@ export function ProfilePage() {
             render={({ field }) => (
               <PhoneField
                 label={tr("common.phone")}
+                readOnly={!editing}
                 error={form.formState.errors.phone?.message}
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -636,14 +648,27 @@ export function ProfilePage() {
           />
           {error && <ErrorBox message={error} />}
           <NeedsConnection online={online} />
-          <div className="form-actions">
-            <Button disabled={form.formState.isSubmitting || !online}>
-              {form.formState.isSubmitting
-                ? tr("common.saving")
-                : tr("common.saveChanges")}
-              <Check size={17} />
-            </Button>
-          </div>
+          {editing && (
+            <div className="form-actions">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  form.reset({ firstName: user.firstName, lastName: user.lastName, phone: user.phone });
+                  setError("");
+                  setEditing(false);
+                }}
+              >
+                {tr("common.cancel")}
+              </Button>
+              <Button disabled={form.formState.isSubmitting || !online}>
+                {form.formState.isSubmitting
+                  ? tr("common.saving")
+                  : tr("common.saveChanges")}
+                <Check size={17} />
+              </Button>
+            </div>
+          )}
         </form>
       </div>
     </>

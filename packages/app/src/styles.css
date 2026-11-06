@@ -5653,3 +5653,10 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   margin: 0;
   padding-inline-start: 1.25rem;
 }
+
+.form-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
