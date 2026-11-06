@@ -1,12 +1,12 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
 Given(
   "que un organizador tiene un evento en el punto {float}, {float} con una invitación para {string}",
   async ({ request, ctx }, lat, lng, persona) => {
-    const registro = await request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
+    const registro = await registrar(request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
     expect(registro.status()).toBe(201);
     ctx.codigo = (await registro.json()).publicCode;
     ctx.titulo = `Fiesta con mapa ${Date.now()}`;

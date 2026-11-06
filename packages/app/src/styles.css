@@ -5631,3 +5631,25 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 :root[data-site-palette] .mobile-scrim { background: color-mix(in srgb, var(--ink) 45%, transparent); }
 :root[data-site-palette] ::-webkit-scrollbar-thumb { background: var(--line-strong); }
 :root[data-site-palette] ::-webkit-scrollbar-track { background: var(--surface-soft); }
+
+.onboarding-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.welcome-page {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: start;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-block: 2rem;
+}
+
+.welcome-page ol {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}

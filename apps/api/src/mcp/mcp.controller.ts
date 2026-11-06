@@ -24,7 +24,7 @@ import { McpOAuth, mcpTestMode } from "./mcp.oauth";
 import { McpService, mcpProtocolVersions } from "./mcp.service";
 import { createMcpToken, revokeMcpToken, verifyMcpToken } from "./mcp.tokens";
 import type { JsonRpcRequest } from "./mcp.types";
-import { type McpScope, mcpMessages, translate } from "@tuevento/contracts";
+import { accountArea, type McpScope, mcpMessages, translate } from "@tuevento/contracts";
 
 @Controller("mcp")
 export class McpController {
@@ -126,14 +126,14 @@ export class McpController {
     @Body() body: { client_name?: string; scopes?: McpScope[] },
   ) {
     if (!mcpTestMode()) throw new NotFoundException();
-    const user = await this.auth.current(req);
+    const user = await this.auth.confirmed(req);
 
     const scopes: McpScope[] = Array.isArray(body?.scopes) && body.scopes.length > 0
       ? body.scopes.filter((s) => s === "mcp:read" || s === "mcp:write")
       : ["mcp:read", "mcp:write"];
 
     const created = await createMcpToken(this.db, {
-      actorType: user.accountType,
+      actorType: accountArea(user.accountType),
       userId: user.id,
       clientName: body?.client_name || "MCP Client",
       scopes,
@@ -143,7 +143,7 @@ export class McpController {
       access_token: created.token,
       token_type: "Bearer",
       expires_at: created.expiresAt.toISOString(),
-      actor_type: user.accountType,
+      actor_type: accountArea(user.accountType),
       scopes,
     };
   }

@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 import { alNorte, codigoUnico, publicarNegocio, puntoUnico } from "./busqueda-proveedores.js";
 
 const cabecera = { "x-tuevento-client": "1" };
@@ -7,7 +7,7 @@ const panel = (page) => page.getByRole("dialog", { name: "Proveedores cerca de t
 
 /** Organizador con la sesión abierta en el navegador (`page.request` comparte sus cookies) y un evento. */
 async function eventoDeOrganizador(page, ctx, datos) {
-  expect((await page.request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() })).status()).toBe(201);
+  expect((await registrar(page.request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() })).status()).toBe(201);
   ctx.titulo = `Fiesta con proveedores ${codigoUnico()}`;
   const evento = await page.request.post("/api/events", {
     headers: cabecera,

@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -11,7 +11,7 @@ Given("que abro la portada", async ({ page }) => {
 Given("que tengo una cuenta de proveedor con la sesión abierta", async ({ request, ui }) => {
   // `request` no comparte la sesión con la app (web ni móvil): se entra con el formulario
   const cuenta = nuevaCuenta();
-  const registro = await request.post("/api/auth/register", { headers: cabecera, data: { ...cuenta, accountType: "provider" } });
+  const registro = await registrar(request, "/api/auth/register", { headers: cabecera, data: { ...cuenta, accountType: "provider" } });
   expect(registro.status()).toBe(201);
   await ui.abrir("/acceso");
   await ui.escribir("Correo electrónico", cuenta.email);

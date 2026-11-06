@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 import { baseURL, englishURL, local } from "../support/entorno.js";
 import { pngDataUrl, providerData } from "../../api/api.mjs";
 
@@ -21,7 +21,7 @@ Given("que hay un proveedor publicado con 2 fotos", async ({ playwright, ctx }) 
   // Contexto propio: el navegador del escenario entra como visitante, sin la sesión del negocio
   const api = await playwright.request.newContext({ baseURL, extraHTTPHeaders: cabecera });
   const cuenta = { ...nuevaCuenta(), accountType: "provider" };
-  expect((await api.post("/api/auth/register", { data: cuenta })).status()).toBe(201);
+  expect((await registrar(api, "/api/auth/register", { data: cuenta })).status()).toBe(201);
   const slug = `negocio-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   const datos = providerData({ businessName: `Banquetes Lupita ${slug.slice(8)}`, slug });
   expect((await api.put("/api/provider/profile", { data: datos })).status()).toBe(200);

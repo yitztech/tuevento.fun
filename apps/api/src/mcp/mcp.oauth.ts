@@ -1,7 +1,7 @@
 import { createHash, createPublicKey, createPrivateKey, hkdfSync } from "node:crypto";
 import { Injectable, NotFoundException, type OnModuleInit } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { isLocale, localePrefix, localesOfSite, siteLocale, type Locale, type McpScope } from "@tuevento/contracts";
+import { accountArea, isLocale, localePrefix, localesOfSite, siteLocale, type AccountType, type Locale, type McpScope } from "@tuevento/contracts";
 import { Database } from "../database";
 import { localeEnv } from "../locale-env";
 import { requestLocale } from "../request-locale";
@@ -79,7 +79,7 @@ const testJwtClient = () => ({
 
 type Provider = InstanceType<typeof import("oidc-provider").default>;
 type Site = { issuer: string; resource: string; origin: string; provider: Provider };
-type Account = { id: string; account_type: "organizer" | "provider"; is_demo: boolean };
+type Account = { id: string; account_type: AccountType; is_demo: boolean };
 
 /** Un servidor de autorización por dominio: cada uno con su emisor, su sesión y su recurso. */
 @Injectable()
@@ -153,7 +153,11 @@ export class McpOAuth implements OnModuleInit {
   }
 
   private async account(id: string) {
-    const [user] = await this.db.query<Account>("SELECT id, account_type, is_demo FROM users WHERE id = $1", [id]);
+    // Una cuenta que aún no termina el registro no conecta asistentes
+    const [user] = await this.db.query<Account>(
+      "SELECT id, account_type, is_demo FROM users WHERE id = $1 AND NOT must_choose_type AND NOT (must_verify_email AND email_verified_at IS NULL)",
+      [id],
+    );
     return user && !user.is_demo ? user : undefined;
   }
 
@@ -203,7 +207,7 @@ export class McpOAuth implements OnModuleInit {
     const scopes = (access.scope ?? "").split(" ").filter((scope): scope is McpScope => scope === GRANTED_SCOPE);
     const user = await this.account(access.accountId);
     if (!user || !scopes.length) return null;
-    return { actorType: user.account_type, userId: user.id, clientName: access.clientId ?? "", scopes, locale };
+    return { actorType: accountArea(user.account_type), userId: user.id, clientName: access.clientId ?? "", scopes, locale };
   }
 
   /** Página de consentimiento en el idioma de quien entra. Un paso caducado también la abre: ahí lo explica. */

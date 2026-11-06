@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { randomBytes, randomInt } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 import { baseURL, englishURL, local } from "../support/entorno.js";
 import { pngDataUrl, providerData } from "../../api/api.mjs";
 
@@ -29,7 +29,7 @@ export const alNorte = (p, km) => ({ lat: p.lat + km / 111.32, lng: p.lng });
 export async function publicarNegocio(playwright, extra) {
   const api = await playwright.request.newContext({ baseURL, extraHTTPHeaders: cabecera });
   try {
-    expect((await api.post("/api/auth/register", { data: { ...nuevaCuenta(), accountType: "provider" } })).status()).toBe(201);
+    expect((await registrar(api, "/api/auth/register", { data: { ...nuevaCuenta(), accountType: "provider" } })).status()).toBe(201);
     const datos = providerData({ slug: `${codigoUnico()}-${randomBytes(2).toString("hex")}`, ...extra });
     expect((await api.put("/api/provider/profile", { data: datos })).status()).toBe(200);
     expect((await api.post("/api/provider/images", { data: { dataUrl: pngDataUrl(40, 30), alt: "Portada" } })).status()).toBe(201);

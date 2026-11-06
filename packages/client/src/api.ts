@@ -123,6 +123,8 @@ export class EventApi {
   /** Confirmar el correo de la cuenta con el enlace del correo, y volver a pedir ese correo. */
   verifyEmail = (token: string) => this.request<User>("/auth/email/verify", "POST", { token });
   resendVerification = () => this.request<{ ok: boolean }>("/auth/email/resend", "POST", {});
+  /** Segundo paso del registro, una sola vez. */
+  chooseAccountType = (accountType: AccountType) => this.request<User>("/auth/account-type", "POST", { accountType });
   /** Baja de los avisos a invitados desde el enlace firmado de un correo. */
   unsubscribe = (h: string, s: string) => this.request<{ ok: boolean }>("/mail/unsubscribe", "POST", { h, s });
   googleNonce = () =>

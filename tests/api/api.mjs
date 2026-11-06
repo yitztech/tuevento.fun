@@ -29,11 +29,28 @@ export function send(url, { method = "GET", headers = {}, body } = {}) {
   });
 }
 
+// API de Mailpit (compose.yml y compose.ci.yml): ahí llegan los correos de la API
+const mailpit = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
+/** Token del último enlace de confirmación enviado a `address`, esperando a que llegue. */
+export async function verificationToken(address) {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const list = await fetch(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}`).then((r) => r.json());
+    for (const { ID } of list.messages ?? []) {
+      const mail = await fetch(`${mailpit}/api/v1/message/${ID}`).then((r) => r.json());
+      const token = /\/confirmar-correo\?token=([\w-]{43})/.exec(mail.Text)?.[1];
+      if (token) return token;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`No llegó a ${address} el correo de confirmación`);
+}
+
 /**
  * Cliente con sus propias cookies (la de sesión y las de acceso a landings), como un navegador.
- * `raw` devuelve la respuesta sin interpretar.
+ * `raw` devuelve la respuesta sin interpretar. Una cuenta nueva no usa la API hasta confirmar su
+ * correo: el cliente lo confirma al registrarse, salvo con `{ confirm: false }`.
  */
-export function client() {
+export function client({ confirm = true } = {}) {
   const jar = new Map();
   const load = (value) => {
     jar.clear();
@@ -62,6 +79,14 @@ export function client() {
       }
       let data = {};
       try { data = JSON.parse(r.text || "{}"); } catch { data = { _text: r.text }; }
+      if (confirm && path === "/auth/register" && method === "POST" && r.status === 201) {
+        const verified = await send(`${base}/auth/email/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-TuEvento-Client": "1", ...headers },
+          body: JSON.stringify({ token: await verificationToken(body.email) }),
+        });
+        assert.equal(verified.status, 200, verified.text.slice(0, 200));
+      }
       return { status: r.status, headers: r.headers, data, text: r.text, setCookie: set ?? [] };
     },
     /** Llama y comprueba el estado esperado (por defecto 200). */
@@ -179,6 +204,7 @@ export const account = (prefix, n, extra = {}) => ({
   email: `${prefix}-${unique}-${n}@example.invalid`,
   phone: "+527770000000",
   password,
+  accountType: "organizer",
   ...extra,
 });
 

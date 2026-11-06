@@ -447,6 +447,29 @@ try {
     assert.equal(cuarta.data.code, "rate_limited");
   });
 
+  await suite("Correo sin confirmar: una cuenta nueva no usa nada privado ni abre otras puertas", async () => {
+    const nueva = client({ confirm: false });
+    await nueva.call("/auth/register", "POST", account(P, "sin-confirmar"), 201);
+    const rutas = [
+      ["GET", "/events"],
+      ["POST", "/events", eventData()],
+      ["GET", "/provider/profile"],
+      ["PATCH", "/profile", { firstName: "Ana", lastName: "Paz", phone: "+527770000000" }],
+      ["GET", "/sync/changes"],
+      ["POST", "/auth/demo", {}],
+      ["POST", "/auth/mobile/authorize", { challenge: "c".repeat(43) }],
+      ["POST", "/auth/account-type", { accountType: "provider" }],
+    ];
+    for (const [method, ruta, body] of rutas) {
+      const r = await nueva.raw(ruta, { method, body });
+      assert.equal(r.status, 403, `${method} ${ruta}`);
+      assert.equal(r.data.code, "email_not_verified", `${method} ${ruta}`);
+    }
+    // El cuerpo del registro no puede saltarse la confirmación
+    const extra = await client({ confirm: false }).raw("/auth/register", { method: "POST", body: account(P, "salto", { mustVerifyEmail: false }) });
+    assert.equal(extra.status, 422);
+  });
+
   await suite("Tipo de cuenta: un proveedor no usa ningún endpoint de eventos, invitaciones, postales ni avisos", async () => {
     const organizador = client();
     await organizador.call("/auth/register", "POST", account(P, "tipo-o"), 201);

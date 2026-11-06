@@ -64,6 +64,7 @@ import { LegalPage, legalPageFor } from "./legal";
 import { PaymentPage, PricingPage } from "./pricing";
 import { OfflineBanner, savedOfflineUser, useOfflineSync, useOnline } from "./offline";
 import { SyncReview } from "./sync-review";
+import { ChooseAccountType, VerifyEmailGate, WelcomePage } from "./onboarding";
 import { Button } from "./ui/button";
 import { Toaster } from "./ui/sonner";
 import { toast as showToast } from "sonner";
@@ -97,13 +98,15 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     [config, setConfig] = useState({ googleClientId: "", demoEnabled: false, paymentsEnabled: false });
   const location = useLocation(),
     navigate = useNavigate();
+  const onboarding = !!user && (user.mustVerifyEmail || user.mustChooseType);
   // Apps: copia local, cola y sincronización (fase 8c); en la web, `api` es la de siempre
   const reloadRef = useRef<() => Promise<void>>(async () => {});
   const { api, offline } = useOfflineSync({
     runtime,
     options,
     base,
-    user,
+    // Sin terminar el registro la API no da datos: no hay nada que sincronizar
+    user: onboarding ? null : user,
     online,
     onData: () => void reloadRef.current().catch(() => {}),
     // La sesión caducó (401): la copia local ya se borró; se pide entrar otra vez
@@ -181,7 +184,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   // Quien ofrece servicios no tiene eventos ni avisos de invitados: la API se los niega (403)
   const provider = user?.accountType === "provider";
   useEffect(() => {
-    if (!user || provider) return;
+    if (!user || provider || onboarding) return;
     void reload().catch((e) => toast(errorText(e)));
     const off = runtime.subscribe?.(() => {
       void reload().catch(() => {});
@@ -193,7 +196,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       off?.();
       clearInterval(timer);
     };
-  }, [user?.id, provider, reload, runtime, toast]);
+  }, [user?.id, provider, onboarding, reload, runtime, toast]);
   useEffect(() => {
     setMenu(false);
     window.scrollTo(0, 0);
@@ -289,6 +292,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         />
       ) : !user ? (
         <Navigate to={location.pathname === "/conectar-asistente" ? `/acceso?asistente=${new URLSearchParams(location.search).get("uid") ?? ""}` : "/acceso"} replace />
+      ) : user.mustVerifyEmail ? (
+        <VerifyEmailGate onLogout={() => void logout()} />
+      ) : user.mustChooseType ? (
+        <ChooseAccountType />
       ) : location.pathname === "/pago" ? (
         <PaymentPage />
       ) : location.pathname.endsWith("/pantalla") ? (
@@ -447,6 +454,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               <VerifyEmailBanner />
               {provider ? (
                 <Routes>
+                  <Route path="/bienvenida" element={<WelcomePage />} />
                   <Route path="/negocio" element={<ProviderBusinessPage />} />
                   <Route path="/negocio/servicios" element={<ProviderServicesPage />} />
                   <Route path="/negocio/fotos" element={<ProviderPhotosPage />} />
@@ -460,6 +468,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
               ) : (
               <Routes>
                 <Route path="/" element={<Navigate to="/app" replace />} />
+                <Route path="/bienvenida" element={<WelcomePage />} />
                 <Route path="/app" element={<Dashboard />} />
                 <Route path="/conectar-app" element={<MobileConnect />} />
                 <Route path="/conectar-asistente" element={<AssistantConnect />} />

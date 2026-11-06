@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -11,7 +11,7 @@ Given("que otra cuenta ya usa una dirección pública", async ({ page, ctx }) =>
   // Se crea antes de la cuenta del escenario: la sesión del navegador queda con la última.
   ctx.ocupada = direccionUnica();
   const cuenta = nuevaCuenta();
-  const registro = await page.request.post("/api/auth/register", { headers: cabecera, data: cuenta });
+  const registro = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: cuenta });
   expect(registro.status()).toBe(201);
   const evento = await page.request.post("/api/events", {
     headers: cabecera,

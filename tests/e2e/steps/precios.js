@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -9,7 +9,7 @@ Given("que abro la página de precios", async ({ ui }) => {
 
 Given("que tengo una cuenta creada y entro a mi espacio", async ({ page }) => {
   // `page.request` comparte las cookies del navegador: la sesión queda abierta.
-  const r = await page.request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
+  const r = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(r.status()).toBe(201);
   await page.goto("/app");
 });

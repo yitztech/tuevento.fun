@@ -25,6 +25,7 @@ import {
   type RegisterInput,
   type User,
   type AccountType,
+  accountArea,
 } from "@tuevento/contracts";
 import { requestLocale } from "./request-locale";
 import { ProblemException } from "./problem";
@@ -55,6 +56,8 @@ export type UserRow = {
   public_code: string;
   account_type: AccountType;
   email_verified_at: Date | null;
+  must_verify_email: boolean;
+  must_choose_type: boolean;
 };
 export const userView = (r: UserRow): User => ({
   id: r.id,
@@ -69,6 +72,8 @@ export const userView = (r: UserRow): User => ({
   publicCode: r.public_code,
   accountType: r.account_type,
   emailVerified: r.email_verified_at !== null,
+  mustVerifyEmail: r.must_verify_email && r.email_verified_at === null,
+  mustChooseType: r.must_choose_type,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin
@@ -106,7 +111,7 @@ export class AuthService {
     const passwordHash = await this.passwordHash(data.password);
     try {
       const [r] = await this.db.query<UserRow>(
-        "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale,account_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale,account_type,must_verify_email,must_choose_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,true,$9) RETURNING *",
         [
           randomUUID(),
           data.firstName,
@@ -115,7 +120,8 @@ export class AuthService {
           data.phone,
           passwordHash,
           locale,
-          data.accountType,
+          data.accountType ?? "organizer",
+          data.accountType === undefined,
         ],
       );
       return userView(r);
@@ -395,6 +401,13 @@ export class AuthService {
       );
     return userView(r);
   }
+  /** La sesión de una cuenta que ya puede usar la plataforma: sin correo por confirmar. */
+  async confirmed(req: FastifyRequest) {
+    const user = await this.current(req);
+    if (user.mustVerifyEmail)
+      throw new ProblemException({ status: 403, code: "email_not_verified", detail: "errors.emailNotVerified" });
+    return user;
+  }
   async logout(req: FastifyRequest, reply: FastifyReply) {
     const token = sessionToken(req);
     if (token)
@@ -411,7 +424,7 @@ export class AuthService {
     nonce: string,
     req: FastifyRequest,
     reply: FastifyReply,
-    accountType: AccountType = "organizer",
+    accountType?: AccountType,
   ) {
     if (!process.env.GOOGLE_CLIENT_ID)
       throw new ServiceUnavailableException(
@@ -460,7 +473,7 @@ export class AuthService {
     try {
       const [r] = await this.db.query<UserRow>(
         // Google confirma el correo (email_verified): la cuenta nace confirmada
-        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type,email_verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,now()) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type,email_verified_at,must_choose_type) VALUES($1,$2,$3,$4,$5,$6,$7,now(),$8) RETURNING *",
         [
           randomUUID(),
           payload.given_name || translate(locale, "common.host"),
@@ -468,7 +481,8 @@ export class AuthService {
           payload.email.toLowerCase(),
           payload.sub,
           locale,
-          accountType,
+          accountType ?? "organizer",
+          accountType === undefined,
         ],
       );
       await this.db.query("INSERT INTO activity(id,kind,platform,user_id) VALUES($1,'registration',$2,$3)", [randomUUID(), clientPlatform(req), r.id]);
@@ -488,13 +502,13 @@ export class SessionGuard implements CanActivate {
   constructor(private auth: AuthService) {}
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthedRequest>();
-    request.user = await this.auth.current(request);
+    request.user = await this.auth.confirmed(request);
     return true;
   }
 }
 
 /** Tipo de cuenta que exige un controlador o un endpoint (`@RequireAccountType("organizer")`). */
-export const RequireAccountType = Reflector.createDecorator<AccountType>();
+export const RequireAccountType = Reflector.createDecorator<"organizer" | "provider">();
 
 /**
  * Cada tipo de cuenta usa solo sus endpoints (AGENTS.md §25): se comprueba aquí, en un solo sitio,
@@ -507,7 +521,9 @@ export class AccountTypeGuard implements CanActivate {
     const required = this.reflector.getAllAndOverride(RequireAccountType, [context.getHandler(), context.getClass()]);
     if (!required) return true;
     const { user } = context.switchToHttp().getRequest<AuthedRequest>();
-    if (user?.accountType !== required)
+    if (user?.mustChooseType)
+      throw new ProblemException({ status: 403, code: "account_type_required", detail: "errors.accountTypeRequired" });
+    if (!user || accountArea(user.accountType) !== required)
       throw new ProblemException({ status: 403, code: "wrong_account_type", detail: "errors.wrongAccountType" });
     return true;
   }

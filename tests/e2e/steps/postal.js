@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
@@ -9,7 +9,7 @@ async function sinDesbordamiento(page) {
 
 Given("que tengo un evento con una invitación", async ({ page, ctx }) => {
   ctx.cuenta = nuevaCuenta();
-  const registro = await page.request.post("/api/auth/register", { headers: cabecera, data: ctx.cuenta });
+  const registro = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: ctx.cuenta });
   expect(registro.status()).toBe(201);
   const evento = await page.request.post("/api/events", {
     headers: cabecera,

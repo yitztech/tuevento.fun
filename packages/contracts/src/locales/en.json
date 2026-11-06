@@ -41,13 +41,13 @@
     "startSomethingWonderful": "Start something wonderful.",
     "yourInformation": "Your information",
     "accountTypeLegend": "How will you use TuEventoFun?",
-    "organizerTitle": "I organize events",
+    "organizerTitle": "Plan my event",
     "organizerHint": "Weddings, birthdays and get-togethers: guests, RSVPs and designs.",
-    "providerTitle": "I offer event services",
+    "providerTitle": "I provide event services",
     "providerHint": "Catering, music, photography, venues… List your business for free.",
     "confirmEmailTitle": "Confirm your email",
     "emailConfirmed": "Email confirmed!",
-    "emailConfirmedDetail": "From now on, your guests will get email updates about your events.",
+    "emailConfirmedDetail": "Your account is ready to continue.",
     "goToMySpace": "Go to my space",
     "unsubscribeTitle": "Stop getting updates",
     "unsubscribeIntro": "You won't get any more TuEventoFun event updates at this email: no changes, cancellations or confirmations of your replies. Your invitations will still open with their link.",
@@ -64,7 +64,9 @@
     "repeatPassword": "Repeat password",
     "chooseImageNoLarger": "Choose an image no larger than 2 MB.",
     "chooseJpgPngWebp": "Choose a JPG, PNG or WebP image.",
-    "couldntReadImage": "Couldn't read the image."
+    "couldntReadImage": "Couldn't read the image.",
+    "agencyTitle": "I run an event planning agency",
+    "agencyHint": "You plan events for your clients: guests, replies and designs in one place."
   },
   "app": {
     "backOverview": "Back to overview",
@@ -325,7 +327,10 @@
     "syncCursorExpired": "Your offline copy is too old: it needs to be downloaded in full again.",
     "versionConflict": "This changed on another device while you were editing it. Check the current version before saving.",
     "couponInvalid": "That coupon isn't valid or is no longer available.",
-    "paymentInProgress": "You already have a payment in progress. Wait for it to finish and try again."
+    "paymentInProgress": "You already have a payment in progress. Wait for it to finish and try again.",
+    "emailNotVerified": "Confirm your email to continue.",
+    "accountTypeRequired": "First choose how you’ll use TuEventoFun.",
+    "accountTypeAlreadyChosen": "Your account type has already been chosen."
   },
   "events": {
     "actions": "Actions",
@@ -825,7 +830,7 @@
     "maximum2048Characters": "Maximum 2048 characters.",
     "invalidCoordinates": "The coordinates aren't valid.",
     "mapLinkNotSupported": "Paste an https link from Google Maps, Apple Maps or Waze.",
-    "invalidAccountType": "Choose whether you organize events or offer services.",
+    "invalidAccountType": "Choose how you’ll use TuEventoFun.",
     "maximum150Characters": "Maximum 150 characters.",
     "maximum5000Characters": "Maximum 5000 characters.",
     "maximum2000Characters": "Maximum 2000 characters.",
@@ -1333,5 +1338,29 @@
     "intro": "{{client}} wants to access your TuEventoFun account.",
     "readOnly": "It will only be able to view your data. It can't create, change or delete anything.",
     "title": "Connect your assistant"
+  },
+  "onboarding": {
+    "verifyTitle": "Check your email",
+    "verifyIntro": "We sent a link to {{email}}. Open it to confirm your email and continue.",
+    "verifyDone": "I’ve confirmed it",
+    "verifyPending": "We don’t see your confirmation yet. Open the link in the email and come back here.",
+    "continue": "Continue",
+    "organizerTitle": "All set for your event",
+    "organizerIntro": "Three steps and your invitation is on its way.",
+    "organizerStep1": "Create your event with its date and place.",
+    "organizerStep2": "Pick a design for your invitation.",
+    "organizerStep3": "Add your guests and follow their replies.",
+    "providerTitle": "Get found",
+    "providerIntro": "Complete your business so you show up when people look for services for their event.",
+    "providerStep1": "Describe your business and where you work.",
+    "providerStep2": "Add your services and their prices.",
+    "providerStep3": "Upload your photos and publish your page.",
+    "providerAction": "Complete my business",
+    "agencyTitle": "Your agency is ready to work",
+    "agencyIntro": "Prepare your clients’ events from one place.",
+    "agencyStep1": "Create a client’s first event.",
+    "agencyStep2": "Tailor the invitation to their style.",
+    "agencyStep3": "Follow the replies for each event from your dashboard.",
+    "agencyAction": "Create the first event"
   }
 }

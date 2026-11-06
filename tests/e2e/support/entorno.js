@@ -6,6 +6,8 @@ export const baseURL = process.env.E2E_BASE_URL || "http://localhost:5187";
 export const adminURL = process.env.E2E_ADMIN_URL || "http://127.0.0.1:8188";
 export const englishURL =
   process.env.E2E_BASE_URL_EN || `http://yourevent.localhost:${new URL(baseURL).port || 80}`;
+// Mailpit (compose.yml y compose.ci.yml): ahí llegan los correos de la app.
+export const mailpitURL = process.env.TEST_MAILPIT_URL || "http://127.0.0.1:8026";
 export const local = /^(localhost|127\.0\.0\.1)$/.test(new URL(baseURL).hostname);
 
 // Ritmo "humano" para seguir la ejecución a ojo (todo en ms, 0 = a toda velocidad):

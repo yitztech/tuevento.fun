@@ -13,7 +13,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   accountLimits,
   registerSchema,
-  type AccountType,
   loginSchema,
   profileSchema,
   forgotPasswordSchema,
@@ -67,7 +66,7 @@ async function readAvatar(file: File): Promise<string> {
   });
 }
 /** Marco común de las pantallas de acceso: historia a la izquierda, formulario a la derecha. */
-function AuthShell({ side = "login", children }: { side?: AuthSide; children: React.ReactNode }) {
+export function AuthShell({ side = "login", children }: { side?: AuthSide; children: React.ReactNode }) {
   return (
     <SiteAuthShell side={side}>
       <Container width="auth" className="auth-form">
@@ -98,8 +97,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     navigate = useNavigate(),
     [error, setError] = useState(""),
     [showPassword, setShowPassword] = useState(false);
-  // ?tipo=proveedor llega desde la sección para proveedores de la portada
-  const initialType: AccountType = new URLSearchParams(search).get("tipo") === "proveedor" ? "provider" : "organizer";
   const form = useForm<RegisterFormInput>({
     resolver: zodResolver(
       registerMode ? registerFormSchema : loginSchema,
@@ -107,7 +104,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
     ) as unknown as Resolver<RegisterFormInput>,
     // Solo los campos del esquema de cada modo: los esquemas no admiten campos de más
     defaultValues: registerMode
-      ? { firstName: "", lastName: "", phone: "", email: "", password: "", confirmPassword: "", accountType: initialType }
+      ? { firstName: "", lastName: "", phone: "", email: "", password: "", confirmPassword: "" }
       : { email: "", password: "" },
   });
   const submit = form.handleSubmit(async (data) => {
@@ -134,21 +131,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               ? tr("account.createAccountPlanFirst")
               : tr("account.eventsPeopleWaiting")}
           </p>
-          {registerMode && (
-            <fieldset className="account-type">
-              <legend>{tr("account.accountTypeLegend")}</legend>
-              {(["organizer", "provider"] as const).map((type) => (
-                <label key={type} className="account-type-option">
-                  <input type="radio" value={type} {...form.register("accountType")} />
-                  <span>
-                    <strong>{tr(type === "organizer" ? "account.organizerTitle" : "account.providerTitle")}</strong>
-                    <small>{tr(type === "organizer" ? "account.organizerHint" : "account.providerHint")}</small>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-          )}
-          <GoogleLogin onError={setError} accountType={registerMode ? form.watch("accountType") : undefined} />
+          <GoogleLogin onError={setError} />
           <div className="or-divider">
             <span>{tr("account.continueEmail")}</span>
           </div>
@@ -433,11 +416,8 @@ export function ResetPasswordPage() {
     </AuthShell>
   );
 }
-function GoogleLogin({ onError, accountType }: { onError: (error: string) => void; accountType?: AccountType }) {
+function GoogleLogin({ onError }: { onError: (error: string) => void }) {
   const postAuthTarget = usePostAuthTarget();
-  // El botón de Google se inicia una vez: el tipo elegido después se lee de aquí al volver
-  const chosenType = useRef(accountType);
-  chosenType.current = accountType;
   const { api, setUser, config, runtime, online } = useApp(),
     navigate = useNavigate(),
     ref = useRef<HTMLDivElement>(null);
@@ -456,7 +436,7 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
           nonce,
           callback: async ({ credential }: { credential: string }) => {
             try {
-              setUser(await api.google(credential, nonce, chosenType.current));
+              setUser(await api.google(credential, nonce));
               navigate(postAuthTarget);
             } catch (e) {
               onError(errorText(e));

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { themes, translate } from '@tuevento/contracts';
-import { Given, When, Then, nuevaCuenta } from './fixtures.js';
+import { Given, When, Then, nuevaCuenta, registrar } from './fixtures.js';
 
 const hermanas = themes.filter(t => 'smallImage' in t);
 const headers = { 'x-tuevento-client': '1' };
@@ -11,7 +11,7 @@ async function sinDesbordamiento(page) {
 
 Given('que abro el catálogo de postales con una cuenta nueva a {int} por {int}', async ({ page }, width, height) => {
   await page.setViewportSize({ width, height });
-  const registro = await page.request.post('/api/auth/register', { headers, data: nuevaCuenta() });
+  const registro = await registrar(page.request, '/api/auth/register', { headers, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   await page.goto('/disenos');
   await expect(page.getByRole('heading', { name: 'Invitaciones con personalidad.' })).toBeVisible();

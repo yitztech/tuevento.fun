@@ -41,13 +41,13 @@
     "startSomethingWonderful": "Commence quelque chose de beau.",
     "yourInformation": "Tes informations",
     "accountTypeLegend": "Comment vas-tu utiliser TuEventoFun ?",
-    "organizerTitle": "J'organise des événements",
+    "organizerTitle": "Organiser mon événement",
     "organizerHint": "Mariages, anniversaires et réunions : invités, réponses et designs.",
     "providerTitle": "Je propose des services pour les événements",
     "providerHint": "Traiteur, musique, photo, salles… Publie ton activité gratuitement.",
     "confirmEmailTitle": "Confirme ton adresse e-mail",
     "emailConfirmed": "Adresse e-mail confirmée !",
-    "emailConfirmedDetail": "Désormais, tes invités recevront par e-mail les avis concernant tes événements.",
+    "emailConfirmedDetail": "Ton compte est prêt pour la suite.",
     "goToMySpace": "Aller à mon espace",
     "unsubscribeTitle": "Ne plus recevoir d’avis",
     "unsubscribeIntro": "Tu ne recevras plus d’avis d’événements TuEventoFun à cette adresse : ni changements, ni annulations, ni confirmations de tes réponses. Tes invitations s’ouvriront toujours avec leur lien.",
@@ -64,7 +64,9 @@
     "repeatPassword": "Répéter le mot de passe",
     "chooseImageNoLarger": "Choisis une image de 2 Mo maximum.",
     "chooseJpgPngWebp": "Choisis une image JPG, PNG ou WebP.",
-    "couldntReadImage": "Impossible de lire l’image."
+    "couldntReadImage": "Impossible de lire l’image.",
+    "agencyTitle": "Je suis une agence d’organisation d’événements",
+    "agencyHint": "Tu organises des événements pour tes clients : invités, réponses et designs au même endroit."
   },
   "app": {
     "backOverview": "Retour à l’aperçu",
@@ -325,7 +327,10 @@
     "syncCursorExpired": "Ta copie hors ligne est trop ancienne : il faut la télécharger à nouveau en entier.",
     "versionConflict": "Ceci a changé sur un autre appareil pendant que tu le modifiais. Vérifie la version actuelle avant d’enregistrer.",
     "couponInvalid": "Ce code promo n’est pas valide ou n’est plus disponible.",
-    "paymentInProgress": "Tu as déjà un paiement en cours. Attends qu’il se termine et réessaie."
+    "paymentInProgress": "Tu as déjà un paiement en cours. Attends qu’il se termine et réessaie.",
+    "emailNotVerified": "Confirme ton e-mail pour continuer.",
+    "accountTypeRequired": "Choisis d’abord comment tu vas utiliser TuEventoFun.",
+    "accountTypeAlreadyChosen": "Ton type de compte est déjà choisi."
   },
   "events": {
     "actions": "Actions",
@@ -825,7 +830,7 @@
     "maximum2048Characters": "2048 caractères maximum.",
     "invalidCoordinates": "Les coordonnées ne sont pas valides.",
     "mapLinkNotSupported": "Colle un lien https de Google Maps, Apple Plans ou Waze.",
-    "invalidAccountType": "Choisis si tu organises des événements ou proposes des services.",
+    "invalidAccountType": "Choisis comment tu vas utiliser TuEventoFun.",
     "maximum150Characters": "150 caractères maximum.",
     "maximum5000Characters": "5000 caractères maximum.",
     "maximum2000Characters": "2000 caractères maximum.",
@@ -1333,5 +1338,29 @@
     "intro": "{{client}} souhaite accéder à ton compte TuEventoFun.",
     "readOnly": "Il pourra seulement consulter tes données. Il ne pourra rien créer, modifier ni supprimer.",
     "title": "Connecte ton assistant"
+  },
+  "onboarding": {
+    "verifyTitle": "Consulte ta boîte mail",
+    "verifyIntro": "Nous avons envoyé un lien à {{email}}. Ouvre-le pour confirmer ton e-mail et continuer.",
+    "verifyDone": "C’est confirmé",
+    "verifyPending": "Nous ne voyons pas encore ta confirmation. Ouvre le lien de l’e-mail et reviens ici.",
+    "continue": "Continuer",
+    "organizerTitle": "Tout est prêt pour ton événement",
+    "organizerIntro": "En trois étapes, ton invitation sera en route.",
+    "organizerStep1": "Crée ton événement avec sa date et son lieu.",
+    "organizerStep2": "Choisis un design pour ton invitation.",
+    "organizerStep3": "Ajoute tes invités et suis leurs réponses.",
+    "providerTitle": "Fais-toi connaître",
+    "providerIntro": "Complète ton entreprise pour apparaître quand quelqu’un cherche des services pour son événement.",
+    "providerStep1": "Décris ton entreprise et ta zone de travail.",
+    "providerStep2": "Ajoute tes services avec leurs prix.",
+    "providerStep3": "Ajoute tes photos et publie ta page.",
+    "providerAction": "Compléter mon entreprise",
+    "agencyTitle": "Ton agence est prête à travailler",
+    "agencyIntro": "Prépare les événements de tes clients au même endroit.",
+    "agencyStep1": "Crée le premier événement d’un client.",
+    "agencyStep2": "Personnalise l’invitation à son style.",
+    "agencyStep3": "Suis les réponses de chaque événement depuis ton tableau de bord.",
+    "agencyAction": "Créer le premier événement"
   }
 }

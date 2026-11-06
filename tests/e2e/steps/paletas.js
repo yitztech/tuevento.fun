@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { adminURL } from "../support/entorno.js";
-import { Given, When, Then, After, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, After, nuevaCuenta, registrar } from "./fixtures.js";
 
 const headers = { "x-tuevento-client": "1" };
 /** Raíz del repositorio: `docker compose` busca ahí sus archivos. */
@@ -35,7 +35,7 @@ Then("el cambio de paleta queda registrado con quien lo hizo", async () => {
   expect(sql("SELECT admin || ' ' || target FROM admin_audit_log WHERE action='site_palette.update' ORDER BY created_at DESC LIMIT 1")).toBe("admin fuchsia-plum-amber");
 });
 Given("que soy dueño del sistema y abro la administración", async ({ page, ctx }) => {
-  const response = await page.request.post("/api/auth/register", { headers, data: nuevaCuenta() });
+  const response = await registrar(page.request, "/api/auth/register", { headers, data: nuevaCuenta() });
   expect(response.status()).toBe(201);
   ctx.paletteOwnerId = (await response.json()).id;
   sql(`UPDATE users SET is_owner=true WHERE id='${ctx.paletteOwnerId}'`);
