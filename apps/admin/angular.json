@@ -18,6 +18,13 @@
             "browser": "src/web/main.ts",
             "tsConfig": "tsconfig.app.json",
             "styles": ["src/web/styles.css"],
+            "assets": [
+              {
+                "glob": "logo-es-*.webp",
+                "input": "src/web/brand",
+                "output": "brand"
+              }
+            ],
             "optimization": {
               "scripts": true,
               "styles": { "minify": true, "inlineCritical": false },

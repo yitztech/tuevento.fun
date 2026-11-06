@@ -1,6 +1,7 @@
 # language: es
 @demo @solo-web @REQ-05
-Característica: La demostración exige registrarse
+Característica: La demostración
+  Exige una cuenta y, ya dentro, abre un espacio con eventos de ejemplo.
 
   @solo-lectura
   Escenario: Sin sesión, la aplicación pide acceder y no abre una demostración
@@ -12,3 +13,9 @@ Característica: La demostración exige registrarse
     Dado que abro la página de inicio
     Cuando pulso el enlace "Ver la demostración" de la portada
     Entonces estoy en la página de registro
+
+  Escenario: La demostración muestra los eventos de ejemplo
+    Dado que tengo una cuenta creada y entro a mi espacio
+    Cuando exploro la demostración
+    Entonces veo el texto "La boda de Sofía & Alejandro"
+    Y veo el texto "¡Felices 30, Mariana!"

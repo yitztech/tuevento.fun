@@ -1,4 +1,4 @@
-// Pasos de features/marca.feature: logo por idioma y favicon.
+// Pasos de features/sitio/marca.feature: logo por idioma y favicon.
 import { expect } from "@playwright/test";
 import { Then } from "./fixtures.js";
 

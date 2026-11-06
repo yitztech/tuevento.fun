@@ -16,16 +16,18 @@ const THEMES: Record<string, string> = {
 };
 // Muestras de cada paleta, en este orden: principal, celebración, acento, fondo suave y texto.
 // Copia de `sitePalettes` (packages/contracts) y de los tokens de packages/app/src/styles.css para Terracota.
+// `hue` es el giro del logo de `brandHueRotation` (packages/app/src/ui/site/brand-palette.ts); null conserva
+// la marca original. El panel pinta el logo completo con ese mismo filtro.
 const PALETTES = [
-  { id: "terracotta", name: "Terracota", colors: ["#a63f30", "#ffca66", "#e25c80", "#f9e6dc", "#3d2a25"] },
-  { id: "fuchsia-plum-amber", name: "Fucsia, Ciruela y Ámbar", colors: ["#d9004b", "#ffc400", "#ff8a00", "#fff0f5", "#3d002b"] },
-  { id: "plum-champagne", name: "Ciruela y Champagne", colors: ["#570035", "#ffd166", "#ff8a00", "#fff1f6", "#320d26"] },
-  { id: "mandarin-raspberry", name: "Mandarina y Frambuesa", colors: ["#b94a00", "#d9004b", "#ffc400", "#fff0e3", "#40152d"] },
-  { id: "raspberry-vanilla", name: "Frambuesa y Vainilla", colors: ["#a90046", "#ffe08a", "#ff8a00", "#fff0f6", "#3d102a"] },
-  { id: "ocean-aqua", name: "Océano y Aguamarina", colors: ["#0a5a8a", "#5ce1d6", "#1fb6c9", "#e8f5fb", "#06283d"] },
-  { id: "forest-mint", name: "Bosque y Menta", colors: ["#12633f", "#8ee6b8", "#2fb67c", "#e7f6ee", "#0b2e20"] },
-  { id: "indigo-ice", name: "Índigo y Hielo", colors: ["#3a3fb8", "#a9d6ff", "#5b8def", "#eceefb", "#15174a"] },
-  { id: "petrol-lime", name: "Petróleo y Lima", colors: ["#0f5c63", "#c6ec5a", "#27a8a0", "#e8f4f2", "#0d2f33"] },
+  { id: "terracotta", name: "Terracota", hue: 325, colors: ["#a63f30", "#ffca66", "#e25c80", "#f9e6dc", "#3d2a25"] },
+  { id: "fuchsia-plum-amber", name: "Fucsia, Ciruela y Ámbar", hue: null, colors: ["#d9004b", "#ffc400", "#ff8a00", "#fff0f5", "#3d002b"] },
+  { id: "plum-champagne", name: "Ciruela y Champagne", hue: 260, colors: ["#570035", "#ffd166", "#ff8a00", "#fff1f6", "#320d26"] },
+  { id: "mandarin-raspberry", name: "Mandarina y Frambuesa", hue: 345, colors: ["#b94a00", "#d9004b", "#ffc400", "#fff0e3", "#40152d"] },
+  { id: "raspberry-vanilla", name: "Frambuesa y Vainilla", hue: 285, colors: ["#a90046", "#ffe08a", "#ff8a00", "#fff0f6", "#3d102a"] },
+  { id: "ocean-aqua", name: "Océano y Aguamarina", hue: 155, colors: ["#0a5a8a", "#5ce1d6", "#1fb6c9", "#e8f5fb", "#06283d"] },
+  { id: "forest-mint", name: "Bosque y Menta", hue: 75, colors: ["#12633f", "#8ee6b8", "#2fb67c", "#e7f6ee", "#0b2e20"] },
+  { id: "indigo-ice", name: "Índigo y Hielo", hue: 180, colors: ["#3a3fb8", "#a9d6ff", "#5b8def", "#eceefb", "#15174a"] },
+  { id: "petrol-lime", name: "Petróleo y Lima", hue: 130, colors: ["#0f5c63", "#c6ec5a", "#27a8a0", "#e8f4f2", "#0d2f33"] },
 ];
 const MESSAGES = {
   invalid: "Usuario o contraseña incorrectos.",
@@ -39,6 +41,13 @@ const MESSAGES = {
 };
 const REGIONS = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["es"], { type: "region" }) : null;
 const JSON_HEADERS = { "Content-Type": "application/json" };
+const SECTION_TITLES: Record<Tab, string> = {
+  summary: "Resumen",
+  users: "Usuarios",
+  events: "Eventos",
+  coupons: "Cupones",
+  design: "Diseño",
+};
 
 const statusOf = (error: unknown) => (error instanceof HttpErrorResponse ? error.status : 0);
 
@@ -55,6 +64,7 @@ export class AdminComponent {
 
   readonly session = signal<Session>("checking");
   readonly tab = signal<Tab>("summary");
+  readonly navOpen = signal(false);
   readonly days = signal(30);
   readonly page = signal(1);
   readonly busy = signal(false);
@@ -96,6 +106,10 @@ export class AdminComponent {
   }
 
   // ── Textos ──────────────────────────────────────────────────────────────
+  sectionTitle() {
+    return SECTION_TITLES[this.tab()];
+  }
+
   platformName(platform: string) {
     return PLATFORMS[platform] || platform;
   }
@@ -123,6 +137,11 @@ export class AdminComponent {
     return PALETTES.find((palette) => palette.id === id)?.name || id;
   }
 
+  // Mismo tratamiento que el sitio: el logo completo se tiñe con la paleta elegida.
+  paletteFilter(hue: number | null) {
+    return hue === null ? "none" : `grayscale(1) sepia(1) saturate(3) hue-rotate(${hue}deg)`;
+  }
+
   couponDiscount(coupon: CouponRow) {
     return coupon.percentOff !== null ? `${coupon.percentOff} %` : `$${((coupon.amountOffCents ?? 0) / 100).toFixed(2)}`;
   }
@@ -140,6 +159,11 @@ export class AdminComponent {
     const stats = this.stats();
     if (!stats) return 0;
     return stats.overview.online.reduce((sum, p) => sum + p.visitors, 0);
+  }
+
+  totalGuests() {
+    const guests = this.stats()?.overview.guests;
+    return guests ? guests.accepted + guests.declined + guests.pending : 0;
   }
 
   // ── Red ─────────────────────────────────────────────────────────────────
@@ -162,6 +186,14 @@ export class AdminComponent {
     this.showPassword.update((shown) => !shown);
   }
 
+  toggleNav() {
+    this.navOpen.update((open) => !open);
+  }
+
+  closeNav() {
+    this.navOpen.set(false);
+  }
+
   login() {
     this.loginError.set("");
     this.showPassword.set(false);
@@ -182,6 +214,7 @@ export class AdminComponent {
   }
 
   logout() {
+    this.navOpen.set(false);
     firstValueFrom(this.http.post("/api/logout", {}, { headers: JSON_HEADERS }))
       .catch(() => undefined)
       .finally(() => {
@@ -222,6 +255,7 @@ export class AdminComponent {
   }
 
   show(tab: Tab) {
+    this.navOpen.set(false);
     this.tab.set(tab);
     this.page.set(1);
     this.reload();

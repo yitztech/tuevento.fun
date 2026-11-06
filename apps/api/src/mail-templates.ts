@@ -1,5 +1,7 @@
 import {
   translate,
+  sitePalettes,
+  type SitePaletteId,
   type Locale,
   type MessageKey,
   type MessageValues,
@@ -21,6 +23,7 @@ function layout(options: {
   to: string;
   subject: string;
   site: string;
+  locale: Locale;
   paragraphs: string[];
   action?: { label: string; url: string };
   footer: string;
@@ -35,28 +38,36 @@ function layout(options: {
     options.site,
     ...(options.unsubscribe ? [`${options.unsubscribe.label}: ${options.unsubscribe.page}`] : []),
   ].join("\n\n");
+  const htmlForPalette = (palette: SitePaletteId) => {
+  const colors = palette === "terracotta"
+    ? { primary: "#a63f30", primaryText: "#ffffff", ink: "#3d2a25", muted: "#765f58", siteBg: "#fff6f2", line: "#f0d8cb" }
+    : sitePalettes[palette];
+  const logo = `${new URL(options.site).origin}/images/brand-v2/email/logo-${options.locale}-${palette}.png`;
   const unsubscribe = options.unsubscribe
-    ? ` · <a href="${escapeHtml(options.unsubscribe.page)}" style="color:#6e5f5a">${escapeHtml(options.unsubscribe.label)}</a>`
+    ? ` · <a href="${escapeHtml(options.unsubscribe.page)}" style="color:${colors.muted}">${escapeHtml(options.unsubscribe.label)}</a>`
     : "";
   const button = options.action
-    ? `<p style="margin:28px 0"><a href="${escapeHtml(options.action.url)}" style="background:#882d17;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escapeHtml(options.action.label)}</a></p>
-<p style="font-size:13px;color:#6e5f5a;word-break:break-all">${escapeHtml(options.action.url)}</p>`
+    ? `<p style="margin:28px 0"><a href="${escapeHtml(options.action.url)}" style="background:${colors.primary};color:${colors.primaryText};text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escapeHtml(options.action.label)}</a></p>
+<p style="font-size:13px;color:${colors.muted};word-break:break-all">${escapeHtml(options.action.url)}</p>`
     : "";
   const html = `<!doctype html>
-<html><body style="margin:0;background:#fdf8f5;font-family:Helvetica,Arial,sans-serif;color:#261c18">
+<html><body style="margin:0;background:${colors.siteBg};font-family:Helvetica,Arial,sans-serif;color:${colors.ink}">
 <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-<p style="font-size:20px;font-weight:700;color:#882d17;margin:0 0 24px">TuEventoFun</p>
-<div style="background:#ffffff;border:1px solid #efe6e1;border-radius:16px;padding:28px 24px;line-height:1.55">
+<p style="margin:0 0 24px"><img src="${escapeHtml(logo)}" width="240" height="80" alt="TuEventoFun" style="display:block;width:240px;height:auto;max-width:100%;border:0"></p>
+<div style="background:#ffffff;border:1px solid ${colors.line};border-radius:16px;padding:28px 24px;line-height:1.55">
 ${options.paragraphs.map((p) => `<p style="margin:0 0 14px">${escapeHtml(p)}</p>`).join("\n")}
 ${button}
 </div>
-<p style="font-size:12px;color:#6e5f5a;margin:20px 4px">${escapeHtml(options.footer)} · <a href="${escapeHtml(options.site)}" style="color:#6e5f5a">${escapeHtml(host)}</a>${unsubscribe}</p>
+<p style="font-size:12px;color:${colors.muted};margin:20px 4px">${escapeHtml(options.footer)} · <a href="${escapeHtml(options.site)}" style="color:${colors.muted}">${escapeHtml(host)}</a>${unsubscribe}</p>
 </div></body></html>`;
+  return html;
+  };
   return {
     to: options.to,
     subject: options.subject,
     text,
-    html,
+    html: htmlForPalette("terracotta"),
+    htmlForPalette,
     ...(options.unsubscribe
       ? {
           headers: {
@@ -74,6 +85,7 @@ export function passwordResetMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.passwordReset.subject"),
@@ -94,6 +106,7 @@ export function passwordChangedMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.passwordChanged.subject"),
@@ -113,6 +126,7 @@ export function verifyEmailMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.verifyEmail.subject"),
@@ -134,6 +148,7 @@ export function loginLockedMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.loginLocked.subject"),
@@ -163,6 +178,7 @@ export function guestReplyMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.guestReply.subject", { event: data.event }),
@@ -193,6 +209,7 @@ export function ownerReplyMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.ownerReply.subject", { guest: data.guest, event: data.event }),
@@ -221,6 +238,7 @@ export function eventChangedMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.eventChanged.subject", { event: data.event }),
@@ -241,6 +259,7 @@ export function eventCancelledMail(
 ): MailMessage {
   const t = (key: MessageKey, values?: MessageValues) => translate(locale, key, values);
   return layout({
+    locale,
     to: data.to,
     site: data.site,
     subject: t("mail.eventCancelled.subject", { event: data.event }),

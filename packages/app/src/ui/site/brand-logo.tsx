@@ -28,6 +28,7 @@ export function BrandLogo({ size = "default", locale }: { size?: keyof typeof si
       alt=""
       width={720}
       height={240}
+      style={{ filter: "var(--brand-image-filter, grayscale(1) sepia(1) saturate(3) hue-rotate(325deg))" }}
       className={cn("aspect-[3/1] h-auto max-w-full shrink-0", sizes[size].cls)}
     />
   );
@@ -43,6 +44,7 @@ export function BrandMark({ className }: { className?: string }) {
       alt=""
       width={96}
       height={96}
+      style={{ filter: "var(--brand-image-filter, grayscale(1) sepia(1) saturate(3) hue-rotate(325deg))" }}
       className={cn("size-10 shrink-0", className)}
     />
   );

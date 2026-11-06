@@ -41,12 +41,34 @@ const themeTags: Record<SiteTheme["id"], Tag[]> = {
   pastel: ["kids", "minimal"],
 };
 
-const birthdayPhotos: { file: string; alt: MessageKey }[] = [
-  { file: "cumple-infantil-jardin", alt: "site.birthdayPhotoGarden" },
-  { file: "cumple-infantil-mesa", alt: "site.birthdayPhotoKidsTable" },
-  { file: "cumple-amigos-jardin", alt: "site.birthdayPhotoFriendsGarden" },
-  { file: "cumple-amigos-picnic", alt: "site.birthdayPhotoPicnic" },
-  { file: "cumple-amigos-cena", alt: "site.birthdayPhotoDinner" },
+const themeCaptions: Partial<Record<SiteTheme["id"], MessageKey>> = {
+  copper: "site.captionCopper",
+  wildflower: "site.captionWildflower",
+  pastel: "site.captionPastel",
+};
+
+const inspirationPhotos: { file: string; alt: MessageKey; caption: MessageKey; tag: Tag }[] = [
+  { file: "cumple-infantil-jardin", alt: "site.birthdayPhotoGarden", caption: "site.captionBirthdayPhotoGarden", tag: "birthdays" },
+  { file: "cumple-infantil-mesa", alt: "site.birthdayPhotoKidsTable", caption: "site.captionBirthdayPhotoKidsTable", tag: "birthdays" },
+  { file: "cumple-amigos-jardin", alt: "site.birthdayPhotoFriendsGarden", caption: "site.captionBirthdayPhotoFriendsGarden", tag: "birthdays" },
+  { file: "cumple-amigos-picnic", alt: "site.birthdayPhotoPicnic", caption: "site.captionBirthdayPhotoPicnic", tag: "birthdays" },
+  { file: "cumple-amigos-cena", alt: "site.birthdayPhotoDinner", caption: "site.captionBirthdayPhotoDinner", tag: "birthdays" },
+  { file: "infantil-jardin", alt: "site.inspirationKidsGarden", caption: "site.captionInspirationKidsGarden", tag: "kids" },
+  { file: "infantil-pastel", alt: "site.inspirationKidsPastel", caption: "site.captionInspirationKidsPastel", tag: "kids" },
+  { file: "infantil-picnic", alt: "site.inspirationKidsPicnic", caption: "site.captionInspirationKidsPicnic", tag: "kids" },
+  { file: "infantil-arte", alt: "site.inspirationKidsCrafts", caption: "site.captionInspirationKidsCrafts", tag: "kids" },
+  { file: "infantil-safari", alt: "site.inspirationKidsSafari", caption: "site.captionInspirationKidsSafari", tag: "kids" },
+  { file: "infantil-arcoiris", alt: "site.inspirationKidsRainbow", caption: "site.captionInspirationKidsRainbow", tag: "kids" },
+  { file: "bodas-jardin", alt: "site.inspirationWedding", caption: "site.captionInspirationWedding", tag: "weddings" },
+  { file: "minimalista-mesa", alt: "site.inspirationMinimal", caption: "site.captionInspirationMinimal", tag: "minimal" },
+  { file: "minimalista-lino", alt: "site.inspirationMinimalLinen", caption: "site.captionInspirationMinimalLinen", tag: "minimal" },
+  { file: "minimalista-terraza", alt: "site.inspirationMinimalTerrace", caption: "site.captionInspirationMinimalTerrace", tag: "minimal" },
+  { file: "minimalista-brindis", alt: "site.inspirationMinimalToast", caption: "site.captionInspirationMinimalToast", tag: "minimal" },
+  { file: "minimalista-pastel", alt: "site.inspirationMinimalCake", caption: "site.captionInspirationMinimalCake", tag: "minimal" },
+  { file: "minimalista-jardin", alt: "site.inspirationMinimalGarden", caption: "site.captionInspirationMinimalGarden", tag: "minimal" },
+  { file: "floral-fiesta", alt: "site.inspirationFloral", caption: "site.captionInspirationFloral", tag: "floral" },
+  { file: "elegante-cena", alt: "site.inspirationElegant", caption: "site.captionInspirationElegant", tag: "elegant" },
+  { file: "celebracion-amigos", alt: "site.inspirationParty", caption: "site.captionInspirationParty", tag: "party" },
 ];
 
 export function HomeDesigns() {
@@ -107,13 +129,34 @@ export function HomeDesigns() {
                     type="button"
                     onClick={() => setSelected(t.id)}
                     aria-pressed={selected === t.id}
+                    aria-label={tr(t.name)}
                     className={cn(
                       "block w-full cursor-pointer rounded-lg outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-reduce:transition-none",
                       selected === t.id && "ring-[3px] ring-primary ring-offset-2 ring-offset-card",
                     )}
                   >
-                    <ThemeCard theme={t} named />
+                    <ThemeCard theme={t} named caption={themeCaptions[t.id]} />
                   </button>
+                </li>
+              ))}
+              {inspirationPhotos.filter((photo) => tag === "all" || photo.tag === tag).map(({ file, alt, caption }) => (
+                <li key={file} className="w-[42%] shrink-0 snap-start sm:w-[28%] md:w-[22%] lg:w-[18.5%]">
+                  <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-card shadow-site-card">
+                    <img
+                      src={`/site/photos/events/${file}-960.webp`}
+                      srcSet={`/site/photos/events/${file}-480.webp 480w, /site/photos/events/${file}-960.webp 960w`}
+                      sizes="(min-width:1024px) 16vw, 40vw"
+                      alt={tr(alt)}
+                      width={640}
+                      height={960}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 size-full object-cover"
+                    />
+                    <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-shade/75 to-transparent px-2 pt-6 pb-2 text-center text-xs font-bold text-white">
+                      {tr(caption)}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -124,28 +167,6 @@ export function HomeDesigns() {
               <ChevronLeft aria-hidden />
             </Button>
           </fieldset>
-          {tag === "birthdays" && (
-            <div className="mt-6">
-              <h3 className="text-sm font-bold text-foreground">{tr("site.birthdayInspiration")}</h3>
-              <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-                {birthdayPhotos.map(({ file, alt }) => (
-                  <li key={file} className="min-w-0">
-                    <img
-                      src={`/site/photos/events/${file}-960.webp`}
-                      srcSet={`/site/photos/events/${file}-480.webp 480w, /site/photos/events/${file}-960.webp 960w`}
-                      sizes="(min-width: 1280px) 14vw, (min-width: 640px) 25vw, 42vw"
-                      alt={tr(alt)}
-                      width={640}
-                      height={960}
-                      loading="lazy"
-                      decoding="async"
-                      className="aspect-[2/3] h-auto w-full rounded-lg object-cover"
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
     </section>
