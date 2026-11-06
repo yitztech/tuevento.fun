@@ -17,6 +17,24 @@ Then("el selector de idioma muestra la bandera y el código del idioma", async (
   await expect(selector(page).locator(".language-code")).toHaveText(/^[A-Z]{2}$/);
 });
 
+Then("el selector de idioma no tiene borde ni fondo", async ({ page }) => {
+  const boton = page.locator(".language-menu > summary:visible").first();
+  await expect(boton).toHaveCSS("border-top-width", "0px");
+  await expect(boton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+});
+
+Then("cada opción del menú tiene a la derecha el doble de margen que a la izquierda", async ({ page }) => {
+  const margenes = await page
+    .locator(".language-menu-list .language-option")
+    .evaluateAll((opciones) =>
+      opciones.map((o) => {
+        const { paddingLeft, paddingRight } = getComputedStyle(o);
+        return parseFloat(paddingRight) / parseFloat(paddingLeft);
+      }),
+    );
+  expect(margenes).toEqual([2, 2, 2, 2, 2]);
+});
+
 Then("el menú solo contiene los idiomas", async ({ page }) => {
   const lista = page.locator(".language-menu-list");
   await expect(lista).toBeVisible();

@@ -10,6 +10,15 @@ Característica: Selector de idioma con banderas
     Entonces el selector de idioma muestra la bandera y el código del idioma
 
   @solo-lectura
+  Escenario: El selector de idioma se integra con la cabecera, sin borde ni fondo
+    Entonces el selector de idioma no tiene borde ni fondo
+
+  @solo-lectura
+  Escenario: Las opciones del menú dejan a la derecha el doble de margen que a la izquierda
+    Cuando abro el selector de idioma
+    Entonces cada opción del menú tiene a la derecha el doble de margen que a la izquierda
+
+  @solo-lectura
   Escenario: El menú de idiomas marca el idioma actual
     Cuando abro el selector de idioma
     Entonces el menú muestra todos los idiomas y marca el actual

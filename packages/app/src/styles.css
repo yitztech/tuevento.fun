@@ -4046,12 +4046,13 @@
   gap: 8px;
   min-height: 40px;
   padding: 6px 12px;
-  border: 1.5px solid var(--line-strong);
   border-radius: 10px;
-  background: #fff;
   color: var(--ink);
   font-size: 13px;
   font-weight: 700;
+}
+.language-menu > summary.language-switcher:hover {
+  color: var(--primary);
 }
 .language-code {
   letter-spacing: 0.02em;
@@ -4083,7 +4084,7 @@
   gap: 12px;
   width: 100%;
   min-height: 46px;
-  padding: 10px 16px;
+  padding: 10px 32px 10px 16px;
   border: 0;
   border-top: 1px solid var(--line);
   background: none;
