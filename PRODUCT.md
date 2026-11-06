@@ -24,11 +24,11 @@ Administración en computadora y tablet; RSVP y envío en móviles; visualizaci�
 
 ## Capabilities and Constraints
 
-Registro con avatar, sesiones y Google; múltiples eventos; dieciséis temas; familias con adultos/niños y notas; compartir por URL, WhatsApp y email; RSVP por integrante con estados azul, amarillo y rosa rojizo; métricas y notificaciones actualizadas. Los enlaces son privados por posesión. No se han proporcionado credenciales Google ni dominio de publicación.
+Registro con avatar, sesiones y Google; múltiples eventos; dieciséis temas; familias con adultos/niños y notas; compartir por URL, WhatsApp y email; RSVP por integrante con estados confirmado (bronce ocre), pendiente (ámbar tostado) y rechazado (carmesí), siempre con su etiqueta de texto; métricas y notificaciones actualizadas. Los enlaces son privados por posesión.
 
 ## Brand Commitments
 
-Panel con fondo blanco puro (#FFFFFF) y sitio público con fondo durazno (ver «Sitio público» en DESIGN.md), elegante, colorido y acogedor. Paleta activa: Terracota Festivo (#882D17), Ámbar Caléndula (#FFCA66), Lino Cálido Marfil (#FDF8F5) y Granada (#E25C80), implementada con variables CSS flexibles que admiten variantes como Cassis y Buganvilla. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio: YunitzTech; contacto: contacto@tuevento.fun.
+Panel con fondo blanco puro (#FFFFFF) y sitio público con fondo durazno (ver «Sitio público» en DESIGN.md), elegante, colorido y acogedor. Paleta activa: terracota (#a63f30, hover #8a3225), ámbar (#ffca66), acento coral (#ea8659) y texto cálido (#3d2a25), con los valores exactos en DESIGN.md. Titulares en Playfair Display y cuerpo en Manrope. Verde y azul evitados como colores principales. Nombre TuEventoFun. Titular del servicio: YunitzTech; contacto: contacto@tuevento.fun.
 
 ## Evidence on Hand
 
@@ -55,8 +55,8 @@ El dueño autorizado consulta en `/administracion` visitantes únicos, visitas, 
 
 `/descargas` presenta Android e iOS desde un catálogo de publicaciones reales. Mientras no haya una versión publicada, informa de su disponibilidad pendiente y permite continuar en web. Android admite APK o Google Play; iOS, TestFlight o App Store. No se muestran enlaces de instalación ficticios.
 
-Las apps reutilizan las pantallas React ES/EN, contratos, cliente y backend web. Capacitor integra HTTP/cookies, portapapeles y navegador del sistema; las actualizaciones de datos usan polling, no push. Los workflows de GitHub Actions cubren CI, despliegue, compilación móvil y publicación del catálogo. El detalle operativo está en `docs/MOBILE-CICD.md`.
+Las apps reutilizan las pantallas React en los cinco idiomas, contratos, cliente y backend web. Capacitor integra HTTP/cookies, portapapeles y navegador del sistema; las actualizaciones de datos usan polling, no push. Los workflows de GitHub Actions cubren CI, despliegue, compilación móvil y publicación del catálogo. El detalle operativo está en `docs/MOBILE-CICD.md`.
 
 ## Estado de publicación y validación
 
-Repositorio GitHub, dominio público y cuenta del dueño siguen sin definir por el usuario. No hay apps firmadas o publicadas ni ejecución remota de los workflows acreditada. Las compilaciones Android debug e iOS para simulador son evidencia de compilación local, no de ejecución visual ni funcionamiento en dispositivos físicos. Publicación, firma, Google real y retorno a la app requieren configuración externa y validación adicional.
+La web está desplegada en https://tuevento.fun y https://yourevent.fun desde GitHub (yitztech/tuevento.fun) con Coolify; el correo y Listmonk están configurados. Android: APK firmado publicado en el catálogo de `/descargas` (Google Play, pendiente de cuenta). iOS: sin publicar, a la espera de la firma de Apple (certificado, perfil y cuenta). Las pruebas de las apps móviles se ejecutan solo en local. Falta validar en dispositivos físicos.
