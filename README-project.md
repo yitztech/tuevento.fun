@@ -225,7 +225,7 @@ docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tuevento -d tueventof
    Antes de hacerlo, el servicio `admin` no puede leer la base (no encuentra el rol). El primer arranque de un volumen nuevo lo crea solo (`services/postgres/initdb/01-admin-role.sh`).
 4. Comprobar `https://admin.tuevento.fun/api/health`: 200 `{"status":"ok"}` si el rol entra y tiene sus permisos; 503 `{"status":"error"}` si no (rol sin crear, contraseña distinta o migración 014 sin aplicar). Es la ruta que puede vigilar Uptime Kuma. `/healthz`, la del `healthcheck` de Docker, solo dice que el proceso vive, como pide el contrato de la plataforma.
 
-En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin-dev`, contraseña `admin-dev-password`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
+En local: `docker compose up -d --build admin` y el panel en `http://127.0.0.1:8188` (usuario `admin`, contraseña `Password.Password.1`; solo para desarrollo). Las pruebas: `npm run e2e` (escenarios `@admin`), `npm run test:db` (permisos del rol) y `npm run test -w @tuevento/admin` (contraseñas, sesiones y bloqueo).
 
 ## Búsqueda de proveedores
 

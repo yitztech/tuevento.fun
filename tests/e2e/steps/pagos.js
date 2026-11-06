@@ -42,7 +42,7 @@ Given("que ya pagué el tramo de hasta {int} invitados", async ({ page, ctx }, i
 
 // Los cupones los crea el administrador en su panel: aquí se usa la misma API
 Given("que existe un cupón del {int} %", async ({ page, ctx }, porcentaje) => {
-  const entrada = await page.request.post(`${adminURL}/api/login`, { data: { username: "admin-dev", password: "admin-dev-password" } });
+  const entrada = await page.request.post(`${adminURL}/api/login`, { data: { username: "admin", password: "Password.Password.1" } });
   expect(entrada.status()).toBe(200);
   ctx.cupon = `QA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const creado = await page.request.post(`${adminURL}/api/coupons`, { data: { code: ctx.cupon, percentOff: porcentaje } });
