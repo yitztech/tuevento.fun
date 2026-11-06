@@ -5,22 +5,22 @@ Característica: Panel de administración
   @solo-lectura
   Escenario: Una contraseña incorrecta no deja entrar
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "clave-equivocada-1"
+    Y entro al panel con el usuario "admin" y la contraseña "clave-equivocada-1"
     Entonces veo el error "Usuario o contraseña incorrectos." del panel
 
   @solo-lectura
   Escenario: El administrador puede ver y ocultar la contraseña que escribe
     Cuando abro el panel de administración
-    Y escribo la contraseña "admin-dev-password" en el panel
+    Y escribo la contraseña "Password.Password.1" en el panel
     Entonces la contraseña del panel está oculta
     Cuando pulso "Mostrar contraseña" en el panel
-    Entonces la contraseña del panel se ve como "admin-dev-password"
+    Entonces la contraseña del panel se ve como "Password.Password.1"
     Cuando pulso "Ocultar contraseña" en el panel
     Entonces la contraseña del panel está oculta
 
   Escenario: El administrador entra y ve el resumen del sitio
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
 
   @solo-lectura
@@ -40,31 +40,31 @@ Característica: Panel de administración
 
   Escenario: Sin Umami configurado, el panel lo indica en los países
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces veo "Umami no está configurado en este entorno." en los visitantes por país
 
   Escenario: El panel muestra los visitantes por país con su nombre en español
     Dado que Umami responde con 7 visitantes de "MX" y 3 de "ES"
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces los visitantes por país muestran "México" con 7 y "España" con 3
 
   Escenario: Si Umami falla, el resto del resumen se sigue viendo
     Dado que Umami no responde
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces veo "No se pudo consultar Umami." en los visitantes por país
     Y veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
 
   Escenario: El panel se usa en un móvil sin desbordamiento horizontal
     Dado que el panel se abre en un móvil de 390 por 844
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces el panel cabe en pantalla sin desbordamiento horizontal
 
   Escenario: El administrador ve las listas de usuarios y de eventos
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Y abro la pestaña "Usuarios" del panel
     Entonces veo la tabla del panel con las columnas "Nombre", "Correo" y "Última actividad" en la página 1
     Cuando abro la pestaña "Eventos" del panel
@@ -72,27 +72,27 @@ Característica: Panel de administración
 
   Escenario: Cambiar el periodo vuelve a pedir el resumen de ese periodo
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Y elijo el periodo "7 días" en el panel
     Entonces el panel pide el resumen y los países de 7 días
 
   Escenario: La sesión del panel sigue abierta al recargar la página
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
     Cuando recargo el panel
     Entonces veo el resumen del panel con "Conectados ahora" y "Usuarios registrados"
 
   Escenario: El administrador sale del panel
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Y salgo del panel
     Entonces veo el formulario de entrada del panel
 
   @pagos
   Escenario: El administrador crea un cupón y lo desactiva
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Y abro la pestaña "Cupones" del panel
     Y creo un cupón nuevo del 20 % en el panel
     Entonces veo el cupón nuevo en el panel con "20 %" y "Activo"
@@ -102,7 +102,7 @@ Característica: Panel de administración
   @pagos @validacion
   Escenario: El panel no admite dos cupones con el mismo código
     Cuando abro el panel de administración
-    Y entro al panel con el usuario "admin-dev" y la contraseña "admin-dev-password"
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Y abro la pestaña "Cupones" del panel
     Y creo un cupón nuevo del 20 % en el panel
     Y repito el cupón nuevo en el panel

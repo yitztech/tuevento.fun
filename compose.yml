@@ -119,7 +119,7 @@ services:
           action: rebuild
 
   # Panel de administración en local: http://127.0.0.1:8188 (usuario y contraseña de desarrollo;
-  # en producción se definen en la plataforma). Contraseña de desarrollo: admin-dev-password
+  # en producción se definen en la plataforma). Contraseña de desarrollo: Password.Password.1
   admin:
     build:
       context: .
@@ -128,8 +128,8 @@ services:
       PORT: "3088"
       DATABASE_URL: postgres://admin_ro@postgres:5432/tueventofun
       PGPASSWORD: ${ADMIN_DB_PASSWORD:-dev-admin}
-      ADMIN_USER: ${ADMIN_USER:-admin-dev}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-scrypt:16384:8:1:vKfbBhhXYX+qW1vUnexl2w==:B15jwpqpCexk35DEqPj7PXKzWIh8Ih8R8K5Hlyu2bpUIxgHSJcBb3cZ7BwhxZEhAcNxuo7qR3v/iNFzkNcUwuQ==}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-scrypt:16384:8:1:o56hPJ8XjSHa1nVgpGv+yw==:m4qf39hJ9/y+/3dUA3nH6phEkm3s1k43xrI/C11MX2KC47qTPs4Xaefy/Z0XvukAMzP+Ol6cXrDEZg1NqMP/Nw==}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       # Las pruebas entran una y otra vez desde la misma IP: sin este límite se bloquearían solas
       ADMIN_MAX_FAILURES: ${ADMIN_MAX_FAILURES:-1000}

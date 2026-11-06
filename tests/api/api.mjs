@@ -221,7 +221,7 @@ async function adminCookie() {
   const login = await send(`${adminBase}/api/login`, {
     method: "POST",
     headers: json,
-    body: JSON.stringify({ username: process.env.TEST_ADMIN_USER || "admin-dev", password: process.env.TEST_ADMIN_PASSWORD || "admin-dev-password" }),
+    body: JSON.stringify({ username: process.env.TEST_ADMIN_USER || "admin", password: process.env.TEST_ADMIN_PASSWORD || "Password.Password.1" }),
   });
   assert.equal(login.status, 200, login.text);
   return login.headers["set-cookie"][0].split(";")[0];
