@@ -153,6 +153,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
             <span>{tr("account.continueEmail")}</span>
           </div>
           <form onSubmit={submit} noValidate>
+            {error && <ErrorBox message={error} />}
             {registerMode && (
               <>
                 <Field
@@ -260,7 +261,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 </Link>
               </p>
             )}
-            {error && <ErrorBox message={error} />}
             <NeedsConnection online={online} />
             <Button
               className="full"
