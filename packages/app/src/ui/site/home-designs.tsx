@@ -41,6 +41,14 @@ const themeTags: Record<SiteTheme["id"], Tag[]> = {
   pastel: ["kids", "minimal"],
 };
 
+const birthdayPhotos: { file: string; alt: MessageKey }[] = [
+  { file: "cumple-infantil-jardin", alt: "site.birthdayPhotoGarden" },
+  { file: "cumple-infantil-mesa", alt: "site.birthdayPhotoKidsTable" },
+  { file: "cumple-amigos-jardin", alt: "site.birthdayPhotoFriendsGarden" },
+  { file: "cumple-amigos-picnic", alt: "site.birthdayPhotoPicnic" },
+  { file: "cumple-amigos-cena", alt: "site.birthdayPhotoDinner" },
+];
+
 export function HomeDesigns() {
   const [tag, setTag] = useState<Tag>("all");
   const [selected, setSelected] = useState<SiteTheme["id"]>("floral");
@@ -116,6 +124,28 @@ export function HomeDesigns() {
               <ChevronLeft aria-hidden />
             </Button>
           </fieldset>
+          {tag === "birthdays" && (
+            <div className="mt-6">
+              <h3 className="text-sm font-bold text-foreground">{tr("site.birthdayInspiration")}</h3>
+              <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+                {birthdayPhotos.map(({ file, alt }) => (
+                  <li key={file} className="min-w-0">
+                    <img
+                      src={`/site/photos/events/${file}-960.webp`}
+                      srcSet={`/site/photos/events/${file}-480.webp 480w, /site/photos/events/${file}-960.webp 960w`}
+                      sizes="(min-width: 1280px) 14vw, (min-width: 640px) 25vw, 42vw"
+                      alt={tr(alt)}
+                      width={640}
+                      height={960}
+                      loading="lazy"
+                      decoding="async"
+                      className="aspect-[2/3] h-auto w-full rounded-lg object-cover"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </section>
