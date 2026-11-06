@@ -274,7 +274,7 @@ export function LanguageSwitcher() {
       <>
         <LocaleFlag locale={target} />
         <span className="language-option-name">{locales[target].name}</span>
-        {current && <Check className="language-option-check" size={16} aria-hidden="true" />}
+        {current && <Check className="language-option-check" size={18} strokeWidth={2.5} aria-hidden="true" />}
       </>
     );
     if (current)

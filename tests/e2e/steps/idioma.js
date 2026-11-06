@@ -27,18 +27,18 @@ Then("el selector de idioma no tiene borde ni fondo", async ({ page }) => {
   await expect(boton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
-Then("el check queda pegado al nombre del idioma actual y al borde del menú", async ({ page }) => {
-  const { alNombre, alBorde } = await page.locator(".language-option.is-current").evaluate((opcion) => {
-    const texto = document.createRange();
-    texto.selectNodeContents(opcion.querySelector(".language-option-name"));
-    const check = opcion.querySelector(".language-option-check").getBoundingClientRect();
-    return {
-      alNombre: check.left - texto.getBoundingClientRect().right,
-      alBorde: opcion.getBoundingClientRect().right - check.right,
-    };
-  });
-  expect(Math.abs(alNombre - 17)).toBeLessThanOrEqual(2);
-  expect(Math.abs(alBorde - 11)).toBeLessThanOrEqual(1);
+Then("el idioma actual lleva fondo redondeado y check", async ({ page }) => {
+  const actual = page.locator(".language-option.is-current");
+  await expect(actual).toHaveCSS("border-top-left-radius", "12px");
+  await expect(actual).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(actual.locator(".language-option-check")).toBeVisible();
+});
+
+Then("el menú de idiomas cabe en la pantalla", async ({ page }) => {
+  const caja = await page.locator(".language-menu-list").boundingBox();
+  const { width } = page.viewportSize();
+  expect(caja.x).toBeGreaterThanOrEqual(0);
+  expect(caja.x + caja.width).toBeLessThanOrEqual(width);
 });
 
 When("hago clic fuera del menú de idiomas", async ({ page }) => {

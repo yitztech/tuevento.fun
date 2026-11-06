@@ -4065,38 +4065,66 @@
   transform: rotate(180deg);
 }
 .language-menu-list {
+  --language-menu-bg: color-mix(in srgb, var(--surface-soft) 40%, #fff);
   position: absolute;
   right: 0;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   z-index: 30;
   display: flex;
   flex-direction: column;
   width: max-content;
-  overflow: hidden;
+  min-width: 180px;
+  padding: 4px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
+  border-radius: 16px;
+  background: var(--language-menu-bg);
   box-shadow: 0 10px 30px color-mix(in srgb, var(--ink) 12%, transparent);
 }
+/* Flecha que une el menú con el botón */
+.language-menu-list::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 26px;
+  width: 12px;
+  height: 12px;
+  border: solid var(--line);
+  border-width: 1px 0 0 1px;
+  border-top-left-radius: 3px;
+  background: var(--language-menu-bg);
+  transform: rotate(45deg);
+}
 .language-option {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 16px;
   width: 100%;
-  min-height: 46px;
-  padding: 10px 11px 10px 8px;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 0;
-  border-top: 1px solid var(--line);
+  border-radius: 12px;
   background: none;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
 }
-.language-menu-list > :first-child {
-  border-top: 0;
+/* Separador corto entre idiomas; el idioma actual ya se distingue por su fondo */
+.language-option + .language-option::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 8px;
+  left: 8px;
+  height: 1px;
+  background: var(--line);
+}
+.language-option.is-current::before,
+.language-option.is-current + .language-option::before {
+  display: none;
 }
 .language-option:hover {
   background: var(--surface-soft);
@@ -4104,23 +4132,37 @@
 .language-option.is-current {
   background: var(--surface-soft-hover);
   color: var(--blue);
-  font-weight: 700;
+  font-weight: 600;
   cursor: default;
 }
 .language-option .locale-flag {
-  width: 15px;
-  height: 10px;
+  width: 25px;
+  height: 16px;
+  border-radius: 3px;
 }
 .language-option-name {
   flex: 1;
 }
 .language-option-check {
-  margin-left: 11px;
+  margin-left: 16px;
   color: var(--blue);
 }
 .language-option:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: -2px;
+}
+/* En la cabecera del sitio hay espacio a la derecha: el menú se centra bajo el botón */
+@media (min-width: 768px) {
+  .landing-header .language-menu-list {
+    right: auto;
+    left: 50%;
+    transform: translateX(-42%);
+  }
+  .landing-header .language-menu-list::before {
+    right: auto;
+    left: 42%;
+    margin-left: -6px;
+  }
 }
 /* Propuesta del idioma del navegador en la primera visita (sin redirigir) */
 .language-suggestion {
