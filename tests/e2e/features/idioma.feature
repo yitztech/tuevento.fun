@@ -16,9 +16,10 @@ Característica: Selector de idioma con banderas
     Entonces el selector de idioma no tiene borde ni fondo
 
   @solo-lectura
-  Escenario: El menú se ajusta a su contenido, con el check pegado al idioma actual
+  Escenario: El idioma actual se resalta con su fondo y el menú cabe en la pantalla
     Cuando abro el selector de idioma
-    Entonces el check queda pegado al nombre del idioma actual y al borde del menú
+    Entonces el idioma actual lleva fondo redondeado y check
+    Y el menú de idiomas cabe en la pantalla
 
   @solo-lectura
   Escenario: Un clic fuera cierra el menú de idiomas
