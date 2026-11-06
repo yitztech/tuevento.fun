@@ -72,7 +72,7 @@ fs.mkdirSync(artifacts, { recursive: true });
       }),
     ).toBeVisible();
     await shot("landing-desktop");
-    expect(apiRequests.filter(url => !url.endsWith("/analytics/visit"))).toEqual([]);
+    expect(apiRequests.filter(url => !url.endsWith("/analytics/visit") && !url.endsWith("/api/site-palette"))).toEqual([]);
     const footer = page.getByRole("navigation", {
       name: "Enlaces del pie de página",
     });
@@ -155,7 +155,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(page.getByRole("status")).toContainText(
       "2 of 3 people are attending",
     );
-    expect(apiRequests.filter(url => !url.endsWith("/analytics/visit"))).toEqual([]);
+    expect(apiRequests.filter(url => !url.endsWith("/analytics/visit") && !url.endsWith("/api/site-palette"))).toEqual([]);
     checks.push(
       "RSVP de ejemplo interactivo cambia el conteo sin escribir en un evento",
     );

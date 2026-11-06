@@ -3,7 +3,7 @@ SET LOCAL statement_timeout = '60s';
 
 CREATE TABLE site_palette_settings (
   singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
-  palette varchar(32) NOT NULL DEFAULT 'terracotta'
+  palette text NOT NULL DEFAULT 'terracotta'
     CHECK (palette IN ('terracotta', 'fuchsia-plum-amber', 'plum-champagne', 'mandarin-raspberry', 'raspberry-vanilla')),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

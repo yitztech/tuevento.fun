@@ -1,8 +1,13 @@
 import { expect } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 import { Given, When, Then, After, nuevaCuenta } from "./fixtures.js";
-import { admin } from "../../db/support/db.js";
 
 const headers = { "x-tuevento-client": "1" };
+/** Raíz del repositorio: `docker compose` busca ahí sus archivos. */
+const raiz = new URL("../../../", import.meta.url);
+/** Por `docker compose exec`: en CI la red de PostgreSQL es interna y su puerto no llega al host. */
+const sql = (query) =>
+  execFileSync("docker", ["compose", "exec", "-T", "postgres", "psql", "-U", "tuevento", "-d", "tueventofun", "-Atc", query], { encoding: "utf8", cwd: raiz }).trim();
 const ids = { "Mandarina y Frambuesa": "mandarin-raspberry", "Fucsia, Ciruela y Ámbar": "fuchsia-plum-amber" };
 
 Given("que soy dueño del sistema y abro la administración", async ({ page, ctx }) => {
@@ -13,11 +18,8 @@ Given("que soy dueño del sistema y abro la administración", async ({ page, ctx
   const response = await page.request.post("/api/auth/register", { headers, data: nuevaCuenta() });
   expect(response.status()).toBe(201);
   ctx.paletteOwnerId = (await response.json()).id;
-  const db = admin("tueventofun");
-  try {
-    await db.query("UPDATE users SET is_owner=true WHERE id=$1", [ctx.paletteOwnerId]);
-    await db.query("UPDATE site_palette_settings SET palette=$1 WHERE singleton=true", [ctx.originalPalette]);
-  } finally { await db.end(); }
+  sql(`UPDATE users SET is_owner=true WHERE id='${ctx.paletteOwnerId}'`);
+  sql(`UPDATE site_palette_settings SET palette='${ctx.originalPalette}' WHERE singleton=true`);
   await page.goto("/administracion");
   await expect(page.getByRole("heading", { name: "Paleta del sitio" })).toBeVisible();
 });
@@ -42,11 +44,7 @@ When("guardo la paleta {string}", async ({ page }, name) => {
   await expect(page.getByText("Paleta guardada.")).toBeVisible();
 });
 Then("el cambio de paleta queda registrado con quien lo hizo", async ({ ctx }) => {
-  const db = admin("tueventofun");
-  try {
-    const { rows } = await db.query("SELECT target FROM admin_audit_log WHERE admin=$1 AND action='site_palette.update'", [ctx.paletteOwnerId]);
-    expect(rows).toEqual([{ target: "fuchsia-plum-amber" }]);
-  } finally { await db.end(); }
+  expect(sql(`SELECT target FROM admin_audit_log WHERE admin='${ctx.paletteOwnerId}' AND action='site_palette.update'`)).toBe("fuchsia-plum-amber");
 });
 Then("la paleta guardada se mantiene al recargar y aparece en la portada", async ({ page }) => {
   await page.reload();
@@ -62,10 +60,6 @@ Then("el servidor rechaza guardar sin origen o con datos no válidos", async ({ 
   expect(invalid.status()).toBe(422);
 });
 After({ tags: "@paletas" }, async ({ ctx }) => {
-  if (!ctx.paletteOwnerId && !ctx.restorePalette) return;
-  const db = admin("tueventofun");
-  try {
-    if (ctx.restorePalette) await db.query("UPDATE site_palette_settings SET palette=$1 WHERE singleton=true", [ctx.restorePalette]);
-    if (ctx.paletteOwnerId) await db.query("DELETE FROM users WHERE id=$1", [ctx.paletteOwnerId]);
-  } finally { await db.end(); }
+  if (ctx.restorePalette) sql(`UPDATE site_palette_settings SET palette='${ctx.restorePalette}' WHERE singleton=true`);
+  if (ctx.paletteOwnerId) sql(`DELETE FROM users WHERE id='${ctx.paletteOwnerId}'`);
 });
