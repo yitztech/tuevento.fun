@@ -113,6 +113,7 @@
     "couldntCompleteActionPlease": "Impossible de terminer l’action. Réessaie.",
     "couldntCompleteRequest": "Impossible de traiter la demande.",
     "country": "Pays",
+    "countryCode": "Indicatif du pays",
     "createFirstEvent": "Créer mon premier événement",
     "createMyAccount": "Créer mon compte",
     "createMyEvent": "Créer mon événement",

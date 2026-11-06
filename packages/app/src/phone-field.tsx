@@ -65,7 +65,7 @@ const onlyPhoneChars = /[^\d\s()+-]/g;
  * Teléfono con selector de país (bandera, nombre y prefijo) y número.
  * El valor que recibe y entrega es el teléfono completo, como antes: "+34 612 34 56 78".
  */
-export function PhoneField({
+function SelectPhoneField({
   label,
   error,
   value,
@@ -137,4 +137,92 @@ export function PhoneField({
       )}
     </div>
   );
+}
+
+/** Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. */
+function parseManual(value: string, fallbackDial: string) {
+  const match = /^\+(\d{1,4})[\s()-]*(.*)$/.exec(value);
+  return match ? { code: match[1], national: match[2] } : { code: fallbackDial, national: value };
+}
+const composeManual = ({ code, national }: { code: string; national: string }) => {
+  const number = national.trim();
+  if (!number) return "";
+  return code ? `+${code} ${number}` : number;
+};
+
+/** Teléfono con el código de país escrito a mano, en lugar de elegirlo de una lista. */
+function ManualPhoneField({
+  label,
+  error,
+  value,
+  onChange,
+}: {
+  label: string;
+  error?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  const defaultDial = dialByIso.get(defaultCountryByLocale[getLocale()])!.slice(1);
+  const [parts, setParts] = useState(() => parseManual(value, defaultDial));
+  useEffect(() => {
+    if (value !== composeManual(parts)) setParts(parseManual(value, defaultDial));
+  }, [value]);
+  const update = (next: { code: string; national: string }) => {
+    const phone = composeManual(next);
+    if (phone.length > accountLimits.phone) return;
+    setParts(next);
+    onChange(phone);
+  };
+
+  return (
+    <div className="field">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="phone-field phone-field-manual">
+        <Input
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-country-code"
+          aria-label={tr("common.countryCode")}
+          maxLength={5}
+          value={parts.code ? `+${parts.code}` : ""}
+          aria-invalid={!!error}
+          onChange={(event) => update({ ...parts, code: event.target.value.replace(/\D/g, "").slice(0, 4) })}
+        />
+        <Input
+          id={id}
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          maxLength={accountLimits.phone}
+          value={parts.national}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : undefined}
+          onChange={(event) => {
+            const raw = event.target.value.replace(onlyPhoneChars, "");
+            // Si pega el número con su prefijo ("+52 55…"), el código se separa solo.
+            update(raw.startsWith("+") ? parseManual(raw, parts.code) : { ...parts, national: raw });
+          }}
+        />
+      </div>
+      {error && (
+        <small id={`${id}-error`} className="field-error" role="alert">
+          {trMessage(error)}
+        </small>
+      )}
+    </div>
+  );
+}
+
+type PhoneFieldProps = {
+  label: string;
+  error?: string;
+  value: string;
+  onChange: (value: string) => void;
+  /** El código de país se escribe a mano en vez de elegirlo de la lista. */
+  manualCode?: boolean;
+};
+
+export function PhoneField({ manualCode, ...props }: PhoneFieldProps) {
+  return manualCode ? <ManualPhoneField {...props} /> : <SelectPhoneField {...props} />;
 }

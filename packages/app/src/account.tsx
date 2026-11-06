@@ -183,6 +183,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   name="phone"
                   render={({ field }) => (
                     <PhoneField
+                      manualCode
                       label={tr("common.phone")}
                       error={form.formState.errors.phone?.message}
                       value={field.value}

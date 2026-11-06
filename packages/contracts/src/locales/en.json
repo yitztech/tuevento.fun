@@ -113,6 +113,7 @@
     "couldntCompleteActionPlease": "Couldn't complete the action. Please try again.",
     "couldntCompleteRequest": "Couldn't complete the request.",
     "country": "Country",
+    "countryCode": "Country code",
     "createFirstEvent": "Create my first event",
     "createMyAccount": "Create my account",
     "createMyEvent": "Create my event",
