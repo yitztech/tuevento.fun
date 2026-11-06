@@ -1,6 +1,7 @@
 // Endpoints sin cobertura en test-api.mjs, idiomas (es, en, pt, de, fr) y validación de
 // entradas. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, sitePaletteIds, themeIds } from "@tuevento/contracts";
 import { base, client, account, verificationToken, cleanup, createCoupon, pedirTelefono, sql, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
@@ -849,8 +850,8 @@ try {
   };
 
   await suite("Búsqueda de proveedores: texto sin acentos, categoría, distancia, páginas y errores en 5 idiomas", async () => {
-    // Solo letras: los trigramas de los dígitos de `unique` coincidirían con otros proveedores de la ejecución
-    const marca = `zafiro${String(unique).replace(/\d/g, (d) => "bcdfghjklm"[d])}`;
+    // Una marca aleatoria evita que las búsquedas aproximadas coincidan con ejecuciones anteriores.
+    const marca = `zafiro${randomBytes(16).toString("hex").replace(/\d/g, (d) => "ghijklmnop"[d])}`;
     const cerca = await proveedorNuevo("busca-cerca");
     await cerca.call("/provider/profile", "PUT", providerData({ businessName: `Florería Ñandú ${marca}`, categories: ["decoration"], geo: { lat: 18.92, lng: -99.23 } }));
     await cerca.call("/provider/services", "POST", { title: "Arco de flores", price: { fromCents: 350000, currency: "MXN", unit: "event" } }, 201);
