@@ -41,13 +41,13 @@
     "startSomethingWonderful": "Comece algo bonito.",
     "yourInformation": "Suas informações",
     "accountTypeLegend": "Como você vai usar o TuEventoFun?",
-    "organizerTitle": "Organizo eventos",
+    "organizerTitle": "Organizar meu evento",
     "organizerHint": "Casamentos, aniversários e encontros: convidados, respostas e designs.",
-    "providerTitle": "Ofereço serviços para eventos",
+    "providerTitle": "Sou fornecedor de serviços para eventos",
     "providerHint": "Bufê, música, fotografia, salões… Divulgue seu negócio de graça.",
     "confirmEmailTitle": "Confirme seu e-mail",
     "emailConfirmed": "E-mail confirmado!",
-    "emailConfirmedDetail": "A partir de agora, seus convidados vão receber por e-mail os avisos dos seus eventos.",
+    "emailConfirmedDetail": "Sua conta está pronta para continuar.",
     "goToMySpace": "Ir para o meu espaço",
     "unsubscribeTitle": "Parar de receber avisos",
     "unsubscribeIntro": "Você não vai mais receber avisos de eventos do TuEventoFun neste e-mail: nem mudanças, nem cancelamentos, nem confirmações das suas respostas. Seus convites continuam abrindo pelo link.",
@@ -64,7 +64,9 @@
     "repeatPassword": "Repetir senha",
     "chooseImageNoLarger": "Escolha uma imagem de até 2 MB.",
     "chooseJpgPngWebp": "Escolha uma imagem JPG, PNG ou WebP.",
-    "couldntReadImage": "Não foi possível ler a imagem."
+    "couldntReadImage": "Não foi possível ler a imagem.",
+    "agencyTitle": "Sou uma agência organizadora de eventos",
+    "agencyHint": "Você organiza eventos para seus clientes: convidados, respostas e designs em um só lugar."
   },
   "app": {
     "backOverview": "Voltar ao resumo",
@@ -325,7 +327,10 @@
     "syncCursorExpired": "Sua cópia offline está antiga demais: é preciso baixá-la inteira de novo.",
     "versionConflict": "Isso mudou em outro dispositivo enquanto você editava. Confira a versão atual antes de salvar.",
     "couponInvalid": "Esse cupom não é válido ou não está mais disponível.",
-    "paymentInProgress": "Você já tem um pagamento em andamento. Espere terminar e tente de novo."
+    "paymentInProgress": "Você já tem um pagamento em andamento. Espere terminar e tente de novo.",
+    "emailNotVerified": "Confirme seu e-mail para continuar.",
+    "accountTypeRequired": "Primeiro escolha como você vai usar o TuEventoFun.",
+    "accountTypeAlreadyChosen": "O tipo da sua conta já foi escolhido."
   },
   "events": {
     "actions": "Ações",
@@ -825,7 +830,7 @@
     "maximum2048Characters": "Máximo de 2048 caracteres.",
     "invalidCoordinates": "As coordenadas não são válidas.",
     "mapLinkNotSupported": "Cole um link https do Google Maps, Apple Maps ou Waze.",
-    "invalidAccountType": "Escolha se você organiza eventos ou oferece serviços.",
+    "invalidAccountType": "Escolha como você vai usar o TuEventoFun.",
     "maximum150Characters": "Máximo de 150 caracteres.",
     "maximum5000Characters": "Máximo de 5000 caracteres.",
     "maximum2000Characters": "Máximo de 2000 caracteres.",
@@ -1294,5 +1299,29 @@
     "intro": "{{client}} quer acessar sua conta do TuEventoFun.",
     "readOnly": "Ele só poderá consultar seus dados. Não poderá criar, alterar nem apagar nada.",
     "title": "Conecte seu assistente"
+  },
+  "onboarding": {
+    "verifyTitle": "Confira seu e-mail",
+    "verifyIntro": "Enviamos um link para {{email}}. Abra-o para confirmar seu e-mail e continuar.",
+    "verifyDone": "Já confirmei",
+    "verifyPending": "Ainda não vemos sua confirmação. Abra o link do e-mail e volte aqui.",
+    "continue": "Continuar",
+    "organizerTitle": "Tudo pronto para o seu evento",
+    "organizerIntro": "Em três passos, seu convite estará a caminho.",
+    "organizerStep1": "Crie seu evento com a data e o local.",
+    "organizerStep2": "Escolha um design para o seu convite.",
+    "organizerStep3": "Adicione seus convidados e acompanhe as respostas.",
+    "providerTitle": "Seja encontrado",
+    "providerIntro": "Complete seu negócio para aparecer quando alguém buscar serviços para o evento.",
+    "providerStep1": "Descreva seu negócio e onde você atende.",
+    "providerStep2": "Adicione seus serviços com os preços.",
+    "providerStep3": "Envie suas fotos e publique sua página.",
+    "providerAction": "Completar meu negócio",
+    "agencyTitle": "Sua agência pronta para trabalhar",
+    "agencyIntro": "Prepare os eventos dos seus clientes em um só lugar.",
+    "agencyStep1": "Crie o primeiro evento de um cliente.",
+    "agencyStep2": "Personalize o convite com o estilo dele.",
+    "agencyStep3": "Acompanhe as respostas de cada evento no seu painel.",
+    "agencyAction": "Criar o primeiro evento"
   }
 }

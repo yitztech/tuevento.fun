@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { _android } from "@playwright/test";
-import { teclado, pausa, android, ios } from "../support/entorno.js";
+import { teclado, pausa, android, ios, mailpitURL } from "../support/entorno.js";
 import { uiPlaywright } from "../support/ui-playwright.js";
 import { uiIos, conectarIos, reiniciarApp, simuladorArrancado } from "../support/ui-ios.js";
 
@@ -20,8 +20,34 @@ export function nuevaCuenta(extra = {}) {
     email: `e2e-${unico}@example.invalid`,
     phone: "+527771234567",
     password: randomBytes(12).toString("hex"),
+    accountType: "organizer",
     ...extra,
   };
+}
+
+/** Token del último enlace de confirmación enviado a `correo`, esperando a que llegue. */
+export async function tokenDeConfirmacion(correo) {
+  for (let intento = 0; intento < 100; intento++) {
+    const busqueda = `${mailpitURL}/api/v1/search?query=${encodeURIComponent(`to:"${correo}"`)}`;
+    const lista = await fetch(busqueda).then((r) => r.json());
+    for (const { ID } of lista.messages ?? []) {
+      const mensaje = await fetch(`${mailpitURL}/api/v1/message/${ID}`).then((r) => r.json());
+      const token = /\/confirmar-correo\?token=([\w-]{43})/.exec(mensaje.Text)?.[1];
+      if (token) return token;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`No llegó a ${correo} el correo de confirmación`);
+}
+
+/** Crea la cuenta por la API y confirma su correo: sin eso, una cuenta nueva no usa la app. */
+export async function registrar(api, url, opciones) {
+  const respuesta = await api.post(url, opciones);
+  if (respuesta.status() === 201) {
+    const token = await tokenDeConfirmacion(opciones.data.email);
+    await api.post(url.replace("/auth/register", "/auth/email/verify"), { headers: opciones.headers, data: { token } });
+  }
+  return respuesta;
 }
 
 /** Navega a una ruta de la app: URL en la web, hash (#/ruta) dentro de la app nativa. */

@@ -319,9 +319,15 @@ const password = z
   .string()
   .min(10, "validation.useLeast10Characters")
   .max(accountLimits.password, "validation.maximum128Characters");
-/** Tipo de cuenta, fijo desde el registro: organiza eventos u ofrece servicios para ellos. */
-export const accountTypes = ["organizer", "provider"] as const;
+/**
+ * Tipo de cuenta, fijo una vez elegido tras confirmar el correo: organiza eventos, ofrece servicios
+ * para ellos o es una agencia que organiza eventos para sus clientes.
+ */
+export const accountTypes = ["organizer", "provider", "agency"] as const;
 export type AccountType = (typeof accountTypes)[number];
+/** Zona de la plataforma de cada tipo: por ahora, una agencia usa lo mismo que quien organiza. */
+export const accountArea = (type: AccountType): "organizer" | "provider" =>
+  type === "provider" ? "provider" : "organizer";
 const accountType = z.enum(accountTypes, "validation.invalidAccountType");
 export const registerSchema = z.strictObject({
   firstName: personName,
@@ -329,9 +335,11 @@ export const registerSchema = z.strictObject({
   email,
   phone,
   password,
-  // Las apps anteriores no lo envían: organizan eventos
-  accountType: accountType.default("organizer"),
+  // La web ya no lo envía (se elige tras confirmar el correo); las apps publicadas, sí
+  accountType: accountType.optional(),
 });
+/** Segundo paso del registro: el tipo de cuenta, una sola vez. */
+export const chooseAccountTypeSchema = z.strictObject({ accountType });
 /** Acceso con Google; el tipo solo cuenta si la cuenta se crea en ese momento. */
 export const googleLoginSchema = z.strictObject({
   credential: z.string().max(12000),
@@ -520,6 +528,10 @@ export type User = {
   accountType: AccountType;
   /** Si confirmó su correo: hasta entonces la plataforma no escribe a sus invitados. */
   emailVerified: boolean;
+  /** Cuenta nueva sin confirmar: no entra a la app hasta abrir el enlace del correo. */
+  mustVerifyEmail: boolean;
+  /** Cuenta nueva que aún no eligió su tipo: es el paso siguiente a confirmar el correo. */
+  mustChooseType: boolean;
 };
 export type Metrics = {
   invitations: number;

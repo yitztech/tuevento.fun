@@ -2,7 +2,7 @@
 import { expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { sitePalettes } from "@tuevento/contracts";
-import { Given, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, Then, nuevaCuenta, registrar } from "./fixtures.js";
 
 const headers = { "x-tuevento-client": "1" };
 const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
@@ -77,7 +77,7 @@ Then("el formulario de acceso muestra sus errores sin confundirlos con la paleta
 });
 
 Then("el panel y un modal usan la paleta, con contraste suficiente", async ({ page, ctx }) => {
-  const registro = await page.request.post("/api/auth/register", { headers, data: nuevaCuenta() });
+  const registro = await registrar(page.request, "/api/auth/register", { headers, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   await page.goto("/app");
   await usaLaPaleta(page, ctx);

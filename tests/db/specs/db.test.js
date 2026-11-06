@@ -335,14 +335,23 @@ test("Ubicación del evento: las dos coordenadas o ninguna, dentro de su rango; 
   assert.equal(await codigoError(() => db.query("INSERT INTO geo_cache(kind,key_hash,locale,response) VALUES('otro','x','es','[]')")), CHECK_VIOLATION);
 });
 
-test("Tipo de cuenta: organiza por defecto y solo admite organizer o provider", async () => {
+test("Tipo de cuenta: organiza por defecto y solo admite organizer, provider o agency", async () => {
   const id = await usuario(db);
   assert.equal((await uno("SELECT account_type FROM users WHERE id=$1", [id])).account_type, "organizer");
+  await db.query("UPDATE users SET account_type='agency' WHERE id=$1", [id]);
   await db.query("UPDATE users SET account_type='provider' WHERE id=$1", [id]);
   for (const valor of ["admin", "Provider", ""])
     assert.equal(await codigoError(() => db.query("UPDATE users SET account_type=$2 WHERE id=$1", [id, valor])), CHECK_VIOLATION, valor);
   assert.equal(await codigoError(() => db.query("UPDATE users SET account_type=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
-  assert.equal((await uno("SELECT convalidated FROM pg_constraint WHERE conname='users_account_type_check'")).convalidated, true, "la 020 valida la restricción");
+  assert.equal((await uno("SELECT convalidated FROM pg_constraint WHERE conname='users_account_type_check'")).convalidated, true, "la 041 valida la restricción");
+});
+
+test("Las cuentas que ya existen quedan exentas de los pasos del registro: las marcas nacen en false", async () => {
+  const id = await usuario(db);
+  const marcas = await uno("SELECT must_verify_email,must_choose_type FROM users WHERE id=$1", [id]);
+  assert.deepEqual(marcas, { must_verify_email: false, must_choose_type: false });
+  assert.equal(await codigoError(() => db.query("UPDATE users SET must_verify_email=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
+  assert.equal(await codigoError(() => db.query("UPDATE users SET must_choose_type=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
 });
 
 test("Proveedor: restricciones del perfil, los servicios y las fotos", async () => {

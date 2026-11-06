@@ -1,12 +1,12 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
 // El organizador se crea con `request` (no comparte cookies con el navegador): quien abre el
 // enlace después es un invitado sin sesión, como en la realidad.
 Given("que un organizador tiene una invitación familiar con notas privadas", async ({ request, ctx }) => {
-  const registro = await request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
+  const registro = await registrar(request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   const evento = await request.post("/api/events", {
     headers: cabecera,

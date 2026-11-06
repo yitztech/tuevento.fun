@@ -11,7 +11,7 @@ import { clientPlatform } from './client-platform';
 export class PlatformController {
   constructor(private db: Database, private auth: AuthService) {}
   @Post('auth/mobile/authorize') async authorize(@Body() body: unknown, @Req() req: FastifyRequest) {
-    const user = await this.auth.current(req);
+    const user = await this.auth.confirmed(req);
     if(user.isDemo) throw new ForbiddenException();
     const {challenge}=parse(z.strictObject({challenge:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}),body,req);
     const code=randomBytes(32).toString('base64url');

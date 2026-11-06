@@ -12,7 +12,32 @@ Característica: Crear una cuenta
   Escenario: Crear una cuenta con datos válidos
     Cuando relleno el registro con datos válidos
     Y envío el formulario de registro
-    Entonces entro a mi espacio
+    Entonces me pide confirmar mi correo
+
+  Escenario: Sin confirmar el correo no se entra a la app
+    Cuando relleno el registro con datos válidos
+    Y envío el formulario de registro
+    Y abro la página "/eventos"
+    Entonces me pide confirmar mi correo
+
+  Esquema del escenario: Tras confirmar el correo elijo el tipo de cuenta y veo mi bienvenida
+    Cuando relleno el registro con datos válidos
+    Y envío el formulario de registro
+    Y confirmo mi correo con el enlace que recibí
+    Entonces me pregunta cómo voy a usar la plataforma
+    Cuando elijo la opción "<opcion>"
+    Y continúo con el registro
+    Entonces veo la bienvenida "<bienvenida>"
+
+    Ejemplos:
+      | opcion                                  | bienvenida                      |
+      | Organizar mi evento                     | Todo listo para tu evento       |
+      | Soy proveedor de servicios para eventos | Haz que te encuentren           |
+      | Soy agencia organizadora de eventos     | Tu agencia, lista para trabajar |
+
+  @solo-lectura
+  Escenario: El formulario de registro no pregunta el tipo de cuenta
+    Entonces no existe el campo "Organizar mi evento"
 
   @solo-lectura
   Escenario: El registro no pide nombre de usuario

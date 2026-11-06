@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 
 const cabecera = { "x-tuevento-client": "1" };
 
 async function registrarCuenta(page) {
   const cuenta = nuevaCuenta();
-  const registro = await page.request.post("/api/auth/register", { headers: cabecera, data: cuenta });
+  const registro = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: cuenta });
   expect(registro.status()).toBe(201);
 }
 

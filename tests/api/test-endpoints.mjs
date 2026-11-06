@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, sitePaletteIds, themeIds } from "@tuevento/contracts";
-import { base, client, account, cleanup, createCoupon, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
+import { base, client, account, verificationToken, cleanup, createCoupon, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -396,6 +396,53 @@ try {
     await mal(`/invitations/${inv.token}/rsvp`, "POST", { members: [{ id: inv.members[0].id, status: "quizas" }] });
     // Los límites exactos sí se aceptan
     await a.call("/profile", "PATCH", { firstName: largo(50), lastName: largo(50), phone: "+52 (777) 123-45-67" }, 200);
+  });
+
+  await suite("Registro en dos pasos: confirmar el correo y elegir el tipo, con errores en 5 idiomas", async () => {
+    const idiomas = [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]];
+    const { accountType: _sinTipo, ...datos } = account(P, "dos-pasos");
+    const nueva = client({ confirm: false });
+    const creada = await nueva.call("/auth/register", "POST", datos, 201);
+    assert.equal(creada.mustVerifyEmail, true);
+    assert.equal(creada.mustChooseType, true);
+    // Sin confirmar: la sesión existe, pero solo sirve para ver la cuenta y reenviar el enlace
+    assert.equal((await nueva.call("/auth/me")).mustVerifyEmail, true);
+    for (const [locale, headers] of idiomas) {
+      const r = await nueva.raw("/events", { headers });
+      assert.equal(r.status, 403, locale);
+      assert.equal(r.data.code, "email_not_verified", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.emailNotVerified"), locale);
+    }
+    await nueva.call("/profile", "PATCH", { firstName: "Ana", lastName: "Paz", phone: "+527770000000" }, 403);
+    await nueva.call("/auth/account-type", "POST", { accountType: "agency" }, 403);
+    // Confirmado, falta el tipo: los eventos y el negocio siguen cerrados
+    const token = await verificationToken(datos.email);
+    assert.equal((await client().call("/auth/email/verify", "POST", { token })).mustVerifyEmail, false);
+    for (const [locale, headers] of idiomas) {
+      const r = await nueva.raw("/events", { headers });
+      assert.equal(r.status, 403, locale);
+      assert.equal(r.data.code, "account_type_required", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.accountTypeRequired"), locale);
+    }
+    await nueva.call("/provider/profile", "GET", undefined, 403);
+    // Un tipo inválido o un campo de más se rechazan
+    const mal = await nueva.raw("/auth/account-type", { method: "POST", body: { accountType: "admin" } });
+    assert.equal(mal.status, 422);
+    assert.equal(mal.data.errors[0].field, "accountType");
+    await nueva.call("/auth/account-type", "POST", { accountType: "agency", isOwner: true }, 422);
+    // La agencia usa lo mismo que quien organiza, y el tipo no se vuelve a elegir
+    const elegida = await nueva.call("/auth/account-type", "POST", { accountType: "agency" });
+    assert.equal(elegida.accountType, "agency");
+    assert.equal(elegida.mustChooseType, false);
+    await nueva.call("/events", "POST", eventData(), 201);
+    await nueva.call("/provider/profile", "GET", undefined, 403);
+    for (const [locale, headers] of idiomas) {
+      const r = await nueva.raw("/auth/account-type", { method: "POST", body: { accountType: "provider" }, headers });
+      assert.equal(r.status, 409, locale);
+      assert.equal(r.data.code, "account_type_already_chosen", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.accountTypeAlreadyChosen"), locale);
+    }
+    assert.equal((await nueva.call("/auth/me")).accountType, "agency");
   });
 
   await suite("Tipo de cuenta: se elige al registrarse, sin elegirlo se organiza y no se cambia después", async () => {
@@ -864,7 +911,7 @@ try {
       assert.equal(baja.data.detail, translate(locale, "errors.unsubscribeLinkInvalid"), locale);
     }
     // Una cuenta nueva empieza sin confirmar; el reenvío tiene límite por cuenta
-    const nueva = client();
+    const nueva = client({ confirm: false });
     assert.equal((await nueva.call("/auth/register", "POST", account(P, "confirmar"), 201)).emailVerified, false);
     for (let i = 0; i < 3; i++) await nueva.call("/auth/email/resend", "POST", {}, 200);
     const cuarto = await nueva.raw("/auth/email/resend", { method: "POST", body: {} });

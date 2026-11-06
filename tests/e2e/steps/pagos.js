@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { adminURL, baseURL, englishURL } from "../support/entorno.js";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 import { eventoNuevo } from "./landing.js";
 
 const cabecera = { "X-TuEvento-Client": "1" };
@@ -86,7 +86,7 @@ When("pulso el primer botón {string}", async ({ page }, texto) => {
 When("abro la página de pago de un evento mío en {string}", async ({ page }, idioma) => {
   const dominio = idioma === "es" ? baseURL : englishURL;
   const raiz = ["pt", "de", "fr"].includes(idioma) ? `${dominio}/${idioma}` : dominio;
-  const registro = await page.request.post(`${dominio}/api/auth/register`, { headers: cabecera, data: nuevaCuenta() });
+  const registro = await registrar(page.request, `${dominio}/api/auth/register`, { headers: cabecera, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   const evento = await page.request.post(`${dominio}/api/events`, { headers: cabecera, data: eventoNuevo(`Cena ${Date.now()}`) });
   expect(evento.status()).toBe(201);

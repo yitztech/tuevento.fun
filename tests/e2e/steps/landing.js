@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 import { baseURL, englishURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
@@ -19,7 +19,7 @@ export const eventoNuevo = (titulo, date = fechaFutura) => ({
 // Con `request`, que no comparte cookies con el navegador ni con la app: quien abre la landing
 // después no tiene la sesión del organizador.
 async function eventoConInvitacion(request, ctx, persona, fecha) {
-  const registro = await request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
+  const registro = await registrar(request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   ctx.codigo = (await registro.json()).publicCode;
   ctx.titulo = `Fiesta de la landing ${Date.now()}`;
@@ -48,7 +48,7 @@ Then("no veo el botón {string}", async ({ page }, texto) => {
 
 Given("que tengo un evento creado sin escribir su dirección", async ({ page, ctx }) => {
   // `page.request` comparte las cookies del navegador: la sesión queda abierta.
-  const registro = await page.request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
+  const registro = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
   ctx.codigo = (await registro.json()).publicCode;
   ctx.unico = Date.now();

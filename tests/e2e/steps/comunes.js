@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar, tokenDeConfirmacion } from "./fixtures.js";
 import { englishURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
@@ -19,7 +19,7 @@ Given("que abro la página de registro en inglés", async ({ page }) => {
 Given("que tengo una cuenta creada y abro mi perfil", async ({ page, ctx }) => {
   ctx.cuenta = nuevaCuenta();
   // `page.request` comparte las cookies del navegador: la sesión queda abierta.
-  const r = await page.request.post("/api/auth/register", { headers: cabecera, data: ctx.cuenta });
+  const r = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: ctx.cuenta });
   expect(r.status()).toBe(201);
   await page.goto("/perfil");
 });
@@ -27,7 +27,7 @@ Given("que tengo una cuenta creada y abro mi perfil", async ({ page, ctx }) => {
 Given("que tengo una cuenta creada por la API sin sesión en el navegador", async ({ request, ctx }) => {
   ctx.cuenta = nuevaCuenta();
   // `request` no comparte las cookies del navegador: hay que entrar con el formulario
-  const r = await request.post("/api/auth/register", { headers: cabecera, data: ctx.cuenta });
+  const r = await registrar(request, "/api/auth/register", { headers: cabecera, data: ctx.cuenta });
   expect(r.status()).toBe(201);
 });
 
@@ -70,6 +70,29 @@ When("envío el formulario de acceso", async ({ ui }) => {
 
 When("guardo los cambios del perfil", async ({ ui }) => {
   await ui.pulsar("Guardar cambios");
+});
+
+Then("me pide confirmar mi correo", async ({ ui }) => {
+  await ui.esperarTexto("Revisa tu correo");
+});
+
+When("confirmo mi correo con el enlace que recibí", async ({ ui, ctx }) => {
+  await ui.abrir(`/confirmar-correo?token=${await tokenDeConfirmacion(ctx.cuenta.email)}`);
+  await ui.esperarTexto("¡Correo confirmado!");
+  await ui.abrir("/app");
+});
+
+Then("me pregunta cómo voy a usar la plataforma", async ({ ui }) => {
+  await ui.esperarTexto("¿Cómo vas a usar TuEventoFun?");
+});
+
+When("continúo con el registro", async ({ ui }) => {
+  await ui.pulsar("Continuar");
+});
+
+Then("veo la bienvenida {string}", async ({ ui }, titulo) => {
+  await ui.esperarUrl(/\/bienvenida$/);
+  await ui.esperarTexto(titulo);
 });
 
 Then("entro a mi espacio", async ({ ui }) => {

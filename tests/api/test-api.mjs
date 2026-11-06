@@ -4,7 +4,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import http from "node:http";
 import https from "node:https";
-import { client as clientWithRaw, createCoupon, setCouponActive } from "./api.mjs";
+import { client as clientWithRaw, createCoupon, setCouponActive, verificationToken } from "./api.mjs";
 const base = process.env.TEST_API_URL || "http://127.0.0.1:3087/api";
 // Dominio inglés de desarrollo (mismo valor que SITE_URL_EN del compose).
 const englishHost = new URL(
@@ -61,7 +61,8 @@ function send(url, { method = "GET", headers = {}, body } = {}) {
     request.end();
   });
 }
-function client() {
+/** Como el de api.mjs: confirma el correo al registrarse, salvo con `{ confirm: false }`. */
+function client({ confirm = true } = {}) {
   let cookie = "";
   return {
     async call(path, method = "GET", body, expected = 200, headers = {}) {
@@ -79,6 +80,8 @@ function client() {
       if (set?.length) cookie = set[0].split(";")[0];
       const data = JSON.parse(r.text || "{}");
       assert.equal(r.status, expected, JSON.stringify(data));
+      if (confirm && path === "/auth/register" && method === "POST" && r.status === 201)
+        await this.call("/auth/email/verify", "POST", { token: await verificationToken(body.email) }, 200, headers);
       return data;
     },
     cookie: () => cookie,
@@ -96,6 +99,7 @@ const account = (n) => ({
   email: `qa-${unique}-${n}@example.invalid`,
   phone: "+527770000000",
   password,
+  accountType: "organizer",
 });
 /**
  * Paga un tramo de un evento en el doble de Stripe (compose.ci.yml), como lo haría el organizador:
@@ -602,26 +606,25 @@ try {
   await suite(
     "Avisos a invitados: solo con el correo del organizador confirmado, agrupados y con baja en un clic",
     async () => {
-      const owner = client(),
+      const owner = client({ confirm: false }),
         data = account("avisos");
       const created = await owner.call("/auth/register", "POST", data, 201);
       users.push(created.id);
       assert.equal(created.emailVerified, false);
-      const invitado = `qa-${unique}-invitado-avisos@example.invalid`;
-      const evento = await owner.call("/events", "POST", eventPayload(), 201);
-      await owner.call(`/events/${evento.id}/invitations`, "POST", {
-        name: "Invitada", email: invitado, phone: "", notes: "", kind: "individual",
-        members: [{ name: "Invitada", kind: "adult", notes: "" }],
-      }, 201);
-      // Sin confirmar el correo, un cambio no escribe al invitado
-      await owner.call(`/events/${evento.id}`, "PATCH", eventPayload({ location: "Otro jardín" }));
-      assert.equal((await mailsTo(invitado, /^Hay cambios en /)).length, 0);
+      // Una cuenta nueva sin confirmar no llega a crear eventos: la API la frena antes
+      await owner.call("/events", "POST", eventPayload(), 403);
       // El correo de confirmación llega con su enlace de un solo uso
       const mail = await mailTo(data.email, /^Confirma tu correo en TuEventoFun$/);
       const token = new URL(mail.Text.match(/https?:\/\/\S+\/confirmar-correo\?token=[\w-]{43}/)[0]).searchParams.get("token");
       assert.equal((await guest.call("/auth/email/verify", "POST", { token })).emailVerified, true);
       await guest.call("/auth/email/verify", "POST", { token }, 400);
       assert.equal((await owner.call("/auth/me")).emailVerified, true);
+      const invitado = `qa-${unique}-invitado-avisos@example.invalid`;
+      const evento = await owner.call("/events", "POST", eventPayload(), 201);
+      await owner.call(`/events/${evento.id}/invitations`, "POST", {
+        name: "Invitada", email: invitado, phone: "", notes: "", kind: "individual",
+        members: [{ name: "Invitada", kind: "adult", notes: "" }],
+      }, 201);
       // Confirmado pero sin pagar: el plan gratuito no escribe a los invitados
       await owner.call(`/events/${evento.id}`, "PATCH", eventPayload({ location: "Jardín gratuito" }));
       assert.equal((await mailsTo(invitado, /^Hay cambios en /)).length, 0);

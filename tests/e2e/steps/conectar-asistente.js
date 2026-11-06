@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect } from "@playwright/test";
-import { Given, When, Then } from "./fixtures.js";
+import { Given, When, Then, registrar } from "./fixtures.js";
 import { baseURL as spanishURL, englishURL } from "../support/entorno.js";
 
 // Conectar un asistente (conectar-asistente.feature). El cliente fijo vuelve a una URL local que no
@@ -45,7 +45,7 @@ Given("que abro un enlace de conexión de asistente que ya no vale", async ({ ui
 When("entro con mi cuenta para conectar el asistente", async ({ ui, ctx, request }) => {
   const correo = `asistente-${randomBytes(6).toString("hex")}@example.invalid`;
   const clave = randomBytes(16).toString("hex");
-  const alta = await request.post("/api/auth/register", {
+  const alta = await registrar(request, "/api/auth/register", {
     headers: { "x-tuevento-client": "1" },
     data: { firstName: "Ana", lastName: "Prueba", email: correo, phone: "+527770000000", password: clave },
   });
@@ -65,7 +65,7 @@ Then("veo que {string} solo podrá consultar mis datos", async ({ ui, ctx }, cli
 
 Given("que tengo sesión en el dominio de {string}", async ({ page }, idioma) => {
   const origen = dominio(idioma);
-  const alta = await page.request.post(`${origen}/api/auth/register`, {
+  const alta = await registrar(page.request, `${origen}/api/auth/register`, {
     headers: { "x-tuevento-client": "1", origin: origen },
     data: {
       firstName: "Ana",

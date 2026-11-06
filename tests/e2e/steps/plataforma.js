@@ -3,7 +3,7 @@
 import { expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
-import { Given, When, Then, nuevaCuenta } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 import { baseURL, englishURL, local } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
@@ -153,7 +153,7 @@ When("envío a la API una escritura con el origen {string}", async ({ page, ctx 
 });
 
 Given("que tengo una cuenta creada por la API", async ({ page }) => {
-  const r = await page.request.post("/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
+  const r = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(r.status()).toBe(201);
 });
 

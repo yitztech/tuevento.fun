@@ -5,11 +5,20 @@ import {
   invitationSchema,
   rsvpSchema,
   registerSchema,
+  chooseAccountTypeSchema,
+  accountArea,
   loginSchema,
   eventSchema,
   countMetrics,
 } from "./index";
 const member = { name: "Ana López", kind: "adult", notes: "" } as const;
+test("El tipo de cuenta admite agencia, que usa la zona de quien organiza", () => {
+  assert.equal(chooseAccountTypeSchema.safeParse({ accountType: "agency" }).success, true);
+  assert.equal(chooseAccountTypeSchema.safeParse({ accountType: "admin" }).success, false);
+  assert.equal(accountArea("agency"), "organizer");
+  assert.equal(accountArea("organizer"), "organizer");
+  assert.equal(accountArea("provider"), "provider");
+});
 test("Una invitación requiere contacto e integrante", () => {
   assert.equal(
     invitationSchema.safeParse({ kind: "individual", members: [member] })

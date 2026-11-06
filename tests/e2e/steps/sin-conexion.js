@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { Given, When, Then, nuevaCuenta, fechaFutura } from "./fixtures.js";
+import { Given, When, Then, nuevaCuenta, fechaFutura, registrar } from "./fixtures.js";
 
 // Trabajo sin conexión en las apps (sin-conexion.feature). Los datos se crean y se comprueban con
 // `request`, que no comparte la sesión con la app: es «la web» u «otro dispositivo» de la misma cuenta.
@@ -7,7 +7,7 @@ const cabecera = { "x-tuevento-client": "1" };
 
 Given("que tengo un evento con una invitación para {string} creados por la API", async ({ request, ctx }, nombre) => {
   ctx.cuenta = nuevaCuenta();
-  expect((await request.post("/api/auth/register", { headers: cabecera, data: ctx.cuenta })).status()).toBe(201);
+  expect((await registrar(request, "/api/auth/register", { headers: cabecera, data: ctx.cuenta })).status()).toBe(201);
   ctx.titulo = `Fiesta sin red ${Date.now()}`;
   const evento = await request.post("/api/events", {
     headers: cabecera,

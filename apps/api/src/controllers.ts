@@ -40,6 +40,7 @@ import {
   registrationSchema,
   unsubscribeSchema,
   verifyEmailSchema,
+  chooseAccountTypeSchema,
   checkoutSchema,
   couponCheckSchema,
   localePrefix,
@@ -47,6 +48,7 @@ import {
   eventSlugPattern,
   accountLimits,
 } from "@tuevento/contracts";
+import { ProblemException } from "./problem";
 import {
   AuthService,
   GOOGLE_NONCE_COOKIE,
@@ -170,7 +172,7 @@ export class PublicController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    const user = await this.auth.current(req);
+    const user = await this.auth.confirmed(req);
     if (user.isDemo) throw new ForbiddenException();
     return this.auth.session(await this.demo.create(requestLocale(req)), req, reply);
   }
@@ -514,6 +516,20 @@ export class OrganizerController {
 @UseGuards(SessionGuard)
 export class AccountController {
   constructor(private db: Database) {}
+  /** Segundo paso del registro, una sola vez: el tipo no cambia después de elegirlo. */
+  @Post("auth/account-type") @HttpCode(200) async chooseAccountType(
+    @Req() req: AuthedRequest,
+    @Body() body: unknown,
+  ) {
+    const { accountType } = parse(chooseAccountTypeSchema, body, req);
+    const [r] = await this.db.query(
+      "UPDATE users SET account_type=$1,must_choose_type=false WHERE id=$2 AND must_choose_type RETURNING *",
+      [accountType, req.user.id],
+    );
+    if (!r)
+      throw new ProblemException({ status: 409, code: "account_type_already_chosen", detail: "errors.accountTypeAlreadyChosen" });
+    return userView(r);
+  }
   @Patch("profile") async profile(
     @Req() req: AuthedRequest,
     @Body() body: unknown,

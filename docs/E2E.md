@@ -57,6 +57,8 @@ Variables: `E2E_BASE_URL` (por defecto `http://localhost:5187`), `E2E_BASE_URL_E
    las apps (p. ej. `sin-conexion.feature`, la copia local del teléfono): los proyectos web lo
    excluyen y corre con `npm run e2e:android`, `e2e:ios` o `e2e:movil`, siempre junto a `@movil`.
 4. Los datos se crean únicos en cada escenario (`nuevaCuenta()`); no dependas de la base de datos.
+   Una cuenta nueva no usa la app hasta confirmar su correo: por la API se crea con
+   `registrar(api, url, opciones)` (`fixtures.js`), que lo confirma leyendo Mailpit.
 
 ## CI
 
