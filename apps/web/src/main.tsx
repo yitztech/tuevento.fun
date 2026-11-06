@@ -14,6 +14,7 @@ import { LegalPage } from '@tuevento/app/legal';
 import { localizedPages, localizedPath, supportedLocales } from '@tuevento/contracts';
 import { PricingPage } from '@tuevento/app/pricing';
 import { LanguageSuggestion, pathPrefix, usePathPrefix } from '@tuevento/app/i18n';
+import { SitePaletteProvider } from "@tuevento/app/site-palette";
 import { Analytics } from './analytics';
 const runtime: Runtime = {
   apiBase: "/api",
@@ -64,10 +65,10 @@ async function start() {
  const api=new EventApi({baseUrl:activeRuntime.apiBase,fetch:activeRuntime.fetch,platform:activeRuntime.platform,locale:()=>getLocale()});
  const Router=native?HashRouter:WebRouter;
  ReactDOM.createRoot(document.getElementById("root")!).render(
-  <Router><Analytics api={api} native={native}/>{!native&&<><SeoLinks/><LanguageSuggestion/></>}{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>
+  <SitePaletteProvider api={api}><Router><Analytics api={api} native={native}/>{!native&&<><SeoLinks/><LanguageSuggestion/></>}{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>
    <Route path="/" element={<LandingPage/>}/><Route path="/descargas" element={<DownloadsPage api={api}/>}/>
    {localizedPages.filter(page=>page!=='providers').flatMap(page=>supportedLocales.map(locale=><Route key={`${page}-${locale}`} path={localizedPath(page,locale)} element={page==='pricing'?<PricingPage/>:<LegalPage page={page as 'privacy'|'terms'}/>}/>))}
    <Route path="*" element={<TuEventoApp runtime={activeRuntime}/>}/>
-  </Routes>}</Router>);
+  </Routes>}</Router></SitePaletteProvider>);
 }
 void start().catch(()=>{const root=document.getElementById('root')!;root.textContent=tr('app.startupError');});

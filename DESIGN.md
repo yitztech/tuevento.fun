@@ -257,3 +257,7 @@ La portada, el acceso, la búsqueda y la página de proveedores, los precios, la
 - **Forma:** radios de 8 a 32 px (`--r-*`), paneles translúcidos con borde blanco y las sombras `shadow-site-soft` y `shadow-site-card`.
 - **Componentes:** `src/ui/site/`. Las fotografías viven en una sola tabla, `src/ui/site/photos.ts`.
 - **Apps:** dentro de Capacitor, `SiteLayout` cambia la cabecera y el pie por una barra con logo e idioma, y los recursos nativos (`favicon.svg`, `scripts/native-assets.mjs`, `index.html`) usan el emblema terracota cálido y fondo `#fff6f2`.
+
+## Paletas de marca seleccionables
+
+La paleta inicial continúa siendo Terracota Festivo & Durazno Cálido. El dueño puede previsualizar y guardar cuatro variantes globales de marca: Fucsia, Ciruela y Ámbar; Ciruela y Champagne; Mandarina y Frambuesa; Frambuesa y Vainilla. La tabla de tokens y sus identificadores viven en `packages/contracts/src/site-palettes.ts`; [docs/PALETAS.md](docs/PALETAS.md) describe su aplicación, persistencia y verificación. Todas conservan blanco en el panel, texto y acciones contrastados, y los colores semánticos de asistencia. Las paletas de las postales de invitación siguen perteneciendo a cada diseño.

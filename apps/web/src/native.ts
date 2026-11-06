@@ -30,6 +30,7 @@ export async function nativeRuntime():Promise<Runtime> {
   if(sinRedSimulada())throw new TypeError('Failed to fetch');
   if(__PRUEBAS__)peticiones++;
   const headers=Object.fromEntries(new Headers(init?.headers).entries());
+  if (!['GET', 'HEAD', 'OPTIONS'].includes((init?.method || 'GET').toUpperCase())) headers.Origin=origin.origin;
   const result=await CapacitorHttp.request({url,method:init?.method||'GET',headers,data:init?.body?JSON.parse(String(init.body)):undefined,responseType:'json',connectTimeout:15000,readTimeout:30000,disableRedirects:true});
   // CapacitorHttp solo interpreta como JSON `application/json`: un error en `application/problem+json` llega como texto
   const data=typeof result.data==='string'?(()=>{try{return JSON.parse(result.data)}catch{return result.data}})():result.data;

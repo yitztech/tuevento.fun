@@ -118,4 +118,4 @@ const conIos = {
 
 export const test = base.extend({ ...comunes, ...(ios ? conIos : android ? conAndroid : conWeb) });
 
-export const { Given, When, Then } = createBdd(test);
+export const { Given, When, Then, After } = createBdd(test);

@@ -658,6 +658,23 @@
     "pending_other": "{{count}} pending",
     "summary": "{{accepted}}, {{declined}} and {{pending}}."
   },
+  "sitePalette": {
+    "title": "Site palette",
+    "description": "Choose a palette to preview on this screen before publishing it to the site.",
+    "current": "Active palette: {{name}}",
+    "select": "Select palette",
+    "save": "Save palette",
+    "cancel": "Cancel preview",
+    "saved": "Palette saved.",
+    "loadError": "Could not load the palette.",
+    "saveError": "Could not save the palette.",
+    "terracotta": "Current terracotta",
+    "fuchsia": "Fuchsia, Plum and Amber",
+    "plum": "Plum and Champagne",
+    "mandarin": "Tangerine and Raspberry",
+    "raspberry": "Raspberry and Vanilla",
+    "preview": "Unsaved preview."
+  },
   "owner": {
     "byClient": "Activity by client",
     "client": "Client",

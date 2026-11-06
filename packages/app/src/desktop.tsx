@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { EventApi } from "@tuevento/client";
+import { SitePaletteProvider } from "./site-palette";
 import { HashRouter } from "react-router-dom";
 import { TuEventoApp, type Runtime } from "./App";
 /**
@@ -6,9 +9,10 @@ import { TuEventoApp, type Runtime } from "./App";
  * It must constrain apiBase and every outgoing URL to an allowlist.
  */
 export function DesktopApp({ runtime }: { runtime: Runtime }) {
+  const api = useMemo(() => new EventApi({ baseUrl: runtime.apiBase, fetch: runtime.fetch, platform: runtime.platform, appVersion: runtime.appVersion }), [runtime]);
   return (
-    <HashRouter>
+    <SitePaletteProvider api={api}><HashRouter>
       <TuEventoApp runtime={runtime} />
-    </HashRouter>
+    </HashRouter></SitePaletteProvider>
   );
 }

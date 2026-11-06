@@ -1367,3 +1367,5 @@ export const mcpToolSchemas = {
 } as const;
 
 
+
+export { sitePaletteIds, sitePaletteSchema, sitePalettes, type SitePaletteId } from "./site-palettes";

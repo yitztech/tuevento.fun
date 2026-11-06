@@ -43,13 +43,20 @@ export function MapView({
   const moved = useRef(onMove);
   moved.current = onMove;
   const [failed, setFailed] = useState(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: el mapa se crea una vez; los cambios de punto los aplica el efecto de abajo
+  const [palette, setPalette] = useState(() => document.documentElement.dataset.sitePalette ?? "");
+  useEffect(() => {
+    const observer = new MutationObserver(() => setPalette(document.documentElement.dataset.sitePalette ?? ""));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-site-palette"] });
+    return () => observer.disconnect();
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: el mapa se recrea con la paleta; el punto lo actualiza el efecto de abajo
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const [maplibre] = await Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl.css")]);
         if (!alive || !container.current) return;
+        const color = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#a63f30";
         const instance = new maplibre.Map({
           container: container.current,
           style: mapStyle,
@@ -62,13 +69,13 @@ export function MapView({
         if (approximate) {
           instance.on("load", () => {
             instance.addSource("area", { type: "geojson", data: circle(point, 1000) });
-            instance.addLayer({ id: "area", type: "fill", source: "area", paint: { "fill-color": "#a63f30", "fill-opacity": 0.15 } });
-            instance.addLayer({ id: "area-line", type: "line", source: "area", paint: { "line-color": "#a63f30", "line-width": 2 } });
+            instance.addLayer({ id: "area", type: "fill", source: "area", paint: { "fill-color": color, "fill-opacity": 0.15 } });
+            instance.addLayer({ id: "area-line", type: "line", source: "area", paint: { "line-color": color, "line-width": 2 } });
           });
           map.current = instance;
           return;
         }
-        const pin = new maplibre.Marker({ color: "#a63f30", draggable: !!moved.current })
+        const pin = new maplibre.Marker({ color, draggable: !!moved.current })
           .setLngLat([point.lng, point.lat])
           .addTo(instance);
         pin.on("dragend", () => {
@@ -86,7 +93,7 @@ export function MapView({
       map.current?.remove();
       map.current = null;
     };
-  }, []);
+  }, [palette]);
   // El punto cambió por otro camino (lista de resultados, enlace pegado)
   useEffect(() => {
     marker.current?.setLngLat([point.lng, point.lat]);

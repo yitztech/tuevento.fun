@@ -5555,3 +5555,19 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
     grid-template-columns: 1fr;
   }
 }
+
+.palette-settings { margin: 24px 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ground); }
+.palette-settings h2 { margin: 0 0 8px; }
+.palette-settings p { margin: 8px 0; }
+.palette-settings label { display: block; font-weight: 700; margin: 16px 0 6px; }
+.palette-settings select { max-width: 100%; min-height: 44px; }
+.palette-settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+:root[data-site-palette] { background: var(--site-bg); }
+:root[data-site-palette] .public-page { background: var(--site-bg); }
+:root[data-site-palette] .celebrate-note { background: var(--surface-soft); }
+:root[data-site-palette] .celebrate-note strong,
+:root[data-site-palette] .inspiration-strip h2,
+:root[data-site-palette] .initial-avatar.rose { color: var(--ink); }
+:root[data-site-palette] .celebrate-note p { color: var(--muted); }
+:root[data-site-palette] .initial-avatar.rose { background: var(--surface-soft-hover); }
+:root[data-site-palette] .language-option.is-current { color: var(--primary-hover); }

@@ -13,7 +13,8 @@
     "./downloads": "./src/downloads.tsx",
     "./legal": "./src/legal.tsx",
     "./pricing": "./src/pricing.tsx",
-    "./i18n": "./src/i18n.tsx"
+    "./i18n": "./src/i18n.tsx",
+    "./site-palette": "./src/site-palette.tsx"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.2.8",
