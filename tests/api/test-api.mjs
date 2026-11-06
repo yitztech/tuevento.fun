@@ -663,7 +663,7 @@ try {
   );
 
   await suite("Cupos de correo: cada dirección recibe como mucho 5 avisos al día", async () => {
-    const owner = client(),
+    const owner = client({ confirm: false }),
       data = account("cupo");
     const created = await owner.call("/auth/register", "POST", data, 201);
     users.push(created.id);
