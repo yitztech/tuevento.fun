@@ -1,6 +1,29 @@
 # language: es
 @postal @solo-web @REQ-04
-Característica: Texto de la postal: posición, color y sombra
+Característica: Postal editable por evento
+  El editor de la postal y el texto sobre ella: posición, color y sombra.
+
+  Escenario: Diseñar la postal y verla en la invitación
+    Dado que tengo un evento con una invitación
+    Y abro el editor de la postal del evento
+    Cuando elijo el fondo de color "#1d4e6b"
+    Y añado el texto "Feliz cumple"
+    Y guardo la postal
+    Entonces veo el aviso "Postal guardada."
+    Cuando abro la invitación del evento
+    Entonces la invitación muestra la postal con el texto "Feliz cumple"
+
+  Esquema del escenario: El editor de la postal cabe en móviles y tabletas
+    Dado que tengo un evento con una invitación
+    Cuando abro el editor de la postal a <ancho> por <alto>
+    Entonces la postal cabe sin desbordamiento horizontal
+
+    Ejemplos:
+      | ancho | alto |
+      | 320   | 568  |
+      | 390   | 844  |
+      | 768   | 1024 |
+      | 1180  | 820  |
 
   Escenario: Mover un texto arrastrándolo dentro de la postal
     Dado que tengo un evento con una invitación

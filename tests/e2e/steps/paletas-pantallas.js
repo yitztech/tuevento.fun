@@ -1,4 +1,4 @@
-// Pasos de features/paletas-pantallas.feature. La paleta se simula en la respuesta de la API.
+// Pasos de features/sitio/paletas-pantallas.feature. La paleta se simula en la respuesta de la API.
 import { expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { sitePalettes } from "@tuevento/contracts";

@@ -1,6 +1,6 @@
 # language: es
 # Solo web: la página pública de la invitación se cubre también dentro de las apps en
-# `landing-evento.feature` (etiquetada para móvil); aquí quedan los detalles de privacidad y
+# `eventos/landing-evento.feature` (etiquetada para móvil); aquí quedan los detalles de privacidad y
 # respuestas por integrante.
 @landing @solo-web
 Característica: La invitación pública protege las notas y responde por integrante

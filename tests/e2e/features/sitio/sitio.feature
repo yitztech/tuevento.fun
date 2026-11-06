@@ -35,3 +35,16 @@ Característica: El sitio público
       | pt     | O bom é estar juntos.               |
       | de     | Das Schönste ist das Zusammensein.  |
       | fr     | Le bonheur, c’est d’être ensemble.  |
+
+  # Solo web: la frase depende del ancho de escritorio
+  @solo-lectura
+  Escenario: La página de acceso muestra su frase en escritorio
+    Dado que abro la página de acceso en un escritorio
+    Entonces veo el texto "Los mejores momentos comienzan aquí."
+
+  # Solo web: el pie no existe dentro de las apps
+  @solo-lectura
+  Escenario: El pie lleva a una sección de la portada desde otra página
+    Dado que abro la página de precios
+    Cuando pulso "Preguntas frecuentes" en el pie
+    Entonces veo el texto "Todo listo para dar el primer paso."

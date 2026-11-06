@@ -6,7 +6,8 @@ informe dice cuál.
 
 ```
 tests/e2e/
-  features/   .feature en español (# language: es)
+  features/   .feature en español (# language: es), por área: acceso/, cuenta/, eventos/,
+              proveedores/, sitio/, admin/, movil/ (solo apps) y plataforma/ (comunes)
   steps/      pasos en JavaScript (fixtures.js = estado y datos únicos por escenario)
   support/    entorno.js (URLs)
   scripts/    summary.mjs (resumen por característica y etiqueta)
@@ -24,7 +25,7 @@ La app debe estar arriba: `docker compose up -d` (http://localhost:5187).
 | Navegador visible, en paralelo | `npm run e2e:headed` |
 | Modo UI de Playwright (pasos, repetir, depurar) | `npm run e2e:ui` |
 | Solo algunos escenarios | `npm run e2e -- --grep @smoke` (o `@registro`, `@limites`, `@api`…) |
-| Un archivo | `npm run e2e -- features/perfil.feature` |
+| Un archivo | `npm run e2e -- features/cuenta/perfil.feature` |
 | Resumen: qué pasa, falla u omite | `npm run e2e:summary` |
 | Informe HTML | `npm run report -w @tuevento/e2e` |
 
