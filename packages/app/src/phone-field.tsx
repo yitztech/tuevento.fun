@@ -185,8 +185,16 @@ function ManualPhoneField({
           autoComplete="tel-country-code"
           aria-label={tr("common.countryCode")}
           maxLength={5}
-          placeholder="+"
-          value={parts.code ? `+${parts.code}` : ""}
+          value={`+${parts.code}`}
+          // El «+» es fijo: el cursor nunca queda antes de él.
+          onFocus={(event) => {
+            const input = event.currentTarget;
+            requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length));
+          }}
+          onSelect={(event) => {
+            const input = event.currentTarget;
+            if ((input.selectionStart ?? 1) < 1) input.setSelectionRange(1, Math.max(1, input.selectionEnd ?? 1));
+          }}
           aria-invalid={!!error}
           aria-describedby={`${id}-code-hint`}
           onChange={(event) => update({ ...parts, code: event.target.value.replace(/\D/g, "").slice(0, 4) })}
