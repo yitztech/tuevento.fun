@@ -4089,7 +4089,7 @@
   border-top: 1px solid var(--line);
   background: none;
   font: inherit;
-  font-size: 15px;
+  font-size: 13px;
   color: var(--ink);
   text-align: left;
   text-decoration: none;
@@ -4106,6 +4106,10 @@
   color: var(--blue);
   font-weight: 700;
   cursor: default;
+}
+.language-option .locale-flag {
+  width: 15px;
+  height: 10px;
 }
 .language-option-name {
   flex: 1;
