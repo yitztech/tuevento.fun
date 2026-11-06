@@ -13,3 +13,17 @@ Característica: Selector de idioma con banderas
   Escenario: El menú de idiomas marca el idioma actual
     Cuando abro el selector de idioma
     Entonces el menú muestra todos los idiomas y marca el actual
+
+  @solo-lectura @i18n
+  Esquema del escenario: El menú de idiomas empieza directamente por la lista, sin título
+    Cuando abro la portada en "<idioma>"
+    Y abro el selector de idioma
+    Entonces el menú solo contiene los idiomas
+
+    Ejemplos:
+      | idioma |
+      | es     |
+      | en     |
+      | pt     |
+      | de     |
+      | fr     |

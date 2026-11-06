@@ -295,7 +295,6 @@ export function LanguageSwitcher() {
         <ChevronDown className="language-chevron" size={14} aria-hidden="true" />
       </summary>
       <div className="language-menu-list">
-        <p className="language-menu-title">{tr("language.viewThisSite")}</p>
         {reachableLocales().map(item)}
       </div>
     </details>

@@ -4077,16 +4077,6 @@
   background: #fff;
   box-shadow: 0 10px 30px rgb(61 42 37 / 12%);
 }
-.language-menu-title {
-  margin: 0;
-  padding: 14px 16px 10px;
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.4;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
 .language-option {
   display: flex;
   align-items: center;
@@ -4103,6 +4093,9 @@
   text-align: left;
   text-decoration: none;
   cursor: pointer;
+}
+.language-menu-list > :first-child {
+  border-top: 0;
 }
 .language-option:hover {
   background: var(--surface-soft);

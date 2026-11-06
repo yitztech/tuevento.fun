@@ -17,6 +17,13 @@ Then("el selector de idioma muestra la bandera y el código del idioma", async (
   await expect(selector(page).locator(".language-code")).toHaveText(/^[A-Z]{2}$/);
 });
 
+Then("el menú solo contiene los idiomas", async ({ page }) => {
+  const lista = page.locator(".language-menu-list");
+  await expect(lista).toBeVisible();
+  await expect(lista.locator("> *")).toHaveCount(5);
+  await expect(lista.locator("> .language-option")).toHaveCount(5);
+});
+
 Then("el menú muestra todos los idiomas y marca el actual", async ({ page }) => {
   await expect(page.locator(".language-menu-list .language-option")).toHaveCount(5);
   await expect(page.locator(".language-menu-list .language-option.is-current .language-option-check")).toBeVisible();
