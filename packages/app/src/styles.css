@@ -1609,7 +1609,7 @@
 .wizard-step[hidden] {
   display: none;
 }
-.wizard-actions {
+.form-actions.wizard-actions {
   justify-content: space-between;
 }
 .wizard-actions-right {
@@ -1621,7 +1621,7 @@
   .wizard-steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .wizard-actions {
+  .form-actions.wizard-actions {
     flex-wrap: wrap;
   }
   .wizard-actions-right {

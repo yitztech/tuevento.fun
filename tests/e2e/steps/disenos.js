@@ -46,13 +46,16 @@ Then('puedo abrir la vista previa de cada postal hermana', async ({ page }) => {
 When('elijo una postal invernal y guardo un evento', async ({ page, ctx }) => {
   await page.getByRole('link', { name: 'Usar Invernal', exact: true }).click();
   await expect(page).toHaveURL(/\/eventos\/nuevo\?tema=winter$/);
+  await page.getByLabel('Nombre del evento', { exact: true }).fill('Encuentro invernal de prueba');
+  await page.getByLabel('Fecha y hora', { exact: true }).fill('2027-12-12T17:00');
+  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
+  await page.getByLabel('¿Dónde nos vemos?', { exact: true }).fill('Lugar de prueba');
+  await sinDesbordamiento(page);
+  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
+  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
   const seleccion = page.locator('.theme-picker').getByRole('button', { name: 'Invernal', exact: true });
   await expect(seleccion).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.theme-choice')).toHaveCount(16);
-  await page.getByLabel('Nombre del evento', { exact: true }).fill('Encuentro invernal de prueba');
-  await page.getByLabel('Fecha y hora', { exact: true }).fill('2027-12-12T17:00');
-  await page.getByLabel('¿Dónde nos vemos?', { exact: true }).fill('Lugar de prueba');
-  await sinDesbordamiento(page);
   const respuesta = page.waitForResponse(r => r.url().endsWith('/api/events') && r.request().method() === 'POST');
   await page.locator('button[type="submit"]').click();
   const creada = await respuesta;

@@ -188,6 +188,10 @@ export function EventEditor() {
     );
     return () => clearTimeout(timer);
   }, [values.slug, id, online]);
+  // Al cambiar entre alta y edición se vuelve al primer paso.
+  useEffect(() => {
+    setStep(0);
+  }, [id]);
   // Al cambiar de paso se vuelve al principio del asistente; el primer render no mueve la página.
   const firstStepRender = useRef(true);
   useEffect(() => {
@@ -541,7 +545,15 @@ export function EventEditor() {
                   </Button>
                 )}
                 {step < lastStep ? (
-                  <Button type="button" onClick={() => void goNext()}>
+                  <Button
+                    type="button"
+                    onClick={(event) => {
+                      // React reutiliza el nodo del botón al cambiar al último paso; sin esto,
+                      // el navegador podría enviar el formulario al pulsar «Siguiente».
+                      event.preventDefault();
+                      void goNext();
+                    }}
+                  >
                     {tr("events.steps.next")}
                     <ArrowRight size={17} />
                   </Button>

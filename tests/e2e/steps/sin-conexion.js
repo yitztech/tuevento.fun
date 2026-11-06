@@ -64,7 +64,10 @@ When("creo el evento {string}", async ({ ui, ctx }, titulo) => {
   await ui.abrir("/eventos/nuevo");
   await ui.escribir("Nombre del evento", ctx.nuevo);
   await ui.fijarValor("Fecha y hora", `${new Date().getUTCFullYear() + 1}-07-20T20:00`);
+  await ui.pulsar("Siguiente");
   await ui.escribir("¿Dónde nos vemos?", "Terraza de pruebas");
+  await ui.pulsar("Siguiente");
+  await ui.pulsar("Siguiente");
   await ui.pulsar("Crear mi evento");
   await ui.esperarTexto(ctx.nuevo);
 });
