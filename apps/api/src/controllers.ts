@@ -42,6 +42,7 @@ import {
   verifyEmailSchema,
   chooseAccountTypeSchema,
   addPhoneSchema,
+  changePasswordSchema,
   checkoutSchema,
   couponCheckSchema,
   localePrefix,
@@ -125,9 +126,9 @@ export class PublicController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const data = parse(registerSchema, body, req);
-    limits.register.hit(ipKey("register", req));
+    await limits.register.hit(this.db, ipKey("register", req));
     const user = await this.auth.session(
-      await this.auth.register(data, requestLocale(req)),
+      await this.auth.register(data, requestLocale(req), req),
       req,
       reply,
       "registration",
@@ -516,7 +517,26 @@ export class OrganizerController {
 @Controller()
 @UseGuards(SessionGuard)
 export class AccountController {
-  constructor(private db: Database) {}
+  constructor(
+    private db: Database,
+    private auth: AuthService,
+  ) {}
+  /** Cambiar la contraseña con la sesión abierta: las demás se cierran y esta se renueva. */
+  @Post("auth/password/change") @HttpCode(200) async changePassword(
+    @Req() req: AuthedRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+    @Body() body: unknown,
+  ) {
+    const { currentPassword, newPassword } = parse(changePasswordSchema, body, req);
+    return this.auth.session(await this.auth.changePassword(req.user, currentPassword, newPassword, req), req, reply);
+  }
+  /** Cerrar la sesión en todos los dispositivos, este incluido. */
+  @Post("auth/logout-all") @HttpCode(200) logoutAll(
+    @Req() req: AuthedRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return this.auth.logoutAll(req.user.id, reply);
+  }
   /** Segundo paso del registro, una sola vez: el tipo no cambia después de elegirlo. */
   @Post("auth/account-type") @HttpCode(200) async chooseAccountType(
     @Req() req: AuthedRequest,

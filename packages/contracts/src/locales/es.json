@@ -41,6 +41,11 @@
     "startSomethingWonderful": "Empieza algo bonito.",
     "yourInformation": "Tu información",
     "editInformation": "Editar información",
+    "securityTitle": "Seguridad",
+    "currentPassword": "Contraseña actual",
+    "changePassword": "Cambiar contraseña",
+    "signOutEverywhere": "Cerrar todas las sesiones",
+    "signOutEverywhereHint": "Cierra tu sesión en todos tus dispositivos, también en este. Úsalo si perdiste un dispositivo o notas algo raro.",
     "accountTypeLegend": "¿Cómo vas a usar TuEventoFun?",
     "organizerTitle": "Organizar mi evento",
     "organizerHint": "Bodas, cumpleaños y reuniones: invitados, respuestas y diseños.",
@@ -333,7 +338,9 @@
     "accountTypeRequired": "Elige primero cómo vas a usar TuEventoFun.",
     "accountTypeAlreadyChosen": "Tu tipo de cuenta ya está elegido.",
     "phoneRequired": "Añade primero tu teléfono para continuar.",
-    "phoneAlreadyAdded": "Tu teléfono ya está guardado."
+    "phoneAlreadyAdded": "Tu teléfono ya está guardado.",
+    "currentPasswordIncorrect": "La contraseña actual no es correcta.",
+    "passwordNotSet": "Tu cuenta entra con Google y no tiene contraseña."
   },
   "events": {
     "actions": "Acciones",

@@ -1,8 +1,13 @@
 import { expect } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 import { baseURL } from "../support/entorno.js";
 
 const cabecera = { "x-tuevento-client": "1" };
+/** Raíz del repositorio: `docker compose` busca ahí sus archivos. */
+const raiz = new URL("../../../", import.meta.url);
+const sql = (query) =>
+  execFileSync("docker", ["compose", "exec", "-T", "postgres", "psql", "-U", "tuevento", "-d", "tueventofun", "-c", query], { stdio: "ignore", cwd: raiz });
 
 /** Valor de la cookie de sesión (`session` o `__Host-session`) de una respuesta. */
 const cookieDeSesion = (respuesta) => {
@@ -119,4 +124,84 @@ When("envío un cierre de sesión desde el origen {string}", async ({ request, c
 Then("la API responde 403 con el código {string}", async ({ ctx }, codigo) => {
   expect(ctx.respuesta.status()).toBe(403);
   expect((await ctx.respuesta.json()).code).toBe(codigo);
+});
+
+When("mi sesión lleva {int} horas sin usarse", async ({ ctx }, horas) => {
+  const email = ctx.cuenta.email.replace(/'/g, "''");
+  sql(`UPDATE sessions SET last_seen_at=now()-interval '${horas} hours' WHERE user_id=(SELECT id FROM users WHERE email='${email}')`);
+});
+
+When("pido mi cuenta con mi sesión", async ({ page, ctx }) => {
+  ctx.respuesta = await page.request.get("/api/auth/me");
+});
+
+When("abro otra sesión en otro dispositivo", async ({ request, ctx }) => {
+  const r = await entrar(request, ctx.cuenta);
+  expect(r.status()).toBe(201);
+  ctx.otraCookie = cookieDeSesion(r).par;
+});
+
+When("cierro todas mis sesiones", async ({ page }) => {
+  const r = await page.request.post("/api/auth/logout-all", { headers: cabecera, data: {} });
+  expect(r.status()).toBe(200);
+});
+
+Then("la API no me reconoce en ningún dispositivo", async ({ page, request, ctx }) => {
+  expect((await page.request.get("/api/auth/me")).status()).toBe(401);
+  expect((await request.get("/api/auth/me", { headers: { cookie: ctx.otraCookie } })).status()).toBe(401);
+});
+
+When("cambio mi contraseña por la API", async ({ page, ctx }) => {
+  ctx.nueva = `${ctx.cuenta.password}-nueva`;
+  ctx.respuesta = await page.request.post("/api/auth/password/change", {
+    headers: cabecera,
+    data: { currentPassword: ctx.cuenta.password, newPassword: ctx.nueva },
+  });
+});
+
+When("cambio mi contraseña por la API con una actual incorrecta", async ({ page, ctx }) => {
+  ctx.respuesta = await page.request.post("/api/auth/password/change", {
+    headers: cabecera,
+    data: { currentPassword: `${ctx.cuenta.password}-mal`, newPassword: `${ctx.cuenta.password}-nueva` },
+  });
+});
+
+Then("la sesión del otro dispositivo ya no sirve", async ({ request, ctx }) => {
+  expect((await request.get("/api/auth/me", { headers: { cookie: ctx.otraCookie } })).status()).toBe(401);
+});
+
+Then("mi sesión sigue abierta", async ({ page }) => {
+  expect((await page.request.get("/api/auth/me")).status()).toBe(200);
+});
+
+Then("la contraseña anterior ya no entra", async ({ request, ctx }) => {
+  expect((await entrar(request, ctx.cuenta)).status()).toBe(401);
+});
+
+Then("la contraseña nueva entra", async ({ request, ctx }) => {
+  expect((await entrar(request, ctx.cuenta, ctx.nueva)).status()).toBe(201);
+});
+
+When("alguien lo repite con el mismo correo y otra contraseña", async ({ request, ctx }) => {
+  ctx.cuenta = ctx.datos;
+  ctx.primera = ctx.datos.password;
+  ctx.respuesta = await request.post("/api/auth/register", {
+    headers: cabecera,
+    data: { ...ctx.datos, password: `${ctx.datos.password}-otra` },
+  });
+});
+
+Then("la primera contraseña ya no entra", async ({ playwright, ctx }) => {
+  const limpio = await playwright.request.newContext({ baseURL });
+  expect((await entrar(limpio, ctx.cuenta, ctx.primera)).status()).toBe(401);
+  await limpio.dispose();
+});
+
+When("alguien se registra con mi correo y otra contraseña", async ({ playwright, ctx }) => {
+  const limpio = await playwright.request.newContext({ baseURL });
+  ctx.respuesta = await limpio.post("/api/auth/register", {
+    headers: cabecera,
+    data: { ...ctx.cuenta, password: `${ctx.cuenta.password}-otra` },
+  });
+  await limpio.dispose();
 });

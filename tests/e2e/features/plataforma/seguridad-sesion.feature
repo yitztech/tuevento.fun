@@ -66,3 +66,56 @@ Característica: Seguridad del acceso y de las sesiones
   Escenario: Una escritura desde un origen ajeno se rechaza
     Cuando envío un cierre de sesión desde el origen "https://sitio-ajeno.example"
     Entonces la API responde 403 con el código "origin_not_allowed"
+
+  @BE-24
+  Escenario: Una sesión usada antes de las 72 horas sigue abierta
+    Dado que tengo una cuenta con la sesión abierta en la API
+    Cuando mi sesión lleva 71 horas sin usarse
+    Y pido mi cuenta con mi sesión
+    Entonces la API responde 200
+
+  @BE-24
+  Escenario: Una sesión sin usar durante 72 horas caduca
+    Dado que tengo una cuenta con la sesión abierta en la API
+    Cuando mi sesión lleva 73 horas sin usarse
+    Y pido mi cuenta con mi sesión
+    Entonces la API responde 401
+
+  @BE-24
+  Escenario: Cerrar todas las sesiones las cierra en todos los dispositivos
+    Dado que tengo una cuenta con la sesión abierta en la API
+    Cuando abro otra sesión en otro dispositivo
+    Y cierro todas mis sesiones
+    Entonces la API no me reconoce en ningún dispositivo
+
+  @BE-24
+  Escenario: Cambiar la contraseña cierra las demás sesiones y anula la anterior
+    Dado que tengo una cuenta con la sesión abierta en la API
+    Cuando abro otra sesión en otro dispositivo
+    Y cambio mi contraseña por la API
+    Entonces la API responde 200
+    Y la sesión del otro dispositivo ya no sirve
+    Y mi sesión sigue abierta
+    Y la contraseña anterior ya no entra
+    Y la contraseña nueva entra
+
+  @BE-24 @validacion
+  Escenario: Cambiar la contraseña exige la actual
+    Dado que tengo una cuenta con la sesión abierta en la API
+    Cuando cambio mi contraseña por la API con una actual incorrecta
+    Entonces la API responde 422
+    Y el error del campo "currentPassword" tiene el código "invalid_current_password"
+
+  @BE-24
+  Escenario: Un registro nuevo sustituye a una cuenta sin confirmar
+    Dado un registro válido para la API
+    Cuando lo envío a la API de registro
+    Y alguien lo repite con el mismo correo y otra contraseña
+    Entonces la API responde 201
+    Y la primera contraseña ya no entra
+
+  @BE-24
+  Escenario: Una cuenta confirmada no se sustituye con otro registro
+    Dado que tengo una cuenta creada por la API sin sesión en el navegador
+    Cuando alguien se registra con mi correo y otra contraseña
+    Entonces la API responde 409

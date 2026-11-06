@@ -17,6 +17,7 @@ import {
   profileSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  changePasswordSchema,
   passwordResetPaths,
   mailPaths,
   themeIds,
@@ -529,6 +530,103 @@ function GoogleLogin({ onError }: { onError: (error: string) => void }) {
     );
   return <div ref={ref} className="google-container" />;
 }
+const changePasswordForm = changePasswordSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "validation.passwordsDontMatch",
+  });
+type ChangePasswordForm = z.infer<typeof changePasswordForm>;
+
+/** Seguridad de la cuenta: cambiar la contraseña y cerrar la sesión en todos los dispositivos. */
+function SecurityPanel() {
+  const { api, user, setUser, signedOut, toast, online } = useApp(),
+    [error, setError] = useState(""),
+    [leaving, setLeaving] = useState(false),
+    [showPassword, setShowPassword] = useState(false);
+  const form = useForm<ChangePasswordForm>({
+    resolver: zodResolver(changePasswordForm, validationOptions(getLocale())) as Resolver<ChangePasswordForm>,
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+  });
+  const submit = form.handleSubmit(async ({ currentPassword, newPassword }) => {
+    setError("");
+    try {
+      setUser(await api.changePassword(currentPassword, newPassword));
+      form.reset();
+      toast(tr("account.donePasswordChangedOther"));
+    } catch (e) {
+      setError(errorText(e));
+    }
+  });
+  const signOutEverywhere = async () => {
+    setLeaving(true);
+    setError("");
+    try {
+      await api.logoutAll();
+      await signedOut();
+    } catch (e) {
+      setError(errorText(e));
+      setLeaving(false);
+    }
+  };
+  const fields = [
+    { name: "currentPassword", label: tr("account.currentPassword"), autoComplete: "current-password" },
+    { name: "newPassword", label: tr("account.newPassword"), autoComplete: "new-password" },
+    { name: "confirmPassword", label: tr("account.repeatPassword"), autoComplete: "new-password" },
+  ] as const;
+  return (
+    <section className="form-panel security-panel">
+      <h2>{tr("account.securityTitle")}</h2>
+      {user?.emailLogin && (
+        <form onSubmit={submit} noValidate>
+          <h3>{tr("account.changePassword")}</h3>
+          <p>{tr("account.savingSignOutOther")}</p>
+          {fields.map(({ name, label, autoComplete }) => (
+            <Field
+              key={name}
+              label={label}
+              error={form.formState.errors[name]?.message}
+              hint={name === "newPassword" ? tr("account.least10CharactersUse") : undefined}
+            >
+              <span className="password-input">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={autoComplete}
+                  maxLength={accountLimits.password}
+                  {...form.register(name)}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? tr("account.hidePassword") : tr("account.showPassword")}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </Button>
+              </span>
+            </Field>
+          ))}
+          <div className="form-actions">
+            <Button disabled={form.formState.isSubmitting || !online}>
+              {form.formState.isSubmitting ? tr("common.saving") : tr("account.changePassword")}
+            </Button>
+          </div>
+        </form>
+      )}
+      <h3>{tr("account.signOutEverywhere")}</h3>
+      <p>{tr("account.signOutEverywhereHint")}</p>
+      {error && <ErrorBox message={error} />}
+      <NeedsConnection online={online} />
+      <div className="form-actions">
+        <Button type="button" variant="outline" disabled={leaving || !online} onClick={() => void signOutEverywhere()}>
+          {tr("account.signOutEverywhere")}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 export function ProfilePage() {
   const { user, api, setUser, toast, online } = useApp(),
     [error, setError] = useState(""),
@@ -671,6 +769,7 @@ export function ProfilePage() {
           )}
         </form>
       </div>
+      {!user.isDemo && <SecurityPanel />}
     </>
   );
 }

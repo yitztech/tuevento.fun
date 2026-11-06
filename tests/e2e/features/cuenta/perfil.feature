@@ -47,6 +47,27 @@ Característica: Perfil de la cuenta
     Y el campo "Nombre" no se puede editar
     Y veo la acción "Editar información"
 
+  @solo-web
+  Escenario: Cambiar la contraseña desde el perfil
+    Cuando escribo mi contraseña actual en el campo "Contraseña actual"
+    Y escribo "una-contrasena-nueva" en el campo "Contraseña nueva"
+    Y escribo "una-contrasena-nueva" en el campo "Repetir contraseña"
+    Y pulso el botón "Cambiar contraseña"
+    Entonces veo el aviso "Listo: tu contraseña cambió y cerramos tus otras sesiones."
+
+  @solo-web @validacion
+  Escenario: La contraseña nueva debe repetirse igual
+    Cuando escribo mi contraseña actual en el campo "Contraseña actual"
+    Y escribo "una-contrasena-nueva" en el campo "Contraseña nueva"
+    Y escribo "otra-contrasena-distinta" en el campo "Repetir contraseña"
+    Y pulso el botón "Cambiar contraseña"
+    Entonces veo el aviso "Las contraseñas no coinciden."
+
+  @solo-web
+  Escenario: Cerrar todas las sesiones lleva a la página de acceso
+    Cuando pulso el botón "Cerrar todas las sesiones"
+    Entonces veo el campo "Correo electrónico"
+
   @smoke
   Escenario: Cambiar el nombre y guardar
     Cuando elijo editar mi información

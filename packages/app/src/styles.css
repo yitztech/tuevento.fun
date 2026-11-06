@@ -5660,3 +5660,7 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   justify-content: space-between;
   gap: 12px;
 }
+
+.security-panel {
+  margin-top: 24px;
+}

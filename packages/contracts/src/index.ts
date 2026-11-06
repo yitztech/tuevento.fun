@@ -398,6 +398,9 @@ export const resetPasswordSchema = z.strictObject({
   password,
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+/** Cambiar la contraseña con la sesión abierta: exige la actual. */
+export const changePasswordSchema = z.strictObject({ currentPassword: password, newPassword: password });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export const newsletterSchema = z.strictObject({
   email,
   name: z.string().trim().max(100).optional(),
@@ -536,6 +539,8 @@ export type User = {
   mustChooseType: boolean;
   /** Cuenta nueva de Google, que no da el teléfono: se pide justo después de registrarse. */
   mustAddPhone: boolean;
+  /** Si entra con correo y contraseña: una cuenta solo de Google no tiene contraseña que cambiar. */
+  emailLogin: boolean;
 };
 export type Metrics = {
   invitations: number;

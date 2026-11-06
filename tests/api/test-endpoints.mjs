@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, sitePaletteIds, themeIds } from "@tuevento/contracts";
-import { base, client, account, verificationToken, cleanup, createCoupon, pedirTelefono, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
+import { base, client, account, verificationToken, cleanup, createCoupon, pedirTelefono, sql, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -492,6 +492,89 @@ try {
     pedirTelefono(otra.email);
     assert.equal((await cliente.call("/profile", "PATCH", { firstName: "Ana", lastName: "Paz", phone: "" }, 200)).mustAddPhone, true);
     assert.equal((await cliente.call("/profile", "PATCH", { firstName: "Ana", lastName: "Paz", phone: "+527770000001" }, 200)).mustAddPhone, false);
+  });
+
+  await suite("Sesiones: caducan sin uso, se cierran en todos los dispositivos y el uso renueva la inactividad", async () => {
+    if (process.env.TEST_API_URL) return;
+    const datos = account(P, "inactiva");
+    const a = client();
+    await a.call("/auth/register", "POST", datos, 201);
+    const email = datos.email.replace(/'/g, "''");
+    const antiguedad = (horas) => sql(`UPDATE sessions SET last_seen_at=now()-interval '${horas} hours' WHERE user_id=(SELECT id FROM users WHERE email='${email}')`);
+    // Justo antes del límite la sesión sirve, y usarla la renueva
+    antiguedad(71);
+    await a.call("/auth/me");
+    assert.equal(sql(`SELECT bool_and(last_seen_at > now() - interval '1 minute') FROM sessions WHERE user_id=(SELECT id FROM users WHERE email='${email}')`), "t");
+    antiguedad(73);
+    await a.call("/auth/me", "GET", undefined, 401);
+    // Cerrar todas: esta sesión y la de otro dispositivo
+    const b = client();
+    await a.call("/auth/login", "POST", { email: datos.email, password: datos.password }, 201);
+    await b.call("/auth/login", "POST", { email: datos.email, password: datos.password }, 201);
+    await a.call("/auth/logout-all", "POST", {}, 200);
+    await a.call("/auth/me", "GET", undefined, 401);
+    await b.call("/auth/me", "GET", undefined, 401);
+    assert.equal(sql(`SELECT count(*) FROM trusted_devices WHERE user_id=(SELECT id FROM users WHERE email='${email}')`), "0");
+  });
+
+  await suite("Cambiar la contraseña: exige la actual, cierra las demás sesiones y avisa, en 5 idiomas", async () => {
+    const idiomas = [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]];
+    const datos = account(P, "cambio-clave");
+    const a = client();
+    const otra = client();
+    assert.equal((await a.call("/auth/register", "POST", datos, 201)).emailLogin, true);
+    await otra.call("/auth/login", "POST", { email: datos.email, password: datos.password }, 201);
+    const nueva = `${datos.password}-nueva`;
+    await a.call("/auth/password/change", "POST", { currentPassword: datos.password, newPassword: "corta" }, 422);
+    await a.call("/auth/password/change", "POST", { currentPassword: datos.password, newPassword: nueva, userId: "otro" }, 422);
+    // Cuatro fallos: uno por idioma, sin llegar al límite de cinco
+    for (const [locale, headers] of idiomas.slice(0, 4)) {
+      const r = await a.raw("/auth/password/change", { method: "POST", headers, body: { currentPassword: `${datos.password}-mal`, newPassword: nueva } });
+      assert.equal(r.status, 422, locale);
+      assert.equal(r.data.code, "invalid_current_password", locale);
+      assert.equal(r.data.errors[0].field, "currentPassword", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.currentPasswordIncorrect"), locale);
+    }
+    await a.call("/auth/password/change", "POST", { currentPassword: datos.password, newPassword: nueva }, 200);
+    // Esta sesión sigue (con un token nuevo), la otra se cierra y solo vale la contraseña nueva
+    await a.call("/auth/me");
+    await otra.call("/auth/me", "GET", undefined, 401);
+    await client().call("/auth/login", "POST", { email: datos.email, password: datos.password }, 401);
+    await client().call("/auth/login", "POST", { email: datos.email, password: nueva }, 201);
+    // Una cuenta sin contraseña (solo Google) no tiene nada que cambiar
+    if (process.env.TEST_API_URL) return;
+    const google = account(P, "sin-clave");
+    const g = client();
+    await g.call("/auth/register", "POST", google, 201);
+    sql(`UPDATE users SET password_hash=NULL WHERE email='${google.email.replace(/'/g, "''")}'`);
+    assert.equal((await g.call("/auth/me")).emailLogin, false);
+    for (const [locale, headers] of idiomas) {
+      const r = await g.raw("/auth/password/change", { method: "POST", headers, body: { currentPassword: google.password, newPassword: nueva } });
+      assert.equal(r.status, 409, locale);
+      assert.equal(r.data.code, "password_not_set", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.passwordNotSet"), locale);
+    }
+  });
+
+  await suite("Registro: una cuenta sin confirmar se sustituye; una confirmada, no", async () => {
+    // Quien se adelanta con un correo ajeno pierde su contraseña y su sesión cuando se registra el dueño
+    const primero = account(P, "sin-reclamar");
+    const atacante = client({ confirm: false });
+    await atacante.call("/auth/register", "POST", primero, 201);
+    const segundo = { ...primero, password: `${primero.password}-dueno` };
+    const dueno = client({ confirm: false });
+    await dueno.call("/auth/register", "POST", segundo, 201);
+    await atacante.call("/auth/me", "GET", undefined, 401);
+    await client({ confirm: false }).call("/auth/login", "POST", { email: primero.email, password: primero.password }, 401);
+    await client({ confirm: false }).call("/auth/login", "POST", { email: primero.email, password: segundo.password }, 201);
+    // Solo vale el enlace del último registro, que confirma la cuenta del dueño
+    const token = await verificationToken(primero.email);
+    await client().call("/auth/email/verify", "POST", { token }, 200);
+    assert.equal((await dueno.call("/auth/me")).mustVerifyEmail, false);
+    // Ya confirmada no se sustituye
+    const r = await client({ confirm: false }).raw("/auth/register", { method: "POST", body: { ...primero, password: `${primero.password}-otro` } });
+    assert.equal(r.status, 409);
+    await client().call("/auth/login", "POST", { email: primero.email, password: segundo.password }, 201);
   });
 
   await suite("Tipo de cuenta: se elige al registrarse, sin elegirlo se organiza y no se cambia después", async () => {

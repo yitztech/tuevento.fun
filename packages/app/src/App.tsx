@@ -201,11 +201,19 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     setMenu(false);
     window.scrollTo(0, 0);
   }, [location.pathname]);
+  const signedOut = async () => {
+    await runtime.clearOfflineStore?.().catch(() => {});
+    setUser(null);
+    setEvents([]);
+    setNotifications([]);
+    navigate("/acceso");
+  };
   const context = {
     api,
     runtime,
     user,
     setUser,
+    signedOut,
     events,
     notifications,
     reload,
@@ -250,11 +258,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   const logout = async () => {
     try {
       await api.logout();
-      await runtime.clearOfflineStore?.().catch(() => {});
-      setUser(null);
-      setEvents([]);
-      setNotifications([]);
-      navigate("/acceso");
+      await signedOut();
     } catch (e) {
       toast(errorText(e));
     }

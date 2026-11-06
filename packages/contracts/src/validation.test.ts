@@ -7,6 +7,7 @@ import {
   registerSchema,
   chooseAccountTypeSchema,
   addPhoneSchema,
+  changePasswordSchema,
   accountArea,
   loginSchema,
   eventSchema,
@@ -28,6 +29,13 @@ test("El teléfono del registro con Google es obligatorio, válido y se guarda e
     assert.equal(addPhoneSchema.safeParse({ phone }).success, false, phone);
   assert.equal(addPhoneSchema.safeParse({}).success, false);
   assert.equal(addPhoneSchema.safeParse({ phone: "+527771234567", extra: 1 }).success, false);
+});
+test("Cambiar la contraseña exige la actual y una nueva válida, sin campos de más", () => {
+  const ok = { currentPassword: "contrasena-actual", newPassword: "contrasena-nueva" };
+  assert.equal(changePasswordSchema.safeParse(ok).success, true);
+  assert.equal(changePasswordSchema.safeParse({ ...ok, newPassword: "corta" }).success, false);
+  assert.equal(changePasswordSchema.safeParse({ newPassword: ok.newPassword }).success, false);
+  assert.equal(changePasswordSchema.safeParse({ ...ok, userId: "otro" }).success, false);
 });
 test("Una invitación requiere contacto e integrante", () => {
   assert.equal(

@@ -25,3 +25,7 @@ Then("veo la acción {string}", async ({ page }, nombre) => {
 Then("no veo la acción {string}", async ({ page }, nombre) => {
   await expect(page.getByRole("button", { name: nombre, exact: true })).toHaveCount(0);
 });
+
+When("escribo mi contraseña actual en el campo {string}", async ({ ui, ctx }, campo) => {
+  await ui.escribir(campo, ctx.cuenta.password);
+});

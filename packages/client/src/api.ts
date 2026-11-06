@@ -132,6 +132,11 @@ export class EventApi {
   googleNonce = () =>
     this.request<{ nonce: string }>("/auth/google/nonce", "POST", {});
   logout = () => this.request("/auth/logout", "POST", {});
+  /** Cierra la sesión en todos los dispositivos, este incluido. */
+  logoutAll = () => this.request<{ ok: boolean }>("/auth/logout-all", "POST", {});
+  /** Cambia la contraseña con la sesión abierta; la respuesta trae la cuenta y una sesión nueva. */
+  changePassword = (currentPassword: string, newPassword: string) =>
+    this.request<User>("/auth/password/change", "POST", { currentPassword, newPassword });
   profile = (data: ProfileInput) =>
     this.request<User>("/profile", "PATCH", data);
   avatar = (dataUrl: string) =>

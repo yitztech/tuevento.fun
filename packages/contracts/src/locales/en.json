@@ -41,6 +41,11 @@
     "startSomethingWonderful": "Start something wonderful.",
     "yourInformation": "Your information",
     "editInformation": "Edit information",
+    "securityTitle": "Security",
+    "currentPassword": "Current password",
+    "changePassword": "Change password",
+    "signOutEverywhere": "Sign out everywhere",
+    "signOutEverywhereHint": "Signs you out on all your devices, including this one. Use it if you’ve lost a device or notice anything unusual.",
     "accountTypeLegend": "How will you use TuEventoFun?",
     "organizerTitle": "Plan my event",
     "organizerHint": "Weddings, birthdays and get-togethers: guests, RSVPs and designs.",
@@ -333,7 +338,9 @@
     "accountTypeRequired": "First choose how you’ll use TuEventoFun.",
     "accountTypeAlreadyChosen": "Your account type has already been chosen.",
     "phoneRequired": "First add your phone number to continue.",
-    "phoneAlreadyAdded": "Your phone number is already saved."
+    "phoneAlreadyAdded": "Your phone number is already saved.",
+    "currentPasswordIncorrect": "Your current password isn’t correct.",
+    "passwordNotSet": "Your account signs in with Google and has no password."
   },
   "events": {
     "actions": "Actions",

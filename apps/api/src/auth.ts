@@ -13,7 +13,7 @@ import { randomBytes, randomUUID, createHash } from "node:crypto";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { clientPlatform } from "./client-platform";
-import { Database } from "./database";
+import { Database, SESSION_IDLE_HOURS } from "./database";
 import {
   passwordResetPaths,
   mailPaths,
@@ -41,6 +41,13 @@ const INVALID_RESET_LINK =
 /** Error de PostgreSQL por un valor repetido en un índice único. */
 export const isUniqueViolation = (e: unknown) =>
   (e as { code?: unknown } | null)?.code === "23505";
+/**
+ * Cuenta que nadie demostró que sea suya: con contraseña y sin confirmar, no usa la plataforma. Un
+ * registro nuevo con ese correo, o Google confirmándolo, la sustituye: así quien se adelanta con el
+ * correo de otra persona no conserva una contraseña en la cuenta que esa persona confirme después.
+ */
+const UNCLAIMED_ACCOUNT_DELETE =
+  "DELETE FROM users WHERE email=$1 AND must_verify_email AND email_verified_at IS NULL AND google_sub IS NULL AND is_demo=false";
 /** Fila de `users` tal como la devuelve PostgreSQL. */
 export type UserRow = {
   id: string;
@@ -76,6 +83,7 @@ export const userView = (r: UserRow): User => ({
   mustVerifyEmail: r.must_verify_email && r.email_verified_at === null,
   mustChooseType: r.must_choose_type,
   mustAddPhone: r.must_add_phone,
+  emailLogin: r.password_hash !== null,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin
@@ -109,29 +117,35 @@ export class AuthService {
   passwordHash(password: string) {
     return hashPassword(password);
   }
-  async register(data: RegisterInput, locale: Locale) {
+  async register(data: RegisterInput, locale: Locale, req: FastifyRequest) {
     const passwordHash = await this.passwordHash(data.password);
     try {
-      const [r] = await this.db.query<UserRow>(
-        "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale,account_type,must_verify_email,must_choose_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,true,$9) RETURNING *",
-        [
-          randomUUID(),
-          data.firstName,
-          data.lastName,
-          data.email,
-          data.phone,
-          passwordHash,
-          locale,
-          data.accountType ?? "organizer",
-          data.accountType === undefined,
-        ],
-      );
+      const r = await this.db.transaction(async (c) => {
+        await c.query(UNCLAIMED_ACCOUNT_DELETE, [data.email]);
+        const { rows } = await c.query<UserRow>(
+          "INSERT INTO users(id,first_name,last_name,email,phone,password_hash,locale,account_type,must_verify_email,must_choose_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,true,$9) RETURNING *",
+          [
+            randomUUID(),
+            data.firstName,
+            data.lastName,
+            data.email,
+            data.phone,
+            passwordHash,
+            locale,
+            data.accountType ?? "organizer",
+            data.accountType === undefined,
+          ],
+        );
+        return rows[0];
+      });
       return userView(r);
     } catch (e: unknown) {
-      if (isUniqueViolation(e))
+      if (isUniqueViolation(e)) {
+        await limits.registerTaken.hit(this.db, ipKey("register-taken", req));
         throw new ConflictException(
           "errors.emailAddressAlreadyRegistered",
         );
+      }
       throw e;
     }
   }
@@ -143,32 +157,32 @@ export class AuthService {
   async login(email: string, password: string, req: FastifyRequest) {
     const accountKey = `login:account:${email}`;
     const accountIpKey = `login:account-ip:${email}:${req.ip}`;
-    limits.loginIp.hit(ipKey("login", req));
+    await limits.loginIp.hit(this.db, ipKey("login", req));
     const [r] = await this.db.query<UserRow>(
       "SELECT * FROM users WHERE email=$1 AND is_demo=false",
       [email],
     );
     const device = r ? await this.trustedDevice(req, r.id) : null;
     const deviceKey = `login:device:${device}`;
-    if (device) limits.loginDevice.check(deviceKey);
+    if (device) await limits.loginDevice.check(this.db, deviceKey);
     else {
-      limits.loginAccountIp.check(accountIpKey);
-      limits.loginAccount.check(accountKey);
+      await limits.loginAccountIp.check(this.db, accountIpKey);
+      await limits.loginAccount.check(this.db, accountKey);
     }
     const { valid, rehash } = await verifyPassword(password, r?.password_hash);
     if (!r || !valid) {
-      if (device) limits.loginDevice.allow(deviceKey);
+      if (device) await limits.loginDevice.allow(this.db, deviceKey);
       else {
-        limits.loginAccountIp.allow(accountIpKey);
-        if (limits.loginAccount.fail(accountKey) && r) this.warnLocked(r);
+        await limits.loginAccountIp.allow(this.db, accountIpKey);
+        if ((await limits.loginAccount.fail(this.db, accountKey)) && r) this.warnLocked(r);
       }
       throw new UnauthorizedException(
         "errors.emailAddressPasswordIncorrect",
       );
     }
-    limits.loginAccountIp.reset(accountIpKey);
-    limits.loginAccount.reset(accountKey);
-    if (device) limits.loginDevice.reset(deviceKey);
+    await limits.loginAccountIp.reset(this.db, accountIpKey);
+    await limits.loginAccount.reset(this.db, accountKey);
+    if (device) await limits.loginDevice.reset(this.db, deviceKey);
     // Los hashes scrypt anteriores pasan a Argon2id al entrar
     if (rehash)
       await this.db.query("UPDATE users SET password_hash=$1 WHERE id=$2", [
@@ -265,9 +279,9 @@ export class AuthService {
    */
   async requestPasswordReset(email: string, req: FastifyRequest) {
     const locale = requestLocale(req);
-    limits.resetIp.hit(ipKey("reset", req));
+    await limits.resetIp.hit(this.db, ipKey("reset", req));
     // Pasado el límite por correo se responde igual, sin enviar nada: no revela si la cuenta existe
-    const [user] = limits.resetAccount.allow(`reset:account:${email}`)
+    const [user] = (await limits.resetAccount.allow(this.db, `reset:account:${email}`))
       ? await this.db.query(
           "SELECT id,first_name,email FROM users WHERE email=$1 AND is_demo=false",
           [email],
@@ -331,7 +345,7 @@ export class AuthService {
   }
   /** Reenvío desde la app: pocos por hora y cuenta. */
   async resendEmailVerification(user: User, req: FastifyRequest) {
-    limits.verifyEmail.hit(`verify:account:${user.id}`);
+    await limits.verifyEmail.hit(this.db, `verify:account:${user.id}`);
     await this.sendEmailVerification(user, requestLocale(req));
     return { ok: true };
   }
@@ -372,14 +386,19 @@ export class AuthService {
     });
     if (!result) throw new BadRequestException(INVALID_RESET_LINK);
     // Quien recupera su cuenta vuelve a entrar aunque estuviera cerrada por intentos ajenos
-    limits.loginAccount.reset(`login:account:${result.user.email}`);
-    const site = siteUrl(result.locale);
+    await limits.loginAccount.reset(this.db, `login:account:${result.user.email}`);
+    this.warnPasswordChanged(result.user, result.locale);
+    return userView(result.user);
+  }
+  /** Aviso al dueño de que su contraseña cambió, con el enlace por si no lo pidió. */
+  private warnPasswordChanged(user: UserRow, locale: Locale) {
+    const site = siteUrl(locale);
     void this.mail
       .send(
-        result.locale,
-        passwordChangedMail(result.locale, {
-          to: result.user.email,
-          name: result.user.first_name,
+        locale,
+        passwordChangedMail(locale, {
+          to: user.email,
+          name: user.first_name,
           site,
           resetUrl: `${site}${passwordResetPaths.request}`,
         }),
@@ -387,20 +406,56 @@ export class AuthService {
       .catch((e: Error) =>
         this.logger.error(`No se pudo enviar el aviso de contraseña cambiada: ${e.message}`),
       );
-    return userView(result.user);
+  }
+  /**
+   * Cambio con la sesión abierta: exige la contraseña actual, cierra todas las sesiones y retira los
+   * dispositivos de confianza. Quien llama abre después una sesión nueva. Una cuenta solo de Google
+   * no tiene contraseña que cambiar.
+   */
+  async changePassword(user: User, current: string, next: string, req: FastifyRequest) {
+    const key = `password-change:account:${user.id}`;
+    await limits.passwordChange.check(this.db, key);
+    const [row] = await this.db.query<UserRow>("SELECT * FROM users WHERE id=$1 AND is_demo=false", [user.id]);
+    if (!row?.password_hash)
+      throw new ProblemException({ status: 409, code: "password_not_set", detail: "errors.passwordNotSet" });
+    if (!(await verifyPassword(current, row.password_hash)).valid) {
+      await limits.passwordChange.allow(this.db, key);
+      throw new ProblemException({
+        status: 422,
+        code: "invalid_current_password",
+        detail: "errors.currentPasswordIncorrect",
+        errors: [{ field: "currentPassword", code: "invalid_current_password", message: "errors.currentPasswordIncorrect" }],
+      });
+    }
+    const passwordHash = await this.passwordHash(next);
+    const updated = await this.db.transaction(async (c) => {
+      const { rows } = await c.query<UserRow>("UPDATE users SET password_hash=$1 WHERE id=$2 RETURNING *", [passwordHash, row.id]);
+      await c.query("DELETE FROM password_resets WHERE user_id=$1", [row.id]);
+      await c.query("DELETE FROM sessions WHERE user_id=$1", [row.id]);
+      await c.query("DELETE FROM trusted_devices WHERE user_id=$1", [row.id]);
+      return rows[0];
+    });
+    await limits.passwordChange.reset(this.db, key);
+    this.warnPasswordChanged(updated, requestLocale(req));
+    return userView(updated);
   }
   async current(req: FastifyRequest) {
     const token = sessionToken(req);
     if (!token)
       throw new UnauthorizedException("errors.signInToContinue");
-    const [r] = await this.db.query<UserRow>(
-      "SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at>now()",
-      [hash(token)],
+    const [r] = await this.db.query<UserRow & { seen_long_ago: boolean }>(
+      `SELECT u.*, s.last_seen_at < now() - interval '5 minutes' AS seen_long_ago
+       FROM users u JOIN sessions s ON s.user_id=u.id
+       WHERE s.token_hash=$1 AND s.expires_at>now() AND s.last_seen_at > now() - make_interval(hours => $2)`,
+      [hash(token), SESSION_IDLE_HOURS],
     );
     if (!r)
       throw new UnauthorizedException(
         "errors.sessionHasExpiredPlease",
       );
+    // Cada cinco minutos como mucho: no una escritura por petición
+    if (r.seen_long_ago)
+      await this.db.query("UPDATE sessions SET last_seen_at=now() WHERE token_hash=$1", [hash(token)]);
     return userView(r);
   }
   /** La sesión de una cuenta que ya puede usar la plataforma: sin correo por confirmar. */
@@ -419,6 +474,16 @@ export class AuthService {
     reply.clearCookie(SESSION_COOKIE, this.cookieOptions());
     if (LEGACY_SESSION_COOKIE !== SESSION_COOKIE)
       reply.clearCookie(LEGACY_SESSION_COOKIE, legacyCookieOptions);
+    return { ok: true };
+  }
+  /** Cierra todas las sesiones de la cuenta, esta incluida, y retira los dispositivos de confianza. */
+  async logoutAll(userId: string, reply: FastifyReply) {
+    await this.db.transaction(async (c) => {
+      await c.query("DELETE FROM sessions WHERE user_id=$1", [userId]);
+      await c.query("DELETE FROM trusted_devices WHERE user_id=$1", [userId]);
+    });
+    reply.clearCookie(SESSION_COOKIE, this.cookieOptions());
+    reply.clearCookie(DEVICE_COOKIE, this.cookieOptions());
     return { ok: true };
   }
   async google(
@@ -463,6 +528,8 @@ export class AuthService {
       [payload.sub],
     );
     if (existing) return userView(existing);
+    // Google confirma que el correo es de quien entra: una cuenta sin reclamar no se lo impide
+    await this.db.query(UNCLAIMED_ACCOUNT_DELETE, [payload.email.toLowerCase()]);
     const [sameEmail] = await this.db.query(
       "SELECT id FROM users WHERE email=$1",
       [payload.email.toLowerCase()],
