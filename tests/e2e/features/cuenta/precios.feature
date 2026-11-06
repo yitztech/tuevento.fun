@@ -5,8 +5,8 @@ Característica: Precios del servicio
   @solo-lectura @smoke
   Escenario: Los precios se ven sin registrarse
     Dado que abro la página de precios
-    Entonces veo la pestaña "Para personas" seleccionada
-    Y veo la pestaña "Para agencias y organizadores"
+    Entonces veo la pestaña "Eventos particulares" seleccionada
+    Y veo la pestaña "Profesionales"
 
   # Stripe aún sin integrar: se salta (@pendiente) hasta conectarlo
   @demo @pendiente
@@ -22,21 +22,21 @@ Característica: Precios del servicio
   @solo-lectura
   Escenario: Los planes de personas muestran sus invitados y su precio en dólares
     Dado que abro la página de precios
-    Entonces la tabla "Para personas" tiene la fila "Gratis | Hasta 20 | $0"
-    Y la tabla "Para personas" tiene la fila "Esencial | 21–60 | $14.99"
-    Y la tabla "Para personas" tiene la fila "Premium | 101–200 | $29.99"
-    Y la tabla "Para personas" tiene la fila "Gran Evento | 501 o más | $99.99"
+    Entonces la tabla "Eventos particulares" tiene la fila "Gratis | Hasta 20 | $0"
+    Y la tabla "Eventos particulares" tiene la fila "Esencial | 21–60 | $14.99"
+    Y la tabla "Eventos particulares" tiene la fila "Premium | 101–200 | $29.99"
+    Y la tabla "Eventos particulares" tiene la fila "Gran Evento | 501 o más | $99.99"
 
   @solo-lectura
   Escenario: Los planes de agencias son una suscripción mensual
     Dado que abro la página de precios
-    Cuando abro la pestaña "Para agencias y organizadores"
-    Entonces la tabla "Para agencias y organizadores" tiene la fila "Starter | $19.99"
-    Y la tabla "Para agencias y organizadores" tiene la fila "Business | $39.99"
-    Y la tabla "Para agencias y organizadores" tiene la fila "Agency | $79.99"
+    Cuando abro la pestaña "Profesionales"
+    Entonces la tabla "Profesionales" tiene la fila "Starter | $19.99"
+    Y la tabla "Profesionales" tiene la fila "Business | $39.99"
+    Y la tabla "Profesionales" tiene la fila "Agency | $79.99"
 
   @solo-lectura
   Escenario: El botón de compra lleva a crear la cuenta
     Dado que abro la página de precios
-    Cuando pulso el enlace "Comprar" de la portada
+    Cuando pulso el enlace "Comprar ahora" de la portada
     Entonces estoy en la página de registro

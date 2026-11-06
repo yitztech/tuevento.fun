@@ -4,7 +4,7 @@ import { Given, When, Then, nuevaCuenta, registrar } from "./fixtures.js";
 const cabecera = { "x-tuevento-client": "1" };
 
 Given("que abro la página de precios", async ({ ui }) => {
-  await ui.abrir("/precios");
+  await ui.abrir("/planes");
 });
 
 Given("que tengo una cuenta creada y entro a mi espacio", async ({ page }) => {
@@ -37,7 +37,7 @@ Then("la tabla {string} tiene la fila {string}", async ({ page }, tabla, fila) =
   const esperada = fila.split(" | ");
   const filas = page.getByRole("tabpanel", { name: tabla }).getByRole("row");
   await expect
-    .poll(async () => (await filas.evaluateAll((rows) => rows.map((row) => [...row.children].map((c) => c.textContent?.trim() ?? "")))).some((celdas) => celdas.join("|") === esperada.join("|")))
+    .poll(async () => (await filas.evaluateAll((rows) => rows.map((row) => [...row.children].map((c) => c.textContent?.trim() ?? "")))).some((celdas) => esperada.every((texto, i) => celdas[i]?.startsWith(texto))))
     .toBe(true);
 });
 

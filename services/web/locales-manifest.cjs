@@ -4,6 +4,7 @@
 //   locale es
 //   hosted pt en        (pt se sirve en el dominio de en, bajo /pt)
 //   path privacy es /privacidad
+//   moved pricing es /precios   (ruta anterior de una página: 301 a la actual)
 //   section providers es /proveedores   (sección con páginas por debajo: /proveedores/<dirección>)
 //   title es TuEventoFun · Invita, reúne y celebra
 //   description es Crea invitaciones…
@@ -11,6 +12,7 @@
 const { resolve } = require("node:path");
 const {
   defaultLocale,
+  locales,
   supportedLocales,
   localizedPages,
   localizedPath,
@@ -32,6 +34,12 @@ for (const page of localizedPages)
     if (!/^\/[a-z0-9/-]*$/.test(path)) throw new Error(`Ruta no válida: ${path}`);
     lines.push(`path ${page} ${locale} ${path}`);
   }
+for (const locale of supportedLocales)
+  for (const [page, paths] of Object.entries(locales[locale].moved ?? {}))
+    for (const path of paths) {
+      if (!/^\/[a-z0-9/-]*$/.test(path)) throw new Error(`Ruta no válida: ${path}`);
+      lines.push(`moved ${page} ${locale} ${path}`);
+    }
 for (const locale of supportedLocales) {
   const path = localizedPath("providers", locale);
   if (!/^\/[a-z]+$/.test(path)) throw new Error(`Ruta no válida: ${path}`);

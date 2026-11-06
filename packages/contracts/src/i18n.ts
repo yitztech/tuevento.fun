@@ -20,6 +20,11 @@ type LocaleConfig = {
   /** Mensajes genéricos de Zod en ese idioma. */
   zod: keyof typeof z.locales;
   paths: Record<LocalizedPage, string>;
+  /**
+   * Rutas anteriores de una página que cambió de nombre: responden 301 a la nueva, para siempre
+   * (una URL pública no desaparece, AGENTS.md §9.2). Las lee el gateway por el manifiesto.
+   */
+  moved?: Partial<Record<LocalizedPage, readonly string[]>>;
   messages: Catalog;
   /**
    * Idioma con dominio propio que sirve a este bajo el prefijo /<código>
@@ -38,21 +43,24 @@ export const locales = {
     name: "Español",
     intl: "es-MX",
     zod: "es",
-    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/precios", providers: "/proveedores" },
+    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/planes", providers: "/proveedores" },
+    moved: { pricing: ["/precios"] },
     messages: es,
   },
   en: {
     name: "English",
     intl: "en-US",
     zod: "en",
-    paths: { privacy: "/privacy", terms: "/terms", pricing: "/pricing", providers: "/vendors" },
+    paths: { privacy: "/privacy", terms: "/terms", pricing: "/plans", providers: "/vendors" },
+    moved: { pricing: ["/pricing"] },
     messages: en,
   },
   pt: {
     name: "Português",
     intl: "pt-BR",
     zod: "pt",
-    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/precos", providers: "/fornecedores" },
+    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/planos", providers: "/fornecedores" },
+    moved: { pricing: ["/precos"] },
     messages: pt,
     hostedBy: "en",
   },
@@ -60,7 +68,8 @@ export const locales = {
     name: "Deutsch",
     intl: "de-DE",
     zod: "de",
-    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/preise", providers: "/dienstleister" },
+    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/plaene", providers: "/dienstleister" },
+    moved: { pricing: ["/preise"] },
     messages: de,
     hostedBy: "en",
   },
@@ -68,7 +77,8 @@ export const locales = {
     name: "Français",
     intl: "fr-FR",
     zod: "fr",
-    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/tarifs", providers: "/prestataires" },
+    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/plans", providers: "/prestataires" },
+    moved: { pricing: ["/tarifs"] },
     messages: fr,
     hostedBy: "en",
   },

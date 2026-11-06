@@ -3,7 +3,7 @@
 El flujo completo de pagos y cupones funciona contra un doble de Stripe (`services/payments-fake`), sin cuentas reales. Nunca se ha probado contra Stripe de verdad. En producción no cambia nada hasta que se definan las claves de Stripe: sin ellas no se cobra ni se limita nada.
 
 > **Pruebas saltadas (6-nov-2026):** hasta integrar Stripe de verdad se saltan los tests ligados a él: `apps/api/src/payments.test.ts` (`test.skip`), las suites de pagos y cupones de `tests/api` (`suite.skip`) y los escenarios de `pagos.feature` y de la demostración (`@pendiente`). Para reactivarlos, quita `.skip` o la etiqueta `@pendiente`.
-> **Página `/precios`:** muestra la nueva oferta (personas por evento y agencias por suscripción mensual, `personalPlans` y `agencyPlans`); el cobro y el tope de invitados siguen en `guestTiers` hasta integrar Stripe.
+> **Página `/planes` (antes `/precios`):** muestra la nueva oferta (eventos particulares por pago único y profesionales por suscripción mensual, `personalPlans` y `agencyPlans`); el cobro y el tope de invitados siguen en `guestTiers` hasta integrar Stripe.
 
 ## Cómo funciona
 
