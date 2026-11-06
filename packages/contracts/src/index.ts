@@ -245,6 +245,18 @@ const email = z
   .email("validation.enterValidEmailAddress")
   .max(accountLimits.email, "validation.maximum254Characters")
   .transform((v) => v.toLowerCase().trim());
+/**
+ * Dígitos del teléfono según los metadatos de libphonenumber y E.164: el código de país tiene de 1 a 3
+ * (+1, +7… hasta +353…); el número nacional, de 4 (p. ej. Niue, +683) a 14 (+7 de Kazajistán), y entre
+ * los dos no pasan de 15.
+ */
+export const phoneLimits = {
+  codeMin: 1,
+  codeMax: 3,
+  nationalMin: 4,
+  nationalMax: 14,
+  totalMax: 15,
+} as const;
 /** País de los teléfonos escritos sin prefijo internacional (el del idioma principal). */
 export const defaultPhoneCountry = "ES";
 /** Teléfono (§6.2): solo sus caracteres, válido según libphonenumber y guardado en E.164. */

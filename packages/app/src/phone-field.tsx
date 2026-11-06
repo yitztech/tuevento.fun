@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { accountLimits, type Locale } from "@tuevento/contracts";
+import { accountLimits, phoneLimits, type Locale } from "@tuevento/contracts";
 import { formatLocale, getLocale, tr, trMessage } from "./i18n";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -171,6 +171,9 @@ function ManualPhoneField({
     if (value !== composeManual(parts)) setParts(parseManual(value, defaultDial));
   }, [value]);
   const update = (next: { code: string; national: string }) => {
+    // Código de 1 a 3 dígitos y, entre código y número, 15 dígitos como máximo (E.164)
+    if (next.code.length > phoneLimits.codeMax) return;
+    if (next.national.replace(/\D/g, "").length > Math.min(phoneLimits.nationalMax, phoneLimits.totalMax - next.code.length)) return;
     const phone = composeManual(next);
     if (phone.length > accountLimits.phone) return;
     setParts(next);
@@ -181,26 +184,19 @@ function ManualPhoneField({
     <div className="field">
       <Label htmlFor={id}>{label}</Label>
       <div className="phone-field phone-field-manual">
+        <span aria-hidden className="phone-sep">+</span>
         <Input
           type="tel"
           inputMode="numeric"
           autoComplete="tel-country-code"
           aria-label={tr("common.countryCode")}
-          maxLength={5}
-          value={`+${parts.code}`}
-          // El «+» es fijo: el cursor nunca queda antes de él.
-          onFocus={(event) => {
-            const input = event.currentTarget;
-            requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length));
-          }}
-          onSelect={(event) => {
-            const input = event.currentTarget;
-            if ((input.selectionStart ?? 1) < 1) input.setSelectionRange(1, Math.max(1, input.selectionEnd ?? 1));
-          }}
+          maxLength={phoneLimits.codeMax}
+          value={parts.code}
           aria-invalid={!!error}
           aria-describedby={`${id}-code-hint`}
-          onChange={(event) => update({ ...parts, code: event.target.value.replace(/\D/g, "").slice(0, 4) })}
+          onChange={(event) => update({ ...parts, code: event.target.value.replace(/\D/g, "").slice(0, phoneLimits.codeMax) })}
         />
+        <span aria-hidden className="phone-sep">-</span>
         <Input
           id={id}
           type="tel"

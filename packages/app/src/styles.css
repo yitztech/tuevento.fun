@@ -1551,7 +1551,12 @@
   gap: 8px;
 }
 .phone-field-manual {
-  grid-template-columns: 6.5rem minmax(0, 1fr);
+  grid-template-columns: auto 4.5rem auto minmax(0, 1fr);
+  align-items: center;
+}
+.phone-sep {
+  color: var(--muted);
+  font-weight: 700;
 }
 .field > small {
   font-size: 10px;
