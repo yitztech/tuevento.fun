@@ -141,7 +141,7 @@ function SelectPhoneField({
 
 /** Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. */
 function parseManual(value: string, fallbackDial: string) {
-  const match = /^\+(\d{1,4})[\s()-]*(.*)$/.exec(value);
+  const match = /^\+(\d{1,3})[\s()-]*(.*)$/.exec(value);
   return match ? { code: match[1], national: match[2] } : { code: fallbackDial, national: value };
 }
 const composeManual = ({ code, national }: { code: string; national: string }) => {
