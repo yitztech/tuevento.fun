@@ -64,8 +64,8 @@
     "verifyEmailBanner": "Confirme ton adresse e-mail ({{email}}) avec le lien que nous t’avons envoyé. D’ici là, tes invités ne recevront pas d’avis par e-mail.",
     "verificationSent": "Nous avons envoyé un nouveau lien à {{email}}. Regarde aussi dans tes spams.",
     "resendVerification": "Renvoyer le lien",
-    "placeholderFirstName": "Camille",
-    "placeholderLastName": "Dubois",
+    "placeholderFirstName": "John",
+    "placeholderLastName": "Smith",
     "placeholderPhone": "6 12 34 56 78",
     "placeholderEmail": "toi@exemple.fr"
   },

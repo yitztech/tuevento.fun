@@ -64,8 +64,8 @@
     "verifyEmailBanner": "Confirma tu correo ({{email}}) con el enlace que te enviamos. Hasta entonces, tus invitados no recibirán avisos por correo.",
     "verificationSent": "Te enviamos un enlace nuevo a {{email}}. Revisa también la carpeta de spam.",
     "resendVerification": "Enviar el enlace otra vez",
-    "placeholderFirstName": "María",
-    "placeholderLastName": "García López",
+    "placeholderFirstName": "John",
+    "placeholderLastName": "Smith",
     "placeholderPhone": "612 34 56 78",
     "placeholderEmail": "tu@correo.com"
   },
