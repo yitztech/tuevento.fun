@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type MouseEvent, type ReactElement } from "react";
+import { Fragment, useEffect, useRef, useState, type MouseEvent, type ReactElement } from "react";
 import i18next from "i18next";
 import { initReactI18next, Trans, useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
@@ -207,6 +207,24 @@ export function LanguageSwitcher() {
   const { locale } = useLocale();
   const { pathname, search, hash } = useLocation();
   const others = reachableLocales().filter((other) => other !== locale);
+  const menu = useRef<HTMLDetailsElement>(null);
+  // Un clic fuera o Escape cierran el menú; con Escape el foco vuelve al botón
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menu.current?.contains(event.target as Node)) menu.current?.removeAttribute("open");
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !menu.current?.open) return;
+      menu.current.removeAttribute("open");
+      menu.current.querySelector("summary")?.focus();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
   if (!others.length) return null;
   const choose = (other: Locale) => (event: MouseEvent<HTMLElement>) => {
     event.currentTarget.closest("details")?.removeAttribute("open");
@@ -283,14 +301,13 @@ export function LanguageSwitcher() {
     );
   };
   return (
-    <details className="language-menu">
+    <details className="language-menu" ref={menu}>
       {/* El nombre accesible empieza por el código visible (WCAG 2.5.3, «label in name») */}
       <summary
         className="language-switcher"
         title={tr("language.changeLanguage")}
         aria-label={`${locale.toUpperCase()} · ${label(locale)}`}
       >
-        <LocaleFlag locale={locale} />
         <span className="language-code">{locale.toUpperCase()}</span>
         <ChevronDown className="language-chevron" size={14} aria-hidden="true" />
       </summary>
