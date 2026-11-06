@@ -22,6 +22,7 @@ import { CouponField } from "./coupon";
 import { errorText, useApp } from "./context";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { Button } from "./ui/button";
+import { PlanTabs } from "./ui/site/plan-tabs";
 import { SiteLayout } from "./ui/site/site-layout";
 
 /** Ruta de la página de precios en un idioma (/precios, /pricing…). */
@@ -56,8 +57,7 @@ function guestsText(plan: PersonalPlan) {
 /** Planes para personas: un pago único por evento según los invitados. */
 function PersonalPlans() {
   return (
-    <section aria-labelledby="pricing-personal">
-      <h2 id="pricing-personal">{tr("pricing.personalTitle")}</h2>
+    <>
       <p className="legal-intro">{tr("pricing.intro")}</p>
       <table className="pricing-table">
         <thead>
@@ -77,15 +77,14 @@ function PersonalPlans() {
           ))}
         </tbody>
       </table>
-    </section>
+    </>
   );
 }
 
 /** Planes para agencias y organizadores: suscripción mensual. */
 function AgencyPlans() {
   return (
-    <section aria-labelledby="pricing-agency">
-      <h2 id="pricing-agency">{tr("pricing.agencyTitle")}</h2>
+    <>
       <p className="legal-intro">{tr("pricing.agencyIntro")}</p>
       <table className="pricing-table">
         <thead>
@@ -103,7 +102,7 @@ function AgencyPlans() {
           ))}
         </tbody>
       </table>
-    </section>
+    </>
   );
 }
 
@@ -147,8 +146,13 @@ export function PricingPage() {
           </Link>
           <h1>{tr("pricing.title")}</h1>
           <p className="legal-intro">{tr("pricing.publicIntro")}</p>
-          <PersonalPlans />
-          <AgencyPlans />
+          <PlanTabs
+            label={tr("pricing.plansLabel")}
+            tabs={[
+              { value: "personal", label: tr("pricing.personalTitle"), content: <PersonalPlans /> },
+              { value: "agency", label: tr("pricing.agencyTitle"), content: <AgencyPlans /> },
+            ]}
+          />
           <Button asChild><Link to="/registro" className="pricing-cta">
             {tr("pricing.buy")}
             <ArrowRight size={18} />

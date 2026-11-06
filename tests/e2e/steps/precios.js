@@ -35,8 +35,20 @@ Then("estoy en la página de pago", async ({ ui }) => {
 Then("la tabla {string} tiene la fila {string}", async ({ page }, tabla, fila) => {
   // Las celdas de la fila se escriben separadas por « | », como se leen en la tabla
   const esperada = fila.split(" | ");
-  const filas = page.getByRole("region", { name: tabla }).getByRole("row");
+  const filas = page.getByRole("tabpanel", { name: tabla }).getByRole("row");
   await expect
     .poll(async () => (await filas.evaluateAll((rows) => rows.map((row) => [...row.children].map((c) => c.textContent?.trim() ?? "")))).some((celdas) => celdas.join("|") === esperada.join("|")))
     .toBe(true);
+});
+
+When("abro la pestaña {string}", async ({ page }, nombre) => {
+  await page.getByRole("tab", { name: nombre, exact: true }).click();
+});
+
+Then("veo la pestaña {string} seleccionada", async ({ page }, nombre) => {
+  await expect(page.getByRole("tab", { name: nombre, exact: true })).toHaveAttribute("aria-selected", "true");
+});
+
+Then("veo la pestaña {string}", async ({ page }, nombre) => {
+  await expect(page.getByRole("tab", { name: nombre, exact: true })).toBeVisible();
 });

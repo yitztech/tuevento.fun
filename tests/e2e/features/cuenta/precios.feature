@@ -5,8 +5,8 @@ Característica: Precios del servicio
   @solo-lectura @smoke
   Escenario: Los precios se ven sin registrarse
     Dado que abro la página de precios
-    Entonces veo el aviso "Para personas"
-    Y veo el aviso "Para agencias y organizadores"
+    Entonces veo la pestaña "Para personas" seleccionada
+    Y veo la pestaña "Para agencias y organizadores"
 
   # Stripe aún sin integrar: se salta (@pendiente) hasta conectarlo
   @demo @pendiente
@@ -30,6 +30,7 @@ Característica: Precios del servicio
   @solo-lectura
   Escenario: Los planes de agencias son una suscripción mensual
     Dado que abro la página de precios
+    Cuando abro la pestaña "Para agencias y organizadores"
     Entonces la tabla "Para agencias y organizadores" tiene la fila "Starter | $19.99"
     Y la tabla "Para agencias y organizadores" tiene la fila "Business | $39.99"
     Y la tabla "Para agencias y organizadores" tiene la fila "Agency | $79.99"
