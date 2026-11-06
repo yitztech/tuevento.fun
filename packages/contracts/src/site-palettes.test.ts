@@ -11,7 +11,7 @@ function contrast(a: string, b: string) {
   return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 }
 test("Las paletas admitidas incluyen la original y rechazan campos o identificadores ajenos", () => {
-  assert.equal(sitePaletteIds.length, 5);
+  assert.equal(sitePaletteIds.length, 9);
   for (const palette of sitePaletteIds) assert.equal(sitePaletteSchema.safeParse({ palette }).success, true);
   assert.equal(sitePaletteSchema.safeParse({ palette: "other" }).success, false);
   assert.equal(sitePaletteSchema.safeParse({ palette: "terracotta", isOwner: true }).success, false);

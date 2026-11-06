@@ -22,6 +22,10 @@ const PALETTES = [
   { id: "plum-champagne", name: "Ciruela y Champagne", colors: ["#570035", "#ffd166", "#ff8a00", "#fff1f6", "#320d26"] },
   { id: "mandarin-raspberry", name: "Mandarina y Frambuesa", colors: ["#b94a00", "#d9004b", "#ffc400", "#fff0e3", "#40152d"] },
   { id: "raspberry-vanilla", name: "Frambuesa y Vainilla", colors: ["#a90046", "#ffe08a", "#ff8a00", "#fff0f6", "#3d102a"] },
+  { id: "ocean-aqua", name: "Océano y Aguamarina", colors: ["#0a5a8a", "#5ce1d6", "#1fb6c9", "#e8f5fb", "#06283d"] },
+  { id: "forest-mint", name: "Bosque y Menta", colors: ["#12633f", "#8ee6b8", "#2fb67c", "#e7f6ee", "#0b2e20"] },
+  { id: "indigo-ice", name: "Índigo y Hielo", colors: ["#3a3fb8", "#a9d6ff", "#5b8def", "#eceefb", "#15174a"] },
+  { id: "petrol-lime", name: "Petróleo y Lima", colors: ["#0f5c63", "#c6ec5a", "#27a8a0", "#e8f4f2", "#0d2f33"] },
 ];
 const MESSAGES = {
   invalid: "Usuario o contraseña incorrectos.",

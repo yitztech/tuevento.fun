@@ -1,6 +1,6 @@
 # language: es
 @paletas-pantallas @solo-web
-Característica: Las cuatro paletas en móvil, tableta y escritorio
+Característica: Las paletas en móvil, tableta y escritorio
   La paleta publicada se simula en la respuesta de la API: los escenarios no cambian la paleta global
   y pueden correr en paralelo con el resto.
 
@@ -26,3 +26,15 @@ Característica: Las cuatro paletas en móvil, tableta y escritorio
       | raspberry-vanilla  | 390   | 844  |
       | raspberry-vanilla  | 820   | 1180 |
       | raspberry-vanilla  | 1440  | 900  |
+      | ocean-aqua         | 390   | 844  |
+      | ocean-aqua         | 820   | 1180 |
+      | ocean-aqua         | 1440  | 900  |
+      | forest-mint        | 390   | 844  |
+      | forest-mint        | 820   | 1180 |
+      | forest-mint        | 1440  | 900  |
+      | indigo-ice         | 390   | 844  |
+      | indigo-ice         | 820   | 1180 |
+      | indigo-ice         | 1440  | 900  |
+      | petrol-lime        | 390   | 844  |
+      | petrol-lime        | 820   | 1180 |
+      | petrol-lime        | 1440  | 900  |

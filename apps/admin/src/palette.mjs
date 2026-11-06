@@ -1,6 +1,9 @@
 // Paletas que acepta el panel. Son los identificadores de `sitePaletteIds` (packages/contracts) y la
-// base de datos los repite en su CHECK (migración 034).
-export const PALETTES = ["terracotta", "fuchsia-plum-amber", "plum-champagne", "mandarin-raspberry", "raspberry-vanilla"];
+// base de datos los repite en su CHECK (migración 036).
+export const PALETTES = [
+  "terracotta", "fuchsia-plum-amber", "plum-champagne", "mandarin-raspberry", "raspberry-vanilla",
+  "ocean-aqua", "forest-mint", "indigo-ice", "petrol-lime",
+];
 
 /** La paleta del cuerpo, si es lo único que trae y es una conocida (AGENTS.md §23), o lanza 422. */
 export function parsePalette(body) {
