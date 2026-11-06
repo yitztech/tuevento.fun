@@ -13,7 +13,7 @@ Característica: Accesibilidad de las páginas públicas
       | es     | /            |
       | es     | /registro    |
       | es     | /acceso      |
-      | es     | /precios     |
+      | es     | /planes      |
       | es     | /privacidad  |
       | en     | /            |
       | en     | /registro    |

@@ -4505,9 +4505,6 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   font-weight: 500;
   color: var(--muted);
 }
-.pricing-cta {
-  margin-top: 8px;
-}
 .coupon-form {
   display: grid;
   gap: 8px;
@@ -4547,11 +4544,6 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
-}
-/* La regla de enlaces de las páginas legales pondría el texto azul sobre el botón azul */
-.legal-page a:not(.language-switcher):not(.logo).pricing-cta,
-.legal-page a:not(.language-switcher):not(.logo).pricing-cta:hover {
-  color: #fff;
 }
 
 /* Postal de evento: lienzo 3:4 con capas en porcentaje (la misma en editor, invitación y móvil) */
