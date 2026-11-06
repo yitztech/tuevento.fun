@@ -61,6 +61,9 @@ export function SiteHeader() {
               : "hidden",
           )}
         >
+          <Link to="/acceso" onClick={close} className={cn(linkClass, "sm:hidden", open && "max-xl:flex max-xl:min-h-12 max-xl:items-center max-xl:px-3 max-xl:text-base max-xl:text-title")}>
+            {tr("landing.logIn")}
+          </Link>
           {links.map((l) => (
             <Link key={l.label} to={l.to} onClick={close} className={cn(linkClass, open && "max-xl:flex max-xl:min-h-12 max-xl:items-center max-xl:px-3 max-xl:text-base max-xl:text-title")}>
               {l.label}

@@ -11,7 +11,7 @@ function contrast(a: string, b: string) {
   return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 }
 test("Las paletas admitidas incluyen la original y rechazan campos o identificadores ajenos", () => {
-  assert.equal(sitePaletteIds.length, 5);
+  assert.equal(sitePaletteIds.length, 9);
   for (const palette of sitePaletteIds) assert.equal(sitePaletteSchema.safeParse({ palette }).success, true);
   assert.equal(sitePaletteSchema.safeParse({ palette: "other" }).success, false);
   assert.equal(sitePaletteSchema.safeParse({ palette: "terracotta", isOwner: true }).success, false);
@@ -31,5 +31,5 @@ test("El contrato OpenAPI de paletas publica los identificadores y operaciones v
   const spec = JSON.parse(await readFile(join(__dirname, "../../../docs/openapi/site-palettes.yaml"), "utf8"));
   assert.deepEqual(spec.components.schemas.SitePalette.properties.palette.enum, [...sitePaletteIds]);
   assert.ok(spec.paths["/site-palette"].get.responses[200]);
-  for (const code of [200, 401, 403, 422]) assert.ok(spec.paths["/owner/site-palette"].put.responses[code]);
+  assert.equal(spec.paths["/owner/site-palette"], undefined);
 });

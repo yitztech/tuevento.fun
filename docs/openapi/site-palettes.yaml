@@ -3,7 +3,7 @@
   "info": {
     "title": "TuEventoFun: paleta global",
     "version": "1.0.0",
-    "description": "Contrato de los dos endpoints internos de paleta; no es el catálogo completo de la API."
+    "description": "Contrato del endpoint público de paleta; la paleta solo se cambia en el panel de administración."
   },
   "servers": [
     {
@@ -35,70 +35,6 @@
           }
         }
       }
-    },
-    "/owner/site-palette": {
-      "put": {
-        "summary": "Guardar la paleta global como dueño",
-        "description": "Requiere sesión del dueño, cabecera X-TuEvento-Client: 1 y Origin permitido.",
-        "parameters": [
-          {
-            "name": "Origin",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-TuEvento-Client",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "const": "1"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SitePalette"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Paleta global activa",
-            "headers": {
-              "Cache-Control": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "no-store"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SitePalette"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Sin sesión válida"
-          },
-          "403": {
-            "description": "Sin permiso o protección de origen fallida"
-          },
-          "422": {
-            "description": "Cuerpo no válido"
-          }
-        }
-      }
     }
   },
   "components": {
@@ -117,7 +53,11 @@
               "fuchsia-plum-amber",
               "plum-champagne",
               "mandarin-raspberry",
-              "raspberry-vanilla"
+              "raspberry-vanilla",
+              "ocean-aqua",
+              "forest-mint",
+              "indigo-ice",
+              "petrol-lime"
             ]
           }
         }

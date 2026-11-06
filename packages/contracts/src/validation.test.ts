@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  phoneLimits,
   invitationSchema,
   rsvpSchema,
   registerSchema,
@@ -200,6 +201,18 @@ test("Registro rechaza letras y teléfonos sin dígitos suficientes", () => {
   for (const value of ["abc1234567", "555-CALL-NOW", "+++++++", "123456", "1234567890123456"]) {
     assert.equal(registerSchema.safeParse({ ...newUser, phone: value }).success, false, value);
   }
+});
+test("Teléfono: código de país de 1 a 3 dígitos, número de 4 a 14 y 15 como máximo entre los dos", () => {
+  const ok = (phone: string) => registerSchema.safeParse({ ...newUser, phone }).success;
+  assert.equal(phoneLimits.codeMin, 1);
+  assert.equal(phoneLimits.codeMax, 3);
+  assert.equal(phoneLimits.nationalMin, 4);
+  assert.equal(phoneLimits.nationalMax, 14);
+  assert.equal(phoneLimits.totalMax, 15);
+  // Código de 1 dígito (+1), de 2 (+34) y de 3 (+353, +683); número de 4 dígitos (+683, Niue)
+  for (const value of ["+1 212 555 0123", "+34 612 345 678", "+353 1 234 5678", "+683 4002"]) assert.equal(ok(value), true, value);
+  // Número de menos de 4 dígitos, de más de 14 y más de 15 en total
+  for (const value of ["+1 234", "+683 400", "+34 6123456789012345", "+353 1234567890123", "+3453 612345678"]) assert.equal(ok(value), false, value);
 });
 test("Registro limita la longitud de nombre, correo, teléfono y contraseña", () => {
   const long = (n: number, c = "a") => c.repeat(n);

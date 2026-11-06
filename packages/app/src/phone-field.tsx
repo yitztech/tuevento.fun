@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { accountLimits, type Locale } from "@tuevento/contracts";
+import { accountLimits, phoneLimits, type Locale } from "@tuevento/contracts";
 import { formatLocale, getLocale, tr, trMessage } from "./i18n";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -65,7 +65,7 @@ const onlyPhoneChars = /[^\d\s()+-]/g;
  * Teléfono con selector de país (bandera, nombre y prefijo) y número.
  * El valor que recibe y entrega es el teléfono completo, como antes: "+34 612 34 56 78".
  */
-export function PhoneField({
+function SelectPhoneField({
   label,
   error,
   value,
@@ -137,4 +137,104 @@ export function PhoneField({
       )}
     </div>
   );
+}
+
+/** Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. */
+function parseManual(value: string, fallbackDial: string) {
+  const match = /^\+(\d{1,3})[\s()-]*(.*)$/.exec(value);
+  return match ? { code: match[1], national: match[2] } : { code: fallbackDial, national: value };
+}
+const composeManual = ({ code, national }: { code: string; national: string }) => {
+  const number = national.trim();
+  if (!number) return "";
+  return code ? `+${code} ${number}` : number;
+};
+
+/** Teléfono con el código de país escrito a mano, en lugar de elegirlo de una lista. */
+function ManualPhoneField({
+  label,
+  error,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  placeholder?: string;
+  error?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  const defaultDial = dialByIso.get(defaultCountryByLocale[getLocale()])!.slice(1);
+  const [parts, setParts] = useState(() => parseManual(value, defaultDial));
+  useEffect(() => {
+    if (value !== composeManual(parts)) setParts(parseManual(value, defaultDial));
+  }, [value]);
+  const update = (next: { code: string; national: string }) => {
+    // Código de 1 a 3 dígitos y, entre código y número, 15 dígitos como máximo (E.164)
+    if (next.code.length > phoneLimits.codeMax) return;
+    if (next.national.replace(/\D/g, "").length > Math.min(phoneLimits.nationalMax, phoneLimits.totalMax - next.code.length)) return;
+    const phone = composeManual(next);
+    if (phone.length > accountLimits.phone) return;
+    setParts(next);
+    onChange(phone);
+  };
+
+  return (
+    <div className="field">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="phone-field phone-field-manual">
+        <span aria-hidden className="phone-sep">+</span>
+        <Input
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-country-code"
+          aria-label={tr("common.countryCode")}
+          maxLength={phoneLimits.codeMax}
+          value={parts.code}
+          aria-invalid={!!error}
+          aria-describedby={`${id}-code-hint`}
+          onChange={(event) => update({ ...parts, code: event.target.value.replace(/\D/g, "").slice(0, phoneLimits.codeMax) })}
+        />
+        <span aria-hidden className="phone-sep">-</span>
+        <Input
+          id={id}
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          placeholder={placeholder}
+          maxLength={accountLimits.phone}
+          value={parts.national}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : undefined}
+          onChange={(event) => {
+            const raw = event.target.value.replace(onlyPhoneChars, "");
+            // Si pega el número con su prefijo ("+52 55…"), el código se separa solo.
+            update(raw.startsWith("+") ? parseManual(raw, parts.code) : { ...parts, national: raw });
+          }}
+        />
+      </div>
+      <small id={`${id}-code-hint`}>{tr("common.countryCodePlusIncluded")}</small>
+      {error && (
+        <small id={`${id}-error`} className="field-error" role="alert">
+          {trMessage(error)}
+        </small>
+      )}
+    </div>
+  );
+}
+
+type PhoneFieldProps = {
+  label: string;
+  error?: string;
+  value: string;
+  onChange: (value: string) => void;
+  /** Ejemplo del número que se muestra mientras el campo está vacío. */
+  placeholder?: string;
+  /** El código de país se escribe a mano en vez de elegirlo de la lista. */
+  manualCode?: boolean;
+};
+
+export function PhoneField({ manualCode, ...props }: PhoneFieldProps) {
+  return manualCode ? <ManualPhoneField {...props} /> : <SelectPhoneField {...props} />;
 }

@@ -1,4 +1,5 @@
 import { validationOptions } from "@tuevento/contracts";
+import { z } from "zod";
 import { tr, getLocale } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -75,6 +76,15 @@ function AuthShell({ side = "login", children }: { side?: AuthSide; children: Re
     </SiteAuthShell>
   );
 }
+/** El registro repite la contraseña; la comprobación es del formulario y no viaja a la API. */
+const registerFormSchema = registerSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "validation.passwordsDontMatch",
+  });
+type RegisterFormInput = RegisterInput & { confirmPassword?: string };
+const registerData = ({ confirmPassword: _confirm, ...data }: RegisterFormInput): RegisterInput => data;
 const filterInput =
   (pattern: RegExp) => (event: { target: { value: string } }) => {
     event.target.value = event.target.value.replace(pattern, "");
@@ -87,38 +97,25 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const { api, setUser, toast, online } = useApp(),
     navigate = useNavigate(),
     [error, setError] = useState(""),
-    [showPassword, setShowPassword] = useState(false),
-    [avatar, setAvatar] = useState("");
+    [showPassword, setShowPassword] = useState(false);
   // ?tipo=proveedor llega desde la sección para proveedores de la portada
   const initialType: AccountType = new URLSearchParams(search).get("tipo") === "proveedor" ? "provider" : "organizer";
-  const form = useForm<RegisterInput>({
+  const form = useForm<RegisterFormInput>({
     resolver: zodResolver(
-      registerMode ? registerSchema : loginSchema,
+      registerMode ? registerFormSchema : loginSchema,
       validationOptions(getLocale()),
-    ) as unknown as Resolver<RegisterInput>,
+    ) as unknown as Resolver<RegisterFormInput>,
     // Solo los campos del esquema de cada modo: los esquemas no admiten campos de más
     defaultValues: registerMode
-      ? { firstName: "", lastName: "", phone: "", email: "", password: "", accountType: initialType }
+      ? { firstName: "", lastName: "", phone: "", email: "", password: "", confirmPassword: "", accountType: initialType }
       : { email: "", password: "" },
   });
   const submit = form.handleSubmit(async (data) => {
     setError("");
     try {
-      let user = registerMode
-        ? await api.register(data)
+      const user = registerMode
+        ? await api.register(registerData(data))
         : await api.login(data.email, data.password);
-      if (registerMode && avatar) {
-        try {
-          user = await api.avatar(avatar);
-        } catch (e) {
-          toast(
-            tr(
-              "account.accountReadyErrorAdd",
-              { error: errorText(e) },
-            ),
-          );
-        }
-      }
       setUser(user);
       navigate(postAuthTarget);
     } catch (e) {
@@ -156,6 +153,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
             <span>{tr("account.continueEmail")}</span>
           </div>
           <form onSubmit={submit} noValidate>
+            {error && <ErrorBox message={error} />}
             {registerMode && (
               <>
                 <Field
@@ -164,6 +162,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <Input
                     autoComplete="given-name"
+                    placeholder={tr("account.placeholderFirstName")}
                     maxLength={accountLimits.personName}
                     {...form.register("firstName", { onChange: onlyNameChars })}
                   />
@@ -174,6 +173,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <Input
                     autoComplete="family-name"
+                    placeholder={tr("account.placeholderLastName")}
                     maxLength={accountLimits.personName}
                     {...form.register("lastName", { onChange: onlyNameChars })}
                   />
@@ -183,6 +183,8 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   name="phone"
                   render={({ field }) => (
                     <PhoneField
+                      manualCode
+                      placeholder={tr("account.placeholderPhone")}
                       label={tr("common.phone")}
                       error={form.formState.errors.phone?.message}
                       value={field.value}
@@ -199,6 +201,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               <Input
                 type="email"
                 autoComplete="email"
+                placeholder={tr("account.placeholderEmail")}
                 maxLength={accountLimits.email}
                 {...form.register("email")}
               />
@@ -219,6 +222,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                     registerMode ? "new-password" : "current-password"
                   }
                   maxLength={accountLimits.password}
+                  placeholder="••••••••••"
                   {...form.register("password")}
                 />
                 <Button variant="ghost" size="icon"
@@ -234,6 +238,22 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 </Button>
               </span>
             </Field>
+            {registerMode && (
+              <Field
+                label={tr("account.repeatPassword")}
+                error={form.formState.errors.confirmPassword?.message}
+              >
+                <span className="password-input">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    maxLength={accountLimits.password}
+                    placeholder="••••••••••"
+                    {...form.register("confirmPassword")}
+                  />
+                </span>
+              </Field>
+            )}
             {!registerMode && (
               <p className="auth-forgot">
                 <Link to={passwordResetPaths.request}>
@@ -241,34 +261,6 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 </Link>
               </p>
             )}
-            {registerMode && (
-              <label className="upload-inline">
-                {avatar ? (
-                  <img src={avatar} alt={tr("account.avatarPreview")} />
-                ) : (
-                  <Upload size={20} />
-                )}
-                <span>
-                  {tr("account.photoLogo")}{" "}
-                  <small>{tr("account.optionalJpgPngWebp")}</small>
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  aria-label={tr("account.uploadProfileImage")}
-                  onChange={async (e) => {
-                    if (e.target.files?.[0])
-                      try {
-                        setAvatar(await readAvatar(e.target.files[0]));
-                        setError("");
-                      } catch (error) {
-                        setError(errorText(error));
-                      }
-                  }}
-                />
-              </label>
-            )}
-            {error && <ErrorBox message={error} />}
             <NeedsConnection online={online} />
             <Button
               className="full"
@@ -451,7 +443,9 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
     ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!config.googleClientId || runtime.startNativeLogin) return;
-    let active = true;
+    let active = true,
+      observer: ResizeObserver | undefined,
+      lastWidth = 0;
     const init = async () => {
       try {
         const { nonce } = await api.googleNonce();
@@ -469,13 +463,31 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
             }
           },
         });
-        google.accounts.id.renderButton(ref.current, {
-          theme: "outline",
-          size: "large",
-          width: 360,
-          text: "continue_with",
-          locale: getLocale(),
+        // El botón ocupa siempre el ancho del contenedor (el mismo de los campos); Google admite de 200 a 400 px
+        const draw = () => {
+          const box = ref.current;
+          if (!box) return;
+          const full = box.clientWidth || 360,
+            width = Math.min(400, Math.max(200, Math.round(full)));
+          box.replaceChildren();
+          const holder = document.createElement("div");
+          box.appendChild(holder);
+          google.accounts.id.renderButton(holder, {
+            theme: "outline",
+            size: "large",
+            width,
+            text: "continue_with",
+            locale: getLocale(),
+          });
+          holder.style.setProperty("zoom", full > 400 ? String(full / 400) : "1");
+        };
+        draw();
+        observer = new ResizeObserver(() => {
+          const w = ref.current?.clientWidth ?? 0;
+          if (Math.abs(w - lastWidth) > 1) { lastWidth = w; draw(); }
         });
+        lastWidth = ref.current?.clientWidth ?? 0;
+        observer.observe(ref.current!);
       } catch (e) {
         onError(errorText(e));
       }
@@ -503,6 +515,7 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
     }
     return () => {
       active = false;
+      observer?.disconnect();
       script?.removeEventListener("load", init);
     };
   }, [config.googleClientId, getLocale(), postAuthTarget]);

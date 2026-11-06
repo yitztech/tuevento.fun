@@ -29,6 +29,10 @@ export interface Countries {
   rows: { country: string | null; visitors: number }[];
 }
 
+export interface SitePalette {
+  palette: string;
+}
+
 export interface Page<T> {
   page: number;
   pageSize: number;

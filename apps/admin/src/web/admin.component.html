@@ -1,357 +1,630 @@
-<header class="top">
-  <strong class="brand">Panel de TuEventoFun</strong>
-  @if (session() === 'in') {
-    <div class="top-actions">
-      <button type="button" class="ghost" (click)="logout()">Salir</button>
-    </div>
-  }
-</header>
+<!-- Sesión en comprobación -->
+@if (session() === 'checking') {
+  <div class="splash" role="status">
+    <span class="splash-mark" aria-hidden="true">T</span>
+    <p>Comprobando la sesión…</p>
+  </div>
+}
 
-<main>
-  <!-- Entrada -->
-  @if (session() === 'out') {
-    <section class="login">
-      <h1>Entrar al panel</h1>
-      <form (ngSubmit)="login()">
-        <label>
-          <span>Usuario</span>
-          <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [(ngModel)]="credentials.username" required>
-        </label>
-        <div class="field">
-          <label for="password">Contraseña</label>
-          <span class="password-field">
-            <input [type]="showPassword() ? 'text' : 'password'" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" [(ngModel)]="credentials.password" id="password" required>
-            <button type="button" class="reveal" aria-controls="password" [attr.aria-pressed]="showPassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" [title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" (click)="togglePassword()">
-              @if (!showPassword()) {
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
-              } @else {
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9.9 5.2A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.4 3.4M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>
-              }
-            </button>
-          </span>
+<!-- Entrada -->
+@if (session() === 'out') {
+  <div class="login-shell">
+    <aside class="login-aside">
+      <div class="login-aside-brand">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <div>
+          <strong>TuEventoFun</strong>
+          <small>Administración</small>
         </div>
-        @if (loginError()) {
-          <p class="error" role="alert">{{ loginError() }}</p>
-        }
-        <button type="submit" class="primary" [disabled]="busy()">Entrar</button>
-      </form>
-    </section>
-  }
+      </div>
+      <div class="login-aside-body">
+        <p class="eyebrow">Panel de administración</p>
+        <h2>El pulso del sitio,<br>en un solo lugar.</h2>
+        <p class="login-aside-copy">
+          Usuarios, eventos, invitaciones, cupones y la identidad visual de TuEventoFun.
+        </p>
+        <ul class="login-aside-list">
+          <li><span aria-hidden="true">✓</span> Actividad del sitio en tiempo real</li>
+          <li><span aria-hidden="true">✓</span> Gestión de cupones y paletas</li>
+          <li><span aria-hidden="true">✓</span> Acceso privado y auditado</li>
+        </ul>
+      </div>
+      <p class="login-aside-foot">Solo para el equipo administrador.</p>
+    </aside>
 
-  @if (session() === 'in') {
-    <div>
-      <nav class="tabs" role="tablist">
-        <button type="button" role="tab" [class.active]="tab() === 'summary'" (click)="show('summary')">Resumen</button>
-        <button type="button" role="tab" [class.active]="tab() === 'users'" (click)="show('users')">Usuarios</button>
-        <button type="button" role="tab" [class.active]="tab() === 'events'" (click)="show('events')">Eventos</button>
-        <button type="button" role="tab" [class.active]="tab() === 'coupons'" (click)="show('coupons')">Cupones</button>
+    <main class="login-main">
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="login-card-brand">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <span>TuEventoFun</span>
+        </div>
+        <h1 id="login-title">Entrar al panel</h1>
+        <p class="login-intro">Introduce tus credenciales para continuar.</p>
+        <form (ngSubmit)="login()">
+          <label class="field">
+            <span>Usuario</span>
+            <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [(ngModel)]="credentials.username" required>
+          </label>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <span class="password-field">
+              <input [type]="showPassword() ? 'text' : 'password'" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" [(ngModel)]="credentials.password" id="password" required>
+              <button type="button" class="reveal" aria-controls="password" [attr.aria-pressed]="showPassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" [title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" (click)="togglePassword()">
+                @if (!showPassword()) {
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9.9 5.2A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.4 3.4M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>
+                }
+              </button>
+            </span>
+          </div>
+          @if (loginError()) {
+            <p class="error" role="alert">{{ loginError() }}</p>
+          }
+          <button type="submit" class="primary" [disabled]="busy()">Entrar</button>
+        </form>
+        <p class="login-foot">Acceso restringido. Los intentos de entrada quedan registrados.</p>
+      </section>
+    </main>
+  </div>
+}
+
+<!-- Panel -->
+@if (session() === 'in') {
+  <div class="app-shell" [class.nav-open]="navOpen()">
+    <div class="scrim" aria-hidden="true" (click)="closeNav()"></div>
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <div class="sidebar-brand-text">
+          <strong>TuEventoFun</strong>
+          <small>Administración</small>
+        </div>
+        <button type="button" class="icon-button sidebar-close" aria-label="Cerrar el menú" (click)="closeNav()">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <p class="nav-label">Secciones</p>
+      <nav class="nav" id="panel-nav" role="tablist" aria-orientation="vertical" aria-label="Secciones del panel">
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'summary'" [class.active]="tab() === 'summary'" (click)="show('summary')">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          <span>Resumen</span>
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'users'" [class.active]="tab() === 'users'" (click)="show('users')">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4"/><path d="M17.5 14.2A6.5 6.5 0 0 1 21.5 20"/></svg>
+          <span>Usuarios</span>
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'events'" [class.active]="tab() === 'events'" (click)="show('events')">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v4M16 3v4"/><path d="M8 14h3M8 17.5h6"/></svg>
+          <span>Eventos</span>
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'coupons'" [class.active]="tab() === 'coupons'" (click)="show('coupons')">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 8.5A2.5 2.5 0 0 0 5.5 6h13A2.5 2.5 0 0 0 21 8.5v1a2.5 2.5 0 0 0 0 5v1A2.5 2.5 0 0 0 18.5 18h-13A2.5 2.5 0 0 0 3 15.5v-1a2.5 2.5 0 0 0 0-5Z"/><path d="M13 8v8"/></svg>
+          <span>Cupones</span>
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'design'" [class.active]="tab() === 'design'" (click)="show('design')">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18h1.5a2.2 2.2 0 0 0 1.6-3.7 2.2 2.2 0 0 1 1.6-3.7H19A2 2 0 0 0 21 11.6 9 9 0 0 0 12 3Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/><circle cx="17" cy="10" r="1"/></svg>
+          <span>Diseño</span>
+        </button>
       </nav>
 
-      @if (error()) {
-        <p class="error" role="alert">
-          {{ error() }}
-          <button type="button" class="ghost" (click)="reload()">Reintentar</button>
-        </p>
-      }
-      @if (busy()) {
-        <p class="muted" role="status">Cargando…</p>
-      }
-
-      <!-- Resumen -->
-      @if (tab() === 'summary' && stats(); as stats) {
-        <section>
-          <div class="toolbar">
-            <label class="period">
-              <span>Periodo</span>
-              <select class="field-small" [ngModel]="days()" (ngModelChange)="setDays($event)">
-                @for (d of periods; track d) {
-                  <option [ngValue]="d">{{ d }} días</option>
-                }
-              </select>
-            </label>
+      <div class="sidebar-foot">
+        <div class="user-chip">
+          <span class="avatar" aria-hidden="true">AD</span>
+          <div>
+            <strong>Administrador</strong>
+            <small>Sesión activa</small>
           </div>
+        </div>
+        <button type="button" class="ghost logout" (click)="logout()">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l5-5-5-5M15 12H3"/></svg>
+          Salir
+        </button>
+      </div>
+    </aside>
 
-          <div class="cards">
-            <article class="card highlight">
-              <h2>Conectados ahora</h2>
-              <p class="big">{{ totalOnline() }}</p>
-              <p class="muted">Visitantes con actividad en los últimos 5 minutos.</p>
-              @if (stats.overview.online.length) {
-                <ul class="inline">
-                  @for (p of stats.overview.online; track p.platform) {
-                    <li>{{ platformName(p.platform) }}: <strong>{{ p.visitors }}</strong></li>
-                  }
-                </ul>
-              } @else {
-                <p class="muted">Nadie en este momento.</p>
-              }
-            </article>
-            <article class="card">
-              <h2>Usuarios registrados</h2>
-              <p class="big">{{ stats.overview.users.total }}</p>
-              <ul class="inline">
-                <li>Nuevos (24 h): <strong>{{ stats.overview.users.last1 }}</strong></li>
-                <li>Nuevos (7 días): <strong>{{ stats.overview.users.last7 }}</strong></li>
-                <li>Nuevos (30 días): <strong>{{ stats.overview.users.last30 }}</strong></li>
-              </ul>
-            </article>
-            <article class="card">
-              <h2>Sesiones abiertas</h2>
-              <p class="big">{{ stats.overview.sessions.open }}</p>
-            </article>
-            <article class="card">
-              <h2>Eventos creados</h2>
-              <p class="big">{{ stats.overview.events.total }}</p>
-              <ul class="inline">
-                <li>Eventos nuevos (7 días): <strong>{{ stats.overview.events.last7 }}</strong></li>
-                <li>Archivados: <strong>{{ stats.overview.events.archived }}</strong></li>
-              </ul>
-            </article>
-            <article class="card">
-              <h2>Invitaciones enviadas</h2>
-              <p class="big">{{ stats.overview.invitations.total }}</p>
-              <ul class="inline">
-                <li>Confirmados: <strong>{{ stats.overview.guests.accepted }}</strong></li>
-                <li>No asisten: <strong>{{ stats.overview.guests.declined }}</strong></li>
-                <li>Pendientes: <strong>{{ stats.overview.guests.pending }}</strong></li>
-              </ul>
-            </article>
-            <article class="card">
-              <h2>Plataformas</h2>
-              <table>
-                <tbody>
-                  @for (p of stats.overview.users.byPlatform; track p.platform) {
-                    <tr>
-                      <th scope="row">{{ platformName(p.platform) }}</th>
-                      <td>{{ p.users }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </article>
-            <article class="card">
-              <h2>Temas de los eventos</h2>
-              <table>
-                <tbody>
-                  @for (t of stats.overview.events.themes; track t.theme) {
-                    <tr>
-                      <th scope="row">{{ themeName(t.theme) }}</th>
-                      <td>{{ t.events }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </article>
-          </div>
+    <div class="workspace">
+      <header class="topbar">
+        <button type="button" class="icon-button menu-button" [attr.aria-label]="navOpen() ? 'Cerrar menú' : 'Abrir menú'" aria-controls="panel-nav" [attr.aria-expanded]="navOpen()" (click)="toggleNav()">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="topbar-title">
+          <p class="eyebrow">Panel de administración</p>
+          <h1>{{ sectionTitle() }}</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="live"><span class="live-dot" aria-hidden="true"></span> En vivo</span>
+          <button type="button" class="ghost" (click)="reload()" [disabled]="busy()">
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.3"/><path d="M20 4v7h-7"/></svg>
+            Actualizar
+          </button>
+        </div>
+      </header>
 
-          <div class="cards wide">
-            <article class="card">
-              <h2>Actividad diaria</h2>
-              <div class="bars" role="img" aria-label="Actividad diaria">
-                @let max = maxOf(stats.activity.daily, 'visits');
-                @for (d of stats.activity.daily; track d.day) {
-                  <div class="bar" [title]="d.day + ': ' + d.visits">
-                    <span class="bar-fill" [style.height.%]="share(d.visits, max)"></span>
-                    <small>{{ d.day.slice(5, 10) }}</small>
-                  </div>
-                }
+      <main class="content" id="contenido">
+        @if (error()) {
+          <p class="alert" role="alert">
+            <span>{{ error() }}</span>
+            <button type="button" class="ghost" (click)="reload()">Reintentar</button>
+          </p>
+        }
+        @if (busy()) {
+          <p class="loading" role="status"><span class="spinner" aria-hidden="true"></span> Cargando…</p>
+        }
+
+        <!-- Resumen -->
+        @if (tab() === 'summary' && stats(); as stats) {
+          <section>
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Rendimiento del sitio</h2>
+                <p class="section-copy">Actividad de TuEventoFun en los últimos {{ days() }} días.</p>
               </div>
-              <table class="totals">
-                <tbody>
-                  <tr><th scope="row">Visitantes</th><td>{{ stats.activity.totals.visitors }}</td></tr>
-                  <tr><th scope="row">Visitas</th><td>{{ stats.activity.totals.visits }}</td></tr>
-                  <tr><th scope="row">Registros</th><td>{{ stats.activity.totals.registrations }}</td></tr>
-                  <tr><th scope="row">Inicios de sesión</th><td>{{ stats.activity.totals.logins }}</td></tr>
-                  <tr><th scope="row">Descargas</th><td>{{ stats.activity.totals.downloads }}</td></tr>
-                </tbody>
-              </table>
-            </article>
-            <article class="card" aria-labelledby="countries-title">
-              <h2 id="countries-title">Visitantes por país</h2>
-              @if (countriesError()) {
-                <p class="error" role="alert">{{ countriesError() }}</p>
-              }
-              @if (countries(); as countries) {
-                @if (!countries.available) {
-                  <p class="muted">Umami no está configurado en este entorno.</p>
+              <label class="period">
+                <span>Periodo</span>
+                <select class="field-small" [ngModel]="days()" (ngModelChange)="setDays($event)">
+                  @for (d of periods; track d) {
+                    <option [ngValue]="d">{{ d }} días</option>
+                  }
+                </select>
+              </label>
+            </div>
+
+            <div class="kpi-grid">
+              <article class="kpi kpi-primary" aria-labelledby="kpi-online">
+                <div class="kpi-top">
+                  <span class="kpi-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+                  </span>
+                  <h2 id="kpi-online">Conectados ahora</h2>
+                </div>
+                <p class="kpi-value">{{ totalOnline() }}</p>
+                <p class="kpi-note">Visitantes con actividad en los últimos 5 minutos.</p>
+                @if (stats.overview.online.length) {
+                  <ul class="inline">
+                    @for (p of stats.overview.online; track p.platform) {
+                      <li>{{ platformName(p.platform) }}: <strong>{{ p.visitors }}</strong></li>
+                    }
+                  </ul>
                 } @else {
-                  @if (countries.rows.length) {
-                    <table>
-                      <tbody>
-                        @for (c of countries.rows.slice(0, 15); track $index) {
-                          <tr>
-                            <th scope="row">{{ countryName(c.country) }}</th>
-                            <td>{{ c.visitors }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  } @else {
-                    <p class="muted">Sin visitas en este periodo.</p>
-                  }
-                  <p class="muted">Fuente: Umami (datos desde el 19 de octubre de 2026).</p>
+                  <p class="kpi-empty">Nadie en este momento.</p>
                 }
-              }
-            </article>
-            <article class="card">
-              <h2>Páginas más visitadas</h2>
-              <table>
-                <tbody>
-                  @for (r of stats.activity.routes; track r.route) {
-                    <tr>
-                      <th scope="row" class="route">{{ r.route }}</th>
-                      <td>{{ r.visits }}</td>
-                    </tr>
+              </article>
+
+              <article class="kpi" aria-labelledby="kpi-users">
+                <div class="kpi-top">
+                  <span class="kpi-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4"/><path d="M17.5 14.2A6.5 6.5 0 0 1 21.5 20"/></svg>
+                  </span>
+                  <h2 id="kpi-users">Usuarios registrados</h2>
+                </div>
+                <p class="kpi-value">{{ stats.overview.users.total }}</p>
+                <ul class="meta-list">
+                  <li><span>Nuevos (24 h)</span><strong>{{ stats.overview.users.last1 }}</strong></li>
+                  <li><span>Nuevos (7 días)</span><strong>{{ stats.overview.users.last7 }}</strong></li>
+                  <li><span>Nuevos (30 días)</span><strong>{{ stats.overview.users.last30 }}</strong></li>
+                </ul>
+              </article>
+
+              <article class="kpi" aria-labelledby="kpi-sessions">
+                <div class="kpi-top">
+                  <span class="kpi-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2.5"/><path d="M8 21h8M12 17v4"/><path d="m9 10 2 2 4-4"/></svg>
+                  </span>
+                  <h2 id="kpi-sessions">Sesiones abiertas</h2>
+                </div>
+                <p class="kpi-value">{{ stats.overview.sessions.open }}</p>
+                <p class="kpi-note">Cuentas con la sesión iniciada ahora mismo.</p>
+              </article>
+
+              <article class="kpi" aria-labelledby="kpi-events">
+                <div class="kpi-top">
+                  <span class="kpi-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v4M16 3v4"/><path d="M8 14h3M8 17.5h6"/></svg>
+                  </span>
+                  <h2 id="kpi-events">Eventos creados</h2>
+                </div>
+                <p class="kpi-value">{{ stats.overview.events.total }}</p>
+                <ul class="meta-list">
+                  <li><span>Eventos nuevos (7 días)</span><strong>{{ stats.overview.events.last7 }}</strong></li>
+                  <li><span>Archivados</span><strong>{{ stats.overview.events.archived }}</strong></li>
+                </ul>
+              </article>
+
+              <article class="kpi" aria-labelledby="kpi-invitations">
+                <div class="kpi-top">
+                  <span class="kpi-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+                  </span>
+                  <h2 id="kpi-invitations">Invitaciones enviadas</h2>
+                </div>
+                <p class="kpi-value">{{ stats.overview.invitations.total }}</p>
+                <ul class="meta-list">
+                  <li><span>Confirmados</span><strong class="ok">{{ stats.overview.guests.accepted }}</strong></li>
+                  <li><span>No asisten</span><strong class="ko">{{ stats.overview.guests.declined }}</strong></li>
+                  <li><span>Pendientes</span><strong>{{ stats.overview.guests.pending }}</strong></li>
+                </ul>
+                <p class="kpi-note">{{ totalGuests() }} respuestas en total.</p>
+              </article>
+            </div>
+
+            <div class="grid-wide">
+              <article class="panel chart-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Actividad diaria</h2>
+                    <p class="panel-copy">Visitas registradas cada día del periodo.</p>
+                  </div>
+                </div>
+                <div class="bars" role="img" aria-label="Actividad diaria">
+                  @let max = maxOf(stats.activity.daily, 'visits');
+                  @for (d of stats.activity.daily; track d.day) {
+                    <div class="bar" [title]="d.day + ': ' + d.visits">
+                      <span class="bar-fill" [style.height.%]="share(d.visits, max)"></span>
+                      <small>{{ d.day.slice(5, 10) }}</small>
+                    </div>
                   }
-                </tbody>
-              </table>
-            </article>
-          </div>
-        </section>
-      }
+                </div>
+                <dl class="totals">
+                  <div><dt>Visitantes</dt><dd>{{ stats.activity.totals.visitors }}</dd></div>
+                  <div><dt>Visitas</dt><dd>{{ stats.activity.totals.visits }}</dd></div>
+                  <div><dt>Registros</dt><dd>{{ stats.activity.totals.registrations }}</dd></div>
+                  <div><dt>Inicios de sesión</dt><dd>{{ stats.activity.totals.logins }}</dd></div>
+                  <div><dt>Descargas</dt><dd>{{ stats.activity.totals.downloads }}</dd></div>
+                </dl>
+              </article>
 
-      <!-- Usuarios -->
-      @if (tab() === 'users' && users(); as users) {
-        <section>
-          <table class="data">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Correo</th>
-                <th>Plataforma</th>
-                <th>Alta</th>
-                <th>Eventos</th>
-                <th>Última actividad</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (u of users.rows; track u.id) {
-                <tr>
-                  <td data-label="Nombre">{{ u.firstName }} {{ u.lastName }}</td>
-                  <td data-label="Correo">{{ u.email }}</td>
-                  <td data-label="Plataforma">{{ platformName(u.platform) }}</td>
-                  <td data-label="Alta">{{ date(u.createdAt) }}</td>
-                  <td data-label="Eventos">{{ u.events }}</td>
-                  <td data-label="Última actividad">{{ date(u.lastActivity) }}</td>
-                </tr>
-              } @empty {
-                <tr><td colspan="6" class="muted">Sin datos todavía.</td></tr>
-              }
-            </tbody>
-          </table>
-          <nav class="pager">
-            <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
-            <span>Página {{ page() }}</span>
-            <button type="button" class="ghost" [disabled]="users.rows.length < users.pageSize" (click)="go(page() + 1)">Siguiente</button>
-          </nav>
-        </section>
-      }
+              <article class="panel" aria-labelledby="countries-title">
+                <div class="panel-head">
+                  <div>
+                    <h2 id="countries-title">Visitantes por país</h2>
+                    <p class="panel-copy">Origen de las visitas según Umami.</p>
+                  </div>
+                </div>
+                @if (countriesError()) {
+                  <p class="error" role="alert">{{ countriesError() }}</p>
+                }
+                @if (countries(); as countries) {
+                  @if (!countries.available) {
+                    <p class="muted">Umami no está configurado en este entorno.</p>
+                  } @else {
+                    @if (countries.rows.length) {
+                      <table class="mini-table">
+                        <tbody>
+                          @for (c of countries.rows.slice(0, 15); track $index) {
+                            <tr>
+                              <th scope="row">{{ countryName(c.country) }}</th>
+                              <td>{{ c.visitors }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <p class="muted">Sin visitas en este periodo.</p>
+                    }
+                    <p class="panel-foot">Fuente: Umami (datos desde el 19 de octubre de 2026).</p>
+                  }
+                }
+              </article>
 
-      <!-- Eventos -->
-      @if (tab() === 'events' && events(); as events) {
-        <section>
-          <table class="data">
-            <thead>
-              <tr>
-                <th>Evento</th>
-                <th>Organizador</th>
-                <th>Fecha</th>
-                <th>Tema</th>
-                <th>Invitaciones</th>
-                <th>Confirmados</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (e of events.rows; track e.id) {
-                <tr>
-                  <td data-label="Evento">{{ e.title }}</td>
-                  <td data-label="Organizador">{{ e.owner }}</td>
-                  <td data-label="Fecha">{{ date(e.date) }}</td>
-                  <td data-label="Tema">{{ themeName(e.theme) }}</td>
-                  <td data-label="Invitaciones">{{ e.invitations }}</td>
-                  <td data-label="Confirmados">{{ e.accepted }}</td>
-                </tr>
-              } @empty {
-                <tr><td colspan="6" class="muted">Sin datos todavía.</td></tr>
-              }
-            </tbody>
-          </table>
-          <nav class="pager">
-            <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
-            <span>Página {{ page() }}</span>
-            <button type="button" class="ghost" [disabled]="events.rows.length < events.pageSize" (click)="go(page() + 1)">Siguiente</button>
-          </nav>
-        </section>
-      }
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Páginas más visitadas</h2>
+                    <p class="panel-copy">Rutas con más tráfico en el periodo.</p>
+                  </div>
+                </div>
+                <table class="mini-table">
+                  <tbody>
+                    @for (r of stats.activity.routes; track r.route) {
+                      <tr>
+                        <th scope="row" class="route">{{ r.route }}</th>
+                        <td>{{ r.visits }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </article>
 
-      <!-- Cupones -->
-      @if (tab() === 'coupons' && coupons(); as coupons) {
-        <section>
-          <form class="coupon-form card" (ngSubmit)="createCoupon()">
-            <h2>Nuevo cupón</h2>
-            <label>
-              <span>Código</span>
-              <input type="text" name="code" maxlength="32" pattern="[A-Za-z0-9\-]{3,32}" autocapitalize="characters" spellcheck="false" [(ngModel)]="couponForm.code" required>
-            </label>
-            <label>
-              <span>Tipo de descuento</span>
-              <select name="kind" [(ngModel)]="couponForm.kind">
-                <option value="percent">Porcentaje</option>
-                <option value="amount">Cantidad en dólares</option>
-              </select>
-            </label>
-            <label>
-              <span>Descuento</span>
-              <input type="number" name="value" min="0.01" [attr.max]="couponForm.kind === 'percent' ? 100 : 1000" [attr.step]="couponForm.kind === 'percent' ? 1 : 0.01" [(ngModel)]="couponForm.value" required>
-            </label>
-            <label>
-              <span>Caduca (opcional)</span>
-              <input type="date" name="expires" [(ngModel)]="couponForm.expires">
-            </label>
-            <label>
-              <span>Máximo de usos (opcional)</span>
-              <input type="number" name="maxRedemptions" min="1" max="100000" step="1" [(ngModel)]="couponForm.maxRedemptions">
-            </label>
-            @if (couponError()) {
-              <p class="error" role="alert">{{ couponError() }}</p>
-            }
-            <button type="submit" class="primary" [disabled]="busy()">Crear cupón</button>
-          </form>
-          <table class="data">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Descuento</th>
-                <th>Usos</th>
-                <th>Caduca</th>
-                <th>Estado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of coupons.rows; track c.id) {
-                <tr>
-                  <td data-label="Código">{{ c.code }}</td>
-                  <td data-label="Descuento">{{ couponDiscount(c) }}</td>
-                  <td data-label="Usos">{{ c.used }}{{ c.maxRedemptions !== null ? ' de ' + c.maxRedemptions : '' }}</td>
-                  <td data-label="Caduca">{{ c.expiresAt ? date(c.expiresAt) : 'Sin caducidad' }}</td>
-                  <td data-label="Estado">{{ c.active ? 'Activo' : 'Desactivado' }}</td>
-                  <td data-label="Acción">
-                    <button type="button" class="ghost" [disabled]="busy()" [attr.aria-label]="(c.active ? 'Desactivar ' : 'Activar ') + c.code" (click)="setCouponActive(c, !c.active)">{{ c.active ? 'Desactivar' : 'Activar' }}</button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="6" class="muted">Sin cupones todavía.</td></tr>
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Plataformas</h2>
+                    <p class="panel-copy">Usuarios registrados por plataforma.</p>
+                  </div>
+                </div>
+                <table class="mini-table">
+                  <tbody>
+                    @for (p of stats.overview.users.byPlatform; track p.platform) {
+                      <tr>
+                        <th scope="row">{{ platformName(p.platform) }}</th>
+                        <td>{{ p.users }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Temas de los eventos</h2>
+                    <p class="panel-copy">Diseños elegidos al crear un evento.</p>
+                  </div>
+                </div>
+                <table class="mini-table">
+                  <tbody>
+                    @for (t of stats.overview.events.themes; track t.theme) {
+                      <tr>
+                        <th scope="row">{{ themeName(t.theme) }}</th>
+                        <td>{{ t.events }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </article>
+            </div>
+          </section>
+        }
+
+        <!-- Usuarios -->
+        @if (tab() === 'users' && users(); as users) {
+          <section>
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Cuentas registradas</h2>
+                <p class="section-copy">Personas que han creado una cuenta en TuEventoFun.</p>
+              </div>
+              <span class="count-chip">{{ users.rows.length }} en esta página</span>
+            </div>
+            <div class="panel table-panel">
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                      <th>Plataforma</th>
+                      <th>Alta</th>
+                      <th>Eventos</th>
+                      <th>Última actividad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (u of users.rows; track u.id) {
+                      <tr>
+                        <td data-label="Nombre">
+                          <span class="person">
+                            <span class="avatar avatar-sm" aria-hidden="true">{{ (u.firstName || '?').slice(0, 1) }}{{ (u.lastName || '').slice(0, 1) }}</span>
+                            <span>{{ u.firstName }} {{ u.lastName }}</span>
+                          </span>
+                        </td>
+                        <td data-label="Correo">{{ u.email }}</td>
+                        <td data-label="Plataforma"><span class="badge">{{ platformName(u.platform) }}</span></td>
+                        <td data-label="Alta">{{ date(u.createdAt) }}</td>
+                        <td data-label="Eventos">{{ u.events }}</td>
+                        <td data-label="Última actividad">{{ date(u.lastActivity) }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="6" class="muted">Sin datos todavía.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <nav class="pager" aria-label="Paginación de usuarios">
+              <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
+              <span>Página {{ page() }}</span>
+              <button type="button" class="ghost" [disabled]="users.rows.length < users.pageSize" (click)="go(page() + 1)">Siguiente</button>
+            </nav>
+          </section>
+        }
+
+        <!-- Eventos -->
+        @if (tab() === 'events' && events(); as events) {
+          <section>
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Eventos creados</h2>
+                <p class="section-copy">Celebraciones y su estado de confirmación.</p>
+              </div>
+              <span class="count-chip">{{ events.rows.length }} en esta página</span>
+            </div>
+            <div class="panel table-panel">
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th>Evento</th>
+                      <th>Organizador</th>
+                      <th>Fecha</th>
+                      <th>Tema</th>
+                      <th>Invitaciones</th>
+                      <th>Confirmados</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (e of events.rows; track e.id) {
+                      <tr>
+                        <td data-label="Evento"><strong>{{ e.title }}</strong></td>
+                        <td data-label="Organizador">{{ e.owner }}</td>
+                        <td data-label="Fecha">{{ date(e.date) }}</td>
+                        <td data-label="Tema"><span class="badge">{{ themeName(e.theme) }}</span></td>
+                        <td data-label="Invitaciones">{{ e.invitations }}</td>
+                        <td data-label="Confirmados"><strong class="ok">{{ e.accepted }}</strong></td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="6" class="muted">Sin datos todavía.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <nav class="pager" aria-label="Paginación de eventos">
+              <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
+              <span>Página {{ page() }}</span>
+              <button type="button" class="ghost" [disabled]="events.rows.length < events.pageSize" (click)="go(page() + 1)">Siguiente</button>
+            </nav>
+          </section>
+        }
+
+        <!-- Cupones -->
+        @if (tab() === 'coupons' && coupons(); as coupons) {
+          <section>
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Cupones</h2>
+                <p class="section-copy">Descuentos activos y su uso acumulado.</p>
+              </div>
+            </div>
+
+            <div class="coupon-layout">
+              <form class="panel coupon-form" (ngSubmit)="createCoupon()">
+                <div class="panel-head">
+                  <div>
+                    <h2>Nuevo cupón</h2>
+                    <p class="panel-copy">Se aplica al pagar una invitación.</p>
+                  </div>
+                </div>
+                <label>
+                  <span>Código</span>
+                  <input type="text" name="code" maxlength="32" pattern="[A-Za-z0-9\-]{3,32}" autocapitalize="characters" spellcheck="false" [(ngModel)]="couponForm.code" required>
+                </label>
+                <label>
+                  <span>Tipo de descuento</span>
+                  <select name="kind" [(ngModel)]="couponForm.kind">
+                    <option value="percent">Porcentaje</option>
+                    <option value="amount">Cantidad en dólares</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Descuento</span>
+                  <input type="number" name="value" min="0.01" [attr.max]="couponForm.kind === 'percent' ? 100 : 1000" [attr.step]="couponForm.kind === 'percent' ? 1 : 0.01" [(ngModel)]="couponForm.value" required>
+                </label>
+                <label>
+                  <span>Caduca (opcional)</span>
+                  <input type="date" name="expires" [(ngModel)]="couponForm.expires">
+                </label>
+                <label>
+                  <span>Máximo de usos (opcional)</span>
+                  <input type="number" name="maxRedemptions" min="1" max="100000" step="1" [(ngModel)]="couponForm.maxRedemptions">
+                </label>
+                @if (couponError()) {
+                  <p class="error" role="alert">{{ couponError() }}</p>
+                }
+                <button type="submit" class="primary" [disabled]="busy()">Crear cupón</button>
+              </form>
+
+              <div class="panel table-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Cupones creados</h2>
+                    <p class="panel-copy">{{ coupons.rows.length }} en esta página.</p>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <table class="data">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Descuento</th>
+                        <th>Usos</th>
+                        <th>Caduca</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (c of coupons.rows; track c.id) {
+                        <tr>
+                          <td data-label="Código"><code class="code">{{ c.code }}</code></td>
+                          <td data-label="Descuento">{{ couponDiscount(c) }}</td>
+                          <td data-label="Usos">{{ c.used }}{{ c.maxRedemptions !== null ? ' de ' + c.maxRedemptions : '' }}</td>
+                          <td data-label="Caduca">{{ c.expiresAt ? date(c.expiresAt) : 'Sin caducidad' }}</td>
+                          <td data-label="Estado"><span class="badge" [class.badge-ok]="c.active" [class.badge-off]="!c.active">{{ c.active ? 'Activo' : 'Desactivado' }}</span></td>
+                          <td data-label="Acción">
+                            <button type="button" class="ghost small" [disabled]="busy()" [attr.aria-label]="(c.active ? 'Desactivar ' : 'Activar ') + c.code" (click)="setCouponActive(c, !c.active)">{{ c.active ? 'Desactivar' : 'Activar' }}</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="6" class="muted">Sin cupones todavía.</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <nav class="pager" aria-label="Paginación de cupones">
+                  <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
+                  <span>Página {{ page() }}</span>
+                  <button type="button" class="ghost" [disabled]="coupons.rows.length < coupons.pageSize" (click)="go(page() + 1)">Siguiente</button>
+                </nav>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- Diseño -->
+        @if (tab() === 'design' && palette(); as palette) {
+          <section>
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Identidad visual</h2>
+                <p class="section-copy">La paleta que ven todos los visitantes del sitio.</p>
+              </div>
+            </div>
+
+            <form class="panel palette-form" (ngSubmit)="savePalette()">
+              <div class="panel-head">
+                <div>
+                  <h2>Paleta del sitio</h2>
+                  <p class="muted">Paleta activa: {{ paletteName(palette) }}. Al guardar, cambia para todos los visitantes en unos 30 segundos.</p>
+                </div>
+                <span class="badge badge-ok">Publicada</span>
+              </div>
+              <fieldset class="palette-options">
+                <legend class="nav-label">Elige una paleta</legend>
+                @for (p of palettes; track p.id) {
+                  <label class="palette-option" [class.current]="p.id === palette">
+                    <input type="radio" name="palette" [value]="p.id" [(ngModel)]="paletteChoice">
+                    <span class="palette-logo" aria-hidden="true">
+                      <img
+                        src="/brand/logo-es-480.webp"
+                        srcset="/brand/logo-es-240.webp 240w, /brand/logo-es-480.webp 480w"
+                        sizes="134px"
+                        width="480"
+                        height="160"
+                        alt=""
+                        loading="lazy"
+                        [style.filter]="paletteFilter(p.hue)">
+                    </span>
+                    <span class="palette-info">
+                      <span class="palette-name">{{ p.name }}</span>
+                      <span class="palette-swatches" aria-hidden="true">
+                        @for (color of p.colors; track $index) {
+                          <span class="swatch" [style.background]="color"></span>
+                        }
+                      </span>
+                    </span>
+                    @if (p.id === palette) {
+                      <span class="badge badge-ok" aria-hidden="true">Activa</span>
+                    }
+                  </label>
+                }
+              </fieldset>
+              @if (paletteError()) {
+                <p class="error" role="alert">{{ paletteError() }}</p>
               }
-            </tbody>
-          </table>
-          <nav class="pager">
-            <button type="button" class="ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">Anterior</button>
-            <span>Página {{ page() }}</span>
-            <button type="button" class="ghost" [disabled]="coupons.rows.length < coupons.pageSize" (click)="go(page() + 1)">Siguiente</button>
-          </nav>
-        </section>
-      }
+              @if (paletteSaved()) {
+                <p class="muted" role="status">Paleta guardada.</p>
+              }
+              <div class="form-actions">
+                <button type="submit" class="primary" [disabled]="busy() || paletteChoice === palette">Guardar paleta</button>
+              </div>
+            </form>
+          </section>
+        }
+      </main>
     </div>
-  }
-</main>
+  </div>
+}

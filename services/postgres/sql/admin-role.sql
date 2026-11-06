@@ -27,6 +27,8 @@ GRANT SELECT (invitation_id, status) ON members TO admin_ro;
 GRANT SELECT ON coupons TO admin_ro;
 GRANT SELECT (coupon_id, payment_id) ON coupon_redemptions TO admin_ro;
 GRANT SELECT (id, status) ON event_payments TO admin_ro;
--- Lo único que escribe el panel: dos funciones que además dejan registro (migración 032)
+GRANT SELECT (palette) ON site_palette_settings TO admin_ro;
+-- Lo único que escribe el panel: funciones que además dejan registro (migraciones 032 y 035)
 GRANT EXECUTE ON FUNCTION admin_create_coupon(text, bigint, bigint, timestamptz, bigint, text) TO admin_ro;
 GRANT EXECUTE ON FUNCTION admin_set_coupon_active(uuid, boolean, text) TO admin_ro;
+GRANT EXECUTE ON FUNCTION admin_set_site_palette(text, text) TO admin_ro;

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createAuth } from "./auth.mjs";
 import { parseCoupon, parseCouponState } from "./coupons.mjs";
 import { createDatabase } from "./db.mjs";
+import { parsePalette } from "./palette.mjs";
 import { isPasswordHash } from "./password.mjs";
 import * as stats from "./stats.mjs";
 import { umamiFromEnv } from "./umami.mjs";
@@ -27,6 +28,7 @@ const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
+  ".webp": "image/webp",
 };
 
 // Los archivos estáticos (la compilación de Angular, `npm run build -w @tuevento/admin`) se leen una
@@ -202,6 +204,18 @@ export async function start({ port = Number(process.env.PORT || 3088) } = {}) {
       const { id, active } = parseCouponState(await readJson(req));
       const [{ ok }] = await db.query("SELECT admin_set_coupon_active($1, $2, $3) AS ok", [id, active, adminUser]);
       return ok ? json(res, 200, { ok }) : json(res, 404, { error: "notFound" });
+    },
+    "GET /api/palette": async (req, res) => {
+      if (!requireSession(req, res)) return;
+      const [{ palette }] = await db.query("SELECT palette FROM site_palette_settings");
+      return json(res, 200, { palette });
+    },
+    // El único sitio desde el que se cambia la paleta global del sitio
+    "PUT /api/palette": async (req, res) => {
+      if (!requireSession(req, res)) return;
+      const palette = parsePalette(await readJson(req));
+      await db.query("SELECT admin_set_site_palette($1, $2)", [palette, adminUser]);
+      return json(res, 200, { palette });
     },
   };
 

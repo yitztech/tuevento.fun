@@ -4,7 +4,6 @@ import type { OwnerMetrics } from '@tuevento/contracts';
 import { useApp, errorText } from './context';
 import { useLocale, tr, formatLocale } from './i18n';
 import { ErrorBox } from './components';
-import { PaletteSettings } from "./palette-settings";
 import { Button } from "./ui/button";
 export function OwnerDashboard() {
  const {api,user} = useApp(); useLocale();
@@ -13,7 +12,6 @@ export function OwnerDashboard() {
  if(!user?.isOwner)return <Navigate to="/app" replace/>;
  const labels = [tr('owner.uniqueVisitors'),tr('owner.visits'),tr('owner.registrations'),tr('owner.signIns'),tr('owner.downloadClicks')];
  return <section className="owner-dashboard"><div className="page-heading"><div><h1>{tr('owner.title')}</h1><p>{tr('owner.subtitle')}</p></div><label>{tr('owner.period')}<select aria-label={tr('owner.period')} value={days} onChange={e=>setDays(Number(e.target.value))}>{[7,30,90].map(n=><option key={n} value={n}>{tr('owner.days',{count:n})}</option>)}</select></label></div>
- <PaletteSettings/>
  <p className="analytics-note">{tr('owner.dataNote')}</p>
  {error?<><ErrorBox message={error}/><Button onClick={()=>setRevision(v=>v+1)}>{tr('common.retry')}</Button></>:!data?<p role="status">{tr('owner.loading')}</p>:<>
  <dl className="owner-totals">{Object.values(data.totals).map((v,i)=><div key={labels[i]}><dt>{labels[i]}</dt><dd>{v.toLocaleString(formatLocale())}</dd></div>)}</dl>

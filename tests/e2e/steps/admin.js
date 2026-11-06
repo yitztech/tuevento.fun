@@ -110,6 +110,18 @@ Then("el panel cabe en pantalla sin desbordamiento horizontal", async ({ page })
   expect(ancho).toBeLessThanOrEqual(visible);
 });
 
+const menuUsuarios = (page) => page.getByRole("tab", { name: "Usuarios", exact: true });
+
+Then("el menú del panel está cerrado", async ({ page }) => {
+  await expect(menuUsuarios(page)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Abrir menú", exact: true })).toHaveAttribute("aria-expanded", "false");
+});
+
+Then("el menú del panel está abierto", async ({ page }) => {
+  await expect(menuUsuarios(page)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cerrar menú", exact: true })).toHaveAttribute("aria-expanded", "true");
+});
+
 When("abro la pestaña {string} del panel", async ({ page }, nombre) => {
   await page.getByRole("tab", { name: nombre, exact: true }).click();
 });
