@@ -183,6 +183,7 @@ export function AddPhone() {
           render={({ field }) => (
             <PhoneField
               label={tr("common.phone")}
+              placeholder={tr("account.placeholderPhone")}
               error={form.formState.errors.phone?.message}
               value={field.value}
               onChange={field.onChange}

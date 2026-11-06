@@ -70,8 +70,10 @@ function SelectPhoneField({
   error,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
+  placeholder?: string;
   error?: string;
   value: string;
   onChange: (value: string) => void;
@@ -119,6 +121,7 @@ function SelectPhoneField({
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
+          placeholder={placeholder}
           maxLength={accountLimits.phone}
           value={parts.national}
           aria-invalid={!!error}
