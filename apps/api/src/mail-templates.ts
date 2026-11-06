@@ -12,11 +12,18 @@ const escapeHtml = (value: string) =>
   value.replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c,
   );
 
 /** Enlaces para darse de baja de los avisos: la página (en el pie) y la baja en un clic (RFC 8058). */
 export type Unsubscribe = { page: string; oneClick: string };
+const brandNames: Record<Locale, string> = {
+  es: "TuEventoFun",
+  en: "YourEventFun",
+  pt: "SeuEventoFun",
+  de: "DeinEventFun",
+  fr: "TonÉvénementFun",
+};
 
 /** Estructura común: texto plano y HTML sencillo con estilos en línea (colores de DESIGN.md). */
 function layout(options: {
@@ -39,28 +46,28 @@ function layout(options: {
     ...(options.unsubscribe ? [`${options.unsubscribe.label}: ${options.unsubscribe.page}`] : []),
   ].join("\n\n");
   const htmlForPalette = (palette: SitePaletteId) => {
-  const colors = palette === "terracotta"
-    ? { primary: "#a63f30", primaryText: "#ffffff", ink: "#3d2a25", muted: "#765f58", siteBg: "#fff6f2", line: "#f0d8cb" }
-    : sitePalettes[palette];
-  const logo = `${new URL(options.site).origin}/images/brand-v2/email/logo-${options.locale}-${palette}.png`;
-  const unsubscribe = options.unsubscribe
-    ? ` · <a href="${escapeHtml(options.unsubscribe.page)}" style="color:${colors.muted}">${escapeHtml(options.unsubscribe.label)}</a>`
-    : "";
-  const button = options.action
-    ? `<p style="margin:28px 0"><a href="${escapeHtml(options.action.url)}" style="background:${colors.primary};color:${colors.primaryText};text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escapeHtml(options.action.label)}</a></p>
-<p style="font-size:13px;color:${colors.muted};word-break:break-all">${escapeHtml(options.action.url)}</p>`
-    : "";
-  const html = `<!doctype html>
-<html><body style="margin:0;background:${colors.siteBg};font-family:Helvetica,Arial,sans-serif;color:${colors.ink}">
+    const colors = palette === "terracotta"
+      ? { primary: "#a63f30", primaryText: "#ffffff", ink: "#3d2a25", muted: "#765f58", siteBg: "#fff6f2", line: "#f0d8cb" }
+      : sitePalettes[palette];
+    const logo = `${new URL(options.site).origin}/images/brand-v2/email/logo-${options.locale}-${palette}.png`;
+    const unsubscribe = options.unsubscribe
+      ? ` · <a href="${escapeHtml(options.unsubscribe.page)}" style="color:${colors.muted}">${escapeHtml(options.unsubscribe.label)}</a>`
+      : "";
+    const button = options.action
+      ? `<p style="margin:28px 0"><a href="${escapeHtml(options.action.url)}" style="background:${colors.primary};color:${colors.primaryText};text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block">${escapeHtml(options.action.label)}</a></p>
+  <p style="font-size:13px;color:${colors.muted};word-break:break-all">${escapeHtml(options.action.url)}</p>`
+      : "";
+    const html = `<!doctype html>
+<html><body style="margin:0;background:${colors.siteBg};font-family:'Manrope Variable',Arial,sans-serif;color:${colors.ink}">
 <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-<p style="margin:0 0 24px"><img src="${escapeHtml(logo)}" width="240" height="80" alt="TuEventoFun" style="display:block;width:240px;height:auto;max-width:100%;border:0"></p>
+<p style="margin:0 0 24px"><img src="${escapeHtml(logo)}" width="240" height="80" alt="${escapeHtml(brandNames[options.locale])}" style="display:block;width:240px;height:auto;max-width:100%;border:0"></p>
 <div style="background:#ffffff;border:1px solid ${colors.line};border-radius:16px;padding:28px 24px;line-height:1.55">
 ${options.paragraphs.map((p) => `<p style="margin:0 0 14px">${escapeHtml(p)}</p>`).join("\n")}
 ${button}
 </div>
 <p style="font-size:12px;color:${colors.muted};margin:20px 4px">${escapeHtml(options.footer)} · <a href="${escapeHtml(options.site)}" style="color:${colors.muted}">${escapeHtml(host)}</a>${unsubscribe}</p>
 </div></body></html>`;
-  return html;
+    return html;
   };
   return {
     to: options.to,

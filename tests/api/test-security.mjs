@@ -459,6 +459,9 @@ try {
       ["POST", "/auth/demo", {}],
       ["POST", "/auth/mobile/authorize", { challenge: "c".repeat(43) }],
       ["POST", "/auth/account-type", { accountType: "provider" }],
+      ["POST", "/auth/phone", { phone: "+527770000000" }],
+      ["POST", "/auth/password/change", { currentPassword: "contrasena-actual", newPassword: "contrasena-nueva" }],
+      ["POST", "/auth/logout-all", {}],
     ];
     for (const [method, ruta, body] of rutas) {
       const r = await nueva.raw(ruta, { method, body });
@@ -468,6 +471,22 @@ try {
     // El cuerpo del registro no puede saltarse la confirmación
     const extra = await client({ confirm: false }).raw("/auth/register", { method: "POST", body: account(P, "salto", { mustVerifyEmail: false }) });
     assert.equal(extra.status, 422);
+  });
+
+  await suite("Cambiar la contraseña: sin sesión no se puede, y una sesión robada no la adivina", async () => {
+    const anonimo = client();
+    await anonimo.call("/auth/password/change", "POST", { currentPassword: "contrasena-actual", newPassword: "contrasena-nueva" }, 401);
+    await anonimo.call("/auth/logout-all", "POST", {}, 401);
+    const datos = account(P, "clave-robada");
+    const robada = client();
+    await robada.call("/auth/register", "POST", datos, 201);
+    let ultima;
+    for (let i = 0; i < 6; i++)
+      ultima = await robada.raw("/auth/password/change", { method: "POST", body: { currentPassword: `${datos.password}-${i}`, newPassword: `${datos.password}-nueva` } });
+    assert.equal(ultima.status, 429);
+    assert.ok(Number(ultima.headers["retry-after"]) > 0);
+    // Ni con la contraseña correcta mientras dura el freno
+    assert.equal((await robada.raw("/auth/password/change", { method: "POST", body: { currentPassword: datos.password, newPassword: `${datos.password}-nueva` } })).status, 429);
   });
 
   await suite("Tipo de cuenta: un proveedor no usa ningún endpoint de eventos, invitaciones, postales ni avisos", async () => {

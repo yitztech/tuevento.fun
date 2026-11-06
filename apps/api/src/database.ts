@@ -3,6 +3,9 @@ import { Pool, PoolClient, QueryResultRow } from "pg";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { newInvitationToken, sealToken, tokenLookup } from "./tokens";
+/** Horas sin usar una sesión hasta que caduca (AGENTS.md §24); la caducidad absoluta son 7 días. */
+export const SESSION_IDLE_HOURS = 72;
+
 @Injectable()
 export class Database implements OnModuleInit, OnModuleDestroy {
   readonly pool = new Pool({
@@ -80,7 +83,11 @@ export class Database implements OnModuleInit, OnModuleDestroy {
       "DELETE FROM activity WHERE created_at < now() - interval '90 days'",
     );
     await this.pool.query("DELETE FROM mobile_auth_codes WHERE expires_at < now()");
-    await this.pool.query("DELETE FROM sessions WHERE expires_at < now()");
+    await this.pool.query(
+      "DELETE FROM sessions WHERE expires_at < now() OR last_seen_at < now() - make_interval(hours => $1)",
+      [SESSION_IDLE_HOURS],
+    );
+    await this.pool.query("DELETE FROM rate_limits WHERE reset_at < now()");
     await this.pool.query("DELETE FROM trusted_devices WHERE expires_at < now()");
     await this.pool.query("DELETE FROM password_resets WHERE expires_at < now()");
     await this.pool.query("DELETE FROM geo_cache WHERE created_at < now() - interval '30 days'");

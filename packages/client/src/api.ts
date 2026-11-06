@@ -125,11 +125,18 @@ export class EventApi {
   resendVerification = () => this.request<{ ok: boolean }>("/auth/email/resend", "POST", {});
   /** Segundo paso del registro, una sola vez. */
   chooseAccountType = (accountType: AccountType) => this.request<User>("/auth/account-type", "POST", { accountType });
+  /** Paso del registro con Google: el teléfono, una sola vez. */
+  addPhone = (phone: string) => this.request<User>("/auth/phone", "POST", { phone });
   /** Baja de los avisos a invitados desde el enlace firmado de un correo. */
   unsubscribe = (h: string, s: string) => this.request<{ ok: boolean }>("/mail/unsubscribe", "POST", { h, s });
   googleNonce = () =>
     this.request<{ nonce: string }>("/auth/google/nonce", "POST", {});
   logout = () => this.request("/auth/logout", "POST", {});
+  /** Cierra la sesión en todos los dispositivos, este incluido. */
+  logoutAll = () => this.request<{ ok: boolean }>("/auth/logout-all", "POST", {});
+  /** Cambia la contraseña con la sesión abierta; la respuesta trae la cuenta y una sesión nueva. */
+  changePassword = (currentPassword: string, newPassword: string) =>
+    this.request<User>("/auth/password/change", "POST", { currentPassword, newPassword });
   profile = (data: ProfileInput) =>
     this.request<User>("/profile", "PATCH", data);
   avatar = (dataUrl: string) =>

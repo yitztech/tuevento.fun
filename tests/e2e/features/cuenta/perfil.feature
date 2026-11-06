@@ -9,20 +9,82 @@ Característica: Perfil de la cuenta
     Entonces no existe el campo "Nombre de usuario"
     Y el campo "Nombre" contiene "Paula"
 
+  @solo-web @solo-lectura
+  Escenario: El perfil se abre con los datos a la vista y sin poder editarlos
+    Entonces el campo "Nombre" contiene "Paula"
+    Y el campo "Nombre" no se puede editar
+    Y el campo "Apellidos" no se puede editar
+    Y el campo "Teléfono" no se puede editar
+    Y veo la acción "Editar información"
+    Y no veo la acción "Guardar cambios"
+
+  @solo-web
+  Escenario: Editar información habilita los campos y ofrece guardar o cancelar
+    Cuando elijo editar mi información
+    Entonces el campo "Nombre" se puede editar
+    Y el campo "Apellidos" se puede editar
+    Y el campo "Teléfono" se puede editar
+    Y veo la acción "Guardar cambios"
+    Y veo la acción "Cancelar"
+    Y no veo la acción "Editar información"
+
+  @solo-web
+  Escenario: Tras guardar, el perfil vuelve a mostrarse sin poder editarse
+    Cuando elijo editar mi información
+    Y escribo "Lucía" en el campo "Nombre"
+    Y guardo los cambios del perfil
+    Entonces veo el aviso "Tu perfil está actualizado."
+    Y el campo "Nombre" contiene "Lucía"
+    Y el campo "Nombre" no se puede editar
+    Y veo la acción "Editar información"
+
+  @solo-web
+  Escenario: Cancelar descarta los cambios y vuelve a solo lectura
+    Cuando elijo editar mi información
+    Y escribo "Lucía" en el campo "Nombre"
+    Y cancelo la edición del perfil
+    Entonces el campo "Nombre" contiene "Paula"
+    Y el campo "Nombre" no se puede editar
+    Y veo la acción "Editar información"
+
+  @solo-web
+  Escenario: Cambiar la contraseña desde el perfil
+    Cuando escribo mi contraseña actual en el campo "Contraseña actual"
+    Y escribo "una-contrasena-nueva" en el campo "Contraseña nueva"
+    Y escribo "una-contrasena-nueva" en el campo "Repetir contraseña"
+    Y pulso el botón "Cambiar contraseña"
+    Entonces veo el aviso "Listo: tu contraseña cambió y cerramos tus otras sesiones."
+
+  @solo-web @validacion
+  Escenario: La contraseña nueva debe repetirse igual
+    Cuando escribo mi contraseña actual en el campo "Contraseña actual"
+    Y escribo "una-contrasena-nueva" en el campo "Contraseña nueva"
+    Y escribo "otra-contrasena-distinta" en el campo "Repetir contraseña"
+    Y pulso el botón "Cambiar contraseña"
+    Entonces veo el aviso "Las contraseñas no coinciden."
+
+  @solo-web
+  Escenario: Cerrar todas las sesiones lleva a la página de acceso
+    Cuando pulso el botón "Cerrar todas las sesiones"
+    Entonces veo el campo "Correo electrónico"
+
   @smoke
   Escenario: Cambiar el nombre y guardar
-    Cuando escribo "Lucía" en el campo "Nombre"
+    Cuando elijo editar mi información
+    Y escribo "Lucía" en el campo "Nombre"
     Y guardo los cambios del perfil
     Entonces veo el aviso "Tu perfil está actualizado."
 
   @validacion @FE-11
   Escenario: El perfil descarta números en el nombre
-    Cuando escribo "Lu2cía" en el campo "Nombre"
+    Cuando elijo editar mi información
+    Y escribo "Lu2cía" en el campo "Nombre"
     Entonces el campo "Nombre" contiene "Lucía"
 
   @solo-web
   Escenario: Guardar el teléfono con el prefijo del país elegido
-    Cuando elijo el prefijo "+33" en el campo "País"
+    Cuando elijo editar mi información
+    Y elijo el prefijo "+33" en el campo "País"
     Y escribo "612345678" en el campo "Teléfono"
     Y guardo los cambios del perfil
     Entonces veo el aviso "Tu perfil está actualizado."
@@ -31,7 +93,8 @@ Característica: Perfil de la cuenta
 
   @solo-web
   Escenario: Escribir un número con prefijo cambia el país
-    Cuando escribo "+525512345678" en el campo "Teléfono"
+    Cuando elijo editar mi información
+    Y escribo "+525512345678" en el campo "Teléfono"
     Entonces el selector "País" muestra el prefijo "+52"
     Y el campo "Teléfono" contiene "5512345678"
 

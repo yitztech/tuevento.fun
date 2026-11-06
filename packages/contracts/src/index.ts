@@ -340,6 +340,8 @@ export const registerSchema = z.strictObject({
 });
 /** Segundo paso del registro: el tipo de cuenta, una sola vez. */
 export const chooseAccountTypeSchema = z.strictObject({ accountType });
+/** Paso del registro con Google: el teléfono, obligatorio y válido, que Google no da. */
+export const addPhoneSchema = z.strictObject({ phone });
 /** Acceso con Google; el tipo solo cuenta si la cuenta se crea en ese momento. */
 export const googleLoginSchema = z.strictObject({
   credential: z.string().max(12000),
@@ -396,6 +398,9 @@ export const resetPasswordSchema = z.strictObject({
   password,
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+/** Cambiar la contraseña con la sesión abierta: exige la actual. */
+export const changePasswordSchema = z.strictObject({ currentPassword: password, newPassword: password });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export const newsletterSchema = z.strictObject({
   email,
   name: z.string().trim().max(100).optional(),
@@ -532,6 +537,10 @@ export type User = {
   mustVerifyEmail: boolean;
   /** Cuenta nueva que aún no eligió su tipo: es el paso siguiente a confirmar el correo. */
   mustChooseType: boolean;
+  /** Cuenta nueva de Google, que no da el teléfono: se pide justo después de registrarse. */
+  mustAddPhone: boolean;
+  /** Si entra con correo y contraseña: una cuenta solo de Google no tiene contraseña que cambiar. */
+  emailLogin: boolean;
 };
 export type Metrics = {
   invitations: number;

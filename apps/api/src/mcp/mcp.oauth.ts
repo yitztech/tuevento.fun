@@ -155,7 +155,7 @@ export class McpOAuth implements OnModuleInit {
   private async account(id: string) {
     // Una cuenta que aún no termina el registro no conecta asistentes
     const [user] = await this.db.query<Account>(
-      "SELECT id, account_type, is_demo FROM users WHERE id = $1 AND NOT must_choose_type AND NOT (must_verify_email AND email_verified_at IS NULL)",
+      "SELECT id, account_type, is_demo FROM users WHERE id = $1 AND NOT must_choose_type AND NOT must_add_phone AND NOT (must_verify_email AND email_verified_at IS NULL)",
       [id],
     );
     return user && !user.is_demo ? user : undefined;

@@ -354,6 +354,31 @@ test("Las cuentas que ya existen quedan exentas de los pasos del registro: las m
   assert.equal(await codigoError(() => db.query("UPDATE users SET must_choose_type=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
 });
 
+test("Registro con Google: la marca de pedir el teléfono nace en false y no admite nulos", async () => {
+  const id = await usuario(db);
+  assert.equal((await uno("SELECT must_add_phone FROM users WHERE id=$1", [id])).must_add_phone, false);
+  await db.query("UPDATE users SET must_add_phone=true WHERE id=$1", [id]);
+  assert.equal((await uno("SELECT must_add_phone FROM users WHERE id=$1", [id])).must_add_phone, true);
+  assert.equal(await codigoError(() => db.query("UPDATE users SET must_add_phone=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
+});
+
+test("Sesiones: el último uso nace con la sesión y es obligatorio", async () => {
+  const id = await usuario(db);
+  await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES('hash-ultimo-uso',$1,now()+interval '7 days')", [id]);
+  const { reciente } = await uno("SELECT last_seen_at > now() - interval '1 minute' AS reciente FROM sessions WHERE token_hash='hash-ultimo-uso'");
+  assert.equal(reciente, true);
+  assert.equal(await codigoError(() => db.query("UPDATE sessions SET last_seen_at=NULL WHERE token_hash='hash-ultimo-uso'")), NOT_NULL_VIOLATION);
+});
+
+test("Límites de intentos: la clave es un hash, nunca un correo ni una IP, y el contador es positivo", async () => {
+  const clave = "a".repeat(64);
+  await db.query("INSERT INTO rate_limits(key,count,reset_at) VALUES($1,1,now()+interval '1 minute')", [clave]);
+  assert.equal(await codigoError(() => db.query("INSERT INTO rate_limits(key,count,reset_at) VALUES($1,1,now())", [clave])), "23505");
+  for (const key of ["login:account:ana@example.com", "192.0.2.1", "A".repeat(64)])
+    assert.equal(await codigoError(() => db.query("INSERT INTO rate_limits(key,count,reset_at) VALUES($1,1,now())", [key])), CHECK_VIOLATION, key);
+  assert.equal(await codigoError(() => db.query("INSERT INTO rate_limits(key,count,reset_at) VALUES($1,0,now())", ["b".repeat(64)])), CHECK_VIOLATION);
+});
+
 test("Proveedor: restricciones del perfil, los servicios y las fotos", async () => {
   const dueno = await usuario(db);
   const p = await uno("INSERT INTO provider_profiles(id,user_id,slug,business_name) VALUES(gen_random_uuid(),$1,'p-'||md5(random()::text),'Negocio') RETURNING id, updated_at", [dueno]);

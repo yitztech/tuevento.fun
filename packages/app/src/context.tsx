@@ -31,6 +31,8 @@ export type AppState = {
   runtime: Runtime;
   user: User | null;
   setUser: (u: User | null) => void;
+  /** Tras cerrar la sesión: borra la copia local y los datos en pantalla y va al acceso. */
+  signedOut: () => Promise<void>;
   events: Event[];
   notifications: Notification[];
   reload: () => Promise<void>;

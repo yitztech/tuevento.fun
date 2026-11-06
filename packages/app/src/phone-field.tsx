@@ -70,8 +70,12 @@ function SelectPhoneField({
   error,
   value,
   onChange,
+  placeholder,
+  readOnly,
 }: {
   label: string;
+  placeholder?: string;
+  readOnly?: boolean;
   error?: string;
   value: string;
   onChange: (value: string) => void;
@@ -106,6 +110,7 @@ function SelectPhoneField({
         <NativeSelect
           aria-label={tr("common.country")}
           value={parts.iso}
+          disabled={readOnly}
           onChange={(event) => update({ ...parts, iso: event.target.value })}
         >
           {options.map(({ iso, dial: optionDial, name }) => (
@@ -119,6 +124,8 @@ function SelectPhoneField({
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
+          placeholder={placeholder}
+          readOnly={readOnly}
           maxLength={accountLimits.phone}
           value={parts.national}
           aria-invalid={!!error}
@@ -140,14 +147,15 @@ function SelectPhoneField({
 }
 
 /** Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. */
-function parseManual(value: string, fallbackDial: string) {
+function parseManual(value: string, fallbackCode = "") {
   const match = /^\+(\d{1,3})[\s()-]*(.*)$/.exec(value);
-  return match ? { code: match[1], national: match[2] } : { code: fallbackDial, national: value };
+  return match ? { code: match[1], national: match[2] } : { code: fallbackCode, national: value };
 }
-const composeManual = ({ code, national }: { code: string; national: string }) => {
+/** Sin código escrito, el teléfono lleva el del idioma, que el campo muestra como ejemplo. */
+const composeManual = ({ code, national }: { code: string; national: string }, defaultDial: string) => {
   const number = national.trim();
   if (!number) return "";
-  return code ? `+${code} ${number}` : number;
+  return `+${code || defaultDial} ${number}`;
 };
 
 /** Teléfono con el código de país escrito a mano, en lugar de elegirlo de una lista. */
@@ -166,15 +174,15 @@ function ManualPhoneField({
 }) {
   const id = useId();
   const defaultDial = dialByIso.get(defaultCountryByLocale[getLocale()])!.slice(1);
-  const [parts, setParts] = useState(() => parseManual(value, defaultDial));
+  const [parts, setParts] = useState(() => parseManual(value));
   useEffect(() => {
-    if (value !== composeManual(parts)) setParts(parseManual(value, defaultDial));
+    if (value !== composeManual(parts, defaultDial)) setParts(parseManual(value));
   }, [value]);
   const update = (next: { code: string; national: string }) => {
     // Código de 1 a 3 dígitos y, entre código y número, 15 dígitos como máximo (E.164)
     if (next.code.length > phoneLimits.codeMax) return;
     if (next.national.replace(/\D/g, "").length > Math.min(phoneLimits.nationalMax, phoneLimits.totalMax - next.code.length)) return;
-    const phone = composeManual(next);
+    const phone = composeManual(next, defaultDial);
     if (phone.length > accountLimits.phone) return;
     setParts(next);
     onChange(phone);
@@ -190,6 +198,7 @@ function ManualPhoneField({
           inputMode="numeric"
           autoComplete="tel-country-code"
           aria-label={tr("common.countryCode")}
+          placeholder={defaultDial}
           maxLength={phoneLimits.codeMax}
           value={parts.code}
           aria-invalid={!!error}
@@ -233,6 +242,8 @@ type PhoneFieldProps = {
   placeholder?: string;
   /** El código de país se escribe a mano en vez de elegirlo de la lista. */
   manualCode?: boolean;
+  /** Solo se muestra: el campo no se puede editar (solo con el selector de país). */
+  readOnly?: boolean;
 };
 
 export function PhoneField({ manualCode, ...props }: PhoneFieldProps) {
