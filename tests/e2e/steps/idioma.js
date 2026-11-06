@@ -12,9 +12,13 @@ When("abro el selector de idioma", async ({ page }) => {
   await selector(page).click();
 });
 
-Then("el selector de idioma muestra la bandera y el código del idioma", async ({ page }) => {
-  await expect(selector(page).locator(".locale-flag")).toBeVisible();
+Then("el selector de idioma muestra el código del idioma sin bandera", async ({ page }) => {
   await expect(selector(page).locator(".language-code")).toHaveText(/^[A-Z]{2}$/);
+  await expect(selector(page).locator(".locale-flag")).toHaveCount(0);
+});
+
+Then("cada idioma del menú lleva su bandera", async ({ page }) => {
+  await expect(page.locator(".language-menu-list .language-option .locale-flag")).toHaveCount(5);
 });
 
 Then("el selector de idioma no tiene borde ni fondo", async ({ page }) => {

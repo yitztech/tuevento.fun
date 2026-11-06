@@ -290,7 +290,6 @@ export function LanguageSwitcher() {
         title={tr("language.changeLanguage")}
         aria-label={`${locale.toUpperCase()} · ${label(locale)}`}
       >
-        <LocaleFlag locale={locale} />
         <span className="language-code">{locale.toUpperCase()}</span>
         <ChevronDown className="language-chevron" size={14} aria-hidden="true" />
       </summary>

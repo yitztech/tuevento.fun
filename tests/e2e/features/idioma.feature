@@ -6,8 +6,10 @@ Característica: Selector de idioma con banderas
     Dado que abro la página de inicio
 
   @solo-lectura
-  Escenario: El selector de idioma muestra la bandera y el código del idioma
-    Entonces el selector de idioma muestra la bandera y el código del idioma
+  Escenario: El selector de idioma muestra solo el código; las banderas van en el menú
+    Entonces el selector de idioma muestra el código del idioma sin bandera
+    Cuando abro el selector de idioma
+    Entonces cada idioma del menú lleva su bandera
 
   @solo-lectura
   Escenario: El selector de idioma se integra con la cabecera, sin borde ni fondo
