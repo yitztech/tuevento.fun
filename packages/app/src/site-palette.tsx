@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { EventApi } from "@tuevento/client";
 import { sitePalettes, sitePaletteSchema, type SitePaletteId } from "@tuevento/contracts";
 
@@ -15,9 +15,30 @@ type PaletteContextValue = {
 };
 const PaletteContext = createContext<PaletteContextValue | null>(null);
 
+const cacheKey = "tuevento.sitePalette";
+const defaultThemeColor = "#fff6f2";
+
+/** Última paleta guardada: evita el parpadeo al cargar y sirve a las apps sin conexión. */
+function cachedPalette(): SitePaletteId {
+  try {
+    const result = sitePaletteSchema.safeParse({ palette: localStorage.getItem(cacheKey) });
+    return result.success ? result.data.palette : "terracotta";
+  } catch {
+    return "terracotta";
+  }
+}
+function rememberPalette(id: SitePaletteId) {
+  try {
+    localStorage.setItem(cacheKey, id);
+  } catch {
+    // Sin almacenamiento se pide al servidor en cada carga
+  }
+}
+
 /** Solo se escriben los valores de la tabla compartida, nunca CSS recibido del servidor. */
 function applyPalette(id: SitePaletteId) {
   const root = document.documentElement;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", id === "terracotta" ? defaultThemeColor : sitePalettes[id].siteBg);
   const names = Object.keys(sitePalettes["fuchsia-plum-amber"]);
   for (const key of [...names, "siteTitle", "sitePeach", "siteCoral", "siteAccentSoft", "siteNote", "siteBand", "sitePhone", "siteShade"]) {
     root.style.removeProperty(`--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`);
@@ -35,7 +56,7 @@ function applyPalette(id: SitePaletteId) {
 }
 
 export function SitePaletteProvider({ api, children }: { api: EventApi; children: ReactNode }) {
-  const [saved, setSaved] = useState<SitePaletteId>("terracotta");
+  const [saved, setSaved] = useState<SitePaletteId>(cachedPalette);
   const [draft, setDraft] = useState<SitePaletteId | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -47,7 +68,7 @@ export function SitePaletteProvider({ api, children }: { api: EventApi; children
     const current = ++serial.current;
     try {
       const response = sitePaletteSchema.parse(await api.request<unknown>("/site-palette"));
-      if (current === serial.current && draftRef.current === null) { setSaved(response.palette); setError(false); }
+      if (current === serial.current && draftRef.current === null) { setSaved(response.palette); rememberPalette(response.palette); setError(false); }
     } catch {
       if (current === serial.current) setError(true);
     } finally {
@@ -61,7 +82,7 @@ export function SitePaletteProvider({ api, children }: { api: EventApi; children
     }, 30000);
     return () => { serial.current++; window.clearInterval(interval); };
   }, [refresh]);
-  useEffect(() => { applyPalette(draft ?? saved); }, [draft, saved]);
+  useLayoutEffect(() => { applyPalette(draft ?? saved); }, [draft, saved]);
   const preview = useCallback((id: SitePaletteId) => { draftRef.current = id; setDraft(id); }, []);
   const cancel = useCallback(() => { draftRef.current = null; setDraft(null); void refresh(); }, [refresh]);
   const save = useCallback(async () => {
@@ -71,7 +92,7 @@ export function SitePaletteProvider({ api, children }: { api: EventApi; children
     setSaving(true);
     try {
       const response = sitePaletteSchema.parse(await api.request<unknown>("/owner/site-palette", "PUT", { palette: candidate }));
-      if (current === serial.current) { setSaved(response.palette); draftRef.current = null; setDraft(null); setError(false); }
+      if (current === serial.current) { setSaved(response.palette); rememberPalette(response.palette); draftRef.current = null; setDraft(null); setError(false); }
     } finally { setSaving(false); }
   }, [api]);
   const value = useMemo(() => ({ saved, selected: draft ?? saved, loading, error, saving, preview, cancel, save, refresh }), [saved, draft, loading, error, saving, preview, cancel, save, refresh]);

@@ -11,4 +11,5 @@ Característica: Paleta global del sitio
     Entonces se restaura la paleta guardada
     Cuando guardo la paleta "Fucsia, Ciruela y Ámbar"
     Entonces la paleta guardada se mantiene al recargar y aparece en la portada
+    Y el cambio de paleta queda registrado con quien lo hizo
     Y el servidor rechaza guardar sin origen o con datos no válidos

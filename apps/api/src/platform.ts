@@ -42,10 +42,12 @@ export class PlatformController {
     // El hook global comprueba la lista de orígenes; para este cambio global también es obligatorio enviarlo.
     if (!req.headers.origin) throw new ForbiddenException('errors.requestOriginNotAllowed');
     const { palette } = parse(sitePaletteSchema, body, req);
-    const [settings] = await this.db.query<{ palette: string }>(
-      'UPDATE site_palette_settings SET palette = $1, updated_at = now() WHERE singleton = true RETURNING palette', [palette],
-    );
-    return { palette: settings.palette };
+    // Acción de administración: el cambio y su registro van juntos (AGENTS.md §25)
+    await this.db.transaction(async (c) => {
+      await c.query('UPDATE site_palette_settings SET palette = $1, updated_at = now() WHERE singleton = true', [palette]);
+      await c.query("INSERT INTO admin_audit_log(admin, action, target) VALUES($1, 'site_palette.update', $2)", [user.id, palette]);
+    });
+    return { palette };
   }
   @Get('owner/metrics') async metrics(@Req() req: FastifyRequest, @Query('days') raw?: string) {
     const user = await this.auth.current(req);

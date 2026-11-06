@@ -3,6 +3,7 @@ import { sitePaletteIds, sitePaletteSchema, type MessageKey, type SitePaletteId 
 import { tr, useLocale } from "./i18n";
 import { useSitePalette } from "./site-palette";
 import { Button } from "./ui/button";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 
 const names: Record<SitePaletteId, MessageKey> = {
   terracotta: "sitePalette.terracotta",
@@ -24,9 +25,9 @@ export function PaletteSettings() {
     {loading ? <p role="status">{tr("common.loading")}</p> : error ? <div role="alert"><p>{tr("sitePalette.loadError")}</p><Button variant="outline" onClick={() => void refresh()}>{tr("common.retry")}</Button></div> : <>
       <p>{tr("sitePalette.current", { name: tr(names[saved]) })}</p>
       <label htmlFor="site-palette">{tr("sitePalette.select")}</label>
-      <select id="site-palette" value={selected} disabled={saving} onChange={(event) => { const result = sitePaletteSchema.safeParse({ palette: event.target.value }); if (result.success) preview(result.data.palette); setSavedMessage(false); setSaveError(false); }}>
-        {sitePaletteIds.map((id) => <option key={id} value={id}>{tr(names[id])}</option>)}
-      </select>
+      <NativeSelect id="site-palette" value={selected} disabled={saving} onChange={(event) => { const result = sitePaletteSchema.safeParse({ palette: event.target.value }); if (result.success) preview(result.data.palette); setSavedMessage(false); setSaveError(false); }}>
+        {sitePaletteIds.map((id) => <NativeSelectOption key={id} value={id}>{tr(names[id])}</NativeSelectOption>)}
+      </NativeSelect>
       {changed && <p role="status">{tr("sitePalette.preview")}</p>}
       <div className="palette-settings-actions">
         <Button disabled={!changed || saving} onClick={() => { setSaveError(false); void save().then(() => setSavedMessage(true)).catch(() => setSaveError(true)); }}>{tr("sitePalette.save")}</Button>

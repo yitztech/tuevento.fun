@@ -41,6 +41,13 @@ When("guardo la paleta {string}", async ({ page }, name) => {
   await page.getByRole("button", { name: "Guardar paleta" }).click();
   await expect(page.getByText("Paleta guardada.")).toBeVisible();
 });
+Then("el cambio de paleta queda registrado con quien lo hizo", async ({ ctx }) => {
+  const db = admin("tueventofun");
+  try {
+    const { rows } = await db.query("SELECT target FROM admin_audit_log WHERE admin=$1 AND action='site_palette.update'", [ctx.paletteOwnerId]);
+    expect(rows).toEqual([{ target: "fuchsia-plum-amber" }]);
+  } finally { await db.end(); }
+});
 Then("la paleta guardada se mantiene al recargar y aparece en la portada", async ({ page }) => {
   await page.reload();
   await expect(page.getByLabel("Seleccionar paleta")).toHaveValue("fuchsia-plum-amber");
