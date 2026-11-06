@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, MailCheck } from "lucide-react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { AccountType } from "@tuevento/contracts";
-import { accountTypes } from "@tuevento/contracts";
-import { tr } from "./i18n";
+import { accountTypes, addPhoneSchema, validationOptions } from "@tuevento/contracts";
+import { getLocale, tr } from "./i18n";
 import { errorText, useApp } from "./context";
 import { AuthShell } from "./account";
 import { ErrorBox } from "./components";
 import { NeedsConnection } from "./offline";
+import { PhoneField } from "./phone-field";
 import { Button } from "./ui/button";
 
 /** Primer paso tras registrarse: sin el correo confirmado, la app no pasa de aquí. */
@@ -141,6 +144,55 @@ export function ChooseAccountType() {
         <NeedsConnection online={online} />
         <Button className="full" disabled={!type || busy || !online}>
           {busy ? tr("account.justMoment") : tr("onboarding.continue")}
+          <ArrowRight size={18} />
+        </Button>
+      </form>
+    </AuthShell>
+  );
+}
+
+/** Registro con Google, tras elegir el tipo: Google no da el teléfono y aquí se pide, válido. */
+export function AddPhone() {
+  const { api, setUser, online } = useApp(),
+    { pathname } = useLocation(),
+    navigate = useNavigate(),
+    [error, setError] = useState("");
+  const form = useForm<{ phone: string }>({
+    resolver: zodResolver(addPhoneSchema, validationOptions(getLocale())) as Resolver<{ phone: string }>,
+    defaultValues: { phone: "" },
+  });
+  const submit = form.handleSubmit(async (data) => {
+    setError("");
+    try {
+      const updated = await api.addPhone(data.phone);
+      // Conectar una app o un asistente es un paso en curso: se sigue ahí
+      if (!pathname.startsWith("/conectar-")) navigate("/bienvenida", { replace: true });
+      setUser(updated);
+    } catch (e) {
+      setError(errorText(e));
+    }
+  });
+  return (
+    <AuthShell side="register">
+      <form onSubmit={(event) => void submit(event)} noValidate>
+        <h2>{tr("onboarding.phoneTitle")}</h2>
+        <p>{tr("onboarding.phoneIntro")}</p>
+        <Controller
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <PhoneField
+              label={tr("common.phone")}
+              error={form.formState.errors.phone?.message}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+        {error && <ErrorBox message={error} />}
+        <NeedsConnection online={online} />
+        <Button className="full" disabled={form.formState.isSubmitting || !online}>
+          {form.formState.isSubmitting ? tr("account.justMoment") : tr("onboarding.continue")}
           <ArrowRight size={18} />
         </Button>
       </form>

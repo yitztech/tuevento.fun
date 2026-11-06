@@ -6,6 +6,7 @@ import {
   rsvpSchema,
   registerSchema,
   chooseAccountTypeSchema,
+  addPhoneSchema,
   accountArea,
   loginSchema,
   eventSchema,
@@ -18,6 +19,15 @@ test("El tipo de cuenta admite agencia, que usa la zona de quien organiza", () =
   assert.equal(accountArea("agency"), "organizer");
   assert.equal(accountArea("organizer"), "organizer");
   assert.equal(accountArea("provider"), "provider");
+});
+test("El teléfono del registro con Google es obligatorio, válido y se guarda en E.164", () => {
+  const ok = addPhoneSchema.safeParse({ phone: "+52 (777) 123-45-67" });
+  assert.equal(ok.success, true);
+  assert.equal(ok.success && ok.data.phone, "+527771234567");
+  for (const phone of ["", "   ", "abc", "123", "+34 000"])
+    assert.equal(addPhoneSchema.safeParse({ phone }).success, false, phone);
+  assert.equal(addPhoneSchema.safeParse({}).success, false);
+  assert.equal(addPhoneSchema.safeParse({ phone: "+527771234567", extra: 1 }).success, false);
 });
 test("Una invitación requiere contacto e integrante", () => {
   assert.equal(

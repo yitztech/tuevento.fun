@@ -64,7 +64,7 @@ import { LegalPage, legalPageFor } from "./legal";
 import { PaymentPage, PricingPage } from "./pricing";
 import { OfflineBanner, savedOfflineUser, useOfflineSync, useOnline } from "./offline";
 import { SyncReview } from "./sync-review";
-import { ChooseAccountType, VerifyEmailGate, WelcomePage } from "./onboarding";
+import { AddPhone, ChooseAccountType, VerifyEmailGate, WelcomePage } from "./onboarding";
 import { Button } from "./ui/button";
 import { Toaster } from "./ui/sonner";
 import { toast as showToast } from "sonner";
@@ -98,7 +98,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
     [config, setConfig] = useState({ googleClientId: "", demoEnabled: false, paymentsEnabled: false });
   const location = useLocation(),
     navigate = useNavigate();
-  const onboarding = !!user && (user.mustVerifyEmail || user.mustChooseType);
+  const onboarding = !!user && (user.mustVerifyEmail || user.mustChooseType || user.mustAddPhone);
   // Apps: copia local, cola y sincronización (fase 8c); en la web, `api` es la de siempre
   const reloadRef = useRef<() => Promise<void>>(async () => {});
   const { api, offline } = useOfflineSync({
@@ -296,6 +296,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         <VerifyEmailGate onLogout={() => void logout()} />
       ) : user.mustChooseType ? (
         <ChooseAccountType />
+      ) : user.mustAddPhone ? (
+        <AddPhone />
       ) : location.pathname === "/pago" ? (
         <PaymentPage />
       ) : location.pathname.endsWith("/pantalla") ? (

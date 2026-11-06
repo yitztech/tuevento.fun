@@ -58,6 +58,7 @@ export type UserRow = {
   email_verified_at: Date | null;
   must_verify_email: boolean;
   must_choose_type: boolean;
+  must_add_phone: boolean;
 };
 export const userView = (r: UserRow): User => ({
   id: r.id,
@@ -74,6 +75,7 @@ export const userView = (r: UserRow): User => ({
   emailVerified: r.email_verified_at !== null,
   mustVerifyEmail: r.must_verify_email && r.email_verified_at === null,
   mustChooseType: r.must_choose_type,
+  mustAddPhone: r.must_add_phone,
 });
 /**
  * Cookies de la API (AGENTS.md §24): con HTTPS llevan el prefijo `__Host-` (Secure, Path=/ y sin
@@ -473,7 +475,7 @@ export class AuthService {
     try {
       const [r] = await this.db.query<UserRow>(
         // Google confirma el correo (email_verified): la cuenta nace confirmada
-        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type,email_verified_at,must_choose_type) VALUES($1,$2,$3,$4,$5,$6,$7,now(),$8) RETURNING *",
+        "INSERT INTO users(id,first_name,last_name,email,google_sub,locale,account_type,email_verified_at,must_choose_type,must_add_phone) VALUES($1,$2,$3,$4,$5,$6,$7,now(),$8,true) RETURNING *",
         [
           randomUUID(),
           payload.given_name || translate(locale, "common.host"),
@@ -523,6 +525,8 @@ export class AccountTypeGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest<AuthedRequest>();
     if (user?.mustChooseType)
       throw new ProblemException({ status: 403, code: "account_type_required", detail: "errors.accountTypeRequired" });
+    if (user?.mustAddPhone)
+      throw new ProblemException({ status: 403, code: "phone_required", detail: "errors.phoneRequired" });
     if (!user || accountArea(user.accountType) !== required)
       throw new ProblemException({ status: 403, code: "wrong_account_type", detail: "errors.wrongAccountType" });
     return true;

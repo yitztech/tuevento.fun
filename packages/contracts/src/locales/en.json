@@ -330,7 +330,9 @@
     "paymentInProgress": "You already have a payment in progress. Wait for it to finish and try again.",
     "emailNotVerified": "Confirm your email to continue.",
     "accountTypeRequired": "First choose how you’ll use TuEventoFun.",
-    "accountTypeAlreadyChosen": "Your account type has already been chosen."
+    "accountTypeAlreadyChosen": "Your account type has already been chosen.",
+    "phoneRequired": "First add your phone number to continue.",
+    "phoneAlreadyAdded": "Your phone number is already saved."
   },
   "events": {
     "actions": "Actions",
@@ -1344,6 +1346,8 @@
     "verifyIntro": "We sent a link to {{email}}. Open it to confirm your email and continue.",
     "verifyDone": "I’ve confirmed it",
     "verifyPending": "We don’t see your confirmation yet. Open the link in the email and come back here.",
+    "phoneTitle": "Add your phone number",
+    "phoneIntro": "Google doesn’t share your phone number. Enter it to finish signing up.",
     "continue": "Continue",
     "organizerTitle": "All set for your event",
     "organizerIntro": "Three steps and your invitation is on its way.",

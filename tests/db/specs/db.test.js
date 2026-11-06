@@ -354,6 +354,14 @@ test("Las cuentas que ya existen quedan exentas de los pasos del registro: las m
   assert.equal(await codigoError(() => db.query("UPDATE users SET must_choose_type=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
 });
 
+test("Registro con Google: la marca de pedir el teléfono nace en false y no admite nulos", async () => {
+  const id = await usuario(db);
+  assert.equal((await uno("SELECT must_add_phone FROM users WHERE id=$1", [id])).must_add_phone, false);
+  await db.query("UPDATE users SET must_add_phone=true WHERE id=$1", [id]);
+  assert.equal((await uno("SELECT must_add_phone FROM users WHERE id=$1", [id])).must_add_phone, true);
+  assert.equal(await codigoError(() => db.query("UPDATE users SET must_add_phone=NULL WHERE id=$1", [id])), NOT_NULL_VIOLATION);
+});
+
 test("Proveedor: restricciones del perfil, los servicios y las fotos", async () => {
   const dueno = await usuario(db);
   const p = await uno("INSERT INTO provider_profiles(id,user_id,slug,business_name) VALUES(gen_random_uuid(),$1,'p-'||md5(random()::text),'Negocio') RETURNING id, updated_at", [dueno]);

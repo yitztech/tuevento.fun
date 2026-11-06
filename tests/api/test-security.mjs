@@ -459,6 +459,7 @@ try {
       ["POST", "/auth/demo", {}],
       ["POST", "/auth/mobile/authorize", { challenge: "c".repeat(43) }],
       ["POST", "/auth/account-type", { accountType: "provider" }],
+      ["POST", "/auth/phone", { phone: "+527770000000" }],
     ];
     for (const [method, ruta, body] of rutas) {
       const r = await nueva.raw(ruta, { method, body });

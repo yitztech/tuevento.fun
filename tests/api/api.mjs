@@ -275,6 +275,15 @@ export async function setCouponActive(id, active) {
   assert.equal(changed.status, 200, changed.text);
 }
 
+/**
+ * Deja la cuenta como la crea el registro con Google (que no se puede hacer sin Google): sin teléfono
+ * y con el paso de pedirlo pendiente. Solo en local o en el CI, donde hay `docker compose`.
+ */
+export function pedirTelefono(email) {
+  execFileSync("docker", ["compose", "exec", "-T", "postgres", "psql", "-U", "tuevento", "-d", "tueventofun", "-c",
+    `UPDATE users SET phone='',must_add_phone=true WHERE email='${email.replace(/'/g, "''")}'`], { stdio: "ignore" });
+}
+
 /** Borra las cuentas de prueba (solo en local, contra el PostgreSQL de Docker; si no se puede, se ignora). */
 export function cleanup(prefix) {
   if (process.env.TEST_API_URL) return;

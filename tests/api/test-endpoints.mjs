@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { translate, supportedLocales, sitePaletteIds, themeIds } from "@tuevento/contracts";
-import { base, client, account, verificationToken, cleanup, createCoupon, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
+import { base, client, account, verificationToken, cleanup, createCoupon, pedirTelefono, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
@@ -443,6 +443,55 @@ try {
       assert.equal(r.data.detail, translate(locale, "errors.accountTypeAlreadyChosen"), locale);
     }
     assert.equal((await nueva.call("/auth/me")).accountType, "agency");
+  });
+
+  await suite("Registro con Google: el teléfono se pide al terminar y, hasta entonces, la cuenta no usa la app", async () => {
+    // Sin credencial de Google real, la cuenta se deja como la deja ese registro: sin teléfono y con el paso pendiente
+    if (process.env.TEST_API_URL) return;
+    const idiomas = [["es", { Host: spanishHost }], ["en", { Host: englishHost }], ["pt", { Host: englishHost, "X-App-Locale": "pt" }], ["de", { Host: englishHost, "X-App-Locale": "de" }], ["fr", { Host: englishHost, "X-App-Locale": "fr" }]];
+    const datos = account(P, "google-tel");
+    const nueva = client();
+    assert.equal((await nueva.call("/auth/register", "POST", datos, 201)).mustAddPhone, false);
+    pedirTelefono(datos.email);
+    const pendiente = await nueva.call("/auth/me");
+    assert.equal(pendiente.mustAddPhone, true);
+    assert.equal(pendiente.phone, "");
+    for (const [locale, headers] of idiomas) {
+      const r = await nueva.raw("/events", { headers });
+      assert.equal(r.status, 403, locale);
+      assert.equal(r.data.code, "phone_required", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.phoneRequired"), locale);
+    }
+    await nueva.call("/provider/profile", "GET", undefined, 403);
+    // Un teléfono vacío, mal escrito o con campos de más se rechaza y el paso sigue pendiente
+    for (const phone of ["", "abc", "123", "+34 000"]) {
+      const mal = await nueva.raw("/auth/phone", { method: "POST", body: { phone } });
+      assert.equal(mal.status, 422, phone);
+      assert.equal(mal.data.errors[0].field, "phone", phone);
+    }
+    await nueva.call("/auth/phone", "POST", { phone: "+52 777 123 4567", mustAddPhone: false }, 422);
+    assert.equal((await nueva.call("/auth/me")).mustAddPhone, true);
+    // Un teléfono válido se guarda en E.164 y abre la app
+    const lista = await nueva.call("/auth/phone", "POST", { phone: "+52 (777) 123-45-67" }, 200);
+    assert.equal(lista.phone, "+527771234567");
+    assert.equal(lista.mustAddPhone, false);
+    await nueva.call("/events", "POST", eventData(), 201);
+    // El paso es de una sola vez
+    for (const [locale, headers] of idiomas) {
+      const r = await nueva.raw("/auth/phone", { method: "POST", body: { phone: "+527771234567" }, headers });
+      assert.equal(r.status, 409, locale);
+      assert.equal(r.data.code, "phone_already_added", locale);
+      assert.equal(r.data.detail, translate(locale, "errors.phoneAlreadyAdded"), locale);
+    }
+    // Sin sesión no hay paso que completar
+    await client().call("/auth/phone", "POST", { phone: "+527771234567" }, 401);
+    // Guardar el teléfono desde el perfil también cierra el paso; un perfil sin teléfono, no
+    const otra = account(P, "google-tel-perfil");
+    const cliente = client();
+    await cliente.call("/auth/register", "POST", otra, 201);
+    pedirTelefono(otra.email);
+    assert.equal((await cliente.call("/profile", "PATCH", { firstName: "Ana", lastName: "Paz", phone: "" }, 200)).mustAddPhone, true);
+    assert.equal((await cliente.call("/profile", "PATCH", { firstName: "Ana", lastName: "Paz", phone: "+527770000001" }, 200)).mustAddPhone, false);
   });
 
   await suite("Tipo de cuenta: se elige al registrarse, sin elegirlo se organiza y no se cambia después", async () => {

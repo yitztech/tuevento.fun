@@ -41,6 +41,7 @@ import {
   unsubscribeSchema,
   verifyEmailSchema,
   chooseAccountTypeSchema,
+  addPhoneSchema,
   checkoutSchema,
   couponCheckSchema,
   localePrefix,
@@ -530,13 +531,27 @@ export class AccountController {
       throw new ProblemException({ status: 409, code: "account_type_already_chosen", detail: "errors.accountTypeAlreadyChosen" });
     return userView(r);
   }
+  /** Registro con Google, tras elegir el tipo: el teléfono que Google no da, una sola vez. */
+  @Post("auth/phone") @HttpCode(200) async addPhone(
+    @Req() req: AuthedRequest,
+    @Body() body: unknown,
+  ) {
+    const { phone } = parse(addPhoneSchema, body, req);
+    const [r] = await this.db.query(
+      "UPDATE users SET phone=$1,must_add_phone=false WHERE id=$2 AND must_add_phone RETURNING *",
+      [phone, req.user.id],
+    );
+    if (!r)
+      throw new ProblemException({ status: 409, code: "phone_already_added", detail: "errors.phoneAlreadyAdded" });
+    return userView(r);
+  }
   @Patch("profile") async profile(
     @Req() req: AuthedRequest,
     @Body() body: unknown,
   ) {
     const d = parse(profileSchema, body, req);
     const [r] = await this.db.query(
-      "UPDATE users SET first_name=$1,last_name=$2,phone=$3 WHERE id=$4 RETURNING *",
+      "UPDATE users SET first_name=$1,last_name=$2,phone=$3,must_add_phone=(must_add_phone AND $3='') WHERE id=$4 RETURNING *",
       [d.firstName, d.lastName, d.phone, req.user.id],
     );
     return userView(r);

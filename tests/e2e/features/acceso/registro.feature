@@ -142,3 +142,22 @@ Característica: Crear una cuenta
   Escenario: Un nombre muy largo se corta en el máximo permitido
     Cuando pego un texto de 60 letras en el campo "Nombre(s)"
     Entonces el campo "Nombre(s)" contiene "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+  # @solo-web: la cuenta se deja como la deja el registro con Google por SQL (docker compose), algo que
+  # la app del emulador no puede hacer. Google mismo no se prueba sin credenciales: lo cubre test:endpoints.
+  @solo-web @validacion
+  Escenario: Una cuenta nueva de Google debe dar un teléfono válido antes de entrar
+    Cuando relleno el registro con datos válidos
+    Y envío el formulario de registro
+    Y confirmo mi correo con el enlace que recibí
+    Y mi cuenta queda como la deja el registro con Google
+    Entonces me pregunta cómo voy a usar la plataforma
+    Cuando elijo la opción "Organizar mi evento"
+    Y continúo con el registro
+    Entonces me pide mi teléfono
+    Cuando escribo "123" en el campo "Teléfono"
+    Y continúo con el registro
+    Entonces veo el aviso "Escribe un teléfono válido."
+    Cuando escribo "+52 777 123 4567" en el campo "Teléfono"
+    Y continúo con el registro
+    Entonces veo la bienvenida "Todo listo para tu evento"

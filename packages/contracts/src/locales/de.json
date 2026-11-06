@@ -330,7 +330,9 @@
     "paymentInProgress": "Es läuft bereits eine Zahlung. Warte, bis sie abgeschlossen ist, und versuche es noch einmal.",
     "emailNotVerified": "Bestätige deine E-Mail-Adresse, um fortzufahren.",
     "accountTypeRequired": "Wähle zuerst, wie du TuEventoFun nutzen möchtest.",
-    "accountTypeAlreadyChosen": "Dein Kontotyp ist bereits gewählt."
+    "accountTypeAlreadyChosen": "Dein Kontotyp ist bereits gewählt.",
+    "phoneRequired": "Gib zuerst deine Telefonnummer ein, um fortzufahren.",
+    "phoneAlreadyAdded": "Deine Telefonnummer ist bereits gespeichert."
   },
   "events": {
     "actions": "Aktionen",
@@ -1344,6 +1346,8 @@
     "verifyIntro": "Wir haben einen Link an {{email}} geschickt. Öffne ihn, um deine E-Mail-Adresse zu bestätigen und fortzufahren.",
     "verifyDone": "Ich habe bestätigt",
     "verifyPending": "Wir sehen deine Bestätigung noch nicht. Öffne den Link in der E-Mail und komm hierher zurück.",
+    "phoneTitle": "Ergänze deine Telefonnummer",
+    "phoneIntro": "Google teilt uns deine Telefonnummer nicht mit. Gib sie ein, um die Registrierung abzuschließen.",
     "continue": "Weiter",
     "organizerTitle": "Alles bereit für dein Event",
     "organizerIntro": "In drei Schritten ist deine Einladung unterwegs.",
