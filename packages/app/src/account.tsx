@@ -1,4 +1,5 @@
 import { validationOptions } from "@tuevento/contracts";
+import { z } from "zod";
 import { tr, getLocale } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -75,6 +76,15 @@ function AuthShell({ side = "login", children }: { side?: AuthSide; children: Re
     </SiteAuthShell>
   );
 }
+/** El registro repite la contraseña; la comprobación es del formulario y no viaja a la API. */
+const registerFormSchema = registerSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "validation.passwordsDontMatch",
+  });
+type RegisterFormInput = RegisterInput & { confirmPassword?: string };
+const registerData = ({ confirmPassword: _confirm, ...data }: RegisterFormInput): RegisterInput => data;
 const filterInput =
   (pattern: RegExp) => (event: { target: { value: string } }) => {
     event.target.value = event.target.value.replace(pattern, "");
@@ -87,38 +97,25 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
   const { api, setUser, toast, online } = useApp(),
     navigate = useNavigate(),
     [error, setError] = useState(""),
-    [showPassword, setShowPassword] = useState(false),
-    [avatar, setAvatar] = useState("");
+    [showPassword, setShowPassword] = useState(false);
   // ?tipo=proveedor llega desde la sección para proveedores de la portada
   const initialType: AccountType = new URLSearchParams(search).get("tipo") === "proveedor" ? "provider" : "organizer";
-  const form = useForm<RegisterInput>({
+  const form = useForm<RegisterFormInput>({
     resolver: zodResolver(
-      registerMode ? registerSchema : loginSchema,
+      registerMode ? registerFormSchema : loginSchema,
       validationOptions(getLocale()),
-    ) as unknown as Resolver<RegisterInput>,
+    ) as unknown as Resolver<RegisterFormInput>,
     // Solo los campos del esquema de cada modo: los esquemas no admiten campos de más
     defaultValues: registerMode
-      ? { firstName: "", lastName: "", phone: "", email: "", password: "", accountType: initialType }
+      ? { firstName: "", lastName: "", phone: "", email: "", password: "", confirmPassword: "", accountType: initialType }
       : { email: "", password: "" },
   });
   const submit = form.handleSubmit(async (data) => {
     setError("");
     try {
-      let user = registerMode
-        ? await api.register(data)
+      const user = registerMode
+        ? await api.register(registerData(data))
         : await api.login(data.email, data.password);
-      if (registerMode && avatar) {
-        try {
-          user = await api.avatar(avatar);
-        } catch (e) {
-          toast(
-            tr(
-              "account.accountReadyErrorAdd",
-              { error: errorText(e) },
-            ),
-          );
-        }
-      }
       setUser(user);
       navigate(postAuthTarget);
     } catch (e) {
@@ -240,39 +237,28 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 </Button>
               </span>
             </Field>
+            {registerMode && (
+              <Field
+                label={tr("account.repeatPassword")}
+                error={form.formState.errors.confirmPassword?.message}
+              >
+                <span className="password-input">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    maxLength={accountLimits.password}
+                    placeholder="••••••••••"
+                    {...form.register("confirmPassword")}
+                  />
+                </span>
+              </Field>
+            )}
             {!registerMode && (
               <p className="auth-forgot">
                 <Link to={passwordResetPaths.request}>
                   {tr("account.forgotPassword")}
                 </Link>
               </p>
-            )}
-            {registerMode && (
-              <label className="upload-inline">
-                {avatar ? (
-                  <img src={avatar} alt={tr("account.avatarPreview")} />
-                ) : (
-                  <Upload size={20} />
-                )}
-                <span>
-                  {tr("account.photoLogo")}{" "}
-                  <small>{tr("account.optionalJpgPngWebp")}</small>
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  aria-label={tr("account.uploadProfileImage")}
-                  onChange={async (e) => {
-                    if (e.target.files?.[0])
-                      try {
-                        setAvatar(await readAvatar(e.target.files[0]));
-                        setError("");
-                      } catch (error) {
-                        setError(errorText(error));
-                      }
-                  }}
-                />
-              </label>
             )}
             {error && <ErrorBox message={error} />}
             <NeedsConnection online={online} />

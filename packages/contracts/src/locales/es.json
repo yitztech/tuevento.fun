@@ -1,17 +1,12 @@
 {
   "account": {
-    "accountReadyErrorAdd": "Tu cuenta está lista. {{error}} Puedes añadir la foto en tu perfil.",
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
-    "avatarPreview": "Vista previa de tu avatar",
     "changePhotoLogo": "Cambiar foto o logo",
     "checkEmail": "Revisa tu correo",
-    "chooseImageNoLarger": "Elige una imagen de hasta 2 MB.",
-    "chooseJpgPngWebp": "Elige una imagen JPG, PNG o WebP.",
     "chooseNewPassword": "Elige una contraseña nueva.",
     "continueEmail": "o continúa con tu correo",
     "continueGoogle": "Continuar con Google",
     "couldntConnectGoogleUse": "No se pudo conectar con Google. Usa tu correo o inténtalo de nuevo.",
-    "couldntReadImage": "No se pudo leer la imagen.",
     "createAccount": "Crea tu cuenta",
     "createAccountPlanFirst": "Crea tu cuenta y prepara tu primera celebración.",
     "demoHost": "Anfitriona de demostración",
@@ -33,7 +28,6 @@
     "least10CharactersUse": "Al menos 10 caracteres. Usa una contraseña única.",
     "newPassword": "Contraseña nueva",
     "optionalJpgPngWebp": "Opcional · JPG, PNG o WebP · Hasta 2 MB",
-    "photoLogo": "Tu foto o logotipo",
     "profileUpdated": "Tu perfil está actualizado.",
     "remembered": "¿Ya la recordaste?",
     "requestNewLink": "Pedir un enlace nuevo",
@@ -45,7 +39,6 @@
     "signIn": "Inicia sesión",
     "signOptionIsntEnabled": "Este acceso aún no está habilitado.",
     "startSomethingWonderful": "Empieza algo bonito.",
-    "uploadProfileImage": "Cargar avatar de registro",
     "yourInformation": "Tu información",
     "accountTypeLegend": "¿Cómo vas a usar TuEventoFun?",
     "organizerTitle": "Organizo eventos",
@@ -67,7 +60,11 @@
     "placeholderFirstName": "John Michael",
     "placeholderLastName": "Smith Johnson",
     "placeholderPhone": "612 34 56 78",
-    "placeholderEmail": "tu@correo.com"
+    "placeholderEmail": "tu@correo.com",
+    "repeatPassword": "Repetir contraseña",
+    "chooseImageNoLarger": "Elige una imagen de hasta 2 MB.",
+    "chooseJpgPngWebp": "Elige una imagen JPG, PNG o WebP.",
+    "couldntReadImage": "No se pudo leer la imagen."
   },
   "app": {
     "backOverview": "Volver al resumen",
@@ -847,7 +844,8 @@
     "invalidPrice": "Escribe un precio válido, sin signos.",
     "invalidCurrency": "Elige una moneda de la lista.",
     "invalidPriceUnit": "Elige por qué se cobra el precio.",
-    "maximum32Characters": "Máximo 32 caracteres."
+    "maximum32Characters": "Máximo 32 caracteres.",
+    "passwordsDontMatch": "Las contraseñas no coinciden."
   },
   "pricing": {
     "title": "Precios",

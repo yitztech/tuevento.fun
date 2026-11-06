@@ -1,17 +1,12 @@
 {
   "account": {
-    "accountReadyErrorAdd": "Ton compte est prêt. {{error}} Tu peux ajouter ta photo dans ton profil.",
     "alreadyHaveAccount": "Tu as déjà un compte ?",
-    "avatarPreview": "Aperçu de ton avatar",
     "changePhotoLogo": "Changer la photo ou le logo",
     "checkEmail": "Consulte ta boîte mail",
-    "chooseImageNoLarger": "Choisis une image de 2 Mo maximum.",
-    "chooseJpgPngWebp": "Choisis une image JPG, PNG ou WebP.",
     "chooseNewPassword": "Choisis un nouveau mot de passe.",
     "continueEmail": "ou continue avec ton e-mail",
     "continueGoogle": "Continuer avec Google",
     "couldntConnectGoogleUse": "Impossible de se connecter à Google. Utilise ton e-mail ou réessaie.",
-    "couldntReadImage": "Impossible de lire l’image.",
     "createAccount": "Crée ton compte",
     "createAccountPlanFirst": "Crée ton compte et prépare ta première fête.",
     "demoHost": "Hôte de démonstration",
@@ -33,7 +28,6 @@
     "least10CharactersUse": "Au moins 10 caractères. Utilise un mot de passe unique.",
     "newPassword": "Nouveau mot de passe",
     "optionalJpgPngWebp": "Facultatif · JPG, PNG ou WebP · Jusqu’à 2 Mo",
-    "photoLogo": "Ta photo ou ton logo",
     "profileUpdated": "Ton profil est à jour.",
     "remembered": "Ça te revient ?",
     "requestNewLink": "Demander un nouveau lien",
@@ -45,7 +39,6 @@
     "signIn": "Connecte-toi",
     "signOptionIsntEnabled": "Cette option de connexion n’est pas encore activée.",
     "startSomethingWonderful": "Commence quelque chose de beau.",
-    "uploadProfileImage": "Téléverser une image de profil",
     "yourInformation": "Tes informations",
     "accountTypeLegend": "Comment vas-tu utiliser TuEventoFun ?",
     "organizerTitle": "J'organise des événements",
@@ -67,7 +60,11 @@
     "placeholderFirstName": "John Michael",
     "placeholderLastName": "Smith Johnson",
     "placeholderPhone": "6 12 34 56 78",
-    "placeholderEmail": "toi@exemple.fr"
+    "placeholderEmail": "toi@exemple.fr",
+    "repeatPassword": "Répéter le mot de passe",
+    "chooseImageNoLarger": "Choisis une image de 2 Mo maximum.",
+    "chooseJpgPngWebp": "Choisis une image JPG, PNG ou WebP.",
+    "couldntReadImage": "Impossible de lire l’image."
   },
   "app": {
     "backOverview": "Retour à l’aperçu",
@@ -847,7 +844,8 @@
     "invalidPrice": "Saisis un prix valide, sans symboles.",
     "invalidCurrency": "Choisis une devise dans la liste.",
     "invalidPriceUnit": "Choisis pour quoi le prix est facturé.",
-    "maximum32Characters": "32 caractères maximum."
+    "maximum32Characters": "32 caractères maximum.",
+    "passwordsDontMatch": "Les mots de passe ne correspondent pas."
   },
   "pricing": {
     "title": "Tarifs",

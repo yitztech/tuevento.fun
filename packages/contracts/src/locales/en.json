@@ -1,17 +1,12 @@
 {
   "account": {
-    "accountReadyErrorAdd": "Your account is ready. {{error}} You can add your photo in your profile.",
     "alreadyHaveAccount": "Already have an account?",
-    "avatarPreview": "Avatar preview",
     "changePhotoLogo": "Change photo or logo",
     "checkEmail": "Check your email",
-    "chooseImageNoLarger": "Choose an image no larger than 2 MB.",
-    "chooseJpgPngWebp": "Choose a JPG, PNG or WebP image.",
     "chooseNewPassword": "Choose a new password.",
     "continueEmail": "or continue with email",
     "continueGoogle": "Continue with Google",
     "couldntConnectGoogleUse": "Couldn't connect to Google. Use email or try again.",
-    "couldntReadImage": "Couldn't read the image.",
     "createAccount": "Create an account",
     "createAccountPlanFirst": "Create your account and plan your first celebration.",
     "demoHost": "Demo host",
@@ -33,7 +28,6 @@
     "least10CharactersUse": "At least 10 characters. Use a unique password.",
     "newPassword": "New password",
     "optionalJpgPngWebp": "Optional · JPG, PNG or WebP · Up to 2 MB",
-    "photoLogo": "Your photo or logo",
     "profileUpdated": "Your profile is up to date.",
     "remembered": "Remembered it?",
     "requestNewLink": "Request a new link",
@@ -45,7 +39,6 @@
     "signIn": "Sign in",
     "signOptionIsntEnabled": "This sign-in option isn't enabled yet.",
     "startSomethingWonderful": "Start something wonderful.",
-    "uploadProfileImage": "Upload profile image",
     "yourInformation": "Your information",
     "accountTypeLegend": "How will you use TuEventoFun?",
     "organizerTitle": "I organize events",
@@ -67,7 +60,11 @@
     "placeholderFirstName": "John Michael",
     "placeholderLastName": "Smith Johnson",
     "placeholderPhone": "415 555 0132",
-    "placeholderEmail": "you@example.com"
+    "placeholderEmail": "you@example.com",
+    "repeatPassword": "Repeat password",
+    "chooseImageNoLarger": "Choose an image no larger than 2 MB.",
+    "chooseJpgPngWebp": "Choose a JPG, PNG or WebP image.",
+    "couldntReadImage": "Couldn't read the image."
   },
   "app": {
     "backOverview": "Back to overview",
@@ -847,7 +844,8 @@
     "invalidPrice": "Enter a valid price, without symbols.",
     "invalidCurrency": "Choose a currency from the list.",
     "invalidPriceUnit": "Choose what the price is charged per.",
-    "maximum32Characters": "Maximum 32 characters."
+    "maximum32Characters": "Maximum 32 characters.",
+    "passwordsDontMatch": "The passwords don’t match."
   },
   "pricing": {
     "title": "Pricing",

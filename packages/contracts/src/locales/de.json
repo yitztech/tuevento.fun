@@ -1,17 +1,12 @@
 {
   "account": {
-    "accountReadyErrorAdd": "Dein Konto ist bereit. {{error}} Du kannst dein Foto in deinem Profil hinzufügen.",
     "alreadyHaveAccount": "Du hast schon ein Konto?",
-    "avatarPreview": "Vorschau deines Avatars",
     "changePhotoLogo": "Foto oder Logo ändern",
     "checkEmail": "Sieh in dein Postfach",
-    "chooseImageNoLarger": "Wähle ein Bild mit höchstens 2 MB.",
-    "chooseJpgPngWebp": "Wähle ein JPG-, PNG- oder WebP-Bild.",
     "chooseNewPassword": "Wähle ein neues Passwort.",
     "continueEmail": "oder mit E-Mail fortfahren",
     "continueGoogle": "Weiter mit Google",
     "couldntConnectGoogleUse": "Die Verbindung mit Google ist fehlgeschlagen. Nutze deine E-Mail oder versuche es noch einmal.",
-    "couldntReadImage": "Das Bild konnte nicht gelesen werden.",
     "createAccount": "Erstelle dein Konto",
     "createAccountPlanFirst": "Erstelle dein Konto und plane deine erste Feier.",
     "demoHost": "Demo-Gastgeberin",
@@ -33,7 +28,6 @@
     "least10CharactersUse": "Mindestens 10 Zeichen. Verwende ein einzigartiges Passwort.",
     "newPassword": "Neues Passwort",
     "optionalJpgPngWebp": "Optional · JPG, PNG oder WebP · Bis zu 2 MB",
-    "photoLogo": "Dein Foto oder Logo",
     "profileUpdated": "Dein Profil ist auf dem neuesten Stand.",
     "remembered": "Doch wieder eingefallen?",
     "requestNewLink": "Neuen Link anfordern",
@@ -45,7 +39,6 @@
     "signIn": "Anmelden",
     "signOptionIsntEnabled": "Diese Anmeldeoption ist noch nicht aktiviert.",
     "startSomethingWonderful": "Fang etwas Schönes an.",
-    "uploadProfileImage": "Profilbild hochladen",
     "yourInformation": "Deine Angaben",
     "accountTypeLegend": "Wie möchtest du TuEventoFun nutzen?",
     "organizerTitle": "Ich organisiere Events",
@@ -67,7 +60,11 @@
     "placeholderFirstName": "John Michael",
     "placeholderLastName": "Smith Johnson",
     "placeholderPhone": "151 23456789",
-    "placeholderEmail": "du@beispiel.de"
+    "placeholderEmail": "du@beispiel.de",
+    "repeatPassword": "Passwort wiederholen",
+    "chooseImageNoLarger": "Wähle ein Bild mit höchstens 2 MB.",
+    "chooseJpgPngWebp": "Wähle ein JPG-, PNG- oder WebP-Bild.",
+    "couldntReadImage": "Das Bild konnte nicht gelesen werden."
   },
   "app": {
     "backOverview": "Zurück zur Übersicht",
@@ -847,7 +844,8 @@
     "invalidPrice": "Gib einen gültigen Preis ohne Zeichen ein.",
     "invalidCurrency": "Wähle eine Währung aus der Liste.",
     "invalidPriceUnit": "Wähle, wofür der Preis gilt.",
-    "maximum32Characters": "Höchstens 32 Zeichen."
+    "maximum32Characters": "Höchstens 32 Zeichen.",
+    "passwordsDontMatch": "Die Passwörter stimmen nicht überein."
   },
   "pricing": {
     "title": "Preise",
