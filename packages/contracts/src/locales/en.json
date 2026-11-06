@@ -64,8 +64,8 @@
     "verifyEmailBanner": "Confirm your email ({{email}}) with the link we sent you. Until then, your guests won't get email updates.",
     "verificationSent": "We sent a new link to {{email}}. Check your spam folder too.",
     "resendVerification": "Send the link again",
-    "placeholderFirstName": "John",
-    "placeholderLastName": "Smith",
+    "placeholderFirstName": "John Michael",
+    "placeholderLastName": "Smith Johnson",
     "placeholderPhone": "415 555 0132",
     "placeholderEmail": "you@example.com"
   },
