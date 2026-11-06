@@ -20,3 +20,12 @@ Los iconos y splash de `apps/web/android/app/src/main/res` y `apps/web/ios/App/A
 ## Sitio público
 
 Los SVG de `apps/web/public/site/` (logo, adornos y fondo de la banda final) son propios. Las fotografías ilustrativas del sitio se eligen en `packages/app/src/ui/site/photos.ts` y se sirven desde `apps/web/public/site/photos/`. Se generaron con la herramienta integrada de imágenes de OpenAI para el prototipo; no representan proveedores ni eventos reales. Sus originales y su inventario están en `apps/new-design/photos-src/` y `apps/new-design/docs/assets-manifest.md`. Las imágenes de la tabla anterior siguen siendo utilizadas por los temas de invitación existentes.
+
+## Marca v2: logo y favicon
+
+Los recursos están en `apps/web/public/images/brand-v2/` y su procedencia, manifiesto y maestros en `docs/assets/brand-v2/`.
+
+- **Logo completo por idioma:** `logo-{es,en,pt,de,fr}-{240,480,720,1080}.webp` (3:1). Lo pinta `BrandLogo` (`packages/app/src/ui/site/brand-logo.tsx`) con `srcset`, según el idioma activo, en la cabecera y el pie del sitio, en las páginas públicas y en el panel (`Logo` de `components.tsx`). Es decorativo: el enlace lleva su texto accesible (`common.tueventofunHome`).
+- **Símbolo:** `icon-{96,192}.webp` con `BrandMark`, para espacios compactos.
+- **Favicon y Apple touch:** `favicon.ico`, `favicon-16.png`, `favicon-32.png` y `apple-touch-icon.png`, declarados en `apps/web/index.html`.
+- **Sin cambiar todavía:** los iconos y splash nativos (`scripts/native-assets.mjs` sigue leyendo `apps/web/public/favicon.svg`). `app-icon-512.png` y `app-icon-1024.png` quedan preparados para ellos.
