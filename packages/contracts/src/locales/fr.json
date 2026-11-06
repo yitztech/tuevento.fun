@@ -114,6 +114,7 @@
     "couldntCompleteRequest": "Impossible de traiter la demande.",
     "country": "Pays",
     "countryCode": "Indicatif du pays",
+    "countryCodePlusIncluded": "Le « + » est déjà inclus : saisis uniquement l’indicatif de ton pays.",
     "createFirstEvent": "Créer mon premier événement",
     "createMyAccount": "Créer mon compte",
     "createMyEvent": "Créer mon événement",

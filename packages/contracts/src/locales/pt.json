@@ -114,6 +114,7 @@
     "couldntCompleteRequest": "Não foi possível concluir a solicitação.",
     "country": "País",
     "countryCode": "Código do país",
+    "countryCodePlusIncluded": "O «+» já está incluído: digite só o código do seu país.",
     "createFirstEvent": "Criar meu primeiro evento",
     "createMyAccount": "Criar minha conta",
     "createMyEvent": "Criar meu evento",

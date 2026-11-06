@@ -114,6 +114,7 @@
     "couldntCompleteRequest": "Die Anfrage konnte nicht abgeschlossen werden.",
     "country": "Land",
     "countryCode": "Ländervorwahl",
+    "countryCodePlusIncluded": "Das „+“ ist schon enthalten: gib nur deine Ländervorwahl ein.",
     "createFirstEvent": "Mein erstes Event erstellen",
     "createMyAccount": "Mein Konto erstellen",
     "createMyEvent": "Mein Event erstellen",

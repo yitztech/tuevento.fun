@@ -114,6 +114,7 @@
     "couldntCompleteRequest": "Couldn't complete the request.",
     "country": "Country",
     "countryCode": "Country code",
+    "countryCodePlusIncluded": "The “+” is already included: type just your country code.",
     "createFirstEvent": "Create my first event",
     "createMyAccount": "Create my account",
     "createMyEvent": "Create my event",

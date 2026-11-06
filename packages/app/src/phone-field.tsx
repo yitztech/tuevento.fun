@@ -185,8 +185,10 @@ function ManualPhoneField({
           autoComplete="tel-country-code"
           aria-label={tr("common.countryCode")}
           maxLength={5}
+          placeholder="+"
           value={parts.code ? `+${parts.code}` : ""}
           aria-invalid={!!error}
+          aria-describedby={`${id}-code-hint`}
           onChange={(event) => update({ ...parts, code: event.target.value.replace(/\D/g, "").slice(0, 4) })}
         />
         <Input
@@ -205,6 +207,7 @@ function ManualPhoneField({
           }}
         />
       </div>
+      <small id={`${id}-code-hint`}>{tr("common.countryCodePlusIncluded")}</small>
       {error && (
         <small id={`${id}-error`} className="field-error" role="alert">
           {trMessage(error)}
