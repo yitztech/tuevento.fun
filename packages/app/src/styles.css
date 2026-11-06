@@ -4071,7 +4071,7 @@
   z-index: 30;
   display: flex;
   flex-direction: column;
-  min-width: 13rem;
+  width: max-content;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -4081,10 +4081,10 @@
 .language-option {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   width: 100%;
   min-height: 46px;
-  padding: 10px 32px 10px 16px;
+  padding: 10px 11px 10px 8px;
   border: 0;
   border-top: 1px solid var(--line);
   background: none;
@@ -4111,6 +4111,7 @@
   flex: 1;
 }
 .language-option-check {
+  margin-left: 11px;
   color: var(--blue);
 }
 .language-option:focus-visible {

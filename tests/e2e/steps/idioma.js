@@ -27,16 +27,34 @@ Then("el selector de idioma no tiene borde ni fondo", async ({ page }) => {
   await expect(boton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
-Then("cada opción del menú tiene a la derecha el doble de margen que a la izquierda", async ({ page }) => {
-  const margenes = await page
-    .locator(".language-menu-list .language-option")
-    .evaluateAll((opciones) =>
-      opciones.map((o) => {
-        const { paddingLeft, paddingRight } = getComputedStyle(o);
-        return parseFloat(paddingRight) / parseFloat(paddingLeft);
-      }),
-    );
-  expect(margenes).toEqual([2, 2, 2, 2, 2]);
+Then("el check queda pegado al nombre del idioma actual y al borde del menú", async ({ page }) => {
+  const { alNombre, alBorde } = await page.locator(".language-option.is-current").evaluate((opcion) => {
+    const texto = document.createRange();
+    texto.selectNodeContents(opcion.querySelector(".language-option-name"));
+    const check = opcion.querySelector(".language-option-check").getBoundingClientRect();
+    return {
+      alNombre: check.left - texto.getBoundingClientRect().right,
+      alBorde: opcion.getBoundingClientRect().right - check.right,
+    };
+  });
+  expect(Math.abs(alNombre - 17)).toBeLessThanOrEqual(2);
+  expect(Math.abs(alBorde - 11)).toBeLessThanOrEqual(1);
+});
+
+When("hago clic fuera del menú de idiomas", async ({ page }) => {
+  await page.locator("body").click({ position: { x: 4, y: 300 } });
+});
+
+When("pulso Escape", async ({ page }) => {
+  await page.keyboard.press("Escape");
+});
+
+Then("el menú de idiomas está cerrado", async ({ page }) => {
+  await expect(page.locator(".language-menu-list")).toBeHidden();
+});
+
+Then("el foco está en el botón del selector de idioma", async ({ page }) => {
+  await expect(page.locator(".language-menu > summary:visible").first()).toBeFocused();
 });
 
 Then("el menú solo contiene los idiomas", async ({ page }) => {

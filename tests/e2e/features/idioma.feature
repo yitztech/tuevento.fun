@@ -16,9 +16,22 @@ Característica: Selector de idioma con banderas
     Entonces el selector de idioma no tiene borde ni fondo
 
   @solo-lectura
-  Escenario: Las opciones del menú dejan a la derecha el doble de margen que a la izquierda
+  Escenario: El menú se ajusta a su contenido, con el check pegado al idioma actual
     Cuando abro el selector de idioma
-    Entonces cada opción del menú tiene a la derecha el doble de margen que a la izquierda
+    Entonces el check queda pegado al nombre del idioma actual y al borde del menú
+
+  @solo-lectura
+  Escenario: Un clic fuera cierra el menú de idiomas
+    Cuando abro el selector de idioma
+    Y hago clic fuera del menú de idiomas
+    Entonces el menú de idiomas está cerrado
+
+  @solo-lectura
+  Escenario: Escape cierra el menú de idiomas y devuelve el foco al botón
+    Cuando abro el selector de idioma
+    Y pulso Escape
+    Entonces el menú de idiomas está cerrado
+    Y el foco está en el botón del selector de idioma
 
   @solo-lectura
   Escenario: El menú de idiomas marca el idioma actual
