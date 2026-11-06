@@ -357,17 +357,28 @@
       <!-- Diseño -->
       @if (tab() === 'design' && palette(); as palette) {
         <section>
-          <form class="coupon-form card" (ngSubmit)="savePalette()">
+          <form class="palette-form card" (ngSubmit)="savePalette()">
             <h2>Paleta del sitio</h2>
             <p class="muted">Paleta activa: {{ paletteName(palette) }}. Al guardar, cambia para todos los visitantes en unos 30 segundos.</p>
-            <label>
-              <span>Paleta</span>
-              <select name="palette" [(ngModel)]="paletteChoice">
-                @for (p of palettes; track p.id) {
-                  <option [value]="p.id">{{ p.name }}</option>
-                }
-              </select>
-            </label>
+            <fieldset class="palette-options">
+              <legend>Paleta</legend>
+              @for (p of palettes; track p.id) {
+                <label class="palette-option" [class.current]="p.id === palette">
+                  <input type="radio" name="palette" [value]="p.id" [(ngModel)]="paletteChoice">
+                  <span class="palette-name">
+                    {{ p.name }}
+                    @if (p.id === palette) {
+                      <strong class="palette-active">Activa</strong>
+                    }
+                  </span>
+                  <span class="swatches" aria-hidden="true">
+                    @for (color of p.colors; track $index) {
+                      <span class="swatch" [style.background]="color"></span>
+                    }
+                  </span>
+                </label>
+              }
+            </fieldset>
             @if (paletteError()) {
               <p class="error" role="alert">{{ paletteError() }}</p>
             }

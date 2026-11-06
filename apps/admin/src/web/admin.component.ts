@@ -14,12 +14,14 @@ const THEMES: Record<string, string> = {
   winter: "Invierno", spring: "Primavera", autumn: "Otoño", silver: "Plata", copper: "Cobre", disco: "Disco",
   starlight: "Luz de estrellas", sand: "Arena", wildflower: "Flores silvestres", pastel: "Pastel",
 };
+// Muestras de cada paleta, en este orden: principal, celebración, acento, fondo suave y texto.
+// Copia de `sitePalettes` (packages/contracts) y de los tokens de packages/app/src/styles.css para Terracota.
 const PALETTES = [
-  { id: "terracotta", name: "Terracota" },
-  { id: "fuchsia-plum-amber", name: "Fucsia, Ciruela y Ámbar" },
-  { id: "plum-champagne", name: "Ciruela y Champagne" },
-  { id: "mandarin-raspberry", name: "Mandarina y Frambuesa" },
-  { id: "raspberry-vanilla", name: "Frambuesa y Vainilla" },
+  { id: "terracotta", name: "Terracota", colors: ["#a63f30", "#ffca66", "#e25c80", "#f9e6dc", "#3d2a25"] },
+  { id: "fuchsia-plum-amber", name: "Fucsia, Ciruela y Ámbar", colors: ["#d9004b", "#ffc400", "#ff8a00", "#fff0f5", "#3d002b"] },
+  { id: "plum-champagne", name: "Ciruela y Champagne", colors: ["#570035", "#ffd166", "#ff8a00", "#fff1f6", "#320d26"] },
+  { id: "mandarin-raspberry", name: "Mandarina y Frambuesa", colors: ["#b94a00", "#d9004b", "#ffc400", "#fff0e3", "#40152d"] },
+  { id: "raspberry-vanilla", name: "Frambuesa y Vainilla", colors: ["#a90046", "#ffe08a", "#ff8a00", "#fff0f6", "#3d102a"] },
 ];
 const MESSAGES = {
   invalid: "Usuario o contraseña incorrectos.",

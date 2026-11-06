@@ -19,7 +19,7 @@ Given("que el sitio usa la paleta inicial", async ({ page, ctx }) => {
 });
 When("guardo la paleta {string} en el panel", async ({ page }, nombre) => {
   await panel(page, "Diseño").click();
-  await page.getByLabel("Paleta", { exact: true }).selectOption({ label: nombre });
+  await page.getByRole("radio", { name: nombre }).check();
   await page.getByRole("button", { name: "Guardar paleta" }).click();
   await expect(page.getByText("Paleta guardada.")).toBeVisible();
 });
