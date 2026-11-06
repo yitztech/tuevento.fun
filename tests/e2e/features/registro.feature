@@ -52,6 +52,53 @@ Característica: Crear una cuenta
       | +52 abc 555-12(3)x4  | 555-12(3)4       |
       | llamame              |                  |
 
+  @validacion @solo-lectura @FE-11
+  Esquema del escenario: El código de país del teléfono solo admite dígitos y hasta 3
+    Cuando escribo "<escrito>" en el campo "Código de país"
+    Entonces el campo "Código de país" contiene "<queda>"
+
+    Ejemplos:
+      | escrito | queda |
+      | 5       | 5     |
+      | 52      | 52    |
+      | 353     | 353   |
+      | 3531    | 353   |
+      | +5a2    | 52    |
+      | abc     |       |
+
+  @limites @solo-lectura
+  Esquema del escenario: Entre el código de país y el número no hay más de 15 dígitos
+    Cuando escribo "<código>" en el campo "Código de país"
+    Y escribo "<número>" en el campo "Teléfono"
+    Entonces el campo "Teléfono" contiene "<queda>"
+
+    Ejemplos:
+      | código | número            | queda          |
+      | 1      | 123456789012345   | 12345678901234 |
+      | 52     | 123456789012345   | 1234567890123  |
+      | 353    | 123456789012345   | 123456789012   |
+
+  @validacion @solo-lectura
+  Escenario: Un teléfono pegado con su prefijo separa el código de país
+    Cuando escribo "+52 55 1234 5678" en el campo "Teléfono"
+    Entonces el campo "Código de país" contiene "52"
+    Y el campo "Teléfono" contiene "55 1234 5678"
+
+  @validacion @solo-lectura
+  Escenario: El código de país tiene un máximo de 3 dígitos
+    Entonces el campo "Código de país" admite como máximo 3 caracteres
+
+  @validacion @solo-lectura
+  Escenario: Las contraseñas deben coincidir
+    Cuando relleno el registro con datos válidos
+    Y escribo "otra-clave-larga-9" en el campo "Repetir contraseña"
+    Y envío el formulario de registro
+    Entonces veo el aviso "Las contraseñas no coinciden."
+
+  @validacion @solo-lectura
+  Escenario: El registro ya no pide foto o logotipo
+    Entonces no existe el campo "Cargar avatar de registro"
+
   @limites @solo-lectura
   Esquema del escenario: Cada campo tiene su longitud máxima
     Entonces el campo "<campo>" admite como máximo <maximo> caracteres

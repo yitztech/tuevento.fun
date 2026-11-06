@@ -371,7 +371,7 @@ try {
     await mal("/auth/login", "POST", { email: "a@b.co", password: largo(129) }, "password");
     await mal("/auth/login", "POST", { email: "a@b.co", password: "corta" }, "password");
     // registro: nombres, teléfono, longitudes
-    for (const [campo, valor] of [["firstName", "Ana2"], ["lastName", "123"], ["phone", "abc1234567"], ["phone", "+++++++"], ["password", "corta"], ["firstName", largo(51)], ["email", `${largo(250)}@x.co`]])
+    for (const [campo, valor] of [["firstName", "Ana2"], ["lastName", "123"], ["phone", "abc1234567"], ["phone", "+++++++"], ["phone", "+1 234"], ["phone", "+683 400"], ["phone", "+353 1234567890123"], ["phone", "+34 6123456789012345"], ["password", "corta"], ["firstName", largo(51)], ["email", `${largo(250)}@x.co`]])
       await mal("/auth/register", "POST", { ...account(P, "inv"), [campo]: valor }, campo);
     // perfil
     await mal("/profile", "PATCH", { firstName: "Lu2", lastName: "Prueba", phone: "+527770000000" }, "firstName");

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { accountLimits, providerCategories } from "./index";
+import { accountLimits, phoneLimits, providerCategories } from "./index";
 
 const migrations = join(__dirname, "../../../apps/api/migrations");
 const sql = readdirSync(migrations)
@@ -52,6 +52,16 @@ test("accountLimits coincide con las restricciones CHECK de la base de datos", (
         `${table}.${column} no coincide con accountLimits.${limit}`,
       );
     }
+  }
+});
+
+test("Los dígitos del teléfono de la base de datos son los de phoneLimits", () => {
+  const digits = `[0-9]{${phoneLimits.codeMin + phoneLimits.nationalMin},${phoneLimits.totalMax}}`;
+  for (const [table, column] of columns.phone) {
+    const constraint = `ALTER TABLE ${table} ADD CONSTRAINT ${table}_${column}_digits`;
+    const at = sql.indexOf(constraint);
+    assert.ok(at >= 0, `${table}.${column} no limita los dígitos del teléfono`);
+    assert.ok(sql.slice(at, at + 260).includes(`~ '^${digits}$'`), `${table}.${column} no usa ${digits}`);
   }
 });
 

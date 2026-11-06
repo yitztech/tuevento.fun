@@ -44,11 +44,19 @@ test("Los límites de longitud de la base de datos coinciden con accountLimits",
     const def = (await db.query("SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conname=$1", [`users_${columna}_max_length`])).rows[0]?.d;
     assert.match(def ?? "", new RegExp(`char_length\\(${columna}\\) <= ${max}\\)`), `users_${columna}_max_length`);
     // En el límite se acepta; uno más se rechaza (y con el correo, que además conserva forma de correo)
-    const valor = (n) => (columna === "email" ? `${"a".repeat(n - 12)}@example.com` : columna === "phone" ? "1".repeat(n) : "a".repeat(n));
+    const valor = (n) => (columna === "email" ? `${"a".repeat(n - 12)}@example.com` : columna === "phone" ? "1".repeat(Math.min(n, 15)) + "-".repeat(Math.max(0, n - 15)) : "a".repeat(n));
     const extra = (n) => ({ [columna]: valor(n), ...(columna === "email" ? {} : { email: `lim-${columna}-${n}@example.invalid` }) });
     assert.equal(await codigoError(() => usuario(db, extra(max))), null, `${columna} = ${max}`);
     assert.equal(await codigoError(() => usuario(db, extra(max + 1))), CHECK_VIOLATION, `${columna} = ${max + 1}`);
   }
+});
+
+test("El teléfono lleva de 5 a 15 dígitos (código de 1 a 3 y número de 4 a 14), o va vacío", async () => {
+  const guarda = (phone) => codigoError(() => usuario(db, { phone, email: `tel-${phone.replace(/\D/g, "")}-${Date.now()}@example.invalid` }));
+  for (const bien of ["", "+1 2345", "+34 612345678", "+353 123456789012", "+7 12345678901234"])
+    assert.equal(await guarda(bien), null, bien);
+  for (const mal of ["+1 234", "+1 23", "+1234567890123456", "+7 123456789012345"])
+    assert.equal(await guarda(mal), CHECK_VIOLATION, mal);
 });
 
 test("Nombre, apellidos y correo son obligatorios", async () => {

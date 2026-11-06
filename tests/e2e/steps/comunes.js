@@ -57,6 +57,7 @@ When("relleno el registro con datos válidos", async ({ ui, ctx }) => {
   await ui.escribir("Teléfono", c.phone);
   await ui.escribir("Correo electrónico", c.email);
   await ui.escribir("Contraseña", c.password);
+  await ui.escribir("Repetir contraseña", c.password);
 });
 
 When("envío el formulario de registro", async ({ ui }) => {

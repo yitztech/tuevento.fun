@@ -40,6 +40,9 @@ Característica: La API valida los datos de la cuenta
       | +++++++       | invalid_characters |
       | 123456        | too_short          |
       | 1234567890123 | invalid_format     |
+      | +683 400      | invalid_format     |
+      | +353 1234567890123 | invalid_format |
+      | +34 6123456789012345 | invalid_format |
 
   @validacion @BE-26
   Escenario: Guarda el teléfono en formato internacional E.164
@@ -47,6 +50,20 @@ Característica: La API valida los datos de la cuenta
     Y lo envío a la API de registro
     Entonces la API responde 201
     Y la cuenta guarda el teléfono "+527771234567"
+
+  @validacion @BE-26
+  Esquema del escenario: Acepta teléfonos de 1 a 3 dígitos de código de país y de 4 a 14 de número
+    Cuando cambio "teléfono" por "<escrito>"
+    Y lo envío a la API de registro
+    Entonces la API responde 201
+    Y la cuenta guarda el teléfono "<guardado>"
+
+    Ejemplos:
+      | escrito         | guardado      |
+      | +1 212 555 0123 | +12125550123  |
+      | +34 612 345 678 | +34612345678  |
+      | +353 1 234 5678 | +35312345678  |
+      | +683 4002       | +6834002      |
 
   @validacion @BE-11 @solo-lectura
   Escenario: Rechaza los campos que no son de la cuenta

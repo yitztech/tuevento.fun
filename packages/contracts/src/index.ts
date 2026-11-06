@@ -268,7 +268,16 @@ const phone = z
   .regex(/^\+?[0-9 ().-]+$/, "validation.useNumbersSpaces")
   .transform((v, ctx) => {
     const parsed = parsePhoneNumberFromString(v, defaultPhoneCountry);
-    if (parsed?.isValid()) return parsed.number as string;
+    // Dígitos según phoneLimits: código de 1 a 3, número de 4 a 14 y no más de 15 entre los dos
+    if (
+      parsed?.isValid() &&
+      parsed.countryCallingCode.length >= phoneLimits.codeMin &&
+      parsed.countryCallingCode.length <= phoneLimits.codeMax &&
+      parsed.nationalNumber.length >= phoneLimits.nationalMin &&
+      parsed.nationalNumber.length <= phoneLimits.nationalMax &&
+      parsed.countryCallingCode.length + parsed.nationalNumber.length <= phoneLimits.totalMax
+    )
+      return parsed.number as string;
     ctx.addIssue({ code: "custom", message: "validation.enterValidPhoneNumber" });
     return z.NEVER;
   });
