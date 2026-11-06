@@ -101,6 +101,21 @@ test("los cupones se leen y solo se escriben con sus funciones, que dejan regist
   }
 });
 
+test("la paleta se lee y solo se escribe con su función, que deja registro", async () => {
+  await lector.query("SELECT palette FROM site_palette_settings");
+  await denegado("UPDATE site_palette_settings SET palette = 'plum-champagne'");
+  await lector.query("SELECT admin_set_site_palette('plum-champagne', 'admin-qa')");
+  assert.equal((await lector.query("SELECT palette FROM site_palette_settings")).rows[0].palette, "plum-champagne");
+  await assert.rejects(lector.query("SELECT admin_set_site_palette('no-existe', 'admin-qa')"), (e) => e.code === "23514");
+  const dueno = admin(base.nombre);
+  try {
+    const { rows } = await dueno.query("SELECT admin, target FROM admin_audit_log WHERE action = 'site_palette.update'");
+    assert.deepEqual(rows, [{ admin: "admin-qa", target: "plum-champagne" }]);
+  } finally {
+    await dueno.end();
+  }
+});
+
 test("repetir el script con el rol ya creado y con permisos no falla: cambia la contraseña y deja los mismos permisos", async () => {
   const otra = "otra-clave-de-prueba-admin";
   const dueno = admin(base.nombre);

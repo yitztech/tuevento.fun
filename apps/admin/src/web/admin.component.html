@@ -45,6 +45,7 @@
         <button type="button" role="tab" [class.active]="tab() === 'users'" (click)="show('users')">Usuarios</button>
         <button type="button" role="tab" [class.active]="tab() === 'events'" (click)="show('events')">Eventos</button>
         <button type="button" role="tab" [class.active]="tab() === 'coupons'" (click)="show('coupons')">Cupones</button>
+        <button type="button" role="tab" [class.active]="tab() === 'design'" (click)="show('design')">Diseño</button>
       </nav>
 
       @if (error()) {
@@ -350,6 +351,31 @@
             <span>Página {{ page() }}</span>
             <button type="button" class="ghost" [disabled]="coupons.rows.length < coupons.pageSize" (click)="go(page() + 1)">Siguiente</button>
           </nav>
+        </section>
+      }
+
+      <!-- Diseño -->
+      @if (tab() === 'design' && palette(); as palette) {
+        <section>
+          <form class="coupon-form card" (ngSubmit)="savePalette()">
+            <h2>Paleta del sitio</h2>
+            <p class="muted">Paleta activa: {{ paletteName(palette) }}. Al guardar, cambia para todos los visitantes en unos 30 segundos.</p>
+            <label>
+              <span>Paleta</span>
+              <select name="palette" [(ngModel)]="paletteChoice">
+                @for (p of palettes; track p.id) {
+                  <option [value]="p.id">{{ p.name }}</option>
+                }
+              </select>
+            </label>
+            @if (paletteError()) {
+              <p class="error" role="alert">{{ paletteError() }}</p>
+            }
+            @if (paletteSaved()) {
+              <p class="muted" role="status">Paleta guardada.</p>
+            }
+            <button type="submit" class="primary" [disabled]="busy() || paletteChoice === palette">Guardar paleta</button>
+          </form>
         </section>
       }
     </div>

@@ -2,10 +2,10 @@ import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Component, DestroyRef, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
-import type { Countries, CouponRow, EventRow, Page, Stats, UserRow } from "./api";
+import type { Countries, CouponRow, EventRow, Page, SitePalette, Stats, UserRow } from "./api";
 
 type Session = "checking" | "out" | "in";
-type Tab = "summary" | "users" | "events" | "coupons";
+type Tab = "summary" | "users" | "events" | "coupons" | "design";
 
 const REFRESH_MS = 60 * 1000;
 const PLATFORMS: Record<string, string> = { web: "Web", android: "Android", ios: "iOS" };
@@ -14,6 +14,13 @@ const THEMES: Record<string, string> = {
   winter: "Invierno", spring: "Primavera", autumn: "Otoño", silver: "Plata", copper: "Cobre", disco: "Disco",
   starlight: "Luz de estrellas", sand: "Arena", wildflower: "Flores silvestres", pastel: "Pastel",
 };
+const PALETTES = [
+  { id: "terracotta", name: "Terracota" },
+  { id: "fuchsia-plum-amber", name: "Fucsia, Ciruela y Ámbar" },
+  { id: "plum-champagne", name: "Ciruela y Champagne" },
+  { id: "mandarin-raspberry", name: "Mandarina y Frambuesa" },
+  { id: "raspberry-vanilla", name: "Frambuesa y Vainilla" },
+];
 const MESSAGES = {
   invalid: "Usuario o contraseña incorrectos.",
   blocked: "Demasiados intentos. Espera unos minutos.",
@@ -22,6 +29,7 @@ const MESSAGES = {
   couponDuplicate: "Ya existe un cupón con ese código.",
   couponInvalid: "Revisa los datos del cupón.",
   couponError: "No se pudo guardar el cupón.",
+  paletteError: "No se pudo guardar la paleta.",
 };
 const REGIONS = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["es"], { type: "region" }) : null;
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -37,6 +45,7 @@ export class AdminComponent {
   private readonly http = inject(HttpClient);
 
   readonly periods = [7, 30, 90];
+  readonly palettes = PALETTES;
 
   readonly session = signal<Session>("checking");
   readonly tab = signal<Tab>("summary");
@@ -53,6 +62,10 @@ export class AdminComponent {
   readonly countriesError = signal("");
   readonly coupons = signal<Page<CouponRow> | null>(null);
   readonly couponError = signal("");
+  readonly palette = signal<string | null>(null);
+  readonly paletteError = signal("");
+  readonly paletteSaved = signal(false);
+  paletteChoice = "";
   credentials = { username: "", password: "" };
   couponForm = { code: "", kind: "percent", value: null as number | null, expires: "", maxRedemptions: null as number | null };
 
@@ -98,6 +111,10 @@ export class AdminComponent {
   date(value: string | null) {
     if (!value) return "";
     return new Date(value).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  paletteName(id: string) {
+    return PALETTES.find((palette) => palette.id === id)?.name || id;
   }
 
   couponDiscount(coupon: CouponRow) {
@@ -168,6 +185,7 @@ export class AdminComponent {
         this.events.set(null);
         this.coupons.set(null);
         this.countries.set(null);
+        this.palette.set(null);
       });
   }
 
@@ -223,9 +241,38 @@ export class AdminComponent {
         () => undefined,
       );
     }
+    if (this.tab() === "design") {
+      this.paletteError.set("");
+      this.paletteSaved.set(false);
+      return this.request<SitePalette>("/api/palette").then(
+        ({ palette }) => {
+          this.palette.set(palette);
+          this.paletteChoice = palette;
+        },
+        () => undefined,
+      );
+    }
     return this.request<Page<EventRow>>(`/api/events?page=${this.page()}`).then(
       (data) => this.events.set(data),
       () => undefined,
+    );
+  }
+
+  savePalette() {
+    this.paletteError.set("");
+    this.paletteSaved.set(false);
+    this.busy.set(true);
+    firstValueFrom(this.http.put<SitePalette>("/api/palette", { palette: this.paletteChoice }, { headers: JSON_HEADERS })).then(
+      ({ palette }) => {
+        this.busy.set(false);
+        this.palette.set(palette);
+        this.paletteSaved.set(true);
+      },
+      (error: unknown) => {
+        this.busy.set(false);
+        if (statusOf(error) === 401) return this.session.set("out");
+        this.paletteError.set(MESSAGES.paletteError);
+      },
     );
   }
 

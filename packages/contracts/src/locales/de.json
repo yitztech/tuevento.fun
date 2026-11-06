@@ -658,23 +658,6 @@
     "pending_other": "{{count}} offen",
     "summary": "{{accepted}}, {{declined}} und {{pending}}."
   },
-  "sitePalette": {
-    "title": "Farbpalette der Website",
-    "description": "Wähle eine Palette, um sie auf diesem Bildschirm vor der Veröffentlichung anzusehen.",
-    "current": "Aktive Palette: {{name}}",
-    "select": "Palette auswählen",
-    "save": "Palette speichern",
-    "cancel": "Vorschau abbrechen",
-    "saved": "Palette gespeichert.",
-    "loadError": "Die Palette konnte nicht geladen werden.",
-    "saveError": "Die Palette konnte nicht gespeichert werden.",
-    "terracotta": "Aktuelles Terrakotta",
-    "fuchsia": "Fuchsie, Pflaume und Bernstein",
-    "plum": "Pflaume und Champagner",
-    "mandarin": "Mandarine und Himbeere",
-    "raspberry": "Himbeere und Vanille",
-    "preview": "Nicht gespeicherte Vorschau."
-  },
   "owner": {
     "byClient": "Aktivität nach Client",
     "client": "Client",

@@ -658,23 +658,6 @@
     "pending_other": "{{count}} en espera",
     "summary": "{{accepted}}, {{declined}} y {{pending}}."
   },
-  "sitePalette": {
-    "title": "Paleta del sitio",
-    "description": "Elige una paleta para verla en esta pantalla antes de publicarla en el sitio.",
-    "current": "Paleta activa: {{name}}",
-    "select": "Seleccionar paleta",
-    "save": "Guardar paleta",
-    "cancel": "Cancelar vista previa",
-    "saved": "Paleta guardada.",
-    "loadError": "No se pudo cargar la paleta.",
-    "saveError": "No se pudo guardar la paleta.",
-    "terracotta": "Terracota actual",
-    "fuchsia": "Fucsia, Ciruela y Ámbar",
-    "plum": "Ciruela y Champagne",
-    "mandarin": "Mandarina y Frambuesa",
-    "raspberry": "Frambuesa y Vainilla",
-    "preview": "Vista previa sin guardar."
-  },
   "owner": {
     "byClient": "Actividad por cliente",
     "client": "Cliente",

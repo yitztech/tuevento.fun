@@ -1,19 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { EventApi } from "@tuevento/client";
 import { sitePalettes, sitePaletteSchema, type SitePaletteId } from "@tuevento/contracts";
-
-type PaletteContextValue = {
-  saved: SitePaletteId;
-  selected: SitePaletteId;
-  loading: boolean;
-  error: boolean;
-  saving: boolean;
-  preview: (palette: SitePaletteId) => void;
-  cancel: () => void;
-  save: () => Promise<void>;
-  refresh: () => Promise<void>;
-};
-const PaletteContext = createContext<PaletteContextValue | null>(null);
 
 const cacheKey = "tuevento.sitePalette";
 const defaultThemeColor = "#fff6f2";
@@ -55,51 +42,26 @@ function applyPalette(id: SitePaletteId) {
   root.dataset.sitePalette = id;
 }
 
+/** Aplica la paleta global, que solo se cambia en el panel de administración (apps/admin). */
 export function SitePaletteProvider({ api, children }: { api: EventApi; children: ReactNode }) {
-  const [saved, setSaved] = useState<SitePaletteId>(cachedPalette);
-  const [draft, setDraft] = useState<SitePaletteId | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [palette, setPalette] = useState<SitePaletteId>(cachedPalette);
   const serial = useRef(0);
-  const draftRef = useRef<SitePaletteId | null>(null);
-  draftRef.current = draft;
   const refresh = useCallback(async () => {
     const current = ++serial.current;
     try {
       const response = sitePaletteSchema.parse(await api.request<unknown>("/site-palette"));
-      if (current === serial.current && draftRef.current === null) { setSaved(response.palette); rememberPalette(response.palette); setError(false); }
+      if (current === serial.current) { setPalette(response.palette); rememberPalette(response.palette); }
     } catch {
-      if (current === serial.current) setError(true);
-    } finally {
-      if (current === serial.current) setLoading(false);
+      // Sin respuesta se mantiene la última paleta conocida
     }
   }, [api]);
   useEffect(() => {
     void refresh();
     const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible" && draftRef.current === null) void refresh();
+      if (document.visibilityState === "visible") void refresh();
     }, 30000);
     return () => { serial.current++; window.clearInterval(interval); };
   }, [refresh]);
-  useLayoutEffect(() => { applyPalette(draft ?? saved); }, [draft, saved]);
-  const preview = useCallback((id: SitePaletteId) => { draftRef.current = id; setDraft(id); }, []);
-  const cancel = useCallback(() => { draftRef.current = null; setDraft(null); void refresh(); }, [refresh]);
-  const save = useCallback(async () => {
-    if (draftRef.current === null) return;
-    const candidate = draftRef.current;
-    const current = ++serial.current;
-    setSaving(true);
-    try {
-      const response = sitePaletteSchema.parse(await api.request<unknown>("/owner/site-palette", "PUT", { palette: candidate }));
-      if (current === serial.current) { setSaved(response.palette); rememberPalette(response.palette); draftRef.current = null; setDraft(null); setError(false); }
-    } finally { setSaving(false); }
-  }, [api]);
-  const value = useMemo(() => ({ saved, selected: draft ?? saved, loading, error, saving, preview, cancel, save, refresh }), [saved, draft, loading, error, saving, preview, cancel, save, refresh]);
-  return <PaletteContext.Provider value={value}>{children}</PaletteContext.Provider>;
-}
-export function useSitePalette() {
-  const value = useContext(PaletteContext);
-  if (!value) throw new Error("SitePaletteProvider missing");
-  return value;
+  useLayoutEffect(() => { applyPalette(palette); }, [palette]);
+  return <>{children}</>;
 }

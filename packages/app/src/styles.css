@@ -5604,12 +5604,6 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   }
 }
 
-.palette-settings { margin: 24px 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ground); }
-.palette-settings h2 { margin: 0 0 8px; }
-.palette-settings p { margin: 8px 0; }
-.palette-settings label { display: block; font-weight: 700; margin: 16px 0 6px; }
-.palette-settings select { max-width: 100%; min-height: 44px; }
-.palette-settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 :root[data-site-palette] {
   --shadow-soft: 0 1px 3px color-mix(in srgb, var(--ink) 5%, transparent), 0 8px 24px color-mix(in srgb, var(--ink) 6%, transparent);
   background: var(--site-bg);

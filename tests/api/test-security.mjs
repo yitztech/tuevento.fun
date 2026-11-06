@@ -24,7 +24,7 @@ try {
       ["GET", `/events/${evento.id}/invitations`], ["POST", `/events/${evento.id}/invitations`],
       ["PUT", `/events/${evento.id}/invitations/${invitacion.id}`], ["DELETE", `/events/${evento.id}/invitations/${invitacion.id}`],
       ["GET", "/notifications"], ["POST", "/notifications/read"], ["PATCH", "/profile"], ["PUT", "/profile/avatar"],
-      ["GET", "/owner/metrics"], ["PUT", "/owner/site-palette"], ["POST", `/events/${evento.id}/checkout`], ["GET", "/sync/changes"],
+      ["GET", "/owner/metrics"], ["POST", `/events/${evento.id}/checkout`], ["GET", "/sync/changes"],
     ];
     for (const [method, path] of protegidos) {
       const r = await guest.raw(path, { method, body: method === "GET" || method === "DELETE" ? undefined : {} });
@@ -186,7 +186,8 @@ try {
     assert.equal(nuevo.isOwner, false);
     assert.equal(nuevo.isDemo, false);
     await c.call("/owner/metrics", "GET", undefined, 403);
-    await c.call("/owner/site-palette", "PUT", { palette: "plum-champagne" }, 403);
+    // La paleta solo se cambia en el panel de administración: la API de la web no tiene esa ruta
+    await c.call("/owner/site-palette", "PUT", { palette: "plum-champagne" }, 404);
     // El perfil tampoco acepta campos que no son suyos
     await c.call("/profile", "PATCH", { firstName: "Ana", lastName: "Prueba", phone: "+527770000000", email: "otro@example.invalid", isOwner: true }, 422);
     const perfil = await c.call("/auth/me");

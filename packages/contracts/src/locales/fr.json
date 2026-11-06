@@ -658,23 +658,6 @@
     "pending_other": "{{count}} en attente",
     "summary": "{{accepted}}, {{declined}} et {{pending}}."
   },
-  "sitePalette": {
-    "title": "Palette du site",
-    "description": "Choisissez une palette pour la prévisualiser sur cet écran avant de la publier sur le site.",
-    "current": "Palette active : {{name}}",
-    "select": "Choisir une palette",
-    "save": "Enregistrer la palette",
-    "cancel": "Annuler l’aperçu",
-    "saved": "Palette enregistrée.",
-    "loadError": "Impossible de charger la palette.",
-    "saveError": "Impossible d’enregistrer la palette.",
-    "terracotta": "Terracotta actuel",
-    "fuchsia": "Fuchsia, prune et ambre",
-    "plum": "Prune et champagne",
-    "mandarin": "Mandarine et framboise",
-    "raspberry": "Framboise et vanille",
-    "preview": "Aperçu non enregistré."
-  },
   "owner": {
     "byClient": "Activité par client",
     "client": "Client",

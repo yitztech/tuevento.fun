@@ -31,5 +31,5 @@ test("El contrato OpenAPI de paletas publica los identificadores y operaciones v
   const spec = JSON.parse(await readFile(join(__dirname, "../../../docs/openapi/site-palettes.yaml"), "utf8"));
   assert.deepEqual(spec.components.schemas.SitePalette.properties.palette.enum, [...sitePaletteIds]);
   assert.ok(spec.paths["/site-palette"].get.responses[200]);
-  for (const code of [200, 401, 403, 422]) assert.ok(spec.paths["/owner/site-palette"].put.responses[code]);
+  assert.equal(spec.paths["/owner/site-palette"], undefined);
 });
