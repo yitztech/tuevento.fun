@@ -63,7 +63,11 @@
     "unsubscribedDetail": "Não vamos mais enviar avisos de eventos para este e-mail.",
     "verifyEmailBanner": "Confirme seu e-mail ({{email}}) pelo link que enviamos. Até lá, seus convidados não vão receber avisos por e-mail.",
     "verificationSent": "Enviamos um link novo para {{email}}. Confira também a pasta de spam.",
-    "resendVerification": "Enviar o link de novo"
+    "resendVerification": "Enviar o link de novo",
+    "placeholderFirstName": "Mariana",
+    "placeholderLastName": "Silva",
+    "placeholderPhone": "11 91234-5678",
+    "placeholderEmail": "voce@exemplo.com"
   },
   "app": {
     "backOverview": "Voltar ao resumo",

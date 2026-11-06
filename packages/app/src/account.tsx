@@ -164,6 +164,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <Input
                     autoComplete="given-name"
+                    placeholder={tr("account.placeholderFirstName")}
                     maxLength={accountLimits.personName}
                     {...form.register("firstName", { onChange: onlyNameChars })}
                   />
@@ -174,6 +175,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                 >
                   <Input
                     autoComplete="family-name"
+                    placeholder={tr("account.placeholderLastName")}
                     maxLength={accountLimits.personName}
                     {...form.register("lastName", { onChange: onlyNameChars })}
                   />
@@ -184,6 +186,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                   render={({ field }) => (
                     <PhoneField
                       manualCode
+                      placeholder={tr("account.placeholderPhone")}
                       label={tr("common.phone")}
                       error={form.formState.errors.phone?.message}
                       value={field.value}
@@ -200,6 +203,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
               <Input
                 type="email"
                 autoComplete="email"
+                placeholder={tr("account.placeholderEmail")}
                 maxLength={accountLimits.email}
                 {...form.register("email")}
               />
@@ -220,6 +224,7 @@ export function AuthPage({ registerMode }: { registerMode: boolean }) {
                     registerMode ? "new-password" : "current-password"
                   }
                   maxLength={accountLimits.password}
+                  placeholder="••••••••••"
                   {...form.register("password")}
                 />
                 <Button variant="ghost" size="icon"

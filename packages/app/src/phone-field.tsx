@@ -156,8 +156,10 @@ function ManualPhoneField({
   error,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
+  placeholder?: string;
   error?: string;
   value: string;
   onChange: (value: string) => void;
@@ -204,6 +206,7 @@ function ManualPhoneField({
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
+          placeholder={placeholder}
           maxLength={accountLimits.phone}
           value={parts.national}
           aria-invalid={!!error}
@@ -230,6 +233,8 @@ type PhoneFieldProps = {
   error?: string;
   value: string;
   onChange: (value: string) => void;
+  /** Ejemplo del número que se muestra mientras el campo está vacío. */
+  placeholder?: string;
   /** El código de país se escribe a mano en vez de elegirlo de la lista. */
   manualCode?: boolean;
 };

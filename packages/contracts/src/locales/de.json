@@ -63,7 +63,11 @@
     "unsubscribedDetail": "Wir schicken keine Veranstaltungshinweise mehr an diese Adresse.",
     "verifyEmailBanner": "Bestätige deine E-Mail-Adresse ({{email}}) über den Link, den wir dir geschickt haben. Bis dahin bekommen deine Gäste keine Hinweise per E-Mail.",
     "verificationSent": "Wir haben einen neuen Link an {{email}} geschickt. Schau auch im Spam-Ordner nach.",
-    "resendVerification": "Link noch einmal senden"
+    "resendVerification": "Link noch einmal senden",
+    "placeholderFirstName": "Anna",
+    "placeholderLastName": "Müller",
+    "placeholderPhone": "151 23456789",
+    "placeholderEmail": "du@beispiel.de"
   },
   "app": {
     "backOverview": "Zurück zur Übersicht",
