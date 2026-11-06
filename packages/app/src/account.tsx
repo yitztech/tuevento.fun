@@ -451,7 +451,9 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
     ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!config.googleClientId || runtime.startNativeLogin) return;
-    let active = true;
+    let active = true,
+      observer: ResizeObserver | undefined,
+      lastWidth = 0;
     const init = async () => {
       try {
         const { nonce } = await api.googleNonce();
@@ -469,13 +471,31 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
             }
           },
         });
-        google.accounts.id.renderButton(ref.current, {
-          theme: "outline",
-          size: "large",
-          width: 360,
-          text: "continue_with",
-          locale: getLocale(),
+        // El botón ocupa siempre el ancho del contenedor (el mismo de los campos); Google admite de 200 a 400 px
+        const draw = () => {
+          const box = ref.current;
+          if (!box) return;
+          const full = box.clientWidth || 360,
+            width = Math.min(400, Math.max(200, Math.round(full)));
+          box.replaceChildren();
+          const holder = document.createElement("div");
+          box.appendChild(holder);
+          google.accounts.id.renderButton(holder, {
+            theme: "outline",
+            size: "large",
+            width,
+            text: "continue_with",
+            locale: getLocale(),
+          });
+          holder.style.setProperty("zoom", full > 400 ? String(full / 400) : "1");
+        };
+        draw();
+        observer = new ResizeObserver(() => {
+          const w = ref.current?.clientWidth ?? 0;
+          if (Math.abs(w - lastWidth) > 1) { lastWidth = w; draw(); }
         });
+        lastWidth = ref.current?.clientWidth ?? 0;
+        observer.observe(ref.current!);
       } catch (e) {
         onError(errorText(e));
       }
@@ -503,6 +523,7 @@ function GoogleLogin({ onError, accountType }: { onError: (error: string) => voi
     }
     return () => {
       active = false;
+      observer?.disconnect();
       script?.removeEventListener("load", init);
     };
   }, [config.googleClientId, getLocale(), postAuthTarget]);

@@ -1991,8 +1991,8 @@
   margin-top: 7px;
 }
 .google-container {
-  display: flex;
-  justify-content: center;
+  display: block;
+  width: 100%;
   min-height: 44px;
 }
 .or-divider {
