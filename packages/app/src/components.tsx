@@ -42,6 +42,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { NativeSelect } from "./ui/native-select";
 import { Textarea } from "./ui/textarea";
+import { BrandLogo, BrandMark } from "./ui/site/brand-logo";
 export function Logo({
   compact = false,
   to = "/",
@@ -51,14 +52,7 @@ export function Logo({
 }) {
   return (
     <Link to={to} className="logo" aria-label={tr("common.tueventofunHome")}>
-      <span className="logo-mark">
-        <img src="/site/branding/logo-mark.svg" alt="" width={35} height={35} />
-      </span>
-      {!compact && (
-        <span>
-          TuEvento<span className="logo-fun">Fun</span>
-        </span>
-      )}
+      {compact ? <BrandMark /> : <BrandLogo size="panel" />}
     </Link>
   );
 }

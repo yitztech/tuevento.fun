@@ -7,6 +7,7 @@ import { LanguageSwitcher, tr, useLocale } from "../../i18n";
 import { LegalLinks } from "../../legal";
 import { pricingPath } from "../../pricing";
 import { Button } from "../button";
+import { BrandLogo } from "./brand-logo";
 
 const linkClass = "rounded-md px-1 py-2 text-[0.82rem] font-semibold whitespace-nowrap text-foreground/90 transition-colors hover:text-primary";
 const primary = "/registro?empezar=evento";
@@ -14,11 +15,8 @@ const primary = "/registro?empezar=evento";
 /** Logo del sitio público. Las apps conservan su icono propio. */
 export function SiteLogo({ compact = false }: { compact?: boolean }) {
   return (
-    <Link to="/" className="inline-flex items-center gap-1.5" aria-label={tr("common.tueventofunHome")}>
-      <img src="/site/branding/logo-mark.svg" alt="" width={64} height={64} className={compact ? "size-9 shrink-0" : "size-10 shrink-0"} />
-      <span className={cn("font-serif leading-none font-bold tracking-tight text-primary max-[359px]:sr-only", compact ? "text-xl" : "text-[1.7rem]")}>
-        TuEventoFun
-      </span>
+    <Link to="/" className="inline-flex items-center" aria-label={tr("common.tueventofunHome")}>
+      <BrandLogo size={compact ? "compact" : "default"} />
     </Link>
   );
 }

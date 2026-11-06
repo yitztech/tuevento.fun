@@ -340,37 +340,8 @@
   color: var(--blue);
 }
 .logo {
-  font-family: "Playfair Display Variable", Georgia, serif;
   display: flex;
   align-items: center;
-  gap: 9px;
-  white-space: nowrap;
-  font-size: 22px;
-  letter-spacing: -0.9px;
-  font-weight: 800;
-  color: var(--blue);
-}
-.logo-mark {
-  display: grid;
-  place-items: center;
-  width: 35px;
-  height: 39px;
-  color: var(--primary);
-}
-.logo-fun {
-  font-weight: inherit;
-}
-.logo > span:last-child {
-  position: relative;
-}
-.logo i {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #d4a53d;
-  right: -5px;
-  top: -3px;
 }
 .app-shell {
   display: flex;
@@ -2648,9 +2619,6 @@
   .topbar {
     padding: 0 27px;
   }
-  .logo {
-    font-size: 20px;
-  }
   .welcome-copy {
     padding: 24px;
   }
@@ -2803,13 +2771,6 @@
     font-size: 9px;
     gap: 5px;
     padding-left: 8px;
-  }
-  .logo {
-    font-size: 19px;
-    gap: 3px;
-  }
-  .logo-mark {
-    width: 31px;
   }
   .side-secondary {
     font-size: 10px;
@@ -3064,9 +3025,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 0;
-  }
-  .sidebar .logo {
-    font-size: 23px;
   }
   .sidebar nav a {
     font-size: 12px;
@@ -3374,9 +3332,6 @@
   }
   .public-header {
     padding: 18px 24px;
-  }
-  .public-header > .logo {
-    font-size: 22px;
   }
   .public-header > span {
     display: none;

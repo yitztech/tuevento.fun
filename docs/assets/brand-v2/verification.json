@@ -1,0 +1,38 @@
+{
+  "assets": 49,
+  "masters": 7,
+  "webp720": [
+    {
+      "file": "logo-es-720.webp",
+      "bytes": 31976
+    },
+    {
+      "file": "logo-en-720.webp",
+      "bytes": 31696
+    },
+    {
+      "file": "logo-fr-720.webp",
+      "bytes": 33438
+    },
+    {
+      "file": "logo-de-720.webp",
+      "bytes": 32110
+    },
+    {
+      "file": "logo-pt-720.webp",
+      "bytes": 32240
+    }
+  ],
+  "transparentAssets": 46,
+  "opaqueExports": 3,
+  "originalsPreserved": true,
+  "finalChecks": {
+    "dimensionsAndAspectRatios": "passed",
+    "sha256Integrity": "passed",
+    "icoFramesDecoded": 3,
+    "webp720Under40KB": "passed",
+    "textAndSmallSizesVisualInspection": "passed",
+    "physicalDeviceTests": "not-run",
+    "siteIntegration": "not-changed"
+  }
+}
