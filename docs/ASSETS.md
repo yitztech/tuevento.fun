@@ -35,6 +35,31 @@ Cinco fotografías ilustrativas generadas con la herramienta integrada de imáge
 
 Se muestran como inspiración en el filtro de cumpleaños; las imágenes no agregan plantillas de invitación ni representan celebraciones documentadas.
 
+### Inspiración para cada ocasión
+
+Con el mismo proceso integrado de generación de imágenes y las versiones WebP de 480 y 960 píxeles, se añadieron fotografías editoriales verticales sin texto ni marcas, con estos conceptos:
+
+| Prefijo | Concepto del prompt |
+| --- | --- |
+| `infantil-jardin` | Fiesta infantil en jardín con globos y pastel. |
+| `infantil-pastel` | Cumpleaños infantil con globos y mesa en tonos pastel. |
+| `infantil-picnic` | Picnic de cumpleaños infantil con guirnaldas y pastel. |
+| `infantil-arte` | Fiesta infantil de arte con pintura y pastel. |
+| `infantil-safari` | Cumpleaños infantil con decoración de safari. |
+| `infantil-arcoiris` | Cumpleaños infantil con decoración de arcoíris. |
+| `bodas-jardin` | Boda íntima en un jardín con flores. |
+| `minimalista-mesa` | Celebración minimalista con pastel, velas y tonos neutros. |
+| `minimalista-lino` | Mesa de cumpleaños íntima con lino, pastel blanco y velas. |
+| `minimalista-terraza` | Celebración en una terraza, con pastel sencillo y vegetación discreta. |
+| `minimalista-brindis` | Amigos brindando en una cena de tonos neutros y luz de velas. |
+| `minimalista-pastel` | Pastel de cumpleaños sencillo con velas y una rama decorativa. |
+| `minimalista-jardin` | Celebración íntima de jardín con flores discretas y pastel. |
+| `floral-fiesta` | Celebración entre flores en un jardín. |
+| `elegante-cena` | Cena elegante con flores y velas. |
+| `celebracion-amigos` | Amigos celebrando bajo guirnaldas de luces. |
+
+Son imágenes de inspiración, no plantillas de invitación adicionales ni eventos reales.
+
 ## Marca v2: logo y favicon
 
 Los recursos están en `apps/web/public/images/brand-v2/` y su procedencia, manifiesto y maestros en `docs/assets/brand-v2/`.

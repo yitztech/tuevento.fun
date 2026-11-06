@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { EventApi } from "@tuevento/client";
 import { sitePalettes, sitePaletteSchema, type SitePaletteId } from "@tuevento/contracts";
+import { brandFilter, brandHueRotation } from "./ui/site/brand-palette";
 
 const cacheKey = "tuevento.sitePalette";
 const defaultThemeColor = "#fff6f2";
@@ -25,6 +26,17 @@ function rememberPalette(id: SitePaletteId) {
 /** Solo se escriben los valores de la tabla compartida, nunca CSS recibido del servidor. */
 function applyPalette(id: SitePaletteId) {
   const root = document.documentElement;
+  root.style.setProperty("--brand-image-filter", brandFilter(brandHueRotation[id]));
+  let favicon = document.querySelector<HTMLLinkElement>('#palette-favicon');
+  if (!favicon) {
+    favicon = document.createElement("link");
+    favicon.id = "palette-favicon";
+    favicon.rel = "icon";
+    favicon.type = "image/svg+xml";
+    favicon.sizes.add("any");
+    document.head.appendChild(favicon);
+  }
+  favicon.href = `/images/brand-v2/favicon-${id}.svg`;
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", id === "terracotta" ? defaultThemeColor : sitePalettes[id].siteBg);
   const names = Object.keys(sitePalettes["fuchsia-plum-amber"]);
   for (const key of [...names, "siteTitle", "sitePeach", "siteCoral", "siteAccentSoft", "siteNote", "siteBand", "sitePhone", "siteShade"]) {

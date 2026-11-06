@@ -1,13 +1,15 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { createTransport } from "nodemailer";
-import { defaultLocale, domainLocales, siteLocale, type Locale } from "@tuevento/contracts";
+import { defaultLocale, domainLocales, siteLocale, sitePaletteSchema, type Locale, type SitePaletteId } from "@tuevento/contracts";
 import { localeEnv, localeEnvName } from "./locale-env";
+import { Database } from "./database";
 
 export type MailMessage = {
   to: string;
   subject: string;
   text: string;
   html: string;
+  htmlForPalette?: (palette: SitePaletteId) => string;
   headers?: Record<string, string>;
 };
 type Sender = {
@@ -25,6 +27,9 @@ type Sender = {
 export class MailService implements OnModuleInit {
   private readonly logger = new Logger(MailService.name);
   private readonly senders = new Map<Locale, Sender>();
+  private lastPalette: SitePaletteId = "terracotta";
+
+  constructor(private readonly db: Database) {}
 
   onModuleInit() {
     // Un remitente por dominio: los idiomas alojados (pt en yourevent.fun) usan el suyo
@@ -58,12 +63,22 @@ export class MailService implements OnModuleInit {
       else this.logger.warn(`Correo sin enviar (${locale}): SMTP sin configurar.`);
       return false;
     }
+    let palette = this.lastPalette;
+    if (message.htmlForPalette) {
+      try {
+        const [settings] = await this.db.query<{ palette: string }>("SELECT palette FROM site_palette_settings WHERE singleton = true");
+        palette = sitePaletteSchema.parse(settings).palette;
+        this.lastPalette = palette;
+      } catch {
+        this.logger.warn("No se pudo consultar la paleta para el correo; se usa la última conocida.");
+      }
+    }
     await sender.transport.sendMail({
       from: sender.from,
       to: message.to,
       subject: message.subject,
       text: message.text,
-      html: message.html,
+      html: message.htmlForPalette?.(palette) ?? message.html,
       headers: { "Content-Language": locale, ...message.headers },
     });
     return true;

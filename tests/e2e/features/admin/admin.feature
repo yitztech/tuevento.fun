@@ -62,6 +62,16 @@ Característica: Panel de administración
     Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
     Entonces el panel cabe en pantalla sin desbordamiento horizontal
 
+  Escenario: El administrador abre y cierra el menú del panel en el móvil
+    Dado que el panel se abre en un móvil de 390 por 844
+    Cuando abro el panel de administración
+    Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"
+    Entonces el menú del panel está cerrado
+    Cuando pulso "Abrir menú" en el panel
+    Entonces el menú del panel está abierto
+    Cuando pulso "Cerrar el menú" en el panel
+    Entonces el menú del panel está cerrado
+
   Escenario: El administrador ve las listas de usuarios y de eventos
     Cuando abro el panel de administración
     Y entro al panel con el usuario "admin" y la contraseña "Password.Password.1"

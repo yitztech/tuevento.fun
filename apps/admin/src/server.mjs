@@ -28,6 +28,7 @@ const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
+  ".webp": "image/webp",
 };
 
 // Los archivos estáticos (la compilación de Angular, `npm run build -w @tuevento/admin`) se leen una
