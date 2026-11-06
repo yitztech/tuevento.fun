@@ -2,13 +2,19 @@
 // entradas. Corre contra la API real: local (Docker) y GitHub Actions.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { translate, supportedLocales, themeIds } from "@tuevento/contracts";
+import { translate, supportedLocales, sitePaletteIds, themeIds } from "@tuevento/contracts";
 import { base, client, account, cleanup, createCoupon, englishHost, mcpAuthorizeUrl, mcpCall, mcpConnect, mcpFollowToClient, mcpOAuth, mcpStartConsent, mcpTokenRequest, send, spanishHost, suiteRunner, eventData, invitationData, unique, pngDataUrl, providerData } from "./api.mjs";
 
 const { suite, records } = suiteRunner();
 const P = "qa-ep";
 try {
   const guest = client();
+
+  await suite("GET /site-palette expone solo la paleta activa", async () => {
+    const respuesta = await guest.call("/site-palette");
+    assert.deepEqual(Object.keys(respuesta), ["palette"]);
+    assert.ok(sitePaletteIds.includes(respuesta.palette));
+  });
 
   await suite("GET /config expone solo lo público", async () => {
     const config = await guest.call("/config");

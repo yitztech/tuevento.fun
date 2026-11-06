@@ -890,7 +890,7 @@
   align-items: center;
   padding: 7px 11px 8px;
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgb(61 42 37 / 10%);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--ink) 10%, transparent);
 }
 .date-stamp strong {
   font-family: "Playfair Display Variable", Georgia, serif;
@@ -1089,7 +1089,7 @@
   margin-top: 12px;
 }
 .mini-invite.mint {
-  background: #fbe3d6;
+  background: var(--surface-soft-hover);
   color: #7a2a1b;
   transform: rotate(-13deg);
   left: -5px;
@@ -1480,7 +1480,7 @@
   border-radius: 10px;
 }
 .initial-avatar.rose {
-  background: #fbe3d6;
+  background: var(--surface-soft-hover);
   color: #7a2a1b;
 }
 .help-content {
@@ -1647,7 +1647,7 @@
 }
 .preview-panel .invitation-art {
   border-radius: 3px;
-  box-shadow: 0 12px 28px rgb(61 42 37 / 14%);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 14%, transparent);
   min-height: 455px;
 }
 .preview-panel .invitation-photo {
@@ -2211,7 +2211,7 @@
 .public-art .invitation-art {
   border-radius: 6px;
   min-height: 600px;
-  box-shadow: 0 15px 50px rgb(61 42 37 / 12%);
+  box-shadow: 0 15px 50px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 .public-art .invitation-photo {
   height: 215px;
@@ -4076,7 +4076,7 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 10px 30px rgb(61 42 37 / 12%);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 .language-option {
   display: flex;
@@ -4139,7 +4139,7 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 14px 40px rgb(61 42 37 / 16%);
+  box-shadow: 0 14px 40px color-mix(in srgb, var(--ink) 16%, transparent);
 }
 .language-suggestion p {
   margin: 0;
@@ -4288,7 +4288,7 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   border-radius: 8px;
   background: var(--blue);
   color: #fff;
-  box-shadow: 0 6px 16px rgb(61 42 37 / 18%);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 .demo-notice .demo-pay:hover {
   filter: brightness(1.08);
@@ -4392,7 +4392,7 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   overflow: hidden;
   border-radius: 14px;
   background: #fff;
-  box-shadow: 0 12px 30px rgb(61 42 37 / 14%);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--ink) 14%, transparent);
   container-type: inline-size;
   user-select: none;
 }
@@ -5561,3 +5561,29 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
     grid-template-columns: 1fr;
   }
 }
+
+.palette-settings { margin: 24px 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ground); }
+.palette-settings h2 { margin: 0 0 8px; }
+.palette-settings p { margin: 8px 0; }
+.palette-settings label { display: block; font-weight: 700; margin: 16px 0 6px; }
+.palette-settings select { max-width: 100%; min-height: 44px; }
+.palette-settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+:root[data-site-palette] {
+  --shadow-soft: 0 1px 3px color-mix(in srgb, var(--ink) 5%, transparent), 0 8px 24px color-mix(in srgb, var(--ink) 6%, transparent);
+  background: var(--site-bg);
+}
+:root[data-site-palette] .public-page { background: var(--site-bg); }
+:root[data-site-palette] .celebrate-note { background: var(--surface-soft); }
+:root[data-site-palette] .celebrate-note strong,
+:root[data-site-palette] .inspiration-strip h2,
+:root[data-site-palette] .initial-avatar.rose { color: var(--ink); }
+:root[data-site-palette] .celebrate-note p { color: var(--muted); }
+:root[data-site-palette] .initial-avatar.rose { background: var(--surface-soft-hover); }
+:root[data-site-palette] .language-option.is-current { color: var(--primary-hover); }
+:root[data-site-palette] .mini-invite.mint,
+:root[data-site-palette] .mini-invite.rose { color: var(--ink); }
+:root[data-site-palette] .mini-invite.rose { background: var(--surface-soft-hover); }
+:root[data-site-palette] .google-button { background: var(--site-bg); }
+:root[data-site-palette] .mobile-scrim { background: color-mix(in srgb, var(--ink) 45%, transparent); }
+:root[data-site-palette] ::-webkit-scrollbar-thumb { background: var(--line-strong); }
+:root[data-site-palette] ::-webkit-scrollbar-track { background: var(--surface-soft); }

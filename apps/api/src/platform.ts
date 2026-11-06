@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Req, Param, Query, Res, BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Req, Param, Query, Res, BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { visitSchema, releaseSchema } from '@tuevento/contracts';
+import { visitSchema, releaseSchema, sitePaletteSchema } from '@tuevento/contracts';
 import { parse } from './problem';
 import { Database } from './database';
 import { AuthService, userView } from './auth';
@@ -30,6 +30,24 @@ export class PlatformController {
     const v = parse(visitSchema, body,req);
     await this.db.query("INSERT INTO activity(id,kind,platform,visitor_id,route) VALUES($1,'visit',$2,$3,$4) ON CONFLICT DO NOTHING", [v.visitId, clientPlatform(req), v.visitorId, v.route]);
     return {ok:true};
+  }
+  @Get('site-palette') async sitePalette(@Res({passthrough:true}) reply: FastifyReply) {
+    reply.header('Cache-Control', 'no-store');
+    const [settings] = await this.db.query<{ palette: string }>('SELECT palette FROM site_palette_settings WHERE singleton = true');
+    return { palette: settings.palette };
+  }
+  @Put('owner/site-palette') async updateSitePalette(@Body() body: unknown, @Req() req: FastifyRequest) {
+    const user = await this.auth.current(req);
+    if (!user.isOwner || user.isDemo) throw new ForbiddenException('errors.accessRestrictedSystemOwner');
+    // El hook global comprueba la lista de orígenes; para este cambio global también es obligatorio enviarlo.
+    if (!req.headers.origin) throw new ForbiddenException('errors.requestOriginNotAllowed');
+    const { palette } = parse(sitePaletteSchema, body, req);
+    // Acción de administración: el cambio y su registro van juntos (AGENTS.md §25)
+    await this.db.transaction(async (c) => {
+      await c.query('UPDATE site_palette_settings SET palette = $1, updated_at = now() WHERE singleton = true', [palette]);
+      await c.query("INSERT INTO admin_audit_log(admin, action, target) VALUES($1, 'site_palette.update', $2)", [user.id, palette]);
+    });
+    return { palette };
   }
   @Get('owner/metrics') async metrics(@Req() req: FastifyRequest, @Query('days') raw?: string) {
     const user = await this.auth.current(req);

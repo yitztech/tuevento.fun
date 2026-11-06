@@ -91,3 +91,35 @@
   color: var(--site-title);
   letter-spacing: -0.01em;
 }
+
+/* La paleta global se hereda también en el sitio público, que define tokens propios. */
+:root[data-site-palette] .site-surface {
+  --primary: inherit;
+  --primary-hover: inherit;
+  --primary-text: inherit;
+  --ink: inherit;
+  --muted: inherit;
+  --line: inherit;
+  --line-strong: inherit;
+  --surface-soft: inherit;
+  --surface-soft-hover: inherit;
+  --site-bg: inherit;
+  --site-title: inherit;
+  --site-peach: inherit;
+  --site-coral: inherit;
+  --site-accent-soft: inherit;
+  --site-note: inherit;
+  --site-band: inherit;
+  --site-phone: inherit;
+  --site-shade: inherit;
+}
+:root[data-site-palette] .site-surface {
+  --site-shadow-soft: 0 12px 32px -14px color-mix(in srgb, var(--ink) 22%, transparent);
+  --site-shadow-card: 0 2px 6px color-mix(in srgb, var(--ink) 5%, transparent), 0 18px 40px -22px color-mix(in srgb, var(--ink) 28%, transparent);
+}
+:root[data-site-palette] .page-wash {
+  background:
+    radial-gradient(60rem 36rem at 100% -4%, var(--surface-soft) 0%, transparent 60%),
+    radial-gradient(48rem 30rem at -6% 38%, var(--surface-soft-hover) 0%, transparent 62%),
+    var(--site-bg);
+}

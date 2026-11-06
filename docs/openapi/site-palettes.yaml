@@ -1,0 +1,127 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TuEventoFun: paleta global",
+    "version": "1.0.0",
+    "description": "Contrato de los dos endpoints internos de paleta; no es el catálogo completo de la API."
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "paths": {
+    "/site-palette": {
+      "get": {
+        "summary": "Consultar la paleta pública activa",
+        "responses": {
+          "200": {
+            "description": "Paleta global activa",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitePalette"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/owner/site-palette": {
+      "put": {
+        "summary": "Guardar la paleta global como dueño",
+        "description": "Requiere sesión del dueño, cabecera X-TuEvento-Client: 1 y Origin permitido.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-TuEvento-Client",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "1"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SitePalette"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paleta global activa",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitePalette"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión válida"
+          },
+          "403": {
+            "description": "Sin permiso o protección de origen fallida"
+          },
+          "422": {
+            "description": "Cuerpo no válido"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SitePalette": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "palette"
+        ],
+        "properties": {
+          "palette": {
+            "type": "string",
+            "enum": [
+              "terracotta",
+              "fuchsia-plum-amber",
+              "plum-champagne",
+              "mandarin-raspberry",
+              "raspberry-vanilla"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
