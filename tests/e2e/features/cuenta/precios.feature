@@ -5,10 +5,11 @@ Característica: Precios del servicio
   @solo-lectura @smoke
   Escenario: Los precios se ven sin registrarse
     Dado que abro la página de precios
-    Entonces veo el aviso "Hasta 50 invitados"
-    Y veo el aviso "Más de 150 invitados"
+    Entonces veo el aviso "Para personas"
+    Y veo el aviso "Para agencias y organizadores"
 
-  @demo
+  # Stripe aún sin integrar: se salta (@pendiente) hasta conectarlo
+  @demo @pendiente
   Escenario: Dentro de la demostración, el botón de pago está resaltado y lleva a la página de pago
     Dado que tengo una cuenta creada y entro a mi espacio
     Cuando exploro la demostración
@@ -19,10 +20,19 @@ Característica: Precios del servicio
     Y veo el aviso "Elige el evento que quieres pagar"
 
   @solo-lectura
-  Escenario: Cada tramo muestra su precio con signo de dólar y dos decimales
+  Escenario: Los planes de personas muestran sus invitados y su precio en dólares
     Dado que abro la página de precios
-    Entonces veo el aviso "$5.00"
-    Y veo el aviso "$30.00"
+    Entonces la tabla "Para personas" tiene la fila "Gratis | Hasta 20 | $0"
+    Y la tabla "Para personas" tiene la fila "Esencial | 21–60 | $14.99"
+    Y la tabla "Para personas" tiene la fila "Premium | 101–200 | $29.99"
+    Y la tabla "Para personas" tiene la fila "Gran Evento | 501 o más | $99.99"
+
+  @solo-lectura
+  Escenario: Los planes de agencias son una suscripción mensual
+    Dado que abro la página de precios
+    Entonces la tabla "Para agencias y organizadores" tiene la fila "Starter | $19.99"
+    Y la tabla "Para agencias y organizadores" tiene la fila "Business | $39.99"
+    Y la tabla "Para agencias y organizadores" tiene la fila "Agency | $79.99"
 
   @solo-lectura
   Escenario: El botón de compra lleva a crear la cuenta

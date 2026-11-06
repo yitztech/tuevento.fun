@@ -67,3 +67,27 @@ export function discountedCents(cents: number, { percentOff, amountOffCents }: C
   const final = Math.max(0, cents - off);
   return final > 0 && final < MIN_CHARGE_CENTS ? Math.min(cents, MIN_CHARGE_CENTS) : final;
 }
+
+/**
+ * Planes que se muestran en `/precios` para personas: un pago único por evento según el número de
+ * invitados. Es solo la oferta pública; el cobro y el tope de invitados siguen en `guestTiers`
+ * hasta que se integre Stripe. `maxGuests: null`: sin límite superior.
+ */
+export const personalPlans = [
+  { key: "free", minGuests: 0, maxGuests: 20, usd: 0 },
+  { key: "essential", minGuests: 21, maxGuests: 60, usd: 14.99 },
+  { key: "plus", minGuests: 61, maxGuests: 100, usd: 19.99 },
+  { key: "premium", minGuests: 101, maxGuests: 200, usd: 29.99 },
+  { key: "celebration", minGuests: 201, maxGuests: 500, usd: 49.99 },
+  { key: "grandEvent", minGuests: 501, maxGuests: null, usd: 99.99 },
+] as const;
+
+/** Planes que se muestran en `/precios` para agencias y organizadores: suscripción mensual en USD. */
+export const agencyPlans = [
+  { key: "starter", usd: 19.99 },
+  { key: "business", usd: 39.99 },
+  { key: "agency", usd: 79.99 },
+] as const;
+
+export type PersonalPlan = (typeof personalPlans)[number];
+export type AgencyPlan = (typeof agencyPlans)[number];

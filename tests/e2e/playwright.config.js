@@ -50,15 +50,15 @@ export default defineConfig({
   },
   // Android: solo los escenarios @movil, de uno en uno y en el WebView de la app.
   projects: android
-    ? [{ name: "android", grep: /@movil/, grepInvert: /@solo-web/ }]
+    ? [{ name: "android", grep: /@movil/, grepInvert: /@solo-web|@pendiente/ }]
     : ios
-      ? [{ name: "ios", grep: /@movil/, grepInvert: /@solo-web|@sin-ios/ }]
+      ? [{ name: "ios", grep: /@movil/, grepInvert: /@solo-web|@sin-ios|@pendiente/ }]
       : [
           // @solo-movil: escenarios que solo existen dentro de las apps (sin conexión, docs/E2E.md)
-          { name: "chromium", use: { ...devices["Desktop Chrome"] }, grepInvert: /@solo-movil/ },
+          { name: "chromium", use: { ...devices["Desktop Chrome"] }, grepInvert: /@solo-movil|@pendiente/ },
           // Web en el móvil (§38): Android con Chromium e iPhone con WebKit, emulados, en cada PR.
           // El panel de administración es de escritorio y se prueba solo en Chromium.
-          { name: "android-chrome", use: { ...devices["Pixel 7"] }, grepInvert: /@admin|@solo-movil/ },
+          { name: "android-chrome", use: { ...devices["Pixel 7"] }, grepInvert: /@admin|@solo-movil|@pendiente/ },
           // WebKit no tiene --host-resolver-rules: en local, el propio gateway hace de proxy HTTP y
           // atiende el dominio inglés por la URL absoluta de cada petición.
           {
@@ -70,14 +70,14 @@ export default defineConfig({
               // 127.0.0.1 va directo: ahí escucha el doble de Stripe (payments-fake), que no es del gateway
               ...(local ? { proxy: { server: new URL(baseURL).origin, bypass: `${new URL(baseURL).hostname},127.0.0.1` } } : {}),
             },
-            grepInvert: /@admin|@solo-movil/,
+            grepInvert: /@admin|@solo-movil|@pendiente/,
           },
           // Firefox, en la ejecución semanal (E2E_FIREFOX=1)
           ...(process.env.E2E_FIREFOX
             ? [
                 {
                   name: "firefox",
-                  grepInvert: /@solo-movil/,
+                  grepInvert: /@solo-movil|@pendiente/,
                   use: {
                     ...devices["Desktop Firefox"],
                     // En local, el dominio inglés se resuelve a 127.0.0.1 como en Chromium

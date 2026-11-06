@@ -31,3 +31,12 @@ When("pulso el botón destacado {string}", async ({ page }, texto) => {
 Then("estoy en la página de pago", async ({ ui }) => {
   await ui.esperarUrl(/\/pago$/);
 });
+
+Then("la tabla {string} tiene la fila {string}", async ({ page }, tabla, fila) => {
+  // Las celdas de la fila se escriben separadas por « | », como se leen en la tabla
+  const esperada = fila.split(" | ");
+  const filas = page.getByRole("region", { name: tabla }).getByRole("row");
+  await expect
+    .poll(async () => (await filas.evaluateAll((rows) => rows.map((row) => [...row.children].map((c) => c.textContent?.trim() ?? "")))).some((celdas) => celdas.join("|") === esperada.join("|")))
+    .toBe(true);
+});

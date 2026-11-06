@@ -4369,6 +4369,37 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   font-weight: 500;
   color: var(--muted);
 }
+.pricing-table {
+  width: 100%;
+  margin: 16px 0 24px;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 15px;
+}
+.pricing-table th,
+.pricing-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-weight: 500;
+}
+.pricing-table thead th {
+  font-weight: 700;
+}
+.pricing-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.pricing-table th:last-child,
+.pricing-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+.pricing-table td:last-child {
+  font-variant-numeric: tabular-nums;
+}
 .pricing-cta {
   margin-top: 8px;
 }

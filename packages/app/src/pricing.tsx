@@ -2,14 +2,18 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import {
+  agencyPlans,
   discountedCents,
   guestTiers,
   localizedPath,
+  personalPlans,
   upgradeCents,
+  type AgencyPlan,
   type AppliedCoupon,
   type Event,
   type GuestTier,
   type Locale,
+  type PersonalPlan,
   type TierIndex,
 } from "@tuevento/contracts";
 import { ApiError } from "@tuevento/client";
@@ -25,6 +29,83 @@ export const pricingPath = (locale: Locale) => localizedPath("pricing", locale);
 
 /** Precio en dólares: $5.00, $10.00… (igual en todos los idiomas). */
 const price = (usd: number) => `$${usd.toFixed(2)}`;
+
+/** Precio de la oferta pública: «$0» para el plan gratis y «$14.99» para el resto. */
+const planPrice = (usd: number) => (usd === 0 ? "$0" : price(usd));
+
+/** Nombre de cada plan público, en el idioma de quien lee (cada clave, escrita entera). */
+const planNames = {
+  free: () => tr("pricing.planFree"),
+  essential: () => tr("pricing.planEssential"),
+  plus: () => tr("pricing.planPlus"),
+  premium: () => tr("pricing.planPremium"),
+  celebration: () => tr("pricing.planCelebration"),
+  grandEvent: () => tr("pricing.planGrandEvent"),
+  starter: () => tr("pricing.planStarter"),
+  business: () => tr("pricing.planBusiness"),
+  agency: () => tr("pricing.planAgency"),
+} satisfies Record<PersonalPlan["key"] | AgencyPlan["key"], () => string>;
+
+/** Invitados que cubre un plan: «Hasta 20», «21–60» o «501 o más». */
+function guestsText(plan: PersonalPlan) {
+  if (plan.minGuests === 0) return tr("pricing.guestsUpTo", { max: plan.maxGuests });
+  if (plan.maxGuests === null) return tr("pricing.guestsFrom", { min: plan.minGuests });
+  return tr("pricing.guestsRange", { min: plan.minGuests, max: plan.maxGuests });
+}
+
+/** Planes para personas: un pago único por evento según los invitados. */
+function PersonalPlans() {
+  return (
+    <section aria-labelledby="pricing-personal">
+      <h2 id="pricing-personal">{tr("pricing.personalTitle")}</h2>
+      <p className="legal-intro">{tr("pricing.intro")}</p>
+      <table className="pricing-table">
+        <thead>
+          <tr>
+            <th scope="col">{tr("pricing.colPlan")}</th>
+            <th scope="col">{tr("pricing.colGuests")}</th>
+            <th scope="col">{tr("pricing.colPrice")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {personalPlans.map((plan) => (
+            <tr key={plan.key}>
+              <th scope="row">{planNames[plan.key]()}</th>
+              <td>{guestsText(plan)}</td>
+              <td>{planPrice(plan.usd)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+/** Planes para agencias y organizadores: suscripción mensual. */
+function AgencyPlans() {
+  return (
+    <section aria-labelledby="pricing-agency">
+      <h2 id="pricing-agency">{tr("pricing.agencyTitle")}</h2>
+      <p className="legal-intro">{tr("pricing.agencyIntro")}</p>
+      <table className="pricing-table">
+        <thead>
+          <tr>
+            <th scope="col">{tr("pricing.agencyColPlan")}</th>
+            <th scope="col">{tr("pricing.agencyColPrice")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {agencyPlans.map((plan) => (
+            <tr key={plan.key}>
+              <th scope="row">{planNames[plan.key]()}</th>
+              <td>{planPrice(plan.usd)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
 
 /** Rótulo de un tramo: «Hasta 50 invitados» o «Más de 150 invitados». */
 function tierLabel(tier: GuestTier, index: number) {
@@ -65,8 +146,9 @@ export function PricingPage() {
             {tr("common.backHome")}
           </Link>
           <h1>{tr("pricing.title")}</h1>
-          <p className="legal-intro">{tr("pricing.intro")}</p>
-          <TierList />
+          <p className="legal-intro">{tr("pricing.publicIntro")}</p>
+          <PersonalPlans />
+          <AgencyPlans />
           <Button asChild><Link to="/registro" className="pricing-cta">
             {tr("pricing.buy")}
             <ArrowRight size={18} />
