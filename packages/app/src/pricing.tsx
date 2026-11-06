@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import {
   discountedCents,
   guestTiers,
@@ -18,9 +18,10 @@ import { CouponField } from "./coupon";
 import { errorText, useApp } from "./context";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { Button } from "./ui/button";
+import { PlansPage } from "./ui/site/plans-page";
 import { SiteLayout } from "./ui/site/site-layout";
 
-/** Ruta de la página de precios en un idioma (/precios, /pricing…). */
+/** Ruta de la página de planes en un idioma (/planes, /plans…). */
 export const pricingPath = (locale: Locale) => localizedPath("pricing", locale);
 
 /** Precio en dólares: $5.00, $10.00… (igual en todos los idiomas). */
@@ -49,7 +50,7 @@ function TierList() {
   );
 }
 
-/** Página pública de precios: visible sin registrarse, en la ruta de cada idioma. */
+/** Página pública de planes: visible sin registrarse, en la ruta de cada idioma. */
 export function PricingPage() {
   const { locale } = useLocale();
   useEffect(() => {
@@ -57,23 +58,7 @@ export function PricingPage() {
   }, [locale]);
   return (
     <SiteLayout>
-    <div className="legal-page pricing-page">
-      <Container width="prose">
-        <div>
-          <Link to="/" className="text-link">
-            <ArrowLeft size={16} />
-            {tr("common.backHome")}
-          </Link>
-          <h1>{tr("pricing.title")}</h1>
-          <p className="legal-intro">{tr("pricing.intro")}</p>
-          <TierList />
-          <Button asChild><Link to="/registro" className="pricing-cta">
-            {tr("pricing.buy")}
-            <ArrowRight size={18} />
-          </Link></Button>
-        </div>
-      </Container>
-    </div>
+      <PlansPage />
     </SiteLayout>
   );
 }

@@ -230,14 +230,17 @@ export const invitationData = (extra = {}) => ({
 
 export function suiteRunner() {
   const records = [];
-  return {
-    records,
-    async suite(name, fn) {
-      await fn();
-      records.push({ name, passed: true });
-      console.log("PASS", name);
-    },
+  async function suite(name, fn) {
+    await fn();
+    records.push({ name, passed: true });
+    console.log("PASS", name);
+  }
+  // `suite.skip(...)` deja la suite escrita pero sin ejecutar, y el resumen la cuenta como omitida
+  suite.skip = async (name) => {
+    records.push({ name, passed: false, skipped: true });
+    console.log("SKIP", name);
   };
+  return { records, suite };
 }
 
 const json = { "Content-Type": "application/json" };

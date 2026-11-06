@@ -4,7 +4,7 @@ import { tr, getLocale, LanguageSwitcher, Lines } from "./i18n";
 import { LocationPicker, MapLinks, MapView } from "./location";
 import { ProviderFinder } from "./provider-finder";
 import { PendingMark } from "./offline";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type KeyboardEvent } from "react";
 import {
   Link,
   useNavigate,
@@ -15,6 +15,8 @@ import {
   Controller,
   useForm,
   useFieldArray,
+  type FieldErrors,
+  type FieldPath,
   type Resolver,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -98,6 +100,13 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 const formSchema = eventSchema.extend({
   date: z.string().min(1, "events.chooseDateTime"),
 });
+/** Campos que valida cada paso del alta de evento (el modo edición los muestra todos). */
+const STEP_FIELDS = [
+  ["title", "date", "timeZone"],
+  ["location", "description"],
+  ["slug", "publicPassword"],
+  ["theme"],
+] satisfies FieldPath<EventInput>[][];
 /** URL de la landing tal como se comparte, sin el protocolo. */
 const landingText = (origin: string, code: string, slug: string) =>
   `${origin.replace(/^https?:\/\//, "")}${eventLandingPath(code, slug)}`;
@@ -110,7 +119,9 @@ export function EventEditor() {
     [loading, setLoading] = useState(!!id),
     // Sin conexión, antes de guardar un cambio que enviará correos a los invitados al sincronizar
     [original, setOriginal] = useState<Event | null>(null),
-    [mailWarning, setMailWarning] = useState<{ kind: "cancel" | "change"; payload: EventInput } | null>(null);
+    [mailWarning, setMailWarning] = useState<{ kind: "cancel" | "change"; payload: EventInput } | null>(null),
+    // Alta por pasos: 0 datos, 1 lugar, 2 página pública, 3 invitación
+    [step, setStep] = useState(0);
   // La dirección se sugiere desde el título hasta que el organizador la escriba a mano
   const [slugTouched, setSlugTouched] = useState(!!id),
     [slugFree, setSlugFree] = useState<boolean | null>(null),
@@ -177,6 +188,15 @@ export function EventEditor() {
     );
     return () => clearTimeout(timer);
   }, [values.slug, id, online]);
+  // Al cambiar de paso se vuelve al principio del asistente; el primer render no mueve la página.
+  const firstStepRender = useRef(true);
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    if (!id) document.querySelector(".wizard-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step, id]);
   const preview = {
     ...values,
     date: values.date
@@ -197,6 +217,42 @@ export function EventEditor() {
     } catch (e) {
       setError(errorText(e));
     }
+  };
+  const wizard = !id;
+  const lastStep = STEP_FIELDS.length - 1;
+  const stepLabels = [
+    tr("events.steps.details"),
+    tr("events.steps.place"),
+    tr("events.steps.page"),
+    tr("events.steps.invitation"),
+  ];
+  const stepHeadings = [
+    tr("events.tellUsAboutEvent"),
+    tr("events.steps.placeTitle"),
+    tr("events.steps.pageTitle"),
+    tr("events.chooseInvitationStyle"),
+  ];
+  const stepHints = [
+    tr("events.steps.detailsHint"),
+    tr("events.steps.placeHint"),
+    tr("events.steps.pageHint"),
+    tr("events.changeWheneverLike"),
+  ];
+  // Valida solo los campos del paso actual antes de dejar avanzar.
+  const goNext = async () => {
+    if (await form.trigger(STEP_FIELDS[step])) setStep((current) => Math.min(current + 1, lastStep));
+  };
+  const onInvalid = (errors: FieldErrors<EventInput>) => {
+    if (!wizard) return;
+    const index = STEP_FIELDS.findIndex((fields) => fields.some((field) => errors[field]));
+    if (index >= 0) setStep(index);
+  };
+  // Enter avanza de paso en lugar de enviar el formulario antes de tiempo.
+  const onFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (!wizard || step >= lastStep || event.key !== "Enter" || event.nativeEvent.isComposing) return;
+    if ((event.target as HTMLElement).tagName === "TEXTAREA") return;
+    event.preventDefault();
+    void goNext();
   };
   const save = form.handleSubmit(async (data) => {
     setError("");
@@ -220,7 +276,7 @@ export function EventEditor() {
       if (cancel || change) return setMailWarning({ kind: cancel ? "cancel" : "change", payload });
     }
     await persist(payload);
-  });
+  }, onInvalid);
   if (loading) return <p role="status">{tr("events.loadingEvent")}</p>;
   return (
     <>
@@ -240,159 +296,272 @@ export function EventEditor() {
           </p>
         </div>
       </div>
-      <form onSubmit={save} className="editor-layout" noValidate>
+      <form
+        onSubmit={save}
+        onKeyDown={onFormKeyDown}
+        className={wizard ? "editor-layout wizard-layout" : "editor-layout"}
+        noValidate
+      >
         <div className="form-panel">
-          <h2>{tr("events.tellUsAboutEvent")}</h2>
-          <Field
-            label={tr("events.eventName")}
-            error={form.formState.errors.title?.message}
-          >
-            <Input
-              {...form.register("title")}
-              placeholder={tr("events.exampleSofiaAlejandrosWedding")}
-              maxLength={100}
-            />
-          </Field>
-          <div className="form-row">
-            <Field
-              label={tr("events.dateTime")}
-              error={form.formState.errors.date?.message}
-            >
-              <Input type="datetime-local" {...form.register("date")} />
-            </Field>
-            <Field
-              label={tr("events.timeZone")}
-              error={form.formState.errors.timeZone?.message}
-            >
-              <NativeSelect {...form.register("timeZone")}>
-                {timeZones.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {tr(label)}
-                  </option>
+          {wizard && (
+            <div className="wizard-head">
+              <ol className="wizard-steps" aria-label={tr("events.steps.label")}>
+                {stepLabels.map((label, index) => (
+                  <li
+                    key={label}
+                    className={
+                      index < step ? "done" : index === step ? "current" : "pending"
+                    }
+                  >
+                    <button
+                      type="button"
+                      className="wizard-step-button"
+                      onClick={() => index < step && setStep(index)}
+                      disabled={index > step}
+                      aria-current={index === step ? "step" : undefined}
+                    >
+                      <span className="wizard-step-number" aria-hidden="true">
+                        {index < step ? <Check size={14} /> : index + 1}
+                      </span>
+                      <span className="wizard-step-label">{label}</span>
+                    </button>
+                  </li>
                 ))}
-              </NativeSelect>
-            </Field>
-          </div>
-          <Field
-            label={tr("events.whereMeeting")}
-            error={form.formState.errors.location?.message}
+              </ol>
+              <div
+                className="wizard-progress"
+                role="progressbar"
+                aria-valuemin={1}
+                aria-valuemax={STEP_FIELDS.length}
+                aria-valuenow={step + 1}
+                aria-label={tr("events.steps.label")}
+              >
+                <span style={{ width: `${((step + 1) / STEP_FIELDS.length) * 100}%` }} />
+              </div>
+              <p className="wizard-notice" role="status" aria-live="polite" aria-atomic="true">
+                <span className="wizard-notice-dot" aria-hidden="true" />
+                {tr("events.steps.announce", {
+                  current: step + 1,
+                  total: STEP_FIELDS.length,
+                  title: stepHeadings[step],
+                })}
+              </p>
+            </div>
+          )}
+
+          <section
+            className="wizard-step"
+            hidden={wizard && step !== 0}
+            aria-labelledby="event-step-1"
           >
-            <Input
-              {...form.register("location")}
-              placeholder={tr("events.venueNameAddress")}
-              maxLength={300}
-            />
-          </Field>
-          <Controller
-            control={form.control}
-            name="geo"
-            render={({ field }) => (
-              <LocationPicker
-                place={values.location}
-                value={field.value ?? null}
-                onChange={(geo) => field.onChange(geo)}
-                onUseAddress={(label) =>
-                  form.setValue("location", label.slice(0, 300), { shouldDirty: true, shouldValidate: true })
-                }
+            <div className="form-section-heading">
+              <h2 id="event-step-1">{stepHeadings[0]}</h2>
+              <p>{stepHints[0]}</p>
+            </div>
+            <Field
+              label={tr("events.eventName")}
+              error={form.formState.errors.title?.message}
+            >
+              <Input
+                {...form.register("title")}
+                placeholder={tr("events.exampleSofiaAlejandrosWedding")}
+                maxLength={100}
               />
-            )}
-          />
-          <ProviderFinder eventKey={id ?? "nuevo"} location={values.location} geo={values.geo ?? null} />
-          <Field
-            label={tr("events.messageGuests")}
-            error={form.formState.errors.description?.message}
-            hint={tr(
-              "events.includeDirectionsDressCode",
-            )}
+            </Field>
+            <div className="form-row">
+              <Field
+                label={tr("events.dateTime")}
+                error={form.formState.errors.date?.message}
+              >
+                <Input type="datetime-local" {...form.register("date")} />
+              </Field>
+              <Field
+                label={tr("events.timeZone")}
+                error={form.formState.errors.timeZone?.message}
+              >
+                <NativeSelect {...form.register("timeZone")}>
+                  {timeZones.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {tr(label)}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            </div>
+          </section>
+
+          <section
+            className="wizard-step"
+            hidden={wizard && step !== 1}
+            aria-labelledby="event-step-2"
           >
-            <Textarea
-              {...form.register("description")}
-              rows={4}
-              placeholder={tr(
-                "events.wereSoExcitedShare",
+            <div className="form-section-heading">
+              <h2 id="event-step-2">{stepHeadings[1]}</h2>
+              <p>{stepHints[1]}</p>
+            </div>
+            <Field
+              label={tr("events.whereMeeting")}
+              error={form.formState.errors.location?.message}
+            >
+              <Input
+                {...form.register("location")}
+                placeholder={tr("events.venueNameAddress")}
+                maxLength={300}
+              />
+            </Field>
+            <Controller
+              control={form.control}
+              name="geo"
+              render={({ field }) => (
+                <LocationPicker
+                  place={values.location}
+                  value={field.value ?? null}
+                  onChange={(geo) => field.onChange(geo)}
+                  onUseAddress={(label) =>
+                    form.setValue("location", label.slice(0, 300), { shouldDirty: true, shouldValidate: true })
+                  }
+                />
               )}
-              maxLength={2500}
             />
-          </Field>
-          <Field
-            label={tr("events.publicAddress")}
-            error={form.formState.errors.slug?.message}
-            hint={
-              !online
-                ? tr("offline.slugCheckLater")
-                : slugFree === false
-                ? tr("events.publicAddressTaken")
-                : tr("events.publicAddressHint", {
-                    url: landingText(runtime.publicOrigin, user?.publicCode ?? "", values.slug || slugify(values.title) || "…"),
-                  })
-            }
+            <ProviderFinder eventKey={id ?? "nuevo"} location={values.location} geo={values.geo ?? null} />
+            <Field
+              label={tr("events.messageGuests")}
+              error={form.formState.errors.description?.message}
+              hint={tr(
+                "events.includeDirectionsDressCode",
+              )}
+            >
+              <Textarea
+                {...form.register("description")}
+                rows={4}
+                placeholder={tr(
+                  "events.wereSoExcitedShare",
+                )}
+                maxLength={2500}
+              />
+            </Field>
+          </section>
+
+          <section
+            className="wizard-step"
+            hidden={wizard && step !== 2}
+            aria-labelledby="event-step-3"
           >
-            <Input
-              {...form.register("slug", { onChange: () => setSlugTouched(true) })}
-              placeholder="boda-ana-y-luis"
-              maxLength={accountLimits.eventSlug}
-            />
-          </Field>
-          <Field
-            label={tr("events.publicPassword")}
-            error={form.formState.errors.publicPassword?.message}
-            hint={hasPassword && !removePassword ? tr("events.publicPasswordKept") : tr("events.publicPasswordHint")}
+            <div className="form-section-heading">
+              <h2 id="event-step-3">{stepHeadings[2]}</h2>
+              <p>{stepHints[2]}</p>
+            </div>
+            <Field
+              label={tr("events.publicAddress")}
+              error={form.formState.errors.slug?.message}
+              hint={
+                !online
+                  ? tr("offline.slugCheckLater")
+                  : slugFree === false
+                  ? tr("events.publicAddressTaken")
+                  : tr("events.publicAddressHint", {
+                      url: landingText(runtime.publicOrigin, user?.publicCode ?? "", values.slug || slugify(values.title) || "…"),
+                    })
+              }
+            >
+              <Input
+                {...form.register("slug", { onChange: () => setSlugTouched(true) })}
+                placeholder="boda-ana-y-luis"
+                maxLength={accountLimits.eventSlug}
+              />
+            </Field>
+            <Field
+              label={tr("events.publicPassword")}
+              error={form.formState.errors.publicPassword?.message}
+              hint={hasPassword && !removePassword ? tr("events.publicPasswordKept") : tr("events.publicPasswordHint")}
+            >
+              <Input
+                type="password"
+                autoComplete="new-password"
+                maxLength={accountLimits.password}
+                {...form.register("publicPassword")}
+              />
+            </Field>
+            {hasPassword && (
+              <label className="check-row">
+                <input type="checkbox" checked={removePassword} onChange={(e) => setRemovePassword(e.target.checked)} />
+                <span>{tr("events.removePublicPassword")}</span>
+              </label>
+            )}
+            {hasPassword && passwordFailures > 0 && (
+              <p className="field-hint" role="status">
+                {tr("events.publicPasswordFailures", { count: passwordFailures })}
+              </p>
+            )}
+          </section>
+
+          <section
+            className="wizard-step"
+            hidden={wizard && step !== lastStep}
+            aria-labelledby="event-step-4"
           >
-            <Input
-              type="password"
-              autoComplete="new-password"
-              maxLength={accountLimits.password}
-              {...form.register("publicPassword")}
+            <div className="form-section-heading">
+              <h2 id="event-step-4">{stepHeadings[3]}</h2>
+              <p>{stepHints[3]}</p>
+            </div>
+            <ThemePicker
+              value={values.theme}
+              onChange={(value) =>
+                form.setValue("theme", value, { shouldDirty: true })
+              }
             />
-          </Field>
-          {hasPassword && (
-            <label className="check-row">
-              <input type="checkbox" checked={removePassword} onChange={(e) => setRemovePassword(e.target.checked)} />
-              <span>{tr("events.removePublicPassword")}</span>
-            </label>
-          )}
-          {hasPassword && passwordFailures > 0 && (
-            <p className="field-hint" role="status">
-              {tr("events.publicPasswordFailures", { count: passwordFailures })}
-            </p>
-          )}
-          <div className="form-section-heading">
-            <h2>{tr("events.chooseInvitationStyle")}</h2>
-            <p>{tr("events.changeWheneverLike")}</p>
-          </div>
-          <ThemePicker
-            value={values.theme}
-            onChange={(value) =>
-              form.setValue("theme", value, { shouldDirty: true })
-            }
-          />
-          {id && (
-            <label className="check-row">
-              <input type="checkbox" {...form.register("cancelled")} />
-              <span>
-                <strong>{tr("events.cancelEvent")}</strong>
-                <small>{tr("events.cancelEventHint")}</small>
-              </span>
-            </label>
-          )}
+            {id && (
+              <label className="check-row">
+                <input type="checkbox" {...form.register("cancelled")} />
+                <span>
+                  <strong>{tr("events.cancelEvent")}</strong>
+                  <small>{tr("events.cancelEventHint")}</small>
+                </span>
+              </label>
+            )}
+          </section>
+
           {error && <ErrorBox message={error} />}
-          <div className="form-actions">
+          <div className={wizard ? "form-actions wizard-actions" : "form-actions"}>
             <Button asChild variant="outline"><Link
               to={id ? `/eventos/${id}` : "/eventos"}
             >
               {tr("common.cancel")}
             </Link></Button>
-            <Button
-              type="submit"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting
-                ? tr("common.saving")
-                : id
-                  ? tr("common.saveChanges")
-                  : tr("common.createMyEvent")}
-              <ArrowRight size={17} />
-            </Button>
+            {wizard ? (
+              <div className="wizard-actions-right">
+                {step > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep((current) => Math.max(0, current - 1))}
+                  >
+                    <ArrowLeft size={17} />
+                    {tr("events.steps.previous")}
+                  </Button>
+                )}
+                {step < lastStep ? (
+                  <Button type="button" onClick={() => void goNext()}>
+                    {tr("events.steps.next")}
+                    <ArrowRight size={17} />
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting
+                      ? tr("common.saving")
+                      : tr("common.createMyEvent")}
+                    <ArrowRight size={17} />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting
+                  ? tr("common.saving")
+                  : tr("common.saveChanges")}
+                <ArrowRight size={17} />
+              </Button>
+            )}
           </div>
         </div>
         <aside className="preview-panel">

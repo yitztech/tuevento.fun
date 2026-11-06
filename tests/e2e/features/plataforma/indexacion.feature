@@ -55,6 +55,6 @@ Característica: Cada URL en un solo estado para los buscadores
 
     Ejemplos:
       | idioma | ruta        | destino |
-      | es     | /precios/   | /precios |
+      | es     | /planes/    | /planes  |
       | es     | /index.html | /        |
       | en     | /pt         | /pt/     |

@@ -37,6 +37,8 @@ server {
         add_header X-Robots-Tag $seo_robots always;
         # /pt/… en un dominio que no aloja ese idioma → el dominio que sí
         if ($locale_redirect) { return 301 $locale_redirect; }
+        # Ruta que cambió de nombre (/precios → /planes): 301 a la nueva
+        if ($moved_redirect) { return 301 $moved_redirect$is_args$args; }
         proxy_pass http://127.0.0.1:5187;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;

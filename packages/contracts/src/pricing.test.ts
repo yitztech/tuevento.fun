@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAddGuests, discountedCents, guestTiers, MIN_CHARGE_CENTS, tierForGuests, upgradeCents } from "./pricing";
+import {
+  agencyPlans,
+  canAddGuests,
+  discountedCents,
+  guestTiers,
+  MIN_CHARGE_CENTS,
+  personalPlans,
+  tierForGuests,
+  upgradeCents,
+} from "./pricing";
 
 const usd = (guests: number) => tierForGuests(guests).usd;
 
@@ -80,4 +89,34 @@ test("Un cupón no deja un cobro por debajo del mínimo de la tarjeta", () => {
   assert.equal(discountedCents(500, { percentOff: null, amountOffCents: 400 }), MIN_CHARGE_CENTS);
   // Nunca cobra más que sin cupón
   assert.equal(discountedCents(50, { percentOff: 10, amountOffCents: null }), 50);
+});
+
+test("Planes de personas: tramos contiguos desde 0, precios crecientes y el último sin límite", () => {
+  assert.deepEqual(
+    personalPlans.map((p) => [p.minGuests, p.maxGuests, p.usd]),
+    [
+      [0, 20, 0],
+      [21, 60, 14.99],
+      [61, 100, 19.99],
+      [101, 200, 29.99],
+      [201, 500, 49.99],
+      [501, null, 99.99],
+    ],
+  );
+  personalPlans.slice(1).forEach((plan, index) => {
+    const previous = personalPlans[index];
+    assert.equal(plan.minGuests, Number(previous.maxGuests) + 1, plan.key);
+    assert.ok(plan.usd > previous.usd, plan.key);
+  });
+});
+
+test("Planes de agencias: Starter, Business y Agency, con la suscripción mensual creciente", () => {
+  assert.deepEqual(
+    agencyPlans.map((p) => [p.key, p.usd]),
+    [
+      ["starter", 19.99],
+      ["business", 39.99],
+      ["agency", 79.99],
+    ],
+  );
 });

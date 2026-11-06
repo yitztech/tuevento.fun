@@ -239,6 +239,17 @@ conf=/etc/nginx/conf.d/sites.conf
   echo '    "~^\S+ (?<slash_idx>/(.*/)?)index\.html$" $slash_idx;'
   echo '    "~^\S+ (?<slash_path>/.*[^/])/+$" $slash_path;'
   echo '}'
+  # Páginas que cambiaron de nombre: la ruta anterior (con o sin barra final) responde 301 en un solo
+  # salto a la nueva, en el mismo idioma. Va antes que $slash_redirect para no encadenar dos saltos.
+  echo '# Ruta anterior de una página → la actual (301 en un solo salto)'
+  echo 'map "$page_lang $seo_rest" $moved_redirect {'
+  echo '    default "";'
+  awk '$1 == "moved" { print $2, $3, $4 }' "$manifest" | while read -r page lang old; do
+    case " $pages_locales " in *" $lang "*) ;; *) continue ;; esac
+    eval "site=\$site_$lang; prefix=\$prefix_$lang"
+    echo "    \"~^$lang $old/?\$\" \"\$origin_$site$prefix$(path_of "@$page" "$lang")\";"
+  done
+  echo '}'
   echo '# Rutas de la SPA (apps/web/src/main.tsx y packages/app/src/App.tsx). Las demás, 404'
   echo 'map $seo_rest $seo_route {'
   echo '    default missing;'

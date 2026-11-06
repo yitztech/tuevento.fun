@@ -81,7 +81,9 @@ server {
     location / {
         # /pt/… en un dominio que no aloja ese idioma → el dominio que sí
         if ($locale_redirect) { return 301 $locale_redirect; }
-        # /precios/ → /precios, /index.html → /, /pt → /pt/
+        # Ruta que cambió de nombre (/precios → /planes): 301 a la nueva en un solo salto
+        if ($moved_redirect) { return 301 $moved_redirect$is_args$args; }
+        # /planes/ → /planes, /index.html → /, /pt → /pt/
         if ($slash_redirect) { return 301 $slash_redirect$is_args$args; }
         include /etc/nginx/snippets/security-headers.conf;
         include /etc/nginx/conf.d/analytics*.snippet;
