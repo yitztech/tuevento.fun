@@ -79,7 +79,7 @@ Then("el formulario de acceso muestra sus errores sin confundirlos con la paleta
 Then("el panel y un modal usan la paleta, con contraste suficiente", async ({ page, ctx }) => {
   const registro = await registrar(page.request, "/api/auth/register", { headers, data: nuevaCuenta() });
   expect(registro.status()).toBe(201);
-  await page.goto("/app");
+  await page.goto("/events");
   await usaLaPaleta(page, ctx);
   await expect(page.getByRole("heading").first()).toBeVisible();
   await contrasteSuficiente(page);

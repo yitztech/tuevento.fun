@@ -5,7 +5,7 @@ export function Analytics({api,native=false}:{api:EventApi;native?:boolean}){
  const {pathname}=useLocation();
  useEffect(()=>{
   // No invitation tokens, contact fields, IPs or full URLs in telemetry.
-  const route=pathname==='/'?(native?'app':'landing'):pathname==='/descargas'?'downloads':pathname==='/app'?'app':null;
+  const route=pathname==='/'?(native?'app':'landing'):pathname==='/descargas'?'downloads':pathname==='/events'?'app':null;
   if(!route)return;
   try {
    const visitorId=localStorage.getItem('tueventofun:visitor')||crypto.randomUUID();localStorage.setItem('tueventofun:visitor',visitorId);

@@ -70,8 +70,8 @@ fs.mkdirSync(artifacts, { recursive: true });
     });
   };
   try {
-    // Sin sesión, /app no abre la demostración: pide acceder primero
-    await page.goto(target + "/app");
+    // Sin sesión, /events no abre la demostración: pide acceder primero
+    await page.goto(target + "/events");
     await expect(page).toHaveURL(/\/acceso$/);
     // La demostración exige una cuenta registrada: el script se registra y abre la demo desde la página
     for (const origen of [target, targetEn]) {
@@ -91,7 +91,7 @@ fs.mkdirSync(artifacts, { recursive: true });
       });
       expect(estado).toBe(201);
     }
-    await page.goto(target + "/app");
+    await page.goto(target + "/events");
     await expect(
       page.getByRole("heading", { name: "La vida se celebra juntos." }),
     ).toBeVisible({ timeout: 30000 });
@@ -103,12 +103,12 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
     // El otro idioma es un enlace a su dominio, nunca una redirección
     const toEnglish = page.locator('a.language-option[hreflang="en"]').first();
-    await expect(toEnglish).toHaveAttribute("href", `${targetEn}/app`);
+    await expect(toEnglish).toHaveAttribute("href", `${targetEn}/events`);
     expect(new URL(page.url()).origin).toBe(new URL(target).origin);
     // Con varios idiomas el selector es un menú: se abre y se elige el inglés
     await page.locator("summary.language-switcher").first().click();
     await toEnglish.click();
-    await page.waitForURL(`${targetEn}/app`);
+    await page.waitForURL(`${targetEn}/events`);
     await expect(
       page.getByRole("heading", {
         name: "Life is better celebrated together.",
@@ -123,12 +123,12 @@ fs.mkdirSync(artifacts, { recursive: true });
     ).toBeVisible();
     await expect(
       page.locator('a.language-option[hreflang="es"]').first(),
-    ).toHaveAttribute("href", `${target}/app`);
+    ).toHaveAttribute("href", `${target}/events`);
     await shot("dashboard-en-desktop");
     await page.setViewportSize({ width: 390, height: 844 });
     await shot("dashboard-en-mobile");
     await page.setViewportSize({ width: 1512, height: 1100 });
-    await page.goto(target + "/app");
+    await page.goto(target + "/events");
     await expect(
       page.getByRole("heading", { name: "La vida se celebra juntos." }),
     ).toBeVisible();
@@ -494,7 +494,8 @@ fs.mkdirSync(artifacts, { recursive: true });
       page.getByRole("heading", { name: "Fiesta de prueba editada" }),
     ).toBeVisible();
     checks.push("Edición del evento persiste");
-    await page.getByRole("button", { name: "Cerrar sesión" }).click();
+    await page.getByRole("button", { name: "Menú de usuario" }).click();
+    await page.getByRole("menuitem", { name: "Cerrar sesión" }).click();
     await expect(
       page.getByRole("heading", { name: "Qué bueno verte de nuevo." }),
     ).toBeVisible();

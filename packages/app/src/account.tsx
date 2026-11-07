@@ -42,6 +42,7 @@ import { AuthLegalNotice } from "./legal";
 import { PhoneField } from "./phone-field";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { SiteAuthShell, type AuthSide } from "./ui/site/auth-shell";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
@@ -52,7 +53,7 @@ function usePostAuthTarget() {
   const theme = query.get("tema");
   if (theme && (themeIds as readonly string[]).includes(theme))
     return `/eventos/nuevo?tema=${theme}`;
-  return query.get("empezar") === "evento" ? "/eventos/nuevo" : "/app";
+  return query.get("empezar") === "evento" ? "/eventos/nuevo" : "/events";
 }
 async function readAvatar(file: File): Promise<string> {
   if (file.size > 2 * 1024 * 1024)
@@ -354,7 +355,7 @@ export function ResetPasswordPage() {
     try {
       setUser(await api.resetPassword(data.token, data.password));
       toast(tr("account.donePasswordChangedOther"));
-      navigate("/app");
+      navigate("/events");
     } catch (e) {
       setError(errorText(e));
     }
@@ -662,6 +663,12 @@ export function ProfilePage() {
           <p>{tr("account.howGuestsSee")}</p>
         </div>
       </div>
+      <Tabs defaultValue="information" className="profile-tabs">
+        <TabsList aria-label={tr("app.profile")}>
+          <TabsTrigger value="information">{tr("account.yourInformation")}</TabsTrigger>
+          {!user.isDemo && <TabsTrigger value="security">{tr("account.securityTitle")}</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="information">
       <div className="profile-layout">
         <aside className="profile-identity">
           <Avatar user={user} size="big" />
@@ -769,7 +776,9 @@ export function ProfilePage() {
           )}
         </form>
       </div>
-      {!user.isDemo && <SecurityPanel />}
+        </TabsContent>
+        {!user.isDemo && <TabsContent value="security"><SecurityPanel /></TabsContent>}
+      </Tabs>
     </>
   );
 }
@@ -812,7 +821,7 @@ export function ConfirmEmailPage() {
         <ErrorBox message={error} />
       )}
       {state !== "working" && (
-        <Button asChild><Link className="full" to={user ? "/app" : "/acceso"}>
+        <Button asChild><Link className="full" to={user ? "/events" : "/acceso"}>
           {user ? tr("account.goToMySpace") : tr("account.signIn")}
           <ArrowRight size={18} />
         </Link></Button>

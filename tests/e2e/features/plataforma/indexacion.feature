@@ -31,7 +31,7 @@ Característica: Cada URL en un solo estado para los buscadores
 
     Ejemplos:
       | idioma | privada            |
-      | es     | /app               |
+      | es     | /events            |
       | es     | /planes/pago       |
       | en     | /plans/checkout    |
       | es     | /e/una-celebracion |
@@ -57,6 +57,9 @@ Característica: Cada URL en un solo estado para los buscadores
 
     Ejemplos:
       | idioma | ruta        | destino |
+      | es     | /app        | /events  |
+      | es     | /app/       | /events  |
+      | en     | /pt/app     | /pt/events |
       | es     | /planes/    | /planes  |
       | es     | /index.html | /        |
       | en     | /pt         | /pt/     |

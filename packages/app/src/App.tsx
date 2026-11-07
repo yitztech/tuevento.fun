@@ -12,7 +12,6 @@ import {
 import {
   LayoutDashboard,
   CalendarDays,
-  Users,
   Palette,
   Bell,
   Settings,
@@ -37,7 +36,6 @@ import {
   EventsPage,
   TemplatesPage,
   NotificationsPage,
-  AllGuests,
   HelpPage,
 } from "./dashboard";
 import { EventEditor, EventDetail, TvPage } from "./event-pages";
@@ -68,6 +66,7 @@ import { AddPhone, ChooseAccountType, VerifyEmailGate, WelcomePage } from "./onb
 import { Button } from "./ui/button";
 import { Toaster } from "./ui/sonner";
 import { toast as showToast } from "sonner";
+import { DropdownMenu } from "radix-ui";
 export type { Runtime } from "./context";
 export { SeoLinks, getLocale, switchAppLocale, tr } from "./i18n";
 export function TuEventoApp({ runtime }: { runtime: Runtime }) {
@@ -251,11 +250,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       ]
     : [
     ...(user?.isOwner ? [{ to: "/administracion", text: tr("app.systemDashboard"), icon: LayoutDashboard }] : []),
-    { to: "/app", text: tr("app.overview"), icon: LayoutDashboard },
+    { to: "/events", text: tr("app.overview"), icon: LayoutDashboard },
     { to: "/eventos", text: tr("common.events"), icon: CalendarDays },
-    { to: "/invitados", text: tr("app.guests"), icon: Users },
     { to: "/disenos", text: tr("app.invitationDesigns"), icon: Palette },
-    { to: "/notificaciones", text: tr("app.notifications"), icon: Bell },
   ];
   const logout = async () => {
     try {
@@ -326,7 +323,12 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
           )}
           <aside className={`sidebar ${menu ? "open" : ""}`}>
             <div className="sidebar-logo">
-              <Logo to="/app" />
+              <Logo onClick={(event) => {
+                if (runtime.platform && runtime.platform !== "web") {
+                  event.preventDefault();
+                  runtime.openExternal(runtime.publicOrigin);
+                }
+              }} />
               <Button variant="ghost" size="icon"
                 className="mobile-only"
                 aria-label={tr("common.closeMenu")}
@@ -341,12 +343,9 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
             </div>
             <nav aria-label={tr("app.mainNavigation")}>
               {navigation.map(({ to, text, icon: Icon }) => (
-                <NavLink key={to} to={to} end={to === "/app" || to === "/negocio"}>
+                <NavLink key={to} to={to} end={to === "/events" || to === "/negocio"}>
                   <Icon size={19} />
                   <span>{text}</span>
-                  {to === "/notificaciones" && unread > 0 && (
-                    <b className="nav-count">{unread}</b>
-                  )}
                   {to === "/eventos" && (
                     <b className="event-count">
                       {events.filter((e) => !e.archived).length}
@@ -382,29 +381,6 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <CircleHelp size={18} />
                 {tr("app.helpGettingStarted")}
               </NavLink>
-              <NavLink className="side-secondary" to="/perfil">
-                <Settings size={18} />
-                {tr("app.profile")}
-              </NavLink>
-              <div className="sidebar-profile">
-                <Avatar user={user} />
-                <div>
-                  <strong>
-                    {user.firstName} {user.lastName}
-                  </strong>
-                  <span>
-                    {user.isDemo ? tr("app.demoAccount") : provider ? tr("provider.accountLabel") : tr("common.host")}
-                  </span>
-                </div>
-                <Button variant="ghost" size="icon"
-                  onClick={logout}
-                  disabled={!online}
-                  aria-label={tr("app.signOut")}
-                  title={online ? tr("app.signOut") : tr("offline.needsConnection")}
-                >
-                  <LogOut size={18} />
-                </Button>
-              </div>
             </div>
           </aside>
           <div className="main-shell">
@@ -422,7 +398,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <strong>
                   {navigation
                     // La ruta más concreta gana: /negocio/fotos antes que /negocio
-                    .filter((n) => n.to !== "/app" && location.pathname.startsWith(n.to))
+                    .filter((n) => n.to !== "/events" && location.pathname.startsWith(n.to))
                     .sort((x, y) => y.to.length - x.to.length)[0]?.text ||
                     (location.pathname === "/perfil"
                       ? tr("app.profile")
@@ -454,9 +430,32 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   )}
                 </Link></Button>
                 )}
-                <Link to="/perfil" aria-label={tr("app.profile")}>
-                  <Avatar user={user} />
-                </Link>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="ghost" className="user-menu-trigger" aria-label={tr("app.userMenu")}>
+                      <Avatar user={user} />
+                      <span className="user-menu-name">{user.firstName} {user.lastName}</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="user-menu-content" align="end" sideOffset={8}>
+                      <DropdownMenu.Label className="user-menu-label">
+                        <strong>{user.firstName} {user.lastName}</strong>
+                        <span>{user.isDemo ? tr("app.demoAccount") : provider ? tr("provider.accountLabel") : tr("common.host")}</span>
+                      </DropdownMenu.Label>
+                      <DropdownMenu.Separator className="user-menu-separator" />
+                      <DropdownMenu.Item className="user-menu-item" asChild>
+                        <Link to="/perfil"><Settings size={18} />{tr("app.profile")}</Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item className="user-menu-item" asChild>
+                        <Link to="/ayuda"><CircleHelp size={18} />{tr("app.helpGettingStarted")}</Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item className="user-menu-item" disabled={!online} onSelect={() => void logout()} title={online ? undefined : tr("offline.needsConnection")}>
+                        <LogOut size={18} />{tr("app.signOut")}
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
               </div>
             </header>
             <main id="main" className="main-content">
@@ -477,9 +476,10 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 </Routes>
               ) : (
               <Routes>
-                <Route path="/" element={<Navigate to="/app" replace />} />
+                <Route path="/" element={<Navigate to="/events" replace />} />
                 <Route path="/bienvenida" element={<WelcomePage />} />
-                <Route path="/app" element={<Dashboard />} />
+                <Route path="/app" element={<Navigate to="/events" replace />} />
+                <Route path="/events" element={<Dashboard />} />
                 <Route path="/conectar-app" element={<MobileConnect />} />
                 <Route path="/conectar-asistente" element={<AssistantConnect />} />
                 <Route path="/administracion" element={<OwnerDashboard />} />
@@ -489,7 +489,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <Route path="/eventos/:id/editar" element={<EventEditor />} />
                 <Route path="/eventos/:id/postal" element={<PostcardEditor />} />
                 <Route path="/disenos" element={<TemplatesPage />} />
-                <Route path="/invitados" element={<AllGuests />} />
+                <Route path="/invitados" element={<Navigate to="/eventos" replace />} />
                 <Route path="/notificaciones" element={<NotificationsPage />} />
                 <Route path="/sincronizar" element={<SyncReview />} />
                 <Route path="/perfil" element={<ProfilePage />} />
@@ -499,7 +499,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   element={
                     <div className="empty">
                       <h1>{tr("app.couldntFindPage")}</h1>
-                      <Button asChild><Link to="/app">
+                      <Button asChild><Link to="/events">
                         {tr("app.backOverview")}
                       </Link></Button>
                     </div>

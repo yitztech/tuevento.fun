@@ -154,7 +154,7 @@ export function SyncReview() {
   const review = offline?.queue.filter((o) => o.state !== "pending") ?? [];
   return (
     <>
-      <Link className="back-link" to="/app">
+      <Link className="back-link" to="/events">
         <ArrowLeft size={16} />
         {tr("app.backOverview")}
       </Link>
