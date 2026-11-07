@@ -1399,7 +1399,17 @@
   --theme-fg: #694455;
 }
 .templates-grid .invitation-art {
-  min-height: 400px;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  min-height: 480px;
+}
+.templates-grid .invitation-photo {
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+.templates-grid .invitation-words {
+  justify-content: center;
 }
 .notification-list {
   margin-top: 24px;
@@ -3414,9 +3424,6 @@
   .template-caption h2 {
     font-size: 17px;
   }
-  .templates-grid .invitation-art {
-    min-height: 395px;
-  }
   .notification-row {
     gap: 12px;
     padding: 18px 12px;
@@ -3782,12 +3789,6 @@
   .templates-grid {
     grid-template-columns: 1fr;
     gap: 23px;
-  }
-  .templates-grid .invitation-art {
-    min-height: 450px;
-  }
-  .templates-grid .invitation-photo {
-    height: 155px;
   }
   .templates-grid .invitation-words h2 {
     font-size: 35px;
