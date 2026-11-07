@@ -247,12 +247,14 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         { to: "/negocio", text: tr("provider.business"), icon: Store },
         { to: "/negocio/servicios", text: tr("provider.services"), icon: ClipboardList },
         { to: "/negocio/fotos", text: tr("provider.photos"), icon: Images },
+        { to: "/ayuda", text: tr("app.helpGettingStarted"), icon: CircleHelp },
       ]
     : [
     ...(user?.isOwner ? [{ to: "/administracion", text: tr("app.systemDashboard"), icon: LayoutDashboard }] : []),
     { to: "/events", text: tr("app.overview"), icon: LayoutDashboard },
     { to: "/eventos", text: tr("common.events"), icon: CalendarDays },
     { to: "/disenos", text: tr("app.invitationDesigns"), icon: Palette },
+    { to: "/ayuda", text: tr("app.helpGettingStarted"), icon: CircleHelp },
   ];
   const logout = async () => {
     try {
@@ -377,10 +379,6 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                   <ChevronRight size={14} />
                 </Link>
               )}
-              <NavLink className="side-secondary" to="/ayuda">
-                <CircleHelp size={18} />
-                {tr("app.helpGettingStarted")}
-              </NavLink>
             </div>
           </aside>
           <div className="main-shell">
@@ -446,9 +444,6 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                       <DropdownMenu.Separator className="user-menu-separator" />
                       <DropdownMenu.Item className="user-menu-item" asChild>
                         <Link to="/perfil"><Settings size={18} />{tr("app.profile")}</Link>
-                      </DropdownMenu.Item>
-                      <DropdownMenu.Item className="user-menu-item" asChild>
-                        <Link to="/ayuda"><CircleHelp size={18} />{tr("app.helpGettingStarted")}</Link>
                       </DropdownMenu.Item>
                       <DropdownMenu.Item className="user-menu-item" disabled={!online} onSelect={() => void logout()} title={online ? undefined : tr("offline.needsConnection")}>
                         <LogOut size={18} />{tr("app.signOut")}
