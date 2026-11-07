@@ -7,7 +7,7 @@ Característica: El sitio público
   Escenario: Filtrar los diseños por estilo deja elegido el primero de ese estilo
     Dado que abro la portada
     Cuando filtro los diseños por "Infantil"
-    Entonces veo 2 diseños de muestra
+    Entonces veo 8 diseños de muestra
     Y el enlace "Crear con este diseño" lleva a "/registro?tema=kids"
 
   @solo-lectura

@@ -126,7 +126,7 @@ export function HomeDesigns() {
                     type="button"
                     onClick={() => setSelected(t.id)}
                     aria-pressed={selected === t.id}
-                    aria-label={tr(t.name)}
+                    aria-label={tr(themeCaptions[t.id] ?? t.name)}
                     className={cn(
                       "block w-full cursor-pointer rounded-lg outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-reduce:transition-none",
                       selected === t.id && "ring-[3px] ring-primary ring-offset-2 ring-offset-card",

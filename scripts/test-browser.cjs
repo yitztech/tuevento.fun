@@ -2,6 +2,7 @@ const { chromium, expect } = require("@playwright/test");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { confirmationToken } = require("./confirm-email.cjs");
 const target = process.env.TEST_WEB_URL || "http://localhost:5187";
 // Un idioma por dominio: el inglés vive en el host de SITE_URL_EN. Contra localhost
 // se usa ese host en el mismo puerto y Chromium lo resuelve a 127.0.0.1, así la
@@ -76,7 +77,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     // La demostración exige una cuenta registrada: el script se registra y abre la demo desde la página
     for (const origen of [target, targetEn]) {
       await page.goto(origen + "/acceso");
-      const estado = await page.evaluate(async () => {
+      const correo = await page.evaluate(async () => {
         const cabeceras = { "content-type": "application/json", "x-tuevento-client": "1" };
         const cuenta = {
           firstName: "Prueba",
@@ -84,11 +85,18 @@ fs.mkdirSync(artifacts, { recursive: true });
           email: `navegador-${Date.now()}@example.invalid`,
           phone: "+527771234567",
           password: "clave-navegador-1",
+          accountType: "organizer",
         };
         await fetch("/api/auth/register", { method: "POST", headers: cabeceras, body: JSON.stringify(cuenta) });
+        return cuenta.email;
+      });
+      const token = await confirmationToken(correo);
+      const estado = await page.evaluate(async (enlace) => {
+        const cabeceras = { "content-type": "application/json", "x-tuevento-client": "1" };
+        await fetch("/api/auth/email/verify", { method: "POST", headers: cabeceras, body: JSON.stringify({ token: enlace }) });
         const demo = await fetch("/api/auth/demo", { method: "POST", headers: { "x-tuevento-client": "1" } });
         return demo.status;
-      });
+      }, token);
       expect(estado).toBe(201);
     }
     await page.goto(target + "/events");
@@ -214,17 +222,23 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page.getByLabel("Teléfono", { exact: true }).fill("+527771234567");
     await page.getByLabel("Correo electrónico", { exact: true }).fill(email);
     await page.getByLabel("Contraseña", { exact: true }).fill(password);
-    await page
-      .getByLabel("Cargar avatar de registro")
-      .setInputFiles(path.resolve("apps/web/public/images/gold.jpg"));
+    await page.getByLabel("Repetir contraseña", { exact: true }).fill(password);
     await page
       .getByRole("button", { name: "Crear mi cuenta", exact: true })
       .click();
+    await expect(page.getByRole("heading", { name: "Revisa tu correo" })).toBeVisible();
+    await page.goto(`${target}/confirmar-correo?token=${await confirmationToken(email)}`);
+    await expect(page.getByText("¡Correo confirmado!")).toBeVisible();
+    await page.goto(target + "/events");
+    await page.getByRole("radio", { name: /Organizar mi evento/ }).check();
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    await expect(page).toHaveURL(/\/bienvenida$/);
+    await page.goto(target + "/events");
     await expect(
       page.getByRole("heading", { name: "Tu próxima historia empieza aquí" }),
     ).toBeVisible();
     checks.push(
-      "Registro con validación y carga de avatar; cuenta inicia vacía",
+      "Registro con validación y correo confirmado; cuenta inicia vacía",
     );
     const me = await context.request.get(target + "/api/auth/me");
     const user = await me.json();
@@ -237,7 +251,8 @@ fs.mkdirSync(artifacts, { recursive: true });
     await expect(
       page.getByRole("heading", { name: "Hay algo que celebrar." }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Crear mi evento" }).click();
+    const nextStep = () => page.getByRole("button", { name: "Siguiente", exact: true }).click();
+    await nextStep();
     await expect(page.getByText("Elige una fecha y hora.")).toBeVisible();
     await page
       .getByLabel("Nombre del evento", { exact: true })
@@ -245,12 +260,15 @@ fs.mkdirSync(artifacts, { recursive: true });
     await page
       .getByLabel("Fecha y hora", { exact: true })
       .fill("2026-12-20T17:00");
+    await nextStep();
     await page
       .getByLabel("¿Dónde nos vemos?", { exact: true })
       .fill("Jardín de pruebas");
     await page
       .getByLabel("Un mensaje para tus invitados", { exact: true })
       .fill("Nos encantará compartir este día. Datos de prueba.");
+    await nextStep();
+    await nextStep();
     await page.getByRole("button", { name: "Tropical", exact: true }).click();
     await shot("event-editor-desktop");
     // El editor en inglés, con la sesión de demostración del dominio inglés
@@ -434,7 +452,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     checks.push("Filtros de asistencia, tablet y modo pantalla a 1920 px");
     await page.setViewportSize({ width: 1512, height: 1100 });
     await page
-      .getByRole("navigation")
+      .getByRole("banner")
       .getByRole("link", { name: /Notificaciones/ })
       .click();
     await expect(

@@ -7,9 +7,9 @@ Característica: Confirmar el correo y darse de baja de los avisos
 
   # Solo web: los enlaces de los correos se abren en el navegador, no dentro de la app
   @solo-web
-  Escenario: Una cuenta nueva ve el aviso para confirmar su correo y puede pedir el enlace otra vez
-    Dado que tengo una cuenta creada y abro mi perfil
-    Entonces veo el aviso "Hasta entonces, tus invitados no recibirán avisos por correo."
+  Escenario: Una cuenta nueva debe confirmar su correo y puede pedir el enlace otra vez
+    Dado que acabo de crear una cuenta sin confirmar el correo
+    Entonces me pide confirmar mi correo
     Cuando pulso "Enviar el enlace otra vez"
     Entonces veo el aviso "Te enviamos un enlace nuevo"
 

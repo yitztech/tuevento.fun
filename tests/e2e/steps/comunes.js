@@ -24,6 +24,14 @@ Given("que tengo una cuenta creada y abro mi perfil", async ({ page, ctx }) => {
   await page.goto("/perfil");
 });
 
+Given("que acabo de crear una cuenta sin confirmar el correo", async ({ page, ctx }) => {
+  ctx.cuenta = nuevaCuenta();
+  // Sin `registrar`: aquí el correo se queda por confirmar
+  const r = await page.request.post("/api/auth/register", { headers: cabecera, data: ctx.cuenta });
+  expect(r.status()).toBe(201);
+  await page.goto("/events");
+});
+
 Given("que tengo una cuenta creada por la API sin sesión en el navegador", async ({ request, ctx }) => {
   ctx.cuenta = nuevaCuenta();
   // `request` no comparte las cookies del navegador: hay que entrar con el formulario

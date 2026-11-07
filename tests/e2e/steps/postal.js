@@ -64,7 +64,7 @@ When("guardo la postal", async ({ page }) => {
   // Se espera la respuesta del guardado: el paso siguiente sale de la página y, en WebKit,
   // a veces lo hacía antes de que el PUT llegase a la API
   const guardado = page.waitForResponse(
-    (r) => r.request().method() === "PUT" && /\/api\/events\/[^/]+\/postcard$/.test(new URL(r.url()).pathname),
+    (r) => r.request().method() === "PUT" && /\/api\/(events\/[^/]+\/postcard|postcard-designs\/[^/]+)$/.test(new URL(r.url()).pathname),
   );
   await page.getByRole("button", { name: "Guardar postal", exact: true }).click();
   expect((await guardado).ok()).toBe(true);

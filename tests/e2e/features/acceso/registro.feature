@@ -17,7 +17,8 @@ Característica: Crear una cuenta
   Escenario: Sin confirmar el correo no se entra a la app
     Cuando relleno el registro con datos válidos
     Y envío el formulario de registro
-    Y abro la página "/eventos"
+    Entonces me pide confirmar mi correo
+    Cuando abro la página "/eventos"
     Entonces me pide confirmar mi correo
 
   Esquema del escenario: Tras confirmar el correo elijo el tipo de cuenta y veo mi bienvenida

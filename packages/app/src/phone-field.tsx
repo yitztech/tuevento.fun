@@ -155,9 +155,15 @@ function SelectPhoneField({
   );
 }
 
-/** Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. */
+/**
+ * Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. Un prefijo conocido
+ * se separa en cuanto está completo; uno desconocido, al llegar un separador. Así, escrito tecla a
+ * tecla, "+5" sigue en el campo hasta completar "+52".
+ */
 function parseManual(value: string, fallbackCode = "") {
-  const match = /^\+(\d{1,3})[\s()-]*(.*)$/.exec(value);
+  const known = longestDialFirst.find(([, dial]) => value.startsWith(dial));
+  if (known) return { code: known[1].slice(1), national: value.slice(known[1].length).replace(/^[\s()-]+/, "") };
+  const match = /^\+(\d{1,3})[\s()-]+(.*)$/.exec(value);
   return match ? { code: match[1], national: match[2] } : { code: fallbackCode, national: value };
 }
 /** Sin código escrito, el teléfono lleva el del idioma, que el campo muestra como ejemplo. */
@@ -228,7 +234,7 @@ function ManualPhoneField({
           onChange={(event) => {
             const raw = event.target.value.replace(onlyPhoneChars, "");
             // Si pega el número con su prefijo ("+52 55…"), el código se separa solo.
-            update(raw.startsWith("+") ? parseManual(raw, parts.code) : { ...parts, national: raw });
+            update(raw.startsWith("+") ? parseManual(raw, parts.code) : { ...parts, national: raw.trimStart() });
           }}
         />
       </div>
