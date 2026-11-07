@@ -12,7 +12,7 @@ import { EventApi } from '@tuevento/client';
 import { DownloadsPage } from '@tuevento/app/downloads';
 import { LegalPage } from '@tuevento/app/legal';
 import { localizedPages, localizedPath, supportedLocales } from '@tuevento/contracts';
-import { PricingPage } from '@tuevento/app/pricing';
+import { PlanCheckoutPage, PricingPage } from '@tuevento/app/pricing';
 import { LanguageSuggestion, pathPrefix, usePathPrefix } from '@tuevento/app/i18n';
 import { SitePaletteProvider } from "@tuevento/app/site-palette";
 import { Analytics } from './analytics';
@@ -68,6 +68,7 @@ async function start() {
   <SitePaletteProvider api={api}><Router><Analytics api={api} native={native}/>{!native&&<><SeoLinks/><LanguageSuggestion/></>}{native?<TuEventoApp runtime={activeRuntime}/>:<Routes>
    <Route path="/" element={<LandingPage/>}/><Route path="/descargas" element={<DownloadsPage api={api}/>}/>
    {localizedPages.filter(page=>page!=='providers').flatMap(page=>supportedLocales.map(locale=><Route key={`${page}-${locale}`} path={localizedPath(page,locale)} element={page==='pricing'?<PricingPage/>:<LegalPage page={page as 'privacy'|'terms'}/>}/>))}
+   {supportedLocales.map(locale=><Route key={`checkout-${locale}`} path={localizedPath('checkout',locale)} element={<PlanCheckoutPage/>}/>)}
    <Route path="*" element={<TuEventoApp runtime={activeRuntime}/>}/>
   </Routes>}</Router></SitePaletteProvider>);
 }

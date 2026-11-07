@@ -61,7 +61,7 @@ import { PublicRsvp } from "./public-rsvp";
 import { EventLanding, LegacyEventAddress } from "./public-event";
 import { PostcardEditor } from "./postcard-editor";
 import { LegalPage, legalPageFor } from "./legal";
-import { PaymentPage, PricingPage } from "./pricing";
+import { PaymentPage, PlanCheckoutPage, PricingPage } from "./pricing";
 import { OfflineBanner, savedOfflineUser, useOfflineSync, useOnline } from "./offline";
 import { SyncReview } from "./sync-review";
 import { AddPhone, ChooseAccountType, VerifyEmailGate, WelcomePage } from "./onboarding";
@@ -120,6 +120,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
   });
   const legal = legalPageFor(location.pathname);
   const pricing = localizedPage(location.pathname) === "pricing";
+  const planCheckout = localizedPage(location.pathname) === "checkout";
   const providerSearch = localizedPage(location.pathname) === "providers";
   const isPublic =
       location.pathname.startsWith("/i/") ||
@@ -128,7 +129,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
       providerRoute(location.pathname) !== null ||
       providerSearch ||
       legal !== null ||
-      pricing,
+      pricing ||
+      planCheckout,
     isAuth = [
       "/registro",
       "/acceso",
@@ -269,6 +271,8 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
         <LegalPage page={legal} />
       ) : pricing ? (
         <PricingPage />
+      ) : planCheckout ? (
+        <PlanCheckoutPage />
       ) : isPublic ? (
         <Routes>
           <Route path="/i/:token" element={<PublicRsvp />} />

@@ -20,23 +20,7 @@ Característica: Precios del servicio
     Y veo el aviso "Elige el evento que quieres pagar"
 
   @solo-lectura
-  Escenario: Los planes de personas muestran sus invitados y su precio en dólares
+  Escenario: El plan gratis lleva a crear la cuenta
     Dado que abro la página de precios
-    Entonces la tabla "Eventos particulares" tiene la fila "Gratis | Hasta 20 | $0"
-    Y la tabla "Eventos particulares" tiene la fila "Esencial | 21–60 | $14.99"
-    Y la tabla "Eventos particulares" tiene la fila "Premium | 101–200 | $29.99"
-    Y la tabla "Eventos particulares" tiene la fila "Gran Evento | 501 o más | $99.99"
-
-  @solo-lectura
-  Escenario: Los planes de agencias son una suscripción mensual
-    Dado que abro la página de precios
-    Cuando abro la pestaña "Profesionales"
-    Entonces la tabla "Profesionales" tiene la fila "Starter | $19.99"
-    Y la tabla "Profesionales" tiene la fila "Business | $39.99"
-    Y la tabla "Profesionales" tiene la fila "Agency | $79.99"
-
-  @solo-lectura
-  Escenario: El botón de compra lleva a crear la cuenta
-    Dado que abro la página de precios
-    Cuando pulso el enlace "Comprar ahora" de la portada
+    Cuando pulso el enlace "Comenzar gratis" de la portada
     Entonces estoy en la página de registro

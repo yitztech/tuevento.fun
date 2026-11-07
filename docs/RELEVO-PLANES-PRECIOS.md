@@ -2,6 +2,8 @@
 
 Estado (6-nov-2026): la página pública `/planes` (antes `/precios`) ya muestra los planes nuevos con su diseño final (PR #82), **sin aviso de vista previa**. Solo cambió lo que se ve (`personalPlans` y `agencyPlans` en `packages/contracts/src/pricing.ts`): el cobro en `packages/app/src/pricing.tsx`, `apps/api/src/payments.ts` y la tabla `event_payments` siguen con los tramos anteriores (`guestTiers`). Hoy la página y el cobro no coinciden: no se debe habilitar el cobro, ni anunciar estos precios como vigentes, hasta que el cobro y las reglas de invitados coincidan con ellos. Los tests de Stripe están saltados hasta integrarlo (ver `docs/PAGOS-PENDIENTES.md`).
 
+La página de pago de un plan (`/planes/pago?plan=…`, `packages/app/src/ui/site/plan-checkout.tsx`) también es solo la pantalla: el botón de pagar va desactivado y los datos de la tarjeta son campos desactivados sin `name`. Al integrar Stripe se sustituyen por su Payment Element: un número de tarjeta nunca pasa por campos propios (PCI DSS). El escenario de pagar lleva `@pendiente` en `tests/e2e/features/cuenta/planes.feature`.
+
 ## Decisiones del usuario
 
 - Personas, USD por evento: Gratis hasta 20; Esencial 21–60 por 14,99; Plus 61–100 por 19,99; Premium 101–200 por 29,99; Celebración 201–500 por 49,99; Gran Evento desde 501 por 99,99.

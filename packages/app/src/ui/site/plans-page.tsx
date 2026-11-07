@@ -1,156 +1,78 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Briefcase,
-  CalendarDays,
-  CircleDollarSign,
-  Crown,
-  Gem,
-  Globe,
-  MonitorSmartphone,
-  Sparkles,
-  Sprout,
-  ShieldCheck,
-  Star,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
-import { agencyPlans, personalPlans, type PersonalPlan } from "@tuevento/contracts";
+import { Briefcase, Check, CircleDollarSign, Globe, MonitorSmartphone, ShieldCheck, Star, Users, type LucideIcon } from "lucide-react";
+import { agencyPlans, localizedPath, personalPlans } from "@tuevento/contracts";
 import { cn } from "cn";
-import { tr } from "../../i18n";
+import { tr, useLocale } from "../../i18n";
 import { Button } from "../button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../tabs";
 import { wrap } from "./home-shared";
+import { planCurrency, planGuests, planInfo, planPrice, popularPlan, type PlanKey } from "./plan-catalog";
 
 // Todos los colores salen de los tokens del tema (primary, muted, border…): al cambiar la paleta del
 // sitio cambia también esta página. Ningún color va fijo.
 
-/** Precio en dólares: «$0» el plan gratis y «$14.99» el resto (igual en todos los idiomas). */
-const planPrice = (usd: number) => (usd === 0 ? "$0" : `$${usd.toFixed(2)}`);
+const pageWidth = "mx-auto w-full max-w-[92rem] px-4 sm:px-6 lg:px-8";
 
-/** Nombre, descripción e icono de cada plan, en el idioma de quien lee (cada clave, escrita entera). */
-const planInfo = {
-  free: { icon: Sprout, name: () => tr("pricing.planFree"), text: () => tr("pricing.descFree") },
-  essential: { icon: Star, name: () => tr("pricing.planEssential"), text: () => tr("pricing.descEssential") },
-  plus: { icon: Users, name: () => tr("pricing.planPlus"), text: () => tr("pricing.descPlus") },
-  premium: { icon: Crown, name: () => tr("pricing.planPremium"), text: () => tr("pricing.descPremium") },
-  celebration: { icon: Sparkles, name: () => tr("pricing.planCelebration"), text: () => tr("pricing.descCelebration") },
-  grandEvent: { icon: Gem, name: () => tr("pricing.planGrandEvent"), text: () => tr("pricing.descGrandEvent") },
-  starter: { icon: Sprout, name: () => tr("pricing.planStarter"), text: () => tr("pricing.descStarter") },
-  business: { icon: Star, name: () => tr("pricing.planBusiness"), text: () => tr("pricing.descBusiness") },
-  agency: { icon: Crown, name: () => tr("pricing.planAgency"), text: () => tr("pricing.descAgency") },
-} satisfies Record<string, { icon: LucideIcon; name: () => string; text: () => string }>;
+/** Hojas del fondo: la forma sale del SVG y el color, del tema (una máscara, no una imagen). */
+export const leaves =
+  "pointer-events-none absolute -z-10 bg-primary/10 [mask:url(/site/decorations/leaf-branch.svg)_center/contain_no-repeat] [-webkit-mask:url(/site/decorations/leaf-branch.svg)_center/contain_no-repeat]";
 
-/** Invitados que cubre un plan: «Hasta 20», «21–60» o «501 o más». */
-function guestsText(plan: PersonalPlan) {
-  if (plan.minGuests === 0) return tr("pricing.guestsUpTo", { max: plan.maxGuests });
-  if (plan.maxGuests === null) return tr("pricing.guestsFrom", { min: plan.minGuests });
-  return tr("pricing.guestsRange", { min: plan.minGuests, max: plan.maxGuests });
-}
+type Card = { key: PlanKey; usd: number; guests?: string; suffix?: string };
 
-type Row = {
-  key: keyof typeof planInfo;
-  guests?: string;
-  price: string;
-  suffix?: string;
-  highlight?: boolean;
-};
-
-const head = "px-4 pb-1 text-[0.68rem] font-bold tracking-[0.16em] text-muted-foreground uppercase";
-const cell = "border-y border-border bg-card px-4 py-3 align-middle first:rounded-l-xl first:border-l last:rounded-r-xl last:border-r";
-
-/** Tabla de planes: una fila-tarjeta por plan, con su icono, su descripción y su precio. */
-function PlanTable({ rows, withGuests }: { rows: Row[]; withGuests: boolean }) {
+/** Tarjeta de un plan: icono, nombre, precio, lo que incluye y su botón. */
+function PlanCard({ plan }: { plan: Card }) {
+  const { locale } = useLocale();
+  const { icon: Icon, name, features } = planInfo[plan.key];
+  const popular = plan.key === popularPlan;
+  const free = plan.usd === 0;
+  const to = free ? "/registro" : `${localizedPath("checkout", locale)}?plan=${plan.key}`;
   return (
-    <table className="mt-5 w-full border-separate border-spacing-y-2 text-left">
-      <thead>
-        <tr>
-          <th scope="col" className={head}>
-            {tr("pricing.colPlan")}
-          </th>
-          {withGuests && (
-            <th scope="col" className={head}>
-              {tr("pricing.colGuests")}
-            </th>
+    <li className="flex">
+      <article
+        aria-labelledby={`plan-${plan.key}`}
+        className={cn(
+          "relative flex w-full flex-col rounded-2xl border bg-card/90 p-5 text-center shadow-site-soft",
+          popular ? "border-2 border-primary bg-accent-soft/40" : "border-border/70",
+        )}
+      >
+        {popular && (
+          <p className="absolute -top-3.5 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[0.72rem] font-bold whitespace-nowrap text-primary-foreground">
+            <Star aria-hidden className="size-3.5 fill-current" />
+            {tr("pricing.mostPopular")}
+          </p>
+        )}
+        <span
+          aria-hidden
+          className={cn(
+            "mx-auto grid size-14 place-items-center rounded-full",
+            plan.key === "grandEvent" ? "bg-celebrate/30 text-primary" : "bg-accent-soft text-primary",
           )}
-          <th scope="col" className={cn(head, "text-right")}>
-            {tr("pricing.colPrice")}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => {
-          const info = planInfo[row.key];
-          const Icon = info.icon;
-          return (
-            <tr key={row.key}>
-              <th scope="row" className={cn(cell, "font-normal", row.highlight && "bg-muted")}>
-                <span className="flex items-center gap-3.5">
-                  <span aria-hidden className="hidden size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-primary sm:grid">
-                    <Icon className="size-5" />
-                  </span>
-                  <span className="grid">
-                    <span className="text-[0.95rem] font-bold text-title">{info.name()}</span>
-                    <span className="text-[0.8rem] text-muted-foreground">{info.text()}</span>
-                  </span>
-                </span>
-              </th>
-              {withGuests && <td className={cn(cell, "text-[0.9rem] whitespace-nowrap", row.highlight && "bg-muted")}>{row.guests}</td>}
-              <td className={cn(cell, "text-right whitespace-nowrap", row.highlight && "bg-muted")}>
-                <span className="text-xl font-bold text-title tabular-nums sm:text-[1.35rem]">{row.price}</span>
-                {row.suffix && <small className="block text-[0.7rem] font-medium text-muted-foreground">{row.suffix}</small>}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
-
-/** Tarjeta de un tipo de plan: icono, título, subtítulo, etiqueta del cobro y tabla. */
-function PlanCard({ icon: Icon, title, subtitle, badge, children }: { icon: LucideIcon; title: string; subtitle: string; badge: string; children: ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-white/70 bg-card/80 p-5 shadow-site-card backdrop-blur-sm sm:p-7">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="flex items-start gap-4">
-          <Icon aria-hidden className="mt-1 size-9 shrink-0 text-primary" strokeWidth={1.5} />
-          <div>
-            <h2 className="text-[clamp(1.4rem,1.1rem+1vw,1.85rem)] leading-tight font-semibold">{title}</h2>
-            <p className="mt-1 text-[0.95rem] text-muted-foreground">{subtitle}</p>
-          </div>
-        </div>
-        <span className="rounded-full bg-muted px-3.5 py-1.5 text-[0.78rem] font-medium text-foreground/80">{badge}</span>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-/** Filas del plan de personas. Se arman al dibujar: los textos dependen del idioma en uso. */
-const personalRows = (): Row[] =>
-  personalPlans.map((plan) => ({ key: plan.key, guests: guestsText(plan), price: planPrice(plan.usd), highlight: plan.usd === 0 }));
-
-/** Lo bueno de comprar, a la izquierda del título. */
-function Highlights() {
-  const items: { icon: LucideIcon; title: string; text: string }[] = [
-    { icon: CalendarDays, title: tr("pricing.featureQuick"), text: tr("pricing.featureQuickText") },
-    { icon: Users, title: tr("pricing.featureSimple"), text: tr("pricing.featureSimpleText") },
-    { icon: ShieldCheck, title: tr("pricing.featureSecure"), text: tr("pricing.featureSecureText") },
-  ];
-  return (
-    <ul className="mt-9 grid gap-5 sm:grid-cols-3">
-      {items.map(({ icon: Icon, title, text }) => (
-        <li key={title} className="grid content-start gap-2.5">
-          <span aria-hidden className="grid size-11 place-items-center rounded-full bg-accent-soft text-primary">
-            <Icon className="size-5" />
-          </span>
-          <h3 className="font-sans text-[0.9rem] font-bold text-title">{title}</h3>
-          <p className="text-[0.78rem] leading-snug text-muted-foreground">{text}</p>
-        </li>
-      ))}
-    </ul>
+        >
+          <Icon className="size-7" strokeWidth={1.6} />
+        </span>
+        <h2 id={`plan-${plan.key}`} className="mt-3 font-sans text-[1.2rem] leading-tight font-bold text-title">
+          {name()}
+        </h2>
+        <p className="mt-2 font-bold text-title">
+          <span className="text-[1.75rem] leading-none tabular-nums">{planPrice(plan.usd)}</span>{" "}
+          <span className="text-[0.85rem] font-medium">{planCurrency}</span>
+        </p>
+        <p className="mt-2 text-[0.85rem] text-foreground/85">{plan.guests ?? plan.suffix}</p>
+        <ul className="mt-4 grid flex-1 content-start gap-2.5 border-t border-border/70 pt-4 text-left">
+          {features().map((feature) => (
+            <li key={feature} className="flex items-start gap-2 text-[0.8rem] leading-snug text-foreground/90">
+              <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2.6} />
+              {feature}
+            </li>
+          ))}
+        </ul>
+        <Button asChild variant={popular ? "default" : "outline"} className={cn("mt-5 w-full", !popular && "text-primary")}>
+          <Link to={to} aria-label={free ? undefined : tr("pricing.choosePlanLabel", { plan: name() })}>
+            {free ? tr("pricing.startFree") : tr("pricing.choosePlan")}
+          </Link>
+        </Button>
+      </article>
+    </li>
   );
 }
 
@@ -163,76 +85,75 @@ function Benefits() {
     { icon: MonitorSmartphone, title: tr("pricing.benefitDevices"), text: tr("pricing.benefitDevicesText") },
   ];
   return (
-    <div className="mt-14 border-t border-border/70 bg-muted/60">
-      <ul className={cn(wrap, "grid gap-6 py-7 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0")}>
-        {items.map(({ icon: Icon, title, text }) => (
-          <li key={title} className="flex items-center gap-4 lg:px-6 lg:first:pl-0 lg:[&:not(:first-child)]:border-l lg:[&:not(:first-child)]:border-border">
-            <Icon aria-hidden className="size-9 shrink-0 text-primary" strokeWidth={1.5} />
-            <div>
-              <h3 className="font-sans text-[0.85rem] font-bold text-title">{title}</h3>
-              <p className="text-[0.78rem] text-muted-foreground">{text}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="mt-10 grid gap-5 rounded-2xl border border-border/60 bg-card/60 p-5 shadow-site-soft sm:grid-cols-2 lg:p-6 xl:grid-cols-4 xl:gap-0">
+      {items.map(({ icon: Icon, title, text }) => (
+        <li key={title} className="flex items-center gap-4 xl:px-6 xl:[&:not(:first-child)]:border-l xl:[&:not(:first-child)]:border-border">
+          <Icon aria-hidden className="size-9 shrink-0 text-primary" strokeWidth={1.5} />
+          <div>
+            <p className="text-[0.85rem] font-bold text-title">{title}</p>
+            <p className="text-[0.78rem] text-muted-foreground">{text}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-// Hojas del fondo: la forma sale del SVG y el color, del tema (una máscara, no una imagen)
-const leaves =
-  "pointer-events-none absolute -z-10 bg-primary/10 [mask:url(/site/decorations/leaf-branch.svg)_center/contain_no-repeat] [-webkit-mask:url(/site/decorations/leaf-branch.svg)_center/contain_no-repeat]";
+const triggerClass =
+  "h-auto min-w-0 flex-1 gap-3 rounded-full px-3 py-3 whitespace-normal text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none sm:px-6 [&_svg:not([class*='size-'])]:size-7";
 
-/** Página pública de planes: presentación a la izquierda y los planes, en dos pestañas, a la derecha. */
-export function PlansPage() {
-  const triggerClass =
-    "h-auto flex-none gap-2.5 rounded-full px-5 py-3 text-[0.9rem] font-semibold text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none";
+function PlanTab({ icon: Icon, title, hint }: { icon: LucideIcon; title: string; hint: string }) {
   return (
-    <div className="relative isolate overflow-hidden">
-      <span aria-hidden className={cn(leaves, "-bottom-10 -left-10 h-96 w-56 -rotate-12")} />
-      <span aria-hidden className={cn(leaves, "-right-12 bottom-24 hidden h-96 w-56 rotate-[18deg] lg:block")} />
-      <div className={cn(wrap, "grid gap-10 pt-10 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] lg:gap-14 lg:pt-14 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]")}>
-        <section aria-labelledby="planes-title" className="lg:pt-24">
-          <p className="eyebrow">{tr("pricing.title")}</p>
-          <h1 id="planes-title" className="display-title mt-3 text-title">
-            {tr("pricing.title")}
-          </h1>
-          <p className="mt-6 max-w-md text-[1.05rem] leading-relaxed text-foreground/85">{tr("pricing.publicIntro")}</p>
-          <Highlights />
-          <Button asChild size="lg" className="mt-10 rounded-full px-8">
-            <Link to="/registro">
-              {tr("pricing.buyNow")}
-              <ArrowRight aria-hidden />
-            </Link>
-          </Button>
-        </section>
-        <Tabs defaultValue="personal" className="min-w-0 gap-4">
-          <TabsList aria-label={tr("pricing.plansLabel")} className="h-auto w-fit max-w-full self-end rounded-full border border-border bg-card/80 p-1.5 shadow-site-soft">
+    <>
+      <Icon aria-hidden strokeWidth={1.6} className="hidden sm:block" />
+      <span className="grid text-center sm:text-left">
+        <span className="text-[0.95rem] font-bold">{title}</span>
+        <span className="hidden text-[0.78rem] font-normal opacity-85 sm:block">{hint}</span>
+      </span>
+    </>
+  );
+}
+
+/** Página pública de planes: título, dos pestañas con las tarjetas de planes y la franja común. */
+export function PlansPage() {
+  const personal = personalPlans.map((plan): Card => ({ key: plan.key, usd: plan.usd, guests: planGuests(plan) }));
+  const agency = agencyPlans.map((plan): Card => ({ key: plan.key, usd: plan.usd, suffix: tr("pricing.perMonth") }));
+  return (
+    <div className="relative isolate overflow-hidden pb-12">
+      <span aria-hidden className={cn(leaves, "-top-10 -left-24 h-96 w-56 -rotate-12")} />
+      <span aria-hidden className={cn(leaves, "-top-16 -right-10 hidden h-96 w-56 rotate-[200deg] lg:block")} />
+      <div className={cn(wrap, "pt-8 lg:pt-10")}>
+        <p className="eyebrow">{tr("pricing.title")}</p>
+        <h1 className="display-title mt-2 text-title">{tr("pricing.headline")}</h1>
+        <p className="mt-3 max-w-3xl text-[1.05rem] text-foreground/85">{tr("pricing.subtitle")}</p>
+      </div>
+      <div className={pageWidth}>
+        <Tabs defaultValue="personal" className="mt-8 gap-9">
+          <TabsList aria-label={tr("pricing.plansLabel")} className="mx-auto w-full max-w-3xl rounded-full group-data-[orientation=horizontal]/tabs:h-auto border border-border bg-card/80 p-1.5 shadow-site-soft">
             <TabsTrigger value="personal" className={triggerClass}>
-              <Users aria-hidden />
-              {tr("pricing.personalTitle")}
+              <PlanTab icon={Users} title={tr("pricing.personalTitle")} hint={tr("pricing.personalTabHint")} />
             </TabsTrigger>
             <TabsTrigger value="professional" className={triggerClass}>
-              <Briefcase aria-hidden />
-              {tr("pricing.agencyTitle")}
+              <PlanTab icon={Briefcase} title={tr("pricing.agencyTitle")} hint={tr("pricing.agencyTabHint")} />
             </TabsTrigger>
           </TabsList>
           <TabsContent value="personal">
-            <PlanCard icon={Users} title={tr("pricing.personalTitle")} subtitle={tr("pricing.personalIntro")} badge={tr("pricing.personalBadge")}>
-              <PlanTable rows={personalRows()} withGuests />
-            </PlanCard>
+            <ul className="grid gap-x-3 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {personal.map((plan) => (
+                <PlanCard key={plan.key} plan={plan} />
+              ))}
+            </ul>
           </TabsContent>
           <TabsContent value="professional">
-            <PlanCard icon={Briefcase} title={tr("pricing.agencyTitle")} subtitle={tr("pricing.agencyIntro")} badge={tr("pricing.agencyBadge")}>
-              <PlanTable
-                withGuests={false}
-                rows={agencyPlans.map((plan) => ({ key: plan.key, price: planPrice(plan.usd), suffix: tr("pricing.perMonth") }))}
-              />
-            </PlanCard>
+            <ul className="mx-auto grid max-w-4xl gap-x-3 gap-y-6 sm:grid-cols-3">
+              {agency.map((plan) => (
+                <PlanCard key={plan.key} plan={plan} />
+              ))}
+            </ul>
           </TabsContent>
         </Tabs>
+        <Benefits />
       </div>
-      <Benefits />
     </div>
   );
 }

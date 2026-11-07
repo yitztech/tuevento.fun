@@ -97,7 +97,11 @@ url_of() {
 }
 
 # Páginas públicas, en el sitemap; las traducidas, con @ y su nombre en packages/contracts
-public_pages="/ /descargas /registro /acceso $(printf '@%s ' $pages)"
+localized_private=$(awk '$1 == "private" { print $2 }' "$manifest")
+public_pages="/ /descargas /registro /acceso"
+for page in $pages; do
+  case " $(printf '%s ' $localized_private)" in *" $page "*) ;; *) public_pages="$public_pages @$page" ;; esac
+done
 # Páginas privadas o de sesión: se sirven con X-Robots-Tag: noindex, nunca con Disallow en robots.txt,
 # que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/…, /app-link/… y
 # las landings /<código>/<dirección>
@@ -259,6 +263,10 @@ conf=/etc/nginx/conf.d/sites.conf
             while read -r path; do echo "    $path public;"; done ;;
       *) echo "    $page public;" ;;
     esac
+  done
+  for page in $localized_private; do
+    awk -v page="$page" '$1 == "path" && $2 == page { print $4 }' "$manifest" | sort -u |
+      while read -r path; do echo "    $path private;"; done
   done
   echo "    \"~^/($private_pages)\$\" private;"
   echo "    \"~^/eventos(/.*)?\$\" private;"

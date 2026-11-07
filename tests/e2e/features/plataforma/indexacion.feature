@@ -32,6 +32,8 @@ Característica: Cada URL en un solo estado para los buscadores
     Ejemplos:
       | idioma | privada            |
       | es     | /app               |
+      | es     | /planes/pago       |
+      | en     | /plans/checkout    |
       | es     | /e/una-celebracion |
       | en     | /eventos/1/editar  |
       | es     | /k7p2x9qa/boda-ana |
