@@ -1398,7 +1398,7 @@
   --theme-bg: #f4dfe8;
   --theme-fg: #694455;
 }
-:is(.templates-grid, .preview-panel) .invitation-art {
+:is(.templates-grid, .preview-panel, [data-slot="dialog-content"]) .invitation-art {
   display: grid;
   grid-template-rows: 1fr 1fr;
 }
@@ -1409,12 +1409,13 @@
 .templates-grid .invitation-words h2 {
   font-size: 28px;
 }
-:is(.templates-grid, .preview-panel) .invitation-photo {
+:is(.templates-grid, .preview-panel, [data-slot="dialog-content"]) .invitation-photo {
   height: 100%;
   min-height: 0;
   object-fit: cover;
+  contain: size;
 }
-:is(.templates-grid, .preview-panel) .invitation-words {
+:is(.templates-grid, .preview-panel, [data-slot="dialog-content"]) .invitation-words {
   justify-content: center;
 }
 .notification-list {
