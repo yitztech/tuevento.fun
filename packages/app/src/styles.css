@@ -1403,7 +1403,11 @@
   grid-template-rows: 1fr 1fr;
 }
 .templates-grid .invitation-art {
-  min-height: 480px;
+  height: 560px;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.templates-grid .invitation-words h2 {
+  font-size: 28px;
 }
 :is(.templates-grid, .preview-panel) .invitation-photo {
   height: 100%;
@@ -3788,9 +3792,6 @@
   .templates-grid {
     grid-template-columns: 1fr;
     gap: 23px;
-  }
-  .templates-grid .invitation-words h2 {
-    font-size: 35px;
   }
   .template-caption h2 {
     font-size: 22px;
