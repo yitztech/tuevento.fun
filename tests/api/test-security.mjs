@@ -508,6 +508,8 @@ try {
       ["POST", `/events/${id}/postcard/versions/${otro}/restore`], ["POST", `/events/${id}/postcard/images`], ["DELETE", `/events/${id}/postcard/images/${otro}`],
       ["GET", `/events/${id}/invitations`], ["POST", `/events/${id}/invitations`],
       ["PUT", `/events/${id}/invitations/${invitacion.id}`], ["DELETE", `/events/${id}/invitations/${invitacion.id}`],
+      ["GET", "/postcard-designs"], ["POST", "/postcard-designs"], ["GET", `/postcard-designs/${otro}`], ["PUT", `/postcard-designs/${otro}`], ["DELETE", `/postcard-designs/${otro}`],
+      ["POST", `/postcard-designs/${otro}/images`], ["DELETE", `/postcard-designs/${otro}/images/${otro}`],
       ["GET", "/notifications"], ["POST", "/notifications/read"],
     ];
     for (const [method, path] of rutas) {

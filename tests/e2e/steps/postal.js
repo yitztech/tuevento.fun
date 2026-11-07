@@ -64,7 +64,7 @@ When("guardo la postal", async ({ page }) => {
   // Se espera la respuesta del guardado: el paso siguiente sale de la página y, en WebKit,
   // a veces lo hacía antes de que el PUT llegase a la API
   const guardado = page.waitForResponse(
-    (r) => r.request().method() === "PUT" && /\/api\/events\/[^/]+\/postcard$/.test(new URL(r.url()).pathname),
+    (r) => r.request().method() === "PUT" && /\/api\/(events\/[^/]+\/postcard|postcard-designs\/[^/]+)$/.test(new URL(r.url()).pathname),
   );
   await page.getByRole("button", { name: "Guardar postal", exact: true }).click();
   expect((await guardado).ok()).toBe(true);
@@ -81,4 +81,33 @@ Then("la invitación muestra la postal con el texto {string}", async ({ page }, 
 Then("la postal cabe sin desbordamiento horizontal", async ({ page }) => {
   await expect(page.locator(".postcard-canvas")).toBeVisible();
   await sinDesbordamiento(page);
+});
+
+Given("que abro los diseños con una cuenta nueva", async ({ page, ctx }) => {
+  ctx.cuenta = nuevaCuenta();
+  const registro = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: ctx.cuenta });
+  expect(registro.status()).toBe(201);
+  await page.goto("/disenos");
+  await expect(page.getByRole("button", { name: "Diseñar mi invitación" })).toBeEnabled();
+});
+
+When("vuelvo a los diseños", async ({ page }) => {
+  await page.getByRole("link", { name: "Volver a los diseños" }).click();
+  await expect(page).toHaveURL(/\/disenos$/);
+});
+
+const misPostales = (page) => page.getByRole("region", { name: "Mis postales" });
+
+Then("veo {int} postal en Mis postales", async ({ page }, cuantas) => {
+  await expect(misPostales(page).getByRole("listitem")).toHaveCount(cuantas);
+});
+
+Then("no veo Mis postales", async ({ page }) => {
+  await expect(page.getByRole("button", { name: "Diseñar mi invitación" })).toBeVisible();
+  await expect(misPostales(page)).toHaveCount(0);
+});
+
+When("borro la primera postal de Mis postales", async ({ page }) => {
+  await misPostales(page).getByRole("button", { name: /^Borrar la postal/ }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Borrar" }).click();
 });

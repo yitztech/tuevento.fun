@@ -1,8 +1,12 @@
 import { expect } from "@playwright/test";
 import { When, Then } from "./fixtures.js";
 
-When("elijo la pestaña {string} del perfil", async ({ page }, nombre) => {
-  await page.getByRole("tab", { name: nombre, exact: true }).click();
+Then("veo la sección {string} del perfil", async ({ page }, nombre) => {
+  await expect(page.getByRole("heading", { name: nombre, exact: true })).toBeVisible();
+});
+
+Then("no hay pestañas en el perfil", async ({ page }) => {
+  await expect(page.getByRole("tab")).toHaveCount(0);
 });
 
 When("elijo editar mi información", async ({ ui }) => {

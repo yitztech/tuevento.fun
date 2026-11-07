@@ -88,7 +88,8 @@ function ColorChoices({ value, onPick }: { value: string; onPick: (color: string
   );
 }
 
-export function PostcardEditor() {
+/** Editor de la postal de un evento o, con `own`, de una postal propia sin evento (`/disenos/:id`). */
+export function PostcardEditor({ own = false }: { own?: boolean }) {
   const { id = "" } = useParams();
   const { api, toast, online } = useApp();
   const [event, setEvent] = useState<Event | null>(null);
@@ -100,7 +101,7 @@ export function PostcardEditor() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const applyPostcard = (postcard: Postcard) => {
+  const applyPostcard = (postcard: Pick<Postcard, "design" | "photos">) => {
     setDesign(postcard.design);
     setSaved(postcard.design);
     setPhotos(postcard.photos);
@@ -110,21 +111,22 @@ export function PostcardEditor() {
 
   useEffect(() => {
     let alive = true;
-    Promise.all([api.event(id), api.postcard(id), api.postcardVersions(id)])
-      .then(([loadedEvent, postcard, loadedVersions]) => {
-        if (!alive) return;
-        setEvent(loadedEvent);
-        applyPostcard(postcard);
-        setVersions(loadedVersions);
-      })
-      .catch((e) => alive && setError(errorText(e)));
+    const load = own
+      ? api.postcardDesign(id).then((postcard) => alive && applyPostcard(postcard))
+      : Promise.all([api.event(id), api.postcard(id), api.postcardVersions(id)]).then(([loadedEvent, postcard, loadedVersions]) => {
+          if (!alive) return;
+          setEvent(loadedEvent);
+          applyPostcard(postcard);
+          setVersions(loadedVersions);
+        });
+    load.catch((e) => alive && setError(errorText(e)));
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, own]);
 
-  if (error) return <Container><ErrorBox message={error} /></Container>;
-  if (!event || !design || !saved) return <Container><p role="status">{tr("common.loading")}</p></Container>;
+  if (!design && error) return <Container><ErrorBox message={error} /></Container>;
+  if ((!own && !event) || !design || !saved) return <Container><p role="status">{tr("common.loading")}</p></Container>;
 
   const dirty = JSON.stringify(design) !== JSON.stringify(saved);
   const selectedText = selected?.kind === "text" ? design.texts[selected.index] : undefined;
@@ -144,9 +146,11 @@ export function PostcardEditor() {
   };
   const save = () =>
     run(async () => {
-      applyPostcard(await api.savePostcard(id, design));
-      await loadVersions();
-      toast(tr("postcard.saved"));
+      const completeDesign = { ...design, texts: design.texts.filter((text) => text.content.trim()) };
+      applyPostcard(await (own ? api.savePostcardDesign(id, completeDesign) : api.savePostcard(id, completeDesign)));
+      setSelected(null);
+      if (!own) await loadVersions();
+      toast(own ? tr("postcard.savedToDesigns") : tr("postcard.saved"));
     });
   const restore = (version: PostcardVersion) =>
     run(async () => {
@@ -161,7 +165,8 @@ export function PostcardEditor() {
     if (!imageTypes.includes(file.type)) return setError(tr("errors.usePngJpgWebp"));
     if (file.size > postcardLimits.photoBytes) return setError(tr("errors.imageMustSmallerThan"));
     run(async () => {
-      const uploaded = await api.uploadPostcardPhoto(id, await readAsDataUrl(file));
+      const dataUrl = await readAsDataUrl(file);
+      const uploaded = await (own ? api.uploadDesignPhoto(id, dataUrl) : api.uploadPostcardPhoto(id, dataUrl));
       let next = design;
       // Con sitio libre en la postal, la foto entra como capa; si no, queda disponible como fondo.
       if (photoLayers < postcardLimits.photos) {
@@ -176,7 +181,7 @@ export function PostcardEditor() {
   };
   const removePhoto = (photo: PostcardPhoto) =>
     run(async () => {
-      const updated = await api.removePostcardPhoto(id, photo.id);
+      const updated = await (own ? api.removeDesignPhoto(id, photo.id) : api.removePostcardPhoto(id, photo.id));
       applyPostcard(updated);
       setSelected(null);
     });
@@ -201,7 +206,7 @@ export function PostcardEditor() {
   const addText = () => {
     setDesign({
       ...design,
-      texts: [...design.texts, { content: tr("postcard.defaultText"), font: "manrope", size: 64, color: "#1f2a37", align: "center", x: 10, y: 40, width: 80 }],
+      texts: [...design.texts, { content: "", font: "manrope", size: 64, color: "#1f2a37", align: "center", x: 10, y: 40, width: 80 }],
     });
     setSelected({ kind: "text", index: design.texts.length });
   };
@@ -219,9 +224,9 @@ export function PostcardEditor() {
   return (
     <main className="postcard-editor">
       <Container>
-        <Link className="text-link" to={`/eventos/${id}`}>
+        <Link className="text-link" to={own ? "/disenos" : `/eventos/${id}`}>
           <ArrowLeft size={16} />
-          {tr("postcard.back")}
+          {own ? tr("postcard.backToDesigns") : tr("postcard.back")}
         </Link>
         <h1>{tr("postcard.title")}</h1>
         <div className="postcard-layout">
@@ -337,6 +342,7 @@ export function PostcardEditor() {
                     <Textarea
                       rows={3}
                       maxLength={accountLimits.postcardText}
+                      placeholder={tr("postcard.defaultText")}
                       value={selectedText.content}
                       onChange={(e) => updateText({ content: e.target.value })}
                     />
@@ -439,7 +445,7 @@ export function PostcardEditor() {
               )}
             </fieldset>
 
-            <fieldset className="postcard-panel">
+            {event && <fieldset className="postcard-panel">
               <legend>{tr("postcard.versions")}</legend>
               <p className="field-hint">{tr("postcard.versionsHint", { max: postcardLimits.versions })}</p>
               {versions.length === 0 && <p>{tr("postcard.noVersions")}</p>}
@@ -464,7 +470,7 @@ export function PostcardEditor() {
                   </li>
                 ))}
               </ol>
-            </fieldset>
+            </fieldset>}
           </section>
         </div>
       </Container>

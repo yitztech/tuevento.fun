@@ -103,7 +103,7 @@ for page in $pages; do
   case " $(printf '%s ' $localized_private)" in *" $page "*) ;; *) public_pages="$public_pages @$page" ;; esac
 done
 # Páginas privadas o de sesión: se sirven con X-Robots-Tag: noindex, nunca con Disallow en robots.txt,
-# que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/…, /app-link/… y
+# que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /disenos/<postal>, /i/…, /e/…, /app-link/… y
 # las landings /<código>/<dirección>
 private_pages='confirmar-correo|baja-de-avisos|bienvenida|app|events|negocio|negocio/servicios|negocio/fotos|pago|conectar-app|conectar-asistente|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
 
@@ -274,6 +274,7 @@ conf=/etc/nginx/conf.d/sites.conf
   done
   echo "    \"~^/($private_pages)\$\" private;"
   echo "    \"~^/eventos(/.*)?\$\" private;"
+  echo "    \"~^/disenos/[0-9a-f-]+\$\" private;"
   echo "    \"~^/(i|e|app-link)/.+\$\" private;"
   # Landing de cada evento: /<código de la cuenta>/<dirección> (landingRoute en packages/contracts)
   echo "    \"~^/[a-z0-9]{8}/[a-z0-9]+(-[a-z0-9]+)*\$\" private;"

@@ -47,7 +47,7 @@ When("entro con mi cuenta para conectar el asistente", async ({ ui, ctx, request
   const clave = randomBytes(16).toString("hex");
   const alta = await registrar(request, "/api/auth/register", {
     headers: { "x-tuevento-client": "1" },
-    data: { firstName: "Ana", lastName: "Prueba", email: correo, phone: "+527770000000", password: clave },
+    data: { firstName: "Ana", lastName: "Prueba", email: correo, phone: "+527770000000", password: clave, accountType: "organizer" },
   });
   expect(alta.status()).toBe(201);
   ctx.correoAsistente = correo;
@@ -72,6 +72,7 @@ Given("que tengo sesión en el dominio de {string}", async ({ page }, idioma) =>
       lastName: "Prueba",
       email: `asistente-${randomBytes(6).toString("hex")}@example.invalid`,
       phone: "+527770000000",
+      accountType: "organizer",
       password: randomBytes(16).toString("hex"),
     },
   });

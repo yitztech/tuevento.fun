@@ -33,7 +33,13 @@ import {
   EyeOff,
   ShieldCheck,
   Heart,
+  Lock,
+  Mail,
   MailCheck,
+  MonitorSmartphone,
+  Pencil,
+  UserRound,
+  type LucideIcon,
 } from "lucide-react";
 import { useApp, errorText } from "./context";
 import { NeedsConnection } from "./offline";
@@ -42,7 +48,6 @@ import { AuthLegalNotice } from "./legal";
 import { PhoneField } from "./phone-field";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { SiteAuthShell, type AuthSide } from "./ui/site/auth-shell";
 function usePostAuthTarget() {
   const [query] = useSearchParams();
@@ -539,6 +544,22 @@ const changePasswordForm = changePasswordSchema
   });
 type ChangePasswordForm = z.infer<typeof changePasswordForm>;
 
+/** Cabecera de una tarjeta del perfil: icono, título y una línea de ayuda. */
+function CardHeading({ icon: Icon, id, title, text, small }: { icon: LucideIcon; id?: string; title: string; text: string; small?: boolean }) {
+  const Title = small ? "h3" : "h2";
+  return (
+    <div className="profile-card-heading">
+      <span aria-hidden className="profile-card-icon">
+        <Icon strokeWidth={1.8} />
+      </span>
+      <div>
+        <Title id={id}>{title}</Title>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
+}
+
 /** Seguridad de la cuenta: cambiar la contraseña y cerrar la sesión en todos los dispositivos. */
 function SecurityPanel() {
   const { api, user, setUser, signedOut, toast, online } = useApp(),
@@ -576,38 +597,44 @@ function SecurityPanel() {
     { name: "confirmPassword", label: tr("account.repeatPassword"), autoComplete: "new-password" },
   ] as const;
   return (
-    <section className="form-panel security-panel">
-      <h2>{tr("account.securityTitle")}</h2>
+    <section className="profile-card" aria-labelledby="profile-security-title">
+      <span aria-hidden className="profile-security-art">
+        <ShieldCheck strokeWidth={1.4} />
+        <Lock strokeWidth={1.8} />
+      </span>
+      <CardHeading icon={ShieldCheck} id="profile-security-title" title={tr("account.securityTitle")} text={tr("account.securityHint")} />
       {user?.emailLogin && (
-        <form onSubmit={submit} noValidate>
-          <h3>{tr("account.changePassword")}</h3>
-          <p>{tr("account.savingSignOutOther")}</p>
-          {fields.map(({ name, label, autoComplete }) => (
-            <Field
-              key={name}
-              label={label}
-              error={form.formState.errors[name]?.message}
-              hint={name === "newPassword" ? tr("account.least10CharactersUse") : undefined}
-            >
-              <span className="password-input">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  autoComplete={autoComplete}
-                  maxLength={accountLimits.password}
-                  {...form.register(name)}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? tr("account.hidePassword") : tr("account.showPassword")}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </Button>
-              </span>
-            </Field>
-          ))}
+        <form onSubmit={submit} className="profile-subcard" noValidate>
+          <CardHeading icon={Lock} small title={tr("account.changePassword")} text={tr("account.savingSignOutOther")} />
+          <div className="profile-password-grid">
+            {fields.map(({ name, label, autoComplete }) => (
+              <Field
+                key={name}
+                label={label}
+                error={form.formState.errors[name]?.message}
+                hint={name === "newPassword" ? tr("account.least10CharactersUse") : undefined}
+              >
+                <span className="password-input icon-input">
+                  <Lock aria-hidden size={18} />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    autoComplete={autoComplete}
+                    maxLength={accountLimits.password}
+                    {...form.register(name)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? tr("account.hidePassword") : tr("account.showPassword")}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </Button>
+                </span>
+              </Field>
+            ))}
+          </div>
           <div className="form-actions">
             <Button disabled={form.formState.isSubmitting || !online}>
               {form.formState.isSubmitting ? tr("common.saving") : tr("account.changePassword")}
@@ -615,15 +642,14 @@ function SecurityPanel() {
           </div>
         </form>
       )}
-      <h3>{tr("account.signOutEverywhere")}</h3>
-      <p>{tr("account.signOutEverywhereHint")}</p>
-      {error && <ErrorBox message={error} />}
-      <NeedsConnection online={online} />
-      <div className="form-actions">
+      <div className="profile-signout">
+        <CardHeading icon={MonitorSmartphone} small title={tr("account.signOutEverywhere")} text={tr("account.signOutEverywhereHint")} />
         <Button type="button" variant="outline" disabled={leaving || !online} onClick={() => void signOutEverywhere()}>
           {tr("account.signOutEverywhere")}
         </Button>
       </div>
+      {error && <ErrorBox message={error} />}
+      <NeedsConnection online={online} />
     </section>
   );
 }
@@ -663,52 +689,51 @@ export function ProfilePage() {
           <p>{tr("account.howGuestsSee")}</p>
         </div>
       </div>
-      <Tabs defaultValue="information" className="profile-tabs">
-        <TabsList aria-label={tr("app.profile")}>
-          <TabsTrigger value="information">{tr("account.yourInformation")}</TabsTrigger>
-          {!user.isDemo && <TabsTrigger value="security">{tr("account.securityTitle")}</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="information">
-      <div className="profile-layout">
+      <div className="profile-page">
         <aside className="profile-identity">
           <Avatar user={user} size="big" />
-          <h2>
-            {user.firstName} {user.lastName}
-          </h2>
-          <p>
-            {user.isDemo ? tr("account.demoHost") : tr("common.host")}
-          </p>
-          <Button asChild variant="outline"><label className="upload-button">
-            <Upload size={17} />
-            {uploading ? tr("common.loadingEllipsis") : tr("account.changePhotoLogo")}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              aria-label={tr("account.changePhotoLogo")}
-              disabled={uploading || !online}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setUploading(true);
-                setError("");
-                try {
-                  setUser(await api.avatar(await readAvatar(file)));
-                  toast(tr("account.imageUpdated"));
-                } catch (error) {
-                  setError(errorText(error));
-                } finally {
-                  setUploading(false);
-                }
-              }}
-            />
-          </label></Button>
-          <small>{tr("account.jpgPngWebp2")}</small>
+          <div>
+            <h2>
+              {user.firstName} {user.lastName}
+            </h2>
+            <p>
+              {user.isDemo ? tr("account.demoHost") : tr("common.host")}
+            </p>
+          </div>
+          <div className="profile-photo">
+            <Button asChild variant="outline"><label className="upload-button">
+              <Upload size={17} />
+              {uploading ? tr("common.loadingEllipsis") : tr("account.changePhotoLogo")}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-label={tr("account.changePhotoLogo")}
+                disabled={uploading || !online}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploading(true);
+                  setError("");
+                  try {
+                    setUser(await api.avatar(await readAvatar(file)));
+                    toast(tr("account.imageUpdated"));
+                  } catch (error) {
+                    setError(errorText(error));
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+              />
+            </label></Button>
+            <small>{tr("account.jpgPngWebp2")}</small>
+          </div>
         </aside>
-        <form onSubmit={submit} className="form-panel" noValidate>
-          <div className="form-panel-heading">
-            <h2>{tr("account.yourInformation")}</h2>
+        <form onSubmit={submit} className="profile-card" aria-labelledby="profile-info-title" noValidate>
+          <div className="profile-card-top">
+            <CardHeading icon={UserRound} id="profile-info-title" title={tr("account.yourInformation")} text={tr("account.informationHint")} />
             {!editing && (
-              <Button type="button" variant="link" disabled={!online} onClick={() => setEditing(true)}>
+              <Button type="button" variant="outline" disabled={!online} onClick={() => setEditing(true)}>
+                <Pencil aria-hidden size={16} />
                 {tr("account.editInformation")}
               </Button>
             )}
@@ -718,25 +743,34 @@ export function ProfilePage() {
               label={tr("common.firstName")}
               error={form.formState.errors.firstName?.message}
             >
-              <Input
-                maxLength={accountLimits.personName}
-                readOnly={!editing}
-                {...form.register("firstName", { onChange: onlyNameChars })}
-              />
+              <span className="icon-input">
+                <UserRound aria-hidden size={18} />
+                <Input
+                  maxLength={accountLimits.personName}
+                  readOnly={!editing}
+                  {...form.register("firstName", { onChange: onlyNameChars })}
+                />
+              </span>
             </Field>
             <Field
               label={tr("common.lastName")}
               error={form.formState.errors.lastName?.message}
             >
-              <Input
-                maxLength={accountLimits.personName}
-                readOnly={!editing}
-                {...form.register("lastName", { onChange: onlyNameChars })}
-              />
+              <span className="icon-input">
+                <UserRound aria-hidden size={18} />
+                <Input
+                  maxLength={accountLimits.personName}
+                  readOnly={!editing}
+                  {...form.register("lastName", { onChange: onlyNameChars })}
+                />
+              </span>
             </Field>
           </div>
           <Field label={tr("common.email")}>
-            <Input value={user.email} readOnly type="email" />
+            <span className="icon-input profile-email">
+              <Mail aria-hidden size={18} />
+              <Input value={user.email} readOnly type="email" />
+            </span>
           </Field>
           <Controller
             control={form.control}
@@ -745,6 +779,7 @@ export function ProfilePage() {
               <PhoneField
                 label={tr("common.phone")}
                 readOnly={!editing}
+                withIcon
                 error={form.formState.errors.phone?.message}
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -775,10 +810,8 @@ export function ProfilePage() {
             </div>
           )}
         </form>
+        {!user.isDemo && <SecurityPanel />}
       </div>
-        </TabsContent>
-        {!user.isDemo && <TabsContent value="security"><SecurityPanel /></TabsContent>}
-      </Tabs>
     </>
   );
 }

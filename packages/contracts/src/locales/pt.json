@@ -72,7 +72,9 @@
     "chooseJpgPngWebp": "Escolha uma imagem JPG, PNG ou WebP.",
     "couldntReadImage": "Não foi possível ler a imagem.",
     "agencyTitle": "Sou uma agência organizadora de eventos",
-    "agencyHint": "Você organiza eventos para seus clientes: convidados, respostas e designs em um só lugar."
+    "agencyHint": "Você organiza eventos para seus clientes: convidados, respostas e designs em um só lugar.",
+    "informationHint": "Mantenha seus dados atualizados para uma experiência melhor.",
+    "securityHint": "Proteja sua conta e controle o acesso às suas sessões."
   },
   "app": {
     "userMenu": "Menu do usuário",
@@ -171,7 +173,6 @@
     "designOwnTitle": "Crie seu convite",
     "designOwnDescription": "Personalize o fundo, adicione suas fotos e escreva sua mensagem.",
     "designOwnAction": "Criar meu convite",
-    "designOwnChooseEvent": "Escolha um evento",
     "addIndividualFamilyInvitations": "Dentro do evento, adicione convites individuais ou familiares. Cada integrante tem nome, classificação como adulto ou criança e notas privadas para você. As notas não aparecem no convite público.",
     "beingTogetherWhatMatters": "O importante é estar juntos.",
     "celebrateSimpleThings": "Celebremos o simples",
@@ -240,7 +241,13 @@
     "whenSomeoneRepliesYoull": "Quando alguém responder, você ficará sabendo aqui primeiro.",
     "youreAllCaught": "Tudo em dia",
     "waysSayWant": "Muitos jeitos de dizer “quero você lá”. Escolha o seu.",
-    "designsCelebrate": "{{count}} modelos para celebrar"
+    "designsCelebrate": "{{count}} modelos para celebrar",
+    "myPostcards": "Meus cartões",
+    "editPostcard": "Editar o cartão salvo em {{date}}",
+    "postcardSavedOn": "Salvo em {{date}}",
+    "deletePostcard": "Excluir o cartão salvo em {{date}}",
+    "confirmDeletePostcard": "Excluir este cartão? Não dá para desfazer.",
+    "postcardDeleted": "Cartão excluído."
   },
   "downloads": {
     "androidNote": "Baixe o APK neste site enquanto o app não chega ao Google Play.",
@@ -333,7 +340,8 @@
     "phoneRequired": "Primeiro adicione seu telefone para continuar.",
     "phoneAlreadyAdded": "Seu telefone já está salvo.",
     "currentPasswordIncorrect": "A senha atual não está correta.",
-    "passwordNotSet": "Sua conta entra com o Google e não tem senha."
+    "passwordNotSet": "Sua conta entra com o Google e não tem senha.",
+    "postcardDesignLimit": "Você atingiu o limite de cartões. Exclua um para criar outro."
   },
   "events": {
     "actions": "Ações",
@@ -595,7 +603,9 @@
     "shadowColor": "Cor da sombra",
     "shadowBlur": "Desfoque",
     "shadowOffsetX": "Deslocamento horizontal",
-    "shadowOffsetY": "Deslocamento vertical"
+    "shadowOffsetY": "Deslocamento vertical",
+    "backToDesigns": "Voltar aos designs",
+    "savedToDesigns": "Cartão salvo em Meus cartões."
   },
   "legal": {
     "acceptOnRegister": "Ao criar sua conta, você aceita os <terms>Termos de uso</terms> e a <privacy>Política de privacidade</privacy>.",

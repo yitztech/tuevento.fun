@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { accountLimits, phoneLimits, type Locale } from "@tuevento/contracts";
 import { formatLocale, getLocale, tr, trMessage } from "./i18n";
+import { Phone } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { NativeSelect } from "./ui/native-select";
@@ -80,10 +81,12 @@ function SelectPhoneField({
   onChange,
   placeholder,
   readOnly,
+  withIcon,
 }: {
   label: string;
   placeholder?: string;
   readOnly?: boolean;
+  withIcon?: boolean;
   error?: string;
   value: string;
   onChange: (value: string) => void;
@@ -122,23 +125,26 @@ function SelectPhoneField({
             </option>
           ))}
         </NativeSelect>
-        <Input
-          id={id}
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel-national"
-          placeholder={placeholder}
-          readOnly={readOnly}
-          maxLength={accountLimits.phone}
-          value={parts.national}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : undefined}
-          onChange={(event) => {
-            const raw = event.target.value.replace(onlyPhoneChars, "");
-            // Si el usuario pega el número con su prefijo ("+52 55…"), el país cambia solo.
-            update(parsePhone(raw, parts.iso));
-          }}
-        />
+        <span className={withIcon ? "icon-input" : "contents"}>
+          {withIcon && <Phone aria-hidden size={18} />}
+          <Input
+            id={id}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
+            placeholder={placeholder}
+            readOnly={readOnly}
+            maxLength={accountLimits.phone}
+            value={parts.national}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${id}-error` : undefined}
+            onChange={(event) => {
+              const raw = event.target.value.replace(onlyPhoneChars, "");
+              // Si el usuario pega el número con su prefijo ("+52 55…"), el país cambia solo.
+              update(parsePhone(raw, parts.iso));
+            }}
+          />
+        </span>
       </div>
       {error && (
         <small id={`${id}-error`} className="field-error" role="alert">
@@ -149,9 +155,15 @@ function SelectPhoneField({
   );
 }
 
-/** Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. */
+/**
+ * Prefijo escrito a mano: "+34 612…" se separa en código (solo dígitos) y número. Un prefijo conocido
+ * se separa en cuanto está completo; uno desconocido, al llegar un separador. Así, escrito tecla a
+ * tecla, "+5" sigue en el campo hasta completar "+52".
+ */
 function parseManual(value: string, fallbackCode = "") {
-  const match = /^\+(\d{1,3})[\s()-]*(.*)$/.exec(value);
+  const known = longestDialFirst.find(([, dial]) => value.startsWith(dial));
+  if (known) return { code: known[1].slice(1), national: value.slice(known[1].length).replace(/^[\s()-]+/, "") };
+  const match = /^\+(\d{1,3})[\s()-]+(.*)$/.exec(value);
   return match ? { code: match[1], national: match[2] } : { code: fallbackCode, national: value };
 }
 /** Sin código escrito, el teléfono lleva el del idioma, que el campo muestra como ejemplo. */
@@ -222,7 +234,7 @@ function ManualPhoneField({
           onChange={(event) => {
             const raw = event.target.value.replace(onlyPhoneChars, "");
             // Si pega el número con su prefijo ("+52 55…"), el código se separa solo.
-            update(raw.startsWith("+") ? parseManual(raw, parts.code) : { ...parts, national: raw });
+            update(raw.startsWith("+") ? parseManual(raw, parts.code) : { ...parts, national: raw.trimStart() });
           }}
         />
       </div>
@@ -247,6 +259,8 @@ type PhoneFieldProps = {
   manualCode?: boolean;
   /** Solo se muestra: el campo no se puede editar (solo con el selector de país). */
   readOnly?: boolean;
+  /** Icono de teléfono dentro del número (solo con el selector de país). */
+  withIcon?: boolean;
 };
 
 export function PhoneField({ manualCode, ...props }: PhoneFieldProps) {

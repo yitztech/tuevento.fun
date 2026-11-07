@@ -415,6 +415,16 @@ export class OrganizerController {
   ) {
     return this.events.removeEvent(req.user.id, id);
   }
+  @Get("postcard-designs") listPostcardDesigns(@Req() req: AuthedRequest) { return this.postcards.listDesigns(req.user.id); }
+  @Post("postcard-designs") createPostcardDesign(@Req() req: AuthedRequest) { return this.postcards.createDesign(req.user.id); }
+  @Get("postcard-designs/:id") getPostcardDesign(@Req() req: AuthedRequest, @Param("id", ParseUUIDPipe) id: string) { return this.postcards.getDesign(req.user.id, id); }
+  @Put("postcard-designs/:id") savePostcardDesign(@Req() req: AuthedRequest, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) { return this.postcards.saveDesign(req.user.id, id, parse(postcardSchema, body, req)); }
+  @Delete("postcard-designs/:id") removePostcardDesign(@Req() req: AuthedRequest, @Param("id", ParseUUIDPipe) id: string) { return this.postcards.removeDesign(req.user.id, id); }
+  @Post("postcard-designs/:id/images") uploadPostcardDesignImage(@Req() req: AuthedRequest, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    const data = parse(z.strictObject({ dataUrl: z.string().max(2800000).regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "errors.usePngJpgWebp") }), body, req);
+    return this.postcards.uploadDesignImage(req.user.id, id, data.dataUrl);
+  }
+  @Delete("postcard-designs/:id/images/:imageId") removePostcardDesignImage(@Req() req: AuthedRequest, @Param("id", ParseUUIDPipe) id: string, @Param("imageId", ParseUUIDPipe) imageId: string) { return this.postcards.removeDesignImage(req.user.id, id, imageId); }
   @Get("events/:id/postcard") postcard(
     @Req() req: AuthedRequest,
     @Param("id", ParseUUIDPipe) id: string,

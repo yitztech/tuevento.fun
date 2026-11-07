@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, MailCheck } from "lucide-react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { AccountType } from "@tuevento/contracts";
+import type { AccountType, User } from "@tuevento/contracts";
 import { accountTypes, addPhoneSchema, validationOptions } from "@tuevento/contracts";
 import { getLocale, tr } from "./i18n";
 import { errorText, useApp } from "./context";
@@ -91,11 +91,29 @@ const typeText = {
   agency: () => ({ title: tr("account.agencyTitle"), hint: tr("account.agencyHint") }),
 } satisfies Record<AccountType, () => { title: string; hint: string }>;
 
-/** Segundo paso, con el correo ya confirmado: cada tipo de cuenta sigue a su bienvenida. */
-export function ChooseAccountType() {
-  const { api, setUser, online } = useApp(),
+/**
+ * Último paso de una cuenta nueva. Conectar una app o un asistente es un paso en curso y se sigue ahí;
+ * si no, la cuenta se actualiza ya en `/bienvenida`: antes, un proveedor caería en su ruta comodín.
+ */
+function useFinishOnboarding() {
+  const { setUser } = useApp(),
     { pathname } = useLocation(),
     navigate = useNavigate(),
+    [pending, setPending] = useState<User | null>(null);
+  useEffect(() => {
+    if (pending && pathname === "/bienvenida") setUser(pending);
+  }, [pending, pathname]);
+  return (updated: User) => {
+    if (pathname.startsWith("/conectar-")) return setUser(updated);
+    setPending(updated);
+    navigate("/bienvenida", { replace: true });
+  };
+}
+
+/** Segundo paso, con el correo ya confirmado: cada tipo de cuenta sigue a su bienvenida. */
+export function ChooseAccountType() {
+  const { api, online } = useApp(),
+    finish = useFinishOnboarding(),
     [type, setType] = useState<AccountType | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -105,10 +123,7 @@ export function ChooseAccountType() {
     setBusy(true);
     setError("");
     try {
-      const updated = await api.chooseAccountType(type);
-      // Conectar una app o un asistente es un paso en curso: se sigue ahí
-      if (!pathname.startsWith("/conectar-")) navigate("/bienvenida", { replace: true });
-      setUser(updated);
+      finish(await api.chooseAccountType(type));
     } catch (e) {
       setError(errorText(e));
       setBusy(false);
@@ -153,9 +168,8 @@ export function ChooseAccountType() {
 
 /** Registro con Google, tras elegir el tipo: Google no da el teléfono y aquí se pide, válido. */
 export function AddPhone() {
-  const { api, setUser, online } = useApp(),
-    { pathname } = useLocation(),
-    navigate = useNavigate(),
+  const { api, online } = useApp(),
+    finish = useFinishOnboarding(),
     [error, setError] = useState("");
   const form = useForm<{ phone: string }>({
     resolver: zodResolver(addPhoneSchema, validationOptions(getLocale())) as Resolver<{ phone: string }>,
@@ -164,10 +178,7 @@ export function AddPhone() {
   const submit = form.handleSubmit(async (data) => {
     setError("");
     try {
-      const updated = await api.addPhone(data.phone);
-      // Conectar una app o un asistente es un paso en curso: se sigue ahí
-      if (!pathname.startsWith("/conectar-")) navigate("/bienvenida", { replace: true });
-      setUser(updated);
+      finish(await api.addPhone(data.phone));
     } catch (e) {
       setError(errorText(e));
     }

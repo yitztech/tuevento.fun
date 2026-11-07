@@ -21,7 +21,7 @@ test("Las migraciones se aplican en orden desde una base vacía, como el rol api
   const aplicadas = (await db.query("SELECT name FROM schema_migrations ORDER BY name")).rows.map((r) => r.name);
   assert.deepEqual(aplicadas, migraciones);
   const tablas = (await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1")).rows.map((r) => r.tablename);
-  assert.deepEqual(tablas, ["activity", "admin_audit_log", "app_releases", "coupon_redemptions", "coupons", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_oauth_records", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "rate_limits", "schema_migrations", "sessions", "site_palette_settings", "sync_clock", "sync_tombstones", "trusted_devices", "users"]);
+  assert.deepEqual(tablas, ["activity", "admin_audit_log", "app_releases", "coupon_redemptions", "coupons", "email_verifications", "event_access", "event_change_notices", "event_notice_batches", "event_payments", "events", "geo_cache", "idempotency_keys", "invitations", "mail_sends", "mail_suppressions", "mcp_oauth_records", "mcp_tokens", "members", "mobile_auth_codes", "newsletter_subscribers", "notifications", "password_resets", "postcard_images", "postcard_versions", "postcards", "provider_categories", "provider_deleted_slugs", "provider_images", "provider_profiles", "provider_search", "provider_services", "provider_slug_history", "rate_limits", "schema_migrations", "sessions", "site_palette_settings", "sync_clock", "sync_tombstones", "trusted_devices", "user_postcard_images", "user_postcards", "users"]);
 });
 
 test("El correo electrónico es el identificador: users no tiene nombre de usuario", async () => {
@@ -158,6 +158,15 @@ test("El rol api no tiene privilegios de administrador (en el servidor real)", a
   assert.equal(await codigoError(() => db.query("CREATE DATABASE intruso")), PERMISO_DENEGADO);
   assert.equal(await codigoError(() => db.query("SELECT rolpassword FROM pg_authid")), PERMISO_DENEGADO);
   assert.equal(await codigoError(() => db.query("COPY users TO PROGRAM 'id'")), PERMISO_DENEGADO);
+});
+
+test("Postal propia: el diseño tiene tamaño acotado y se borra con su cuenta, con sus fotos", async () => {
+  const dueno = await usuario(db);
+  const postal = await uno("INSERT INTO user_postcards(id,user_id,design) VALUES(gen_random_uuid(),$1,'{}') RETURNING id", [dueno]);
+  await db.query("INSERT INTO user_postcard_images(id,postcard_id) VALUES(gen_random_uuid(),$1)", [postal.id]);
+  assert.equal(await codigoError(() => db.query("UPDATE user_postcards SET design=$2 WHERE id=$1", [postal.id, JSON.stringify({ texto: "x".repeat(20000) })])), CHECK_VIOLATION);
+  await db.query("DELETE FROM users WHERE id=$1", [dueno]);
+  assert.equal((await uno("SELECT count(*)::int AS n FROM user_postcard_images WHERE postcard_id=$1", [postal.id])).n, 0);
 });
 
 test("Postal: el diseño tiene tamaño acotado y se borra con su evento", async () => {

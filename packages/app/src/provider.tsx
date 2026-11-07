@@ -514,7 +514,7 @@ function ServiceEditor({ service, onClose, onSaved }: { service: ProviderService
 }
 
 /** Confirmación antes de borrar: nada se borra con un solo toque. */
-function ConfirmDelete({ text, onConfirm, onClose }: { text: string; onConfirm: () => Promise<void>; onClose: () => void }) {
+export function ConfirmDelete({ text, onConfirm, onClose }: { text: string; onConfirm: () => Promise<void>; onClose: () => void }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (

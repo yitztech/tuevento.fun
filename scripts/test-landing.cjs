@@ -2,6 +2,7 @@ const { chromium, expect } = require("@playwright/test");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { confirmationToken } = require("./confirm-email.cjs");
 const { execFileSync } = require("node:child_process");
 const target = process.env.TEST_WEB_URL || "http://localhost:5187";
 // Un idioma por dominio (ver test-browser.cjs): el inglés en el host de SITE_URL_EN.
@@ -187,10 +188,26 @@ fs.mkdirSync(artifacts, { recursive: true });
       .fill("+527771234567");
     await page.getByLabel("Email address", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByLabel("Repeat password", { exact: true }).fill(password);
     await page
       .getByRole("button", { name: "Create my account", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/eventos\/nuevo\?tema=tropical$/);
+    await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
+    const confirmed = page.waitForResponse((r) => r.url().endsWith("/api/auth/email/verify"));
+    await page.goto(`${targetEn}/confirmar-correo?token=${await confirmationToken(email)}`);
+    await confirmed;
+    await page.goto(targetEn + "/events");
+    await page.getByRole("radio").first().check();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect(page).toHaveURL(/\/bienvenida$/);
+    await page.goto(targetEn + "/eventos/nuevo?tema=tropical");
+    const nextStep = () => page.getByRole("button", { name: "Next", exact: true }).click();
+    await page.getByLabel("Event name", { exact: true }).fill("Landing event");
+    await page.getByLabel("Date and time", { exact: true }).fill("2027-12-20T17:00");
+    await nextStep();
+    await page.getByLabel("Where are we meeting?", { exact: true }).fill("Test garden");
+    await nextStep();
+    await nextStep();
     await expect(
       page.getByRole("button", { name: "Tropical", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -202,7 +219,7 @@ fs.mkdirSync(artifacts, { recursive: true });
     // La cuenta guarda el idioma del dominio donde se registró
     expect(created.locale).toBe("en");
     checks.push(
-      "CTA de diseño crea una cuenta real en inglés y conserva Tropical al abrir el editor",
+      "CTA de diseño crea una cuenta real en inglés y, confirmada, abre Tropical en el editor",
     );
     await page
       .getByRole("navigation", { name: "Main navigation" })

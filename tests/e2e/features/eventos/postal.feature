@@ -51,3 +51,29 @@ Característica: Postal editable por evento
     Y guardo la postal
     Y abro la invitación del evento
     Entonces la invitación muestra el fondo de color "#6b6b6b"
+
+  Escenario: Diseñar una postal propia desde los diseños la añade a Mis postales
+    Dado que abro los diseños con una cuenta nueva
+    Cuando pulso el botón "Diseñar mi invitación"
+    Y elijo el fondo de color "#1d4e6b"
+    Y añado el texto "Mi postal"
+    Y guardo la postal
+    Entonces veo el aviso "Postal guardada en Mis postales."
+    Cuando vuelvo a los diseños
+    Entonces veo 1 postal en Mis postales
+
+  Escenario: Una postal propia sin guardar no aparece en Mis postales
+    Dado que abro los diseños con una cuenta nueva
+    Cuando pulso el botón "Diseñar mi invitación"
+    Y vuelvo a los diseños
+    Entonces no veo Mis postales
+
+  Escenario: Borrar una postal propia la quita de Mis postales
+    Dado que abro los diseños con una cuenta nueva
+    Cuando pulso el botón "Diseñar mi invitación"
+    Y elijo el fondo de color "#1d4e6b"
+    Y guardo la postal
+    Y vuelvo a los diseños
+    Y borro la primera postal de Mis postales
+    Entonces veo el aviso "Postal borrada."
+    Y no veo Mis postales

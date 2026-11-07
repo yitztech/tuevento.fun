@@ -72,7 +72,9 @@
     "chooseJpgPngWebp": "Choisis une image JPG, PNG ou WebP.",
     "couldntReadImage": "Impossible de lire l’image.",
     "agencyTitle": "Je suis une agence d’organisation d’événements",
-    "agencyHint": "Tu organises des événements pour tes clients : invités, réponses et designs au même endroit."
+    "agencyHint": "Tu organises des événements pour tes clients : invités, réponses et designs au même endroit.",
+    "informationHint": "Garde tes informations à jour pour une meilleure expérience.",
+    "securityHint": "Protège ton compte et contrôle l’accès à tes sessions."
   },
   "app": {
     "userMenu": "Menu utilisateur",
@@ -171,7 +173,6 @@
     "designOwnTitle": "Créez votre invitation",
     "designOwnDescription": "Personnalisez le fond, ajoutez vos photos et écrivez votre message.",
     "designOwnAction": "Créer mon invitation",
-    "designOwnChooseEvent": "Choisissez un événement",
     "addIndividualFamilyInvitations": "Dans ton événement, ajoute des invitations individuelles ou familiales. Chaque membre a un nom, une catégorie adulte ou enfant et des notes privées pour toi. Les notes n’apparaissent jamais sur l’invitation publique.",
     "beingTogetherWhatMatters": "L’important, c’est d’être ensemble.",
     "celebrateSimpleThings": "Célébrons les choses simples",
@@ -240,7 +241,13 @@
     "whenSomeoneRepliesYoull": "Quand quelqu’un répond, tu l’apprends ici en premier.",
     "youreAllCaught": "Tout est à jour",
     "waysSayWant": "Tant de façons de dire « je veux que tu sois là ». Choisis la tienne.",
-    "designsCelebrate": "{{count}} modèles pour faire la fête"
+    "designsCelebrate": "{{count}} modèles pour faire la fête",
+    "myPostcards": "Mes cartes",
+    "editPostcard": "Modifier la carte enregistrée le {{date}}",
+    "postcardSavedOn": "Enregistrée le {{date}}",
+    "deletePostcard": "Supprimer la carte enregistrée le {{date}}",
+    "confirmDeletePostcard": "Supprimer cette carte ? C’est irréversible.",
+    "postcardDeleted": "Carte supprimée."
   },
   "downloads": {
     "androidNote": "Télécharge l’APK depuis ce site en attendant son arrivée sur Google Play.",
@@ -333,7 +340,8 @@
     "phoneRequired": "Ajoute d’abord ton numéro de téléphone pour continuer.",
     "phoneAlreadyAdded": "Ton numéro de téléphone est déjà enregistré.",
     "currentPasswordIncorrect": "Ton mot de passe actuel n’est pas correct.",
-    "passwordNotSet": "Ton compte se connecte avec Google et n’a pas de mot de passe."
+    "passwordNotSet": "Ton compte se connecte avec Google et n’a pas de mot de passe.",
+    "postcardDesignLimit": "Tu as atteint le nombre maximal de cartes. Supprimes-en une pour en créer une autre."
   },
   "events": {
     "actions": "Actions",
@@ -595,7 +603,9 @@
     "shadowColor": "Couleur de l'ombre",
     "shadowBlur": "Flou",
     "shadowOffsetX": "Décalage horizontal",
-    "shadowOffsetY": "Décalage vertical"
+    "shadowOffsetY": "Décalage vertical",
+    "backToDesigns": "Retour aux designs",
+    "savedToDesigns": "Carte enregistrée dans « Mes cartes »."
   },
   "legal": {
     "acceptOnRegister": "En créant ton compte, tu acceptes les <terms>Conditions d’utilisation</terms> et la <privacy>Politique de confidentialité</privacy>.",
