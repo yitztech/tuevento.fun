@@ -171,6 +171,10 @@
     "youreInvited": "Tu es invité"
   },
   "dashboard": {
+    "designOwnTitle": "Créez votre invitation",
+    "designOwnDescription": "Personnalisez le fond, ajoutez vos photos et écrivez votre message.",
+    "designOwnAction": "Créer mon invitation",
+    "designOwnChooseEvent": "Choisissez un événement",
     "addGuestsEachEvent": "Ajoute tes invités depuis chaque événement et retrouve-les tous ici.",
     "addIndividualFamilyInvitations": "Dans ton événement, ajoute des invitations individuelles ou familiales. Chaque membre a un nom, une catégorie adulte ou enfant et des notes privées pour toi. Les notes n’apparaissent jamais sur l’invitation publique.",
     "beingTogetherWhatMatters": "L’important, c’est d’être ensemble.",

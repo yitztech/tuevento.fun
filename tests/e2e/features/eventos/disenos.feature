@@ -7,7 +7,7 @@ Característica: Postales hermanas en móviles y tabletas
   @slow
   Esquema del escenario: El catálogo y el editor permiten usar las diez variantes nuevas
     Dado que abro el catálogo de postales con una cuenta nueva a <ancho> por <alto>
-    Entonces las dieciséis postales cargan sin desbordamiento horizontal
+    Entonces las postales del catálogo cargan sin desbordamiento horizontal
     Y puedo abrir la vista previa de cada postal hermana
     Cuando elijo una postal invernal y guardo un evento
     Entonces el evento conserva el diseño invernal al volver a editarlo

@@ -171,6 +171,10 @@
     "youreInvited": "You're invited"
   },
   "dashboard": {
+    "designOwnTitle": "Design your invitation",
+    "designOwnDescription": "Customize the background, add your photos and write your own message.",
+    "designOwnAction": "Design my invitation",
+    "designOwnChooseEvent": "Choose an event",
     "addGuestsEachEvent": "Add guests to each event and find them all here.",
     "addIndividualFamilyInvitations": "Add individual or family invitations within your event. Each member has a name, an adult or child category and private notes for you. These notes never appear on the public invitation.",
     "beingTogetherWhatMatters": "Being together is what matters.",

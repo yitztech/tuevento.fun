@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { themes, translate } from '@tuevento/contracts';
 import { Given, When, Then, nuevaCuenta, registrar } from './fixtures.js';
 
-const hermanas = themes.filter(t => 'smallImage' in t);
+const hermanas = themes.filter(t => 'smallImage' in t && !t.id.startsWith('occasion-'));
 const headers = { 'x-tuevento-client': '1' };
 
 async function sinDesbordamiento(page) {
@@ -17,9 +17,9 @@ Given('que abro el catálogo de postales con una cuenta nueva a {int} por {int}'
   await expect(page.getByRole('heading', { name: 'Invitaciones con personalidad.' })).toBeVisible();
 });
 
-Then('las dieciséis postales cargan sin desbordamiento horizontal', async ({ page }) => {
-  await expect(page.locator('.template-card')).toHaveCount(16);
-  await expect(page.getByText('16 diseños para celebrar', { exact: true })).toBeVisible();
+Then('las postales del catálogo cargan sin desbordamiento horizontal', async ({ page }) => {
+  await expect(page.locator('.template-card')).toHaveCount(themes.length);
+  await expect(page.getByText(`${themes.length} diseños para celebrar`, { exact: true })).toBeVisible();
   for (const imagen of await page.locator('.template-card img').all()) {
     await imagen.scrollIntoViewIfNeeded();
     await expect(imagen).toHaveJSProperty('complete', true);
@@ -55,7 +55,7 @@ When('elijo una postal invernal y guardo un evento', async ({ page, ctx }) => {
   await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
   const seleccion = page.locator('.theme-picker').getByRole('button', { name: 'Invernal', exact: true });
   await expect(seleccion).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.theme-choice')).toHaveCount(16);
+  await expect(page.locator('.theme-choice')).toHaveCount(themes.length);
   const respuesta = page.waitForResponse(r => r.url().endsWith('/api/events') && r.request().method() === 'POST');
   await page.locator('button[type="submit"]').click();
   const creada = await respuesta;
