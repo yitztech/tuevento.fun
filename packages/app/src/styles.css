@@ -1398,17 +1398,19 @@
   --theme-bg: #f4dfe8;
   --theme-fg: #694455;
 }
-.templates-grid .invitation-art {
+:is(.templates-grid, .preview-panel) .invitation-art {
   display: grid;
   grid-template-rows: 1fr 1fr;
+}
+.templates-grid .invitation-art {
   min-height: 480px;
 }
-.templates-grid .invitation-photo {
+:is(.templates-grid, .preview-panel) .invitation-photo {
   height: 100%;
   min-height: 0;
   object-fit: cover;
 }
-.templates-grid .invitation-words {
+:is(.templates-grid, .preview-panel) .invitation-words {
   justify-content: center;
 }
 .notification-list {
@@ -1803,9 +1805,6 @@
   border-radius: 3px;
   box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 14%, transparent);
   min-height: 455px;
-}
-.preview-panel .invitation-photo {
-  height: 150px;
 }
 .preview-panel .invitation-words {
   padding-top: 24px;
