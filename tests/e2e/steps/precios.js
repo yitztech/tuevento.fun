@@ -11,7 +11,7 @@ Given("que tengo una cuenta creada y entro a mi espacio", async ({ page }) => {
   // `page.request` comparte las cookies del navegador: la sesión queda abierta.
   const r = await registrar(page.request, "/api/auth/register", { headers: cabecera, data: nuevaCuenta() });
   expect(r.status()).toBe(201);
-  await page.goto("/app");
+  await page.goto("/events");
 });
 
 When("exploro la demostración", async ({ page }) => {

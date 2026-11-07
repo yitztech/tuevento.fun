@@ -208,12 +208,12 @@ fs.mkdirSync(artifacts, { recursive: true });
       .getByRole("navigation", { name: "Main navigation" })
       .getByRole("link", { name: "Overview", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/app$/);
+    await expect(page).toHaveURL(/\/events$/);
     await expect(
       page.getByRole("heading", { name: "Your next story starts here" }),
     ).toBeVisible();
     checks.push(
-      "Panel en /app accesible después de la captación, con cuenta vacía",
+      "Panel en /events accesible después de la captación, con cuenta vacía",
     );
     await page.goto(targetEn);
     const createFirstEventLinks = page.getByRole("link", {

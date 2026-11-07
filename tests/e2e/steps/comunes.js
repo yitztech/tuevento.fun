@@ -79,7 +79,7 @@ Then("me pide confirmar mi correo", async ({ ui }) => {
 When("confirmo mi correo con el enlace que recibí", async ({ ui, ctx }) => {
   await ui.abrir(`/confirmar-correo?token=${await tokenDeConfirmacion(ctx.cuenta.email)}`);
   await ui.esperarTexto("¡Correo confirmado!");
-  await ui.abrir("/app");
+  await ui.abrir("/events");
 });
 
 Then("me pregunta cómo voy a usar la plataforma", async ({ ui }) => {
@@ -96,7 +96,7 @@ Then("veo la bienvenida {string}", async ({ ui }, titulo) => {
 });
 
 Then("entro a mi espacio", async ({ ui }) => {
-  await ui.esperarUrl(/\/app$/);
+  await ui.esperarUrl(/\/events$/);
 });
 
 Then("el campo {string} contiene {string}", async ({ ui }, campo, valor) => {

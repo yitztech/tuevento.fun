@@ -49,7 +49,8 @@ Característica: Perfil de la cuenta
 
   @solo-web
   Escenario: Cambiar la contraseña desde el perfil
-    Cuando escribo mi contraseña actual en el campo "Contraseña actual"
+    Cuando elijo la pestaña "Seguridad" del perfil
+    Y escribo mi contraseña actual en el campo "Contraseña actual"
     Y escribo "una-contrasena-nueva" en el campo "Contraseña nueva"
     Y escribo "una-contrasena-nueva" en el campo "Repetir contraseña"
     Y pulso el botón "Cambiar contraseña"
@@ -57,7 +58,8 @@ Característica: Perfil de la cuenta
 
   @solo-web @validacion
   Escenario: La contraseña nueva debe repetirse igual
-    Cuando escribo mi contraseña actual en el campo "Contraseña actual"
+    Cuando elijo la pestaña "Seguridad" del perfil
+    Y escribo mi contraseña actual en el campo "Contraseña actual"
     Y escribo "una-contrasena-nueva" en el campo "Contraseña nueva"
     Y escribo "otra-contrasena-distinta" en el campo "Repetir contraseña"
     Y pulso el botón "Cambiar contraseña"
@@ -65,7 +67,8 @@ Característica: Perfil de la cuenta
 
   @solo-web
   Escenario: Cerrar todas las sesiones lleva a la página de acceso
-    Cuando pulso el botón "Cerrar todas las sesiones"
+    Cuando elijo la pestaña "Seguridad" del perfil
+    Y pulso el botón "Cerrar todas las sesiones"
     Entonces veo el campo "Correo electrónico"
 
   @smoke

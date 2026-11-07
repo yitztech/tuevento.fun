@@ -1,6 +1,10 @@
 import { expect } from "@playwright/test";
 import { When, Then } from "./fixtures.js";
 
+When("elijo la pestaña {string} del perfil", async ({ page }, nombre) => {
+  await page.getByRole("tab", { name: nombre, exact: true }).click();
+});
+
 When("elijo editar mi información", async ({ ui }) => {
   await ui.pulsar("Editar información");
 });

@@ -79,7 +79,7 @@ async function mailTo(address, subject) {
     await expect(page.getByText("Use at least 10 characters.")).toBeVisible();
     await page.getByLabel("New password", { exact: true }).fill(crypto.randomBytes(12).toString("hex"));
     await page.getByRole("button", { name: "Save and sign in" }).click();
-    await expect(page).toHaveURL(/\/app$/);
+    await expect(page).toHaveURL(/\/events$/);
     await expect(
       page.getByText("Done: your password changed and your other sessions were signed out."),
     ).toBeVisible();

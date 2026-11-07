@@ -101,7 +101,7 @@ public_pages="/ /descargas /registro /acceso $(printf '@%s ' $pages)"
 # Páginas privadas o de sesión: se sirven con X-Robots-Tag: noindex, nunca con Disallow en robots.txt,
 # que impide a Google ver el noindex (AGENTS.md §9.2). Más /eventos/…, /i/…, /e/…, /app-link/… y
 # las landings /<código>/<dirección>
-private_pages='confirmar-correo|baja-de-avisos|bienvenida|app|negocio|negocio/servicios|negocio/fotos|pago|conectar-app|conectar-asistente|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
+private_pages='confirmar-correo|baja-de-avisos|bienvenida|app|events|negocio|negocio/servicios|negocio/fotos|pago|conectar-app|conectar-asistente|administracion|disenos|invitados|notificaciones|perfil|ayuda|recuperar-contrasena|nueva-contrasena'
 
 conf=/etc/nginx/conf.d/sites.conf
 {
@@ -244,6 +244,10 @@ conf=/etc/nginx/conf.d/sites.conf
   echo '# Ruta anterior de una página → la actual (301 en un solo salto)'
   echo 'map "$page_lang $seo_rest" $moved_redirect {'
   echo '    default "";'
+  for lang in $pages_locales; do
+    eval "site=\$site_$lang; prefix=\$prefix_$lang"
+    echo "    \"~^$lang /app/?\$\" \"\$origin_$site$prefix/events\";"
+  done
   awk '$1 == "moved" { print $2, $3, $4 }' "$manifest" | while read -r page lang old; do
     case " $pages_locales " in *" $lang "*) ;; *) continue ;; esac
     eval "site=\$site_$lang; prefix=\$prefix_$lang"
