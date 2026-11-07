@@ -144,7 +144,9 @@ export function PostcardEditor() {
   };
   const save = () =>
     run(async () => {
-      applyPostcard(await api.savePostcard(id, design));
+      const completeDesign = { ...design, texts: design.texts.filter((text) => text.content.trim()) };
+      applyPostcard(await api.savePostcard(id, completeDesign));
+      setSelected(null);
       await loadVersions();
       toast(tr("postcard.saved"));
     });
@@ -201,7 +203,7 @@ export function PostcardEditor() {
   const addText = () => {
     setDesign({
       ...design,
-      texts: [...design.texts, { content: tr("postcard.defaultText"), font: "manrope", size: 64, color: "#1f2a37", align: "center", x: 10, y: 40, width: 80 }],
+      texts: [...design.texts, { content: "", font: "manrope", size: 64, color: "#1f2a37", align: "center", x: 10, y: 40, width: 80 }],
     });
     setSelected({ kind: "text", index: design.texts.length });
   };
@@ -337,6 +339,7 @@ export function PostcardEditor() {
                     <Textarea
                       rows={3}
                       maxLength={accountLimits.postcardText}
+                      placeholder={tr("postcard.defaultText")}
                       value={selectedText.content}
                       onChange={(e) => updateText({ content: e.target.value })}
                     />

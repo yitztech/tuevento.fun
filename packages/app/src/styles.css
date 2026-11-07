@@ -4600,6 +4600,9 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
   line-height: 1.15;
   font-weight: 700;
 }
+.postcard-canvas.is-editable .postcard-text {
+  min-height: 1em;
+}
 .postcard-canvas.is-editable .postcard-layer {
   cursor: grab;
   touch-action: none;
