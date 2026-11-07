@@ -5792,3 +5792,21 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .security-panel {
   margin-top: 24px;
 }
+
+/* Acceso al editor de una invitación desde la colección de diseños. */
+.templates-create-own {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ground);
+}
+.templates-create-own h2 { margin: 0 0 .35rem; }
+.templates-create-own p { margin: 0; color: var(--muted); }
+.templates-event-list { display: grid; gap: .75rem; }
+.templates-event-list a { height: auto; min-height: 44px; white-space: normal; overflow-wrap: anywhere; text-align: left; }

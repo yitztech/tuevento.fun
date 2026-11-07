@@ -332,6 +332,9 @@ export function EventsPage() {
 }
 export function TemplatesPage() {
   const [preview, setPreview] = useState<(typeof themes)[number] | null>(null);
+  const [chooseEvent, setChooseEvent] = useState(false);
+  const { events } = useApp();
+  const availableEvents = events.filter((event) => !event.archived && !event.cancelled);
   return (
     <>
       <div className="page-heading">
@@ -345,6 +348,19 @@ export function TemplatesPage() {
           <PaletteIcon />
           {tr("dashboard.designsCelebrate", { count: themes.length })}
         </span>
+      </div>
+      <div className="templates-create-own">
+        <div>
+          <h2>{tr("dashboard.designOwnTitle")}</h2>
+          <p>{tr("dashboard.designOwnDescription")}</p>
+        </div>
+        {availableEvents.length ? (
+          <Button type="button" onClick={() => setChooseEvent(true)}>
+            {tr("dashboard.designOwnAction")}
+          </Button>
+        ) : (
+          <Button asChild><Link to="/eventos/nuevo">{tr("dashboard.createEvent")}</Link></Button>
+        )}
       </div>
       <div className="templates-grid">
         {themes.map((t) => (
@@ -381,6 +397,17 @@ export function TemplatesPage() {
           </article>
         ))}
       </div>
+      {chooseEvent && (
+        <Modal title={tr("dashboard.designOwnChooseEvent")} onClose={() => setChooseEvent(false)}>
+          <div className="templates-event-list">
+            {availableEvents.map((event) => (
+              <Button key={event.id} asChild variant="outline">
+                <Link to={`/eventos/${event.id}/postal`}>{event.title}</Link>
+              </Button>
+            ))}
+          </div>
+        </Modal>
+      )}
       {preview && (
         <Modal title={tr(preview.name)} onClose={() => setPreview(null)}>
           <InvitationArt

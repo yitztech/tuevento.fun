@@ -170,6 +170,10 @@
     "youreInvited": "Du bist eingeladen"
   },
   "dashboard": {
+    "designOwnTitle": "Gestalte deine Einladung",
+    "designOwnDescription": "Passe den Hintergrund an, füge deine Fotos hinzu und schreibe deine eigene Nachricht.",
+    "designOwnAction": "Einladung gestalten",
+    "designOwnChooseEvent": "Veranstaltung auswählen",
     "addGuestsEachEvent": "Füge deine Gäste in jedem Event hinzu und finde sie alle hier.",
     "addIndividualFamilyInvitations": "Füge in deinem Event Einzel- oder Familieneinladungen hinzu. Jedes Mitglied hat einen Namen, die Kategorie Erwachsener oder Kind und private Notizen für dich. Die Notizen erscheinen nie in der öffentlichen Einladung.",
     "beingTogetherWhatMatters": "Was zählt, ist das Zusammensein.",

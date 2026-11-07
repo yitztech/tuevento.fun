@@ -170,6 +170,10 @@
     "youreInvited": "Você está convidado"
   },
   "dashboard": {
+    "designOwnTitle": "Crie seu convite",
+    "designOwnDescription": "Personalize o fundo, adicione suas fotos e escreva sua mensagem.",
+    "designOwnAction": "Criar meu convite",
+    "designOwnChooseEvent": "Escolha um evento",
     "addGuestsEachEvent": "Adicione seus convidados em cada evento e encontre todos aqui.",
     "addIndividualFamilyInvitations": "Dentro do evento, adicione convites individuais ou familiares. Cada integrante tem nome, classificação como adulto ou criança e notas privadas para você. As notas não aparecem no convite público.",
     "beingTogetherWhatMatters": "O importante é estar juntos.",

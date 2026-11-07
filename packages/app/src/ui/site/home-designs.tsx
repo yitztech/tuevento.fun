@@ -39,6 +39,27 @@ const themeTags: Record<SiteTheme["id"], Tag[]> = {
   sand: ["minimal"],
   wildflower: ["floral", "weddings"],
   pastel: ["kids", "minimal"],
+  "occasion-cumple-infantil-jardin": ["birthdays"],
+  "occasion-cumple-infantil-mesa": ["birthdays"],
+  "occasion-cumple-amigos-jardin": ["birthdays"],
+  "occasion-cumple-amigos-picnic": ["birthdays"],
+  "occasion-cumple-amigos-cena": ["birthdays"],
+  "occasion-infantil-jardin": ["kids"],
+  "occasion-infantil-pastel": ["kids"],
+  "occasion-infantil-picnic": ["kids"],
+  "occasion-infantil-arte": ["kids"],
+  "occasion-infantil-safari": ["kids"],
+  "occasion-infantil-arcoiris": ["kids"],
+  "occasion-bodas-jardin": ["weddings"],
+  "occasion-minimalista-mesa": ["minimal"],
+  "occasion-minimalista-lino": ["minimal"],
+  "occasion-minimalista-terraza": ["minimal"],
+  "occasion-minimalista-brindis": ["minimal"],
+  "occasion-minimalista-pastel": ["minimal"],
+  "occasion-minimalista-jardin": ["minimal"],
+  "occasion-floral-fiesta": ["floral"],
+  "occasion-elegante-cena": ["elegant"],
+  "occasion-celebracion-amigos": ["party"],
 };
 
 const themeCaptions: Partial<Record<SiteTheme["id"], MessageKey>> = {
@@ -46,30 +67,6 @@ const themeCaptions: Partial<Record<SiteTheme["id"], MessageKey>> = {
   wildflower: "site.captionWildflower",
   pastel: "site.captionPastel",
 };
-
-const inspirationPhotos: { file: string; alt: MessageKey; caption: MessageKey; tag: Tag }[] = [
-  { file: "cumple-infantil-jardin", alt: "site.birthdayPhotoGarden", caption: "site.captionBirthdayPhotoGarden", tag: "birthdays" },
-  { file: "cumple-infantil-mesa", alt: "site.birthdayPhotoKidsTable", caption: "site.captionBirthdayPhotoKidsTable", tag: "birthdays" },
-  { file: "cumple-amigos-jardin", alt: "site.birthdayPhotoFriendsGarden", caption: "site.captionBirthdayPhotoFriendsGarden", tag: "birthdays" },
-  { file: "cumple-amigos-picnic", alt: "site.birthdayPhotoPicnic", caption: "site.captionBirthdayPhotoPicnic", tag: "birthdays" },
-  { file: "cumple-amigos-cena", alt: "site.birthdayPhotoDinner", caption: "site.captionBirthdayPhotoDinner", tag: "birthdays" },
-  { file: "infantil-jardin", alt: "site.inspirationKidsGarden", caption: "site.captionInspirationKidsGarden", tag: "kids" },
-  { file: "infantil-pastel", alt: "site.inspirationKidsPastel", caption: "site.captionInspirationKidsPastel", tag: "kids" },
-  { file: "infantil-picnic", alt: "site.inspirationKidsPicnic", caption: "site.captionInspirationKidsPicnic", tag: "kids" },
-  { file: "infantil-arte", alt: "site.inspirationKidsCrafts", caption: "site.captionInspirationKidsCrafts", tag: "kids" },
-  { file: "infantil-safari", alt: "site.inspirationKidsSafari", caption: "site.captionInspirationKidsSafari", tag: "kids" },
-  { file: "infantil-arcoiris", alt: "site.inspirationKidsRainbow", caption: "site.captionInspirationKidsRainbow", tag: "kids" },
-  { file: "bodas-jardin", alt: "site.inspirationWedding", caption: "site.captionInspirationWedding", tag: "weddings" },
-  { file: "minimalista-mesa", alt: "site.inspirationMinimal", caption: "site.captionInspirationMinimal", tag: "minimal" },
-  { file: "minimalista-lino", alt: "site.inspirationMinimalLinen", caption: "site.captionInspirationMinimalLinen", tag: "minimal" },
-  { file: "minimalista-terraza", alt: "site.inspirationMinimalTerrace", caption: "site.captionInspirationMinimalTerrace", tag: "minimal" },
-  { file: "minimalista-brindis", alt: "site.inspirationMinimalToast", caption: "site.captionInspirationMinimalToast", tag: "minimal" },
-  { file: "minimalista-pastel", alt: "site.inspirationMinimalCake", caption: "site.captionInspirationMinimalCake", tag: "minimal" },
-  { file: "minimalista-jardin", alt: "site.inspirationMinimalGarden", caption: "site.captionInspirationMinimalGarden", tag: "minimal" },
-  { file: "floral-fiesta", alt: "site.inspirationFloral", caption: "site.captionInspirationFloral", tag: "floral" },
-  { file: "elegante-cena", alt: "site.inspirationElegant", caption: "site.captionInspirationElegant", tag: "elegant" },
-  { file: "celebracion-amigos", alt: "site.inspirationParty", caption: "site.captionInspirationParty", tag: "party" },
-];
 
 export function HomeDesigns() {
   const [tag, setTag] = useState<Tag>("all");
@@ -139,26 +136,7 @@ export function HomeDesigns() {
                   </button>
                 </li>
               ))}
-              {inspirationPhotos.filter((photo) => tag === "all" || photo.tag === tag).map(({ file, alt, caption }) => (
-                <li key={file} className="w-[42%] shrink-0 snap-start sm:w-[28%] md:w-[22%] lg:w-[18.5%]">
-                  <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-card shadow-site-card">
-                    <img
-                      src={`/site/photos/events/${file}-960.webp`}
-                      srcSet={`/site/photos/events/${file}-480.webp 480w, /site/photos/events/${file}-960.webp 960w`}
-                      sizes="(min-width:1024px) 16vw, 40vw"
-                      alt={tr(alt)}
-                      width={640}
-                      height={960}
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 size-full object-cover"
-                    />
-                    <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-shade/75 to-transparent px-2 pt-6 pb-2 text-center text-xs font-bold text-white">
-                      {tr(caption)}
-                    </span>
-                  </div>
-                </li>
-              ))}
+
             </ul>
             <Button variant="light" size="round" onClick={() => page(1)} aria-label={tr("site.moreDesigns")} className="absolute top-1/2 -right-3 inline-flex -translate-y-1/2 shadow-site-soft">
               <ChevronRight aria-hidden />

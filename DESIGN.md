@@ -200,9 +200,9 @@ El sistema estandariza anchos de contenedor y tarjetas compartidos con `micitaen
 
 La tarjeta de evento integra fotografía, fecha superpuesta, tema, título, lugar y barra de asistencia. Utiliza borde fino, esquinas con `--radius`, fondo `--ground` y sombra `--shadow-soft`. El hover intensifica el borde a `--line-strong` y eleva sutilmente la tarjeta, escalando la foto a 1.025 en 500 ms. Las invitaciones conservan fotografía y composición temática.
 
-#### Colección de postales: 16 diseños
+#### Colección de postales: 37 diseños
 
-Los seis diseños originales se amplían con diez variantes hermanas. Cada familia conserva la composición fotográfica, el tratamiento tipográfico y la jerarquía de la postal de origen. Los colores siguientes pertenecen exclusivamente a las invitaciones.
+Los seis diseños originales se amplían con diez variantes hermanas y 21 fotografías de ocasiones disponibles como plantillas. Cada familia conserva la composición fotográfica, el tratamiento tipográfico y la jerarquía de la postal de origen. Los colores siguientes pertenecen exclusivamente a las invitaciones.
 
 | Variante | Familia | Fondo | Texto |
 | --- | --- | --- | --- |
