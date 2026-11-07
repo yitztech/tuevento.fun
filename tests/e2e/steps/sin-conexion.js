@@ -28,7 +28,7 @@ Given("entro en la app con esa cuenta", async ({ ui, ctx }) => {
   await ui.escribir("Correo electrónico", ctx.cuenta.email);
   await ui.escribir("Contraseña", ctx.cuenta.password);
   await ui.pulsar("Entrar a mi espacio");
-  await ui.esperarUrl(/\/app$/);
+  await ui.esperarUrl(/\/events$/);
   // La primera sincronización guarda los eventos en el teléfono
   await ui.esperarTexto(ctx.titulo);
   await ui.esperarCopiaLocal(ctx.cuenta.email);

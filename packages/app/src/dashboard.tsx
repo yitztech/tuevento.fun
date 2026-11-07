@@ -12,7 +12,6 @@ import {
   Search,
   SlidersHorizontal,
   Mail,
-  Users,
   Heart,
   PartyPopper,
   MapPin,
@@ -22,8 +21,6 @@ import {
   themes,
   emptyMetrics,
   type Metrics,
-  type Invitation,
-  type Event,
 } from "@tuevento/contracts";
 import { useApp, dateText, errorText } from "./context";
 import {
@@ -47,7 +44,7 @@ export function Dashboard() {
     setDemoBusy(true);
     try {
       setUser(await api.demo());
-      navigate("/app");
+      navigate("/events");
     } catch (e) {
       toast(errorText(e));
     } finally {
@@ -490,100 +487,6 @@ export function NotificationsPage() {
       ) : (
         <Empty title={tr("dashboard.youreAllCaught")}>
           {tr("dashboard.newRepliesAppearHere")}
-        </Empty>
-      )}
-    </>
-  );
-}
-export function AllGuests() {
-  const { api, events, toast } = useApp();
-  const [rows, setRows] = useState<
-      (Invitation & {
-        event: Event;
-      })[]
-    >([]),
-    [search, setSearch] = useState(""),
-    [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    Promise.all(
-      events.map(async (event) =>
-        (await api.invitations(event.id)).map((i) => ({ ...i, event })),
-      ),
-    )
-      .then((data) => {
-        if (active) setRows(data.flat());
-      })
-      .catch((e) => toast(errorText(e)))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [events, api]);
-  const filtered = rows.filter((i) =>
-    (i.name + " " + i.members.map((m) => m.name).join(" "))
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
-  return (
-    <>
-      <div className="page-heading">
-        <div>
-          <h1>{tr("dashboard.favoritePeople")}</h1>
-          <p>
-            {tr(
-              "dashboard.viewAllInvitationsOpen",
-            )}
-          </p>
-        </div>
-        <span className="soft-label">
-          <Users size={17} />
-          {tr("dashboard.peopleInvitedCount", {
-            count: rows.reduce((n, i) => n + i.members.length, 0),
-          })}
-        </span>
-      </div>
-      <label className="search-field standalone">
-        <Search size={18} />
-        <input
-          placeholder={tr("dashboard.searchPeopleFamilies")}
-          aria-label={tr("dashboard.searchPeopleFamilies")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </label>
-      {loading ? (
-        <p role="status">{tr("dashboard.loadingGuests")}</p>
-      ) : filtered.length ? (
-        <div className="guest-directory">
-          {filtered.map((i) => (
-            <Link key={i.id} to={`/eventos/${i.event.id}`}>
-              <span className="initial-avatar">
-                {i.name.slice(0, 2).toUpperCase()}
-              </span>
-              <div>
-                <strong>{i.name}</strong>
-                <span>{i.event.title}</span>
-              </div>
-              <span className="directory-members">
-                {tr("common.peopleCount", { count: i.members.length })}
-              </span>
-              <ArrowUpRight size={18} />
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <Empty
-          title={tr("dashboard.letsMakeGuestList")}
-          action={
-            <Button asChild><Link to="/eventos">
-              {tr("dashboard.goEvents")}
-            </Link></Button>
-          }
-        >
-          {tr("dashboard.addGuestsEachEvent")}
         </Empty>
       )}
     </>

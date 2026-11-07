@@ -1,7 +1,7 @@
 import { Given, When, Then } from "./fixtures.js";
 
 Given("que abro la aplicación sin sesión", async ({ ui }) => {
-  await ui.abrir("/app");
+  await ui.abrir("/events");
 });
 
 When("pulso el enlace {string} de la portada", async ({ page }, nombre) => {

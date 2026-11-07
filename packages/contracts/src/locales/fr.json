@@ -75,6 +75,7 @@
     "agencyHint": "Tu organises des événements pour tes clients : invités, réponses et designs au même endroit."
   },
   "app": {
+    "userMenu": "Menu utilisateur",
     "backOverview": "Retour à l’aperçu",
     "closeNavigation": "Fermer la navigation",
     "couldntFindPage": "Nous n’avons pas trouvé cette page",

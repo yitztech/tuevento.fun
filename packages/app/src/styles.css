@@ -5792,3 +5792,19 @@ body.native-app {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-ar
 .security-panel {
   margin-top: 24px;
 }
+
+/* El menú de cuenta permanece junto a las acciones de la cabecera. */
+.user-menu-trigger { min-height: 44px; padding: 4px 8px; gap: 8px; }
+.user-menu-name { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-menu-content { min-width: 220px; max-width: min(320px, calc(100vw - 24px)); padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); color: var(--ink); box-shadow: 0 8px 24px rgb(38 28 24 / 16%); z-index: 100; }
+.user-menu-label { display: grid; gap: 3px; padding: 8px; overflow-wrap: anywhere; }
+.user-menu-label span { color: var(--muted); font-size: 12px; }
+.user-menu-separator { height: 1px; margin: 4px 0; background: var(--line); }
+.user-menu-item { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px; border-radius: 7px; outline: none; cursor: pointer; color: var(--ink); }
+.user-menu-item[data-highlighted] { background: var(--surface-soft); }
+.user-menu-item[data-disabled] { opacity: .5; cursor: not-allowed; }
+.profile-tabs { margin-top: 1.5rem; }
+.profile-tabs [data-slot="tabs-list"] { min-height: 44px; max-width: 100%; }
+.profile-tabs [data-slot="tabs-trigger"] { min-height: 40px; white-space: normal; }
+.profile-tabs .profile-layout { margin-top: 1.5rem; }
+@media (max-width: 760px) { .user-menu-name { display: none; } .user-menu-trigger { min-width: 44px; } }

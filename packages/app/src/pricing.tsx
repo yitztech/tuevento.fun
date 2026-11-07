@@ -180,7 +180,7 @@ export function PaymentPage() {
           <LanguageSwitcher />
         </header>
         <main>
-          <Link to={event ? `/eventos/${event.id}` : "/app"} className="text-link">
+          <Link to={event ? `/eventos/${event.id}` : "/events"} className="text-link">
             <ArrowLeft size={16} />
             {tr("pricing.back")}
           </Link>

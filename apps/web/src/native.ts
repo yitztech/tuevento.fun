@@ -45,7 +45,7 @@ export async function nativeRuntime():Promise<Runtime> {
   if(parsed.pathname.startsWith('/i/')||landingRoute(parsed.pathname)){window.location.hash=parsed.pathname;return}
   if(parsed.pathname!=='/app-link/auth')return;
   const verifier=await SecureStorage.getItem(PKCE_KEY).catch(()=>null);if(!verifier)return;
-  try{await api.request('/auth/mobile/exchange','POST',{code:parsed.searchParams.get('code'),verifier});await SecureStorage.removeItem(PKCE_KEY).catch(()=>{});await Browser.close().catch(()=>{});window.location.hash='/app';window.location.reload()}catch{window.alert(tr('app.sessionConnectError'))}
+  try{await api.request('/auth/mobile/exchange','POST',{code:parsed.searchParams.get('code'),verifier});await SecureStorage.removeItem(PKCE_KEY).catch(()=>{});await Browser.close().catch(()=>{});window.location.hash='/events';window.location.reload()}catch{window.alert(tr('app.sessionConnectError'))}
  };
  localStorage.removeItem(PKCE_KEY); // de versiones anteriores
  await App.addListener('appUrlOpen',({url})=>{void handleURL(url)});

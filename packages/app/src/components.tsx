@@ -6,6 +6,7 @@ import {
   isValidElement,
   type ReactNode,
   type ReactElement,
+  type MouseEventHandler,
 } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -46,12 +47,14 @@ import { BrandLogo, BrandMark } from "./ui/site/brand-logo";
 export function Logo({
   compact = false,
   to = "/",
+  onClick,
 }: {
   compact?: boolean;
   to?: string;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   return (
-    <Link to={to} className="logo" aria-label={tr("common.tueventofunHome")}>
+    <Link to={to} onClick={onClick} className="logo" aria-label={tr("common.tueventofunHome")}>
       {compact ? <BrandMark /> : <BrandLogo size="panel" />}
     </Link>
   );

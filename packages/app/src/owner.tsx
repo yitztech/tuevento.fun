@@ -9,7 +9,7 @@ export function OwnerDashboard() {
  const {api,user} = useApp(); useLocale();
  const [days,setDays]=useState(30),[data,setData]=useState<OwnerMetrics|null>(null),[error,setError]=useState(''),[revision,setRevision]=useState(0);
  useEffect(()=>{if(!user?.isOwner)return; let active=true; setData(null);setError('');api.request<OwnerMetrics>(`/owner/metrics?days=${days}`).then(v=>{if(active)setData(v)}).catch(e=>{if(active)setError(errorText(e))});return()=>{active=false}},[api,days,revision,user?.isOwner]);
- if(!user?.isOwner)return <Navigate to="/app" replace/>;
+ if(!user?.isOwner)return <Navigate to="/events" replace/>;
  const labels = [tr('owner.uniqueVisitors'),tr('owner.visits'),tr('owner.registrations'),tr('owner.signIns'),tr('owner.downloadClicks')];
  return <section className="owner-dashboard"><div className="page-heading"><div><h1>{tr('owner.title')}</h1><p>{tr('owner.subtitle')}</p></div><label>{tr('owner.period')}<select aria-label={tr('owner.period')} value={days} onChange={e=>setDays(Number(e.target.value))}>{[7,30,90].map(n=><option key={n} value={n}>{tr('owner.days',{count:n})}</option>)}</select></label></div>
  <p className="analytics-note">{tr('owner.dataNote')}</p>

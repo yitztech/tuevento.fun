@@ -7,5 +7,5 @@ Given("entro en la app con mi cuenta", async ({ ui, ctx }) => {
   await ui.escribir("Correo electrónico", ctx.cuenta.email);
   await ui.escribir("Contraseña", ctx.cuenta.password);
   await ui.pulsar("Entrar a mi espacio");
-  await ui.esperarUrl(/\/app$/);
+  await ui.esperarUrl(/\/events$/);
 });

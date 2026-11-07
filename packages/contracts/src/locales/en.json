@@ -75,6 +75,7 @@
     "agencyHint": "You plan events for your clients: guests, replies and designs in one place."
   },
   "app": {
+    "userMenu": "User menu",
     "backOverview": "Back to overview",
     "closeNavigation": "Close navigation",
     "couldntFindPage": "We couldn't find this page",
