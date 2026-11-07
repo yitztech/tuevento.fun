@@ -72,7 +72,9 @@
     "chooseJpgPngWebp": "Elige una imagen JPG, PNG o WebP.",
     "couldntReadImage": "No se pudo leer la imagen.",
     "agencyTitle": "Soy agencia organizadora de eventos",
-    "agencyHint": "Organizas eventos para tus clientes: invitados, respuestas y diseños en un solo lugar."
+    "agencyHint": "Organizas eventos para tus clientes: invitados, respuestas y diseños en un solo lugar.",
+    "informationHint": "Mantén tus datos actualizados para una mejor experiencia.",
+    "securityHint": "Protege tu cuenta y controla el acceso a tus sesiones."
   },
   "app": {
     "userMenu": "Menú de usuario",
@@ -171,7 +173,6 @@
     "designOwnTitle": "Diseña tu invitación",
     "designOwnDescription": "Personaliza el fondo, añade tus fotos y escribe tu propio mensaje.",
     "designOwnAction": "Diseñar mi invitación",
-    "designOwnChooseEvent": "Elige un evento",
     "addIndividualFamilyInvitations": "Dentro del evento, añade invitaciones individuales o familiares. Cada integrante tiene su nombre, clasificación de adulto o niño y notas privadas para ti. Las notas no aparecen en la invitación pública.",
     "beingTogetherWhatMatters": "Lo importante es estar juntos.",
     "celebrateSimpleThings": "Celebremos lo simple",
@@ -240,7 +241,13 @@
     "whenSomeoneRepliesYoull": "Cuando alguien responda, aquí te enterarás primero.",
     "youreAllCaught": "Todo al día",
     "waysSayWant": "Muchas formas de decir «quiero que estés ahí». Elige la tuya.",
-    "designsCelebrate": "{{count}} diseños para celebrar"
+    "designsCelebrate": "{{count}} diseños para celebrar",
+    "myPostcards": "Mis postales",
+    "editPostcard": "Editar la postal guardada el {{date}}",
+    "postcardSavedOn": "Guardada el {{date}}",
+    "deletePostcard": "Borrar la postal guardada el {{date}}",
+    "confirmDeletePostcard": "¿Borrar esta postal? No se puede deshacer.",
+    "postcardDeleted": "Postal borrada."
   },
   "downloads": {
     "androidNote": "Descarga el APK desde este sitio mientras llega a Google Play.",
@@ -333,7 +340,8 @@
     "phoneRequired": "Añade primero tu teléfono para continuar.",
     "phoneAlreadyAdded": "Tu teléfono ya está guardado.",
     "currentPasswordIncorrect": "La contraseña actual no es correcta.",
-    "passwordNotSet": "Tu cuenta entra con Google y no tiene contraseña."
+    "passwordNotSet": "Tu cuenta entra con Google y no tiene contraseña.",
+    "postcardDesignLimit": "Ya tienes el máximo de postales. Borra una para crear otra."
   },
   "events": {
     "actions": "Acciones",
@@ -595,7 +603,9 @@
     "shadowColor": "Color de la sombra",
     "shadowBlur": "Desenfoque",
     "shadowOffsetX": "Desplazamiento horizontal",
-    "shadowOffsetY": "Desplazamiento vertical"
+    "shadowOffsetY": "Desplazamiento vertical",
+    "backToDesigns": "Volver a los diseños",
+    "savedToDesigns": "Postal guardada en Mis postales."
   },
   "legal": {
     "acceptOnRegister": "Al crear tu cuenta aceptas las <terms>Condiciones de uso</terms> y el <privacy>Aviso de privacidad</privacy>.",

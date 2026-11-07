@@ -1127,6 +1127,8 @@ export const postcardLimits = {
   photoBytes: 2 * 1024 * 1024,
   photoSide: 2048,
   versions: 20,
+  /** Postales propias guardadas por cuenta. */
+  designs: 100,
 } as const;
 export const postcardFonts = ["manrope", "bricolage", "playfair", "pacifico"] as const;
 export const postcardAligns = ["left", "center", "right"] as const;
@@ -1175,6 +1177,7 @@ export const postcardSchema = z.strictObject({
   texts: z.array(postcardText).max(postcardLimits.texts),
 });
 export type PostcardDesign = z.infer<typeof postcardSchema>;
+export type UserPostcard = { id: string; design: PostcardDesign; photos: { id: string; url: string }[]; updatedAt: string };
 export const emptyPostcard: PostcardDesign = {
   background: { type: "color", color: "#ffffff" },
   photos: [],

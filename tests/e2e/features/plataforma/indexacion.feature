@@ -34,6 +34,7 @@ Característica: Cada URL en un solo estado para los buscadores
       | es     | /events            |
       | es     | /planes/pago       |
       | en     | /plans/checkout    |
+      | es     | /disenos/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b |
       | es     | /e/una-celebracion |
       | en     | /eventos/1/editar  |
       | es     | /k7p2x9qa/boda-ana |

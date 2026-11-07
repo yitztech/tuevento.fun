@@ -72,7 +72,9 @@
     "chooseJpgPngWebp": "Choose a JPG, PNG or WebP image.",
     "couldntReadImage": "Couldn't read the image.",
     "agencyTitle": "I run an event planning agency",
-    "agencyHint": "You plan events for your clients: guests, replies and designs in one place."
+    "agencyHint": "You plan events for your clients: guests, replies and designs in one place.",
+    "informationHint": "Keep your details up to date for a better experience.",
+    "securityHint": "Protect your account and control access to your sessions."
   },
   "app": {
     "userMenu": "User menu",
@@ -171,7 +173,6 @@
     "designOwnTitle": "Design your invitation",
     "designOwnDescription": "Customize the background, add your photos and write your own message.",
     "designOwnAction": "Design my invitation",
-    "designOwnChooseEvent": "Choose an event",
     "addIndividualFamilyInvitations": "Add individual or family invitations within your event. Each member has a name, an adult or child category and private notes for you. These notes never appear on the public invitation.",
     "beingTogetherWhatMatters": "Being together is what matters.",
     "celebrateSimpleThings": "Celebrate the simple things",
@@ -240,7 +241,13 @@
     "whenSomeoneRepliesYoull": "When someone replies, you'll hear about it here first.",
     "youreAllCaught": "You're all caught up",
     "waysSayWant": "So many ways to say “I want you there.” Find yours.",
-    "designsCelebrate": "{{count}} designs to celebrate"
+    "designsCelebrate": "{{count}} designs to celebrate",
+    "myPostcards": "My postcards",
+    "editPostcard": "Edit the postcard saved on {{date}}",
+    "postcardSavedOn": "Saved on {{date}}",
+    "deletePostcard": "Delete the postcard saved on {{date}}",
+    "confirmDeletePostcard": "Delete this postcard? This can’t be undone.",
+    "postcardDeleted": "Postcard deleted."
   },
   "downloads": {
     "androidNote": "Download the APK from this site while we prepare for Google Play.",
@@ -333,7 +340,8 @@
     "phoneRequired": "First add your phone number to continue.",
     "phoneAlreadyAdded": "Your phone number is already saved.",
     "currentPasswordIncorrect": "Your current password isn’t correct.",
-    "passwordNotSet": "Your account signs in with Google and has no password."
+    "passwordNotSet": "Your account signs in with Google and has no password.",
+    "postcardDesignLimit": "You’ve reached the postcard limit. Delete one to create another."
   },
   "events": {
     "actions": "Actions",
@@ -595,7 +603,9 @@
     "shadowColor": "Shadow color",
     "shadowBlur": "Blur",
     "shadowOffsetX": "Horizontal offset",
-    "shadowOffsetY": "Vertical offset"
+    "shadowOffsetY": "Vertical offset",
+    "backToDesigns": "Back to designs",
+    "savedToDesigns": "Postcard saved to My postcards."
   },
   "legal": {
     "acceptOnRegister": "By creating your account you accept the <terms>Terms of use</terms> and the <privacy>Privacy policy</privacy>.",

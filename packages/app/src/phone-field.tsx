@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { accountLimits, phoneLimits, type Locale } from "@tuevento/contracts";
 import { formatLocale, getLocale, tr, trMessage } from "./i18n";
+import { Phone } from "lucide-react";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { NativeSelect } from "./ui/native-select";
@@ -80,10 +81,12 @@ function SelectPhoneField({
   onChange,
   placeholder,
   readOnly,
+  withIcon,
 }: {
   label: string;
   placeholder?: string;
   readOnly?: boolean;
+  withIcon?: boolean;
   error?: string;
   value: string;
   onChange: (value: string) => void;
@@ -122,23 +125,26 @@ function SelectPhoneField({
             </option>
           ))}
         </NativeSelect>
-        <Input
-          id={id}
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel-national"
-          placeholder={placeholder}
-          readOnly={readOnly}
-          maxLength={accountLimits.phone}
-          value={parts.national}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : undefined}
-          onChange={(event) => {
-            const raw = event.target.value.replace(onlyPhoneChars, "");
-            // Si el usuario pega el número con su prefijo ("+52 55…"), el país cambia solo.
-            update(parsePhone(raw, parts.iso));
-          }}
-        />
+        <span className={withIcon ? "icon-input" : "contents"}>
+          {withIcon && <Phone aria-hidden size={18} />}
+          <Input
+            id={id}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
+            placeholder={placeholder}
+            readOnly={readOnly}
+            maxLength={accountLimits.phone}
+            value={parts.national}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${id}-error` : undefined}
+            onChange={(event) => {
+              const raw = event.target.value.replace(onlyPhoneChars, "");
+              // Si el usuario pega el número con su prefijo ("+52 55…"), el país cambia solo.
+              update(parsePhone(raw, parts.iso));
+            }}
+          />
+        </span>
       </div>
       {error && (
         <small id={`${id}-error`} className="field-error" role="alert">
@@ -247,6 +253,8 @@ type PhoneFieldProps = {
   manualCode?: boolean;
   /** Solo se muestra: el campo no se puede editar (solo con el selector de país). */
   readOnly?: boolean;
+  /** Icono de teléfono dentro del número (solo con el selector de país). */
+  withIcon?: boolean;
 };
 
 export function PhoneField({ manualCode, ...props }: PhoneFieldProps) {

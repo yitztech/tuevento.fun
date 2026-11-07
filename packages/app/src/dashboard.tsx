@@ -16,11 +16,13 @@ import {
   PartyPopper,
   MapPin,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import {
   themes,
   emptyMetrics,
   type Metrics,
+  type UserPostcard,
 } from "@tuevento/contracts";
 import { useApp, dateText, errorText } from "./context";
 import {
@@ -33,6 +35,8 @@ import {
   InvitationArt,
   Modal,
 } from "./components";
+import { PostcardCanvas } from "./postcard-canvas";
+import { ConfirmDelete } from "./provider";
 import { Button } from "./ui/button";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 export function Dashboard() {
@@ -327,11 +331,60 @@ export function EventsPage() {
     </>
   );
 }
+/** Postales propias guardadas: cada una abre su editor y se puede borrar. */
+function MyPostcards({ postcards, onRemove }: { postcards: UserPostcard[]; onRemove: (postcard: UserPostcard) => void }) {
+  return (
+    <section className="my-postcards" aria-labelledby="my-postcards-title">
+      <h2 id="my-postcards-title">{tr("dashboard.myPostcards")}</h2>
+      <ul className="my-postcards-grid">
+        {postcards.map((postcard) => {
+          const date = dateText(postcard.updatedAt, Intl.DateTimeFormat().resolvedOptions().timeZone, { day: "numeric", month: "short", year: "numeric" });
+          return (
+            <li key={postcard.id}>
+              <Link to={`/disenos/${postcard.id}`} aria-label={tr("dashboard.editPostcard", { date })}>
+                <PostcardCanvas design={postcard.design} photos={postcard.photos} />
+              </Link>
+              <div className="my-postcards-caption">
+                <span>{tr("dashboard.postcardSavedOn", { date })}</span>
+                <Button type="button" variant="ghost" size="icon" aria-label={tr("dashboard.deletePostcard", { date })} onClick={() => onRemove(postcard)}>
+                  <Trash2 size={18} aria-hidden />
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export function TemplatesPage() {
   const [preview, setPreview] = useState<(typeof themes)[number] | null>(null);
-  const [chooseEvent, setChooseEvent] = useState(false);
-  const { events } = useApp();
-  const availableEvents = events.filter((event) => !event.archived && !event.cancelled);
+  const [postcards, setPostcards] = useState<UserPostcard[]>([]);
+  const [removing, setRemoving] = useState<UserPostcard | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const { api, online, toast } = useApp();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!online) return;
+    let alive = true;
+    api.postcardDesigns().then((list) => alive && setPostcards(list)).catch((e) => alive && setError(errorText(e)));
+    return () => {
+      alive = false;
+    };
+  }, [api, online]);
+  const designOwn = async () => {
+    setCreating(true);
+    setError("");
+    try {
+      const postcard = await api.createPostcardDesign();
+      navigate(`/disenos/${postcard.id}`);
+    } catch (e) {
+      setError(errorText(e));
+      setCreating(false);
+    }
+  };
   return (
     <>
       <div className="page-heading">
@@ -351,14 +404,12 @@ export function TemplatesPage() {
           <h2>{tr("dashboard.designOwnTitle")}</h2>
           <p>{tr("dashboard.designOwnDescription")}</p>
         </div>
-        {availableEvents.length ? (
-          <Button type="button" onClick={() => setChooseEvent(true)}>
-            {tr("dashboard.designOwnAction")}
-          </Button>
-        ) : (
-          <Button asChild><Link to="/eventos/nuevo">{tr("dashboard.createEvent")}</Link></Button>
-        )}
+        <Button type="button" disabled={creating || !online} onClick={() => void designOwn()}>
+          {tr("dashboard.designOwnAction")}
+        </Button>
       </div>
+      {error && <ErrorBox message={error} />}
+      {postcards.length > 0 && <MyPostcards postcards={postcards} onRemove={setRemoving} />}
       <div className="templates-grid">
         {themes.map((t) => (
           <article className={`template-card theme-${t.id}`} key={t.id}>
@@ -394,16 +445,17 @@ export function TemplatesPage() {
           </article>
         ))}
       </div>
-      {chooseEvent && (
-        <Modal title={tr("dashboard.designOwnChooseEvent")} onClose={() => setChooseEvent(false)}>
-          <div className="templates-event-list">
-            {availableEvents.map((event) => (
-              <Button key={event.id} asChild variant="outline">
-                <Link to={`/eventos/${event.id}/postal`}>{event.title}</Link>
-              </Button>
-            ))}
-          </div>
-        </Modal>
+      {removing && (
+        <ConfirmDelete
+          text={tr("dashboard.confirmDeletePostcard")}
+          onClose={() => setRemoving(null)}
+          onConfirm={async () => {
+            await api.removePostcardDesign(removing.id);
+            setPostcards((list) => list.filter((postcard) => postcard.id !== removing.id));
+            setRemoving(null);
+            toast(tr("dashboard.postcardDeleted"));
+          }}
+        />
       )}
       {preview && (
         <Modal title={tr(preview.name)} onClose={() => setPreview(null)}>

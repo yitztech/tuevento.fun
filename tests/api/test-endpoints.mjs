@@ -41,6 +41,38 @@ try {
     await organizador.call(`/events/${evento.id}`, "DELETE");
   });
 
+  await suite("Postales propias: borrador único, se listan al guardarlas, se borran y no se ven desde otra cuenta", async () => {
+    const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    const duena = client();
+    await duena.call("/auth/register", "POST", account(P, "postal-propia"), 201);
+    const borrador = await duena.call("/postcard-designs", "POST", {}, 201);
+    assert.equal((await duena.call("/postcard-designs", "POST", {}, 201)).id, borrador.id, "un solo borrador por cuenta");
+    assert.deepEqual(await duena.call("/postcard-designs"), [], "un borrador no está en la lista");
+    const foto = await duena.call(`/postcard-designs/${borrador.id}/images`, "POST", { dataUrl: PNG }, 201);
+    assert.equal((await send(new URL(foto.url, base), { headers: { "x-tuevento-client": "1" } })).status, 200);
+    const diseno = { background: { type: "photo", photo: foto.id }, photos: [], texts: [{ content: "Hola", font: "playfair", size: 64, color: "#112233", align: "center", x: 10, y: 20, width: 80 }] };
+    const ruta = `/postcard-designs/${borrador.id}`;
+    assert.deepEqual((await duena.call(ruta, "PUT", diseno)).design.texts, diseno.texts);
+    const lista = await duena.call("/postcard-designs");
+    assert.deepEqual(lista.map((postal) => [postal.id, postal.photos.map((p) => p.id)]), [[borrador.id, [foto.id]]]);
+    await duena.call(ruta, "PUT", { ...diseno, background: { type: "photo", photo: crypto.randomUUID() } }, 400);
+    await duena.call(ruta, "PUT", { ...diseno, sobra: true }, 422);
+
+    const otra = client();
+    await otra.call("/auth/register", "POST", account(P, "postal-ajena"), 201);
+    await otra.call(ruta, "GET", undefined, 404);
+    await otra.call(ruta, "PUT", diseno, 404);
+    await otra.call(ruta, "DELETE", undefined, 404);
+    await otra.call(`${ruta}/images`, "POST", { dataUrl: PNG }, 404);
+    await otra.call(`${ruta}/images/${foto.id}`, "DELETE", undefined, 404);
+
+    const limpia = await duena.call(`${ruta}/images/${foto.id}`, "DELETE");
+    assert.equal(limpia.design.background.type, "color", "quitar la foto no deja una referencia rota");
+    await duena.call(ruta, "DELETE");
+    await duena.call(ruta, "GET", undefined, 404);
+    assert.deepEqual(await duena.call("/postcard-designs"), []);
+  });
+
   await suite("Postal de evento: se guarda con versiones, usa sus fotos y se lee sin sesión", async () => {
     const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
     const organizador = client();

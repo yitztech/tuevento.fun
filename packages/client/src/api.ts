@@ -18,6 +18,7 @@ import type {
   Postcard,
   PostcardDesign,
   PostcardVersion,
+  UserPostcard,
   GeoPlace,
   GeoPoint,
   AccountType,
@@ -166,6 +167,13 @@ export class EventApi {
     );
   deleteInvitation = (eventId: string, id: string) =>
     this.request(`/events/${eventId}/invitations/${id}`, "DELETE");
+  postcardDesigns = () => this.request<UserPostcard[]>("/postcard-designs");
+  createPostcardDesign = () => this.request<UserPostcard>("/postcard-designs", "POST", {});
+  postcardDesign = (id: string) => this.request<UserPostcard>(`/postcard-designs/${id}`);
+  savePostcardDesign = (id: string, design: PostcardDesign) => this.request<UserPostcard>(`/postcard-designs/${id}`, "PUT", design);
+  removePostcardDesign = (id: string) => this.request(`/postcard-designs/${id}`, "DELETE");
+  uploadDesignPhoto = (id: string, dataUrl: string) => this.request<{ id: string; url: string }>(`/postcard-designs/${id}/images`, "POST", { dataUrl });
+  removeDesignPhoto = (id: string, imageId: string) => this.request<UserPostcard>(`/postcard-designs/${id}/images/${imageId}`, "DELETE");
   postcard = (eventId: string) =>
     this.request<Postcard>(`/events/${eventId}/postcard`);
   savePostcard = (eventId: string, design: PostcardDesign) =>

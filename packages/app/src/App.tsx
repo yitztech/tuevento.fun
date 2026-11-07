@@ -484,6 +484,7 @@ export function TuEventoApp({ runtime }: { runtime: Runtime }) {
                 <Route path="/eventos/:id/editar" element={<EventEditor />} />
                 <Route path="/eventos/:id/postal" element={<PostcardEditor />} />
                 <Route path="/disenos" element={<TemplatesPage />} />
+                <Route path="/disenos/:id" element={<PostcardEditor own />} />
                 <Route path="/invitados" element={<Navigate to="/eventos" replace />} />
                 <Route path="/notificaciones" element={<NotificationsPage />} />
                 <Route path="/sincronizar" element={<SyncReview />} />

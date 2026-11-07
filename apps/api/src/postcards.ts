@@ -10,10 +10,12 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 import {
+  emptyPostcard,
   postcardLimits,
   type Postcard,
   type PostcardDesign,
   type PostcardVersion,
+  type UserPostcard,
 } from "@tuevento/contracts";
 import { Database } from "./database";
 
@@ -133,26 +135,7 @@ export class PostcardsService {
     );
     if (n >= postcardLimits.photos)
       throw new ConflictException("errors.postcardPhotoLimit");
-    const bytes = Buffer.from(dataUrl.split(",")[1], "base64");
-    if (bytes.length > postcardLimits.photoBytes)
-      throw new UnprocessableEntityException("errors.imageMustSmallerThan");
-    let output: Buffer;
-    try {
-      const image = sharp(bytes, { limitInputPixels: 25000000 });
-      const metadata = await image.metadata();
-      if (!["jpeg", "png", "webp"].includes(metadata.format || ""))
-        throw new Error("Unsupported image");
-      output = await image
-        .rotate()
-        .resize(postcardLimits.photoSide, postcardLimits.photoSide, {
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .jpeg({ quality: 85 })
-        .toBuffer();
-    } catch {
-      throw new UnprocessableEntityException("errors.couldntReadImageTry");
-    }
+    const output = await this.processImage(dataUrl);
     const id = randomUUID();
     await mkdir(imageDir(), { recursive: true });
     await writeFile(join(imageDir(), `${id}.jpg`), output);
@@ -161,6 +144,100 @@ export class PostcardsService {
       [id, eventId],
     );
     return { id, url: postcardImageUrl(id) };
+  }
+
+  private async processImage(dataUrl: string): Promise<Buffer> {
+    const bytes = Buffer.from(dataUrl.split(",")[1], "base64");
+    if (bytes.length > postcardLimits.photoBytes)
+      throw new UnprocessableEntityException("errors.imageMustSmallerThan");
+    try {
+      const image = sharp(bytes, { limitInputPixels: 25000000 });
+      const metadata = await image.metadata();
+      if (!["jpeg", "png", "webp"].includes(metadata.format || "")) throw new Error("Unsupported image");
+      return await image.rotate().resize(postcardLimits.photoSide, postcardLimits.photoSide, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+    } catch { throw new UnprocessableEntityException("errors.couldntReadImageTry"); }
+  }
+
+  private async ownDesign(userId: string, id: string) {
+    const [row] = await this.db.query("SELECT id, design, updated_at FROM user_postcards WHERE id=$1 AND user_id=$2", [id, userId]);
+    if (!row) throw new NotFoundException();
+    return row;
+  }
+
+  /** Abre una postal nueva. Sigue en borrador, fuera de la lista, hasta guardarla; cada cuenta tiene un solo borrador. */
+  async createDesign(userId: string) {
+    const [draft] = await this.db.query("SELECT id FROM user_postcards WHERE user_id=$1 AND published=false ORDER BY created_at DESC LIMIT 1", [userId]);
+    if (draft) return this.getDesign(userId, draft.id);
+    const [{ n }] = await this.db.query("SELECT count(*)::int AS n FROM user_postcards WHERE user_id=$1", [userId]);
+    if (n >= postcardLimits.designs) throw new ConflictException("errors.postcardDesignLimit");
+    const id = randomUUID();
+    await this.db.query("INSERT INTO user_postcards(id,user_id,design) VALUES ($1,$2,$3)", [id, userId, JSON.stringify(emptyPostcard)]);
+    return this.getDesign(userId, id);
+  }
+
+  async getDesign(userId: string, id: string): Promise<UserPostcard> {
+    const row = await this.ownDesign(userId, id);
+    const images = await this.db.query("SELECT id FROM user_postcard_images WHERE postcard_id=$1 ORDER BY created_at", [id]);
+    return { id, design: row.design, photos: images.map((image) => ({ id: image.id, url: postcardImageUrl(image.id) })), updatedAt: row.updated_at.toISOString() };
+  }
+
+  async listDesigns(userId: string): Promise<UserPostcard[]> {
+    const rows = await this.db.query(
+      `SELECT p.id, p.design, p.updated_at, COALESCE(array_agg(i.id ORDER BY i.created_at) FILTER (WHERE i.id IS NOT NULL), '{}') AS images
+       FROM user_postcards p LEFT JOIN user_postcard_images i ON i.postcard_id=p.id
+       WHERE p.user_id=$1 AND p.published=true GROUP BY p.id ORDER BY p.created_at DESC, p.id DESC LIMIT $2`,
+      [userId, postcardLimits.designs],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      design: row.design,
+      photos: row.images.map((image: string) => ({ id: image, url: postcardImageUrl(image) })),
+      updatedAt: row.updated_at.toISOString(),
+    }));
+  }
+
+  /** Borra la postal y sus fotos; quien no es su dueño recibe 404. */
+  async removeDesign(userId: string, id: string) {
+    await this.ownDesign(userId, id);
+    const images = await this.db.query("SELECT id FROM user_postcard_images WHERE postcard_id=$1", [id]);
+    await this.db.query("DELETE FROM user_postcards WHERE id=$1 AND user_id=$2", [id, userId]);
+    await Promise.all(images.map((image) => unlink(join(imageDir(), `${image.id}.jpg`)).catch(() => {})));
+    return { ok: true };
+  }
+
+  async saveDesign(userId: string, id: string, design: PostcardDesign) {
+    await this.ownDesign(userId, id);
+    const used = [...new Set(photoIds(design))];
+    if (used.length) {
+      const found = await this.db.query("SELECT id FROM user_postcard_images WHERE postcard_id=$1 AND id=ANY($2::uuid[])", [id, used]);
+      if (found.length !== used.length) throw new BadRequestException("errors.postcardPhotoNotFound");
+    }
+    await this.db.query("UPDATE user_postcards SET design=$3, published=true, updated_at=now() WHERE id=$1 AND user_id=$2", [id, userId, JSON.stringify(design)]);
+    return this.getDesign(userId, id);
+  }
+
+  async uploadDesignImage(userId: string, postcardId: string, dataUrl: string) {
+    await this.ownDesign(userId, postcardId);
+    const [{ n }] = await this.db.query("SELECT count(*)::int AS n FROM user_postcard_images WHERE postcard_id=$1", [postcardId]);
+    if (n >= postcardLimits.photos) throw new ConflictException("errors.postcardPhotoLimit");
+    const output = await this.processImage(dataUrl);
+    const id = randomUUID();
+    await mkdir(imageDir(), { recursive: true });
+    await writeFile(join(imageDir(), `${id}.jpg`), output);
+    try { await this.db.query("INSERT INTO user_postcard_images(id,postcard_id) VALUES($1,$2)", [id, postcardId]); }
+    catch (error) { await unlink(join(imageDir(), `${id}.jpg`)).catch(() => {}); throw error; }
+    return { id, url: postcardImageUrl(id) };
+  }
+
+  async removeDesignImage(userId: string, postcardId: string, imageId: string) {
+    const row = await this.ownDesign(userId, postcardId);
+    const [removed] = await this.db.query("DELETE FROM user_postcard_images WHERE id=$1 AND postcard_id=$2 RETURNING id", [imageId, postcardId]);
+    if (!removed) throw new NotFoundException("errors.postcardPhotoNotFound");
+    const design: PostcardDesign = row.design;
+    const cleaned = { ...design, background: design.background.type === "photo" && design.background.photo === imageId ? { type: "color" as const, color: "#ffffff" } : design.background, photos: design.photos.filter((photo) => photo.photo !== imageId) };
+    await this.db.query("UPDATE user_postcards SET design=$3,updated_at=now() WHERE id=$1 AND user_id=$2", [postcardId, userId, JSON.stringify(cleaned)]);
+    await unlink(join(imageDir(), `${imageId}.jpg`)).catch(() => {});
+    return this.getDesign(userId, postcardId);
   }
 
   /** Borra la foto y la quita del diseño actual, para que nunca quede una referencia rota. */
@@ -211,7 +288,7 @@ export class PostcardsService {
   /** Foto pública por identificador aleatorio (UUID), como los tokens de invitación. */
   async image(imageId: string): Promise<Buffer> {
     const [r] = await this.db.query(
-      "SELECT id FROM postcard_images WHERE id=$1",
+      "SELECT id FROM postcard_images WHERE id=$1 UNION ALL SELECT id FROM user_postcard_images WHERE id=$1",
       [imageId],
     );
     if (!r) throw new NotFoundException("errors.postcardPhotoNotFound");

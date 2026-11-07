@@ -72,7 +72,9 @@
     "chooseJpgPngWebp": "Wähle ein JPG-, PNG- oder WebP-Bild.",
     "couldntReadImage": "Das Bild konnte nicht gelesen werden.",
     "agencyTitle": "Ich bin eine Eventagentur",
-    "agencyHint": "Du organisierst Events für deine Kundschaft: Gäste, Antworten und Designs an einem Ort."
+    "agencyHint": "Du organisierst Events für deine Kundschaft: Gäste, Antworten und Designs an einem Ort.",
+    "informationHint": "Halte deine Daten aktuell, damit alles reibungslos läuft.",
+    "securityHint": "Schütze dein Konto und behalte den Zugriff auf deine Sitzungen im Blick."
   },
   "app": {
     "userMenu": "Benutzermenü",
@@ -171,7 +173,6 @@
     "designOwnTitle": "Gestalte deine Einladung",
     "designOwnDescription": "Passe den Hintergrund an, füge deine Fotos hinzu und schreibe deine eigene Nachricht.",
     "designOwnAction": "Einladung gestalten",
-    "designOwnChooseEvent": "Veranstaltung auswählen",
     "addIndividualFamilyInvitations": "Füge in deinem Event Einzel- oder Familieneinladungen hinzu. Jedes Mitglied hat einen Namen, die Kategorie Erwachsener oder Kind und private Notizen für dich. Die Notizen erscheinen nie in der öffentlichen Einladung.",
     "beingTogetherWhatMatters": "Was zählt, ist das Zusammensein.",
     "celebrateSimpleThings": "Feiern wir die kleinen Dinge",
@@ -240,7 +241,13 @@
     "whenSomeoneRepliesYoull": "Wenn jemand antwortet, erfährst du es hier zuerst.",
     "youreAllCaught": "Alles erledigt",
     "waysSayWant": "Viele Arten zu sagen „Ich will dich dabeihaben“. Finde deine.",
-    "designsCelebrate": "{{count}} Designs zum Feiern"
+    "designsCelebrate": "{{count}} Designs zum Feiern",
+    "myPostcards": "Meine Karten",
+    "editPostcard": "Die am {{date}} gespeicherte Karte bearbeiten",
+    "postcardSavedOn": "Gespeichert am {{date}}",
+    "deletePostcard": "Die am {{date}} gespeicherte Karte löschen",
+    "confirmDeletePostcard": "Diese Karte löschen? Das lässt sich nicht rückgängig machen.",
+    "postcardDeleted": "Karte gelöscht."
   },
   "downloads": {
     "androidNote": "Lade die APK von dieser Website herunter, bis die App bei Google Play erscheint.",
@@ -333,7 +340,8 @@
     "phoneRequired": "Gib zuerst deine Telefonnummer ein, um fortzufahren.",
     "phoneAlreadyAdded": "Deine Telefonnummer ist bereits gespeichert.",
     "currentPasswordIncorrect": "Dein aktuelles Passwort ist nicht korrekt.",
-    "passwordNotSet": "Dein Konto nutzt die Anmeldung mit Google und hat kein Passwort."
+    "passwordNotSet": "Dein Konto nutzt die Anmeldung mit Google und hat kein Passwort.",
+    "postcardDesignLimit": "Du hast die maximale Anzahl an Karten erreicht. Lösche eine, um eine neue zu erstellen."
   },
   "events": {
     "actions": "Aktionen",
@@ -595,7 +603,9 @@
     "shadowColor": "Schattenfarbe",
     "shadowBlur": "Weichzeichnung",
     "shadowOffsetX": "Versatz horizontal",
-    "shadowOffsetY": "Versatz vertikal"
+    "shadowOffsetY": "Versatz vertikal",
+    "backToDesigns": "Zurück zu den Designs",
+    "savedToDesigns": "Karte unter „Meine Karten“ gespeichert."
   },
   "legal": {
     "acceptOnRegister": "Mit der Erstellung deines Kontos akzeptierst du die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy>.",
