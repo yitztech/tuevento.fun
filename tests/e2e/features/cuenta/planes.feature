@@ -35,7 +35,27 @@ Característica: Elegir un plan y llegar a su página de pago
     Entonces el plan "Starter" muestra "$19.99"
     Y el plan "Business" muestra "$39.99"
     Y el plan "Agency" muestra "$79.99"
-    Y el plan "Agency" muestra "por mes"
+    Y el plan "Agency" muestra "USD/mes"
+
+  @solo-lectura
+  Esquema del escenario: Cada plan profesional dice sus eventos activos, su equipo y su descuento
+    Dado que abro la página de precios
+    Cuando abro la pestaña "Profesionales"
+    Entonces el plan "<plan>" muestra "<eventos>"
+    Y el plan "<plan>" muestra "<equipo>"
+    Y el plan "<plan>" muestra "<descuento>"
+
+    Ejemplos:
+      | plan     | eventos                  | equipo                           | descuento                       |
+      | Starter  | Hasta 5 eventos activos  | Equipo: hasta 2 colaboradores    | 15% de descuento en cada evento |
+      | Business | Hasta 15 eventos activos | Equipo: hasta 5 colaboradores    | 25% de descuento en cada evento |
+      | Agency   | Hasta 40 eventos activos | Equipo y permisos personalizados | 35% de descuento en cada evento |
+
+  @solo-lectura
+  Escenario: El plan Business se destaca como el más popular de los profesionales
+    Dado que abro la página de precios
+    Cuando abro la pestaña "Profesionales"
+    Entonces el plan "Business" muestra "Más popular"
 
   @solo-lectura @smoke
   Escenario: Elegir un plan lleva a su página de pago con el resumen
@@ -54,6 +74,7 @@ Característica: Elegir un plan y llegar a su página de pago
     Cuando abro la pestaña "Profesionales"
     Y elijo el plan "Business"
     Entonces estoy en la página de pago del plan "business"
+    Y el resumen de la compra muestra "Hasta 15 eventos activos"
     Y el resumen de la compra muestra "USD · Suscripción mensual"
     Y el total a pagar es "$39.99 USD"
 

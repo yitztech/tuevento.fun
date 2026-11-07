@@ -1,11 +1,9 @@
 import {
-  Building2,
   CalendarDays,
   Crown,
   Gift,
+  Layers,
   PartyPopper,
-  Sprout,
-  Star,
   Users,
   UsersRound,
   type LucideIcon,
@@ -19,13 +17,16 @@ export type CheckoutPlan = { kind: "personal"; plan: PersonalPlan } | { kind: "a
 
 /** Moneda de todos los planes: el código ISO no se traduce. */
 export const planCurrency = "USD";
-/** Plan que se destaca en la página de planes. */
-export const popularPlan: PlanKey = "premium";
+/** Planes que se destacan en la página de planes: uno por pestaña. */
+export const popularPlans: readonly PlanKey[] = ["premium", "business"];
 
 /** Precio en dólares: «$0» el plan gratis y «$14.99» el resto (igual en todos los idiomas). */
 export const planPrice = (usd: number) => (usd === 0 ? "$0" : `$${usd.toFixed(2)}`);
 
 const allOf = (plan: () => string) => tr("pricing.featAllOf", { plan: plan() });
+const agencyPlan = (key: AgencyPlan["key"]) => agencyPlans.find((plan) => plan.key === key)!;
+const discount = (key: AgencyPlan["key"]) => tr("pricing.featEventDiscount", { percent: agencyPlan(key).eventDiscountPercent });
+const team = (key: AgencyPlan["key"]) => tr("pricing.featTeamUpTo", { people: Number(agencyPlan(key).collaborators) });
 const names = {
   free: () => tr("pricing.planFree"),
   essential: () => tr("pricing.planEssential"),
@@ -40,10 +41,9 @@ const names = {
 
 /**
  * Icono, nombre y lo que incluye cada plan, en el idioma de quien lee (cada clave, escrita entera:
- * la prueba de catálogos busca las claves en el código). Los planes de agencias aún no tienen sus
- * funciones definidas (docs/RELEVO-PLANES-PRECIOS.md): solo llevan una descripción.
+ * la prueba de catálogos busca las claves en el código). Los planes de agencias añaden una descripción.
  */
-export const planInfo: Record<PlanKey, { icon: LucideIcon; name: () => string; features: () => string[] }> = {
+export const planInfo: Record<PlanKey, { icon: LucideIcon; name: () => string; description?: () => string; features: () => string[] }> = {
   free: {
     icon: Gift,
     name: names.free,
@@ -74,9 +74,24 @@ export const planInfo: Record<PlanKey, { icon: LucideIcon; name: () => string; f
     name: names.grandEvent,
     features: () => [tr("pricing.featEverything"), tr("pricing.featHighVolume"), tr("pricing.featAdvice")],
   },
-  starter: { icon: Sprout, name: names.starter, features: () => [tr("pricing.descStarter")] },
-  business: { icon: Star, name: names.business, features: () => [tr("pricing.descBusiness")] },
-  agency: { icon: Building2, name: names.agency, features: () => [tr("pricing.descAgency")] },
+  starter: {
+    icon: Users,
+    name: names.starter,
+    description: () => tr("pricing.descStarter"),
+    features: () => [tr("pricing.featDashboard"), tr("pricing.featClients"), team("starter"), discount("starter"), tr("pricing.featEmailSupport")],
+  },
+  business: {
+    icon: Crown,
+    name: names.business,
+    description: () => tr("pricing.descBusiness"),
+    features: () => [allOf(names.starter), team("business"), discount("business"), tr("pricing.featAdvancedReports"), tr("pricing.featPrioritySupport")],
+  },
+  agency: {
+    icon: Layers,
+    name: names.agency,
+    description: () => tr("pricing.descAgency"),
+    features: () => [allOf(names.business), tr("pricing.featCustomTeam"), discount("agency"), tr("pricing.featOwnBrand"), tr("pricing.featExpertSupport")],
+  },
 };
 
 /** Invitados que cubre un plan: «Hasta 20 invitados», «21 – 60 invitados» o «Más de 500 invitados». */

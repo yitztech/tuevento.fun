@@ -82,11 +82,14 @@ export const personalPlans = [
   { key: "grandEvent", minGuests: 501, maxGuests: null, usd: 99.99 },
 ] as const;
 
-/** Planes que se muestran en `/precios` para agencias y organizadores: suscripción mensual en USD. */
+/**
+ * Planes que se muestran en `/planes` para agencias y organizadores: suscripción mensual en USD, con
+ * los eventos activos, los colaboradores (null: equipo a medida) y el descuento por evento de cada uno.
+ */
 export const agencyPlans = [
-  { key: "starter", usd: 19.99 },
-  { key: "business", usd: 39.99 },
-  { key: "agency", usd: 79.99 },
+  { key: "starter", usd: 19.99, activeEvents: 5, collaborators: 2, eventDiscountPercent: 15 },
+  { key: "business", usd: 39.99, activeEvents: 15, collaborators: 5, eventDiscountPercent: 25 },
+  { key: "agency", usd: 79.99, activeEvents: 40, collaborators: null, eventDiscountPercent: 35 },
 ] as const;
 
 export type PersonalPlan = (typeof personalPlans)[number];

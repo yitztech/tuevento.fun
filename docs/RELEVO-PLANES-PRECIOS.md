@@ -7,7 +7,7 @@ La página de pago de un plan (`/planes/pago?plan=…`, `packages/app/src/ui/sit
 ## Decisiones del usuario
 
 - Personas, USD por evento: Gratis hasta 20; Esencial 21–60 por 14,99; Plus 61–100 por 19,99; Premium 101–200 por 29,99; Celebración 201–500 por 49,99; Gran Evento desde 501 por 99,99.
-- Profesionales, USD al mes: Starter 19,99; Business 39,99; Agency 79,99. Mostrar precios; los límites y funciones permanecen pendientes de definir. No implementar privilegios, promesas ni cobros de suscripción hasta tener sus condiciones.
+- Profesionales, USD al mes: Starter 19,99; Business 39,99; Agency 79,99. La página muestra ya sus eventos activos (5, 15, 40), colaboradores (2, 5, a medida), descuento por evento (15, 25, 35 %) y funciones, en `agencyPlans` y `planInfo`. Nada de eso se aplica todavía: faltan los límites en la API, el descuento, la marca propia y las condiciones de la suscripción.
 - Los eventos y pagos anteriores conservan sus condiciones. No reinterpretar `event_payments.tier` existente con una nueva tabla de índices.
 
 ## Pendiente para que los planes por evento sean contratables
@@ -16,7 +16,7 @@ La página de pago de un plan (`/planes/pago?plan=…`, `packages/app/src/ui/sit
 2. Actualizar contratos, validación, restricciones SQL y migraciones con `NOT VALID` cuando corresponda, autorización por propietario, API, límites de invitados, cupones, ampliaciones, mensajes y pantalla de pago web/móvil. El límite gratuito actual no coincide con los 20 invitados de la propuesta.
 3. Decidir la experiencia cuando Stripe no esté configurado: el usuario no debe quedar atrapado al llegar al límite sin un modo disponible de contratar. No habilitar cobros hasta tener infraestructura y políticas operativas verificadas.
 4. Agregar pruebas de límites 20/21, 60/61, 100/101, 200/201 y 500/501; importes exactos, descuentos, actualizaciones, concurrencia, webhooks repetidos, pagos históricos y pendientes, autorización por recurso y paridad de cinco idiomas. Ejecutar suites de API, base de datos y E2E con el simulador de Stripe; después validar Stripe en modo de pruebas con su webhook y, antes de publicar, las tareas operativas de `docs/PAGOS-PENDIENTES.md`.
-5. Implementar suscripciones profesionales solo cuando se definan límites y prestaciones, incluyendo ciclo de vida, cancelación, impago, derechos y migración. Hasta entonces, valorar un aviso en la página de que los planes aún no se pueden contratar.
+5. Implementar suscripciones profesionales con los límites y prestaciones publicados, definiendo antes su ciclo de vida, cancelación, impago, derechos y migración. Hasta entonces, valorar un aviso en la página de que los planes aún no se pueden contratar.
 
 ## Verificación
 

@@ -33,7 +33,9 @@ function PlanSummary({ choice }: { choice: CheckoutPlan }) {
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="font-sans text-[1.3rem] leading-tight font-bold text-title">{name()}</h2>
-            {personal && <p className="text-[0.9rem] text-foreground/85">{planGuests(choice.plan)}</p>}
+            <p className="text-[0.9rem] text-foreground/85">
+              {personal ? planGuests(choice.plan) : tr("pricing.activeEvents", { events: choice.plan.activeEvents })}
+            </p>
           </div>
           <p className="text-right font-bold text-title">
             <span className="block text-[1.6rem] leading-none tabular-nums">{planPrice(choice.plan.usd)}</span>
@@ -178,7 +180,7 @@ function PaymentForm({ choice }: { choice: CheckoutPlan }) {
       </dl>
       <p role="status" className="mt-4 flex items-start gap-2.5 rounded-lg bg-muted p-3 text-[0.82rem] text-foreground/90">
         <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-        {tr("pricing.paymentPending")}
+        {choice.kind === "personal" ? tr("pricing.paymentPending") : tr("pricing.paymentPendingAgency")}
       </p>
       <Button type="submit" size="lg" disabled className="mt-4 w-full rounded-full">
         <Lock aria-hidden className="size-4" />
