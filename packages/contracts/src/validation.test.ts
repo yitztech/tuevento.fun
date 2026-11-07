@@ -171,8 +171,8 @@ test("Idiomas admitidos, fallback y traducción sin alterar texto propio", async
     notificationMessage({ accepted: 2, declined: 0, pending: 1 }, "es"),
     "2 confirmados, 0 no asistirán y 1 en espera.",
   );
-  assert.equal(translate("es", "common.peopleCount", { count: 1 }), "1 persona");
-  assert.equal(translate("en", "common.peopleCount", { count: 3 }), "3 people");
+  assert.equal(translate("es", "pricing.guestsNow", { count: 1 }), "Tu evento tiene 1 invitado.");
+  assert.equal(translate("en", "pricing.guestsNow", { count: 3 }), "Your event has 3 guests.");
   assert.equal(translate("en", "events.memberNumber", { number: 2 }), "Member 2");
   for (const theme of themes) assert.notEqual(translate("en", theme.name), theme.name);
 });

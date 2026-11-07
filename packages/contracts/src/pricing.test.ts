@@ -110,13 +110,13 @@ test("Planes de personas: tramos contiguos desde 0, precios crecientes y el últ
   });
 });
 
-test("Planes de agencias: Starter, Business y Agency, con la suscripción mensual creciente", () => {
+test("Planes de agencias: Starter, Business y Agency, con suscripción, eventos, equipo y descuento crecientes", () => {
   assert.deepEqual(
-    agencyPlans.map((p) => [p.key, p.usd]),
+    agencyPlans.map((p) => [p.key, p.usd, p.activeEvents, p.collaborators, p.eventDiscountPercent]),
     [
-      ["starter", 19.99],
-      ["business", 39.99],
-      ["agency", 79.99],
+      ["starter", 19.99, 5, 2, 15],
+      ["business", 39.99, 15, 5, 25],
+      ["agency", 79.99, 40, null, 35],
     ],
   );
 });

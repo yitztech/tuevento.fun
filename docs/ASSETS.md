@@ -68,3 +68,7 @@ Los recursos están en `apps/web/public/images/brand-v2/` y su procedencia, mani
 - **Símbolo:** `icon-{96,192}.webp` con `BrandMark`, para espacios compactos.
 - **Favicon y Apple touch:** `favicon.ico`, `favicon-16.png`, `favicon-32.png` y `apple-touch-icon.png`, declarados en `apps/web/index.html`.
 - **Sin cambiar todavía:** los iconos y splash nativos (`scripts/native-assets.mjs` sigue leyendo `apps/web/public/favicon.svg`). `app-icon-512.png` y `app-icon-1024.png` quedan preparados para ellos.
+
+### Fotografías de ocasiones como plantillas
+
+Las 21 fotografías ilustrativas de la portada también se distribuyen como plantillas seleccionables en `apps/web/public/images/occasion-*.webp`, copiadas sin modificación desde `site/photos/events/` en sus versiones de 480 y 960 píxeles. Las imágenes se generaron con la herramienta integrada de OpenAI; son ilustrativas y no muestran celebraciones reales documentadas. Los identificadores estables y las descripciones traducidas forman parte del catálogo de contratos.

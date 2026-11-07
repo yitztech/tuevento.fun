@@ -23,7 +23,7 @@ const dialByIso = new Map(countryDials);
 /** Coincidencia más larga primero, para que un prefijo no tape a otro que empieza igual. */
 const longestDialFirst = [...countryDials].sort(([, a], [, b]) => b.length - a.length);
 /** País inicial según el idioma activo. */
-const defaultCountryByLocale: Record<Locale, string> = {
+export const defaultCountryByLocale: Record<Locale, string> = {
   es: "ES",
   en: "US",
   pt: "BR",
@@ -31,8 +31,16 @@ const defaultCountryByLocale: Record<Locale, string> = {
   fr: "FR",
 };
 
+/** Países en el idioma activo, por orden alfabético: el selector de prefijo y el de facturación. */
+export function countryOptions() {
+  const names = new Intl.DisplayNames([formatLocale()], { type: "region" });
+  return countryDials
+    .map(([iso, dial]) => ({ iso, dial, name: names.of(iso) ?? iso }))
+    .sort((a, b) => a.name.localeCompare(b.name, formatLocale()));
+}
+
 /** Bandera emoji a partir del código ISO del país (dos letras regionales). */
-const flagOf = (iso: string) =>
+export const flagOf = (iso: string) =>
   String.fromCodePoint(...[...iso].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65));
 
 type PhoneParts = { iso: string; national: string };
@@ -83,12 +91,7 @@ function SelectPhoneField({
   const id = useId();
   const locale = getLocale();
   const defaultIso = defaultCountryByLocale[locale];
-  const options = useMemo(() => {
-    const names = new Intl.DisplayNames([formatLocale()], { type: "region" });
-    return countryDials
-      .map(([iso, dial]) => ({ iso, dial, name: names.of(iso) ?? iso }))
-      .sort((a, b) => a.name.localeCompare(b.name, formatLocale()));
-  }, [locale]);
+  const options = useMemo(countryOptions, [locale]);
   const [parts, setParts] = useState(() => parsePhone(value, defaultIso));
   // Un valor que llega de fuera (p. ej. al cargar el perfil) sustituye al que muestra el campo.
   // Solo depende de `value`: mientras el usuario escribe, el valor de fuera va un paso por detrás.

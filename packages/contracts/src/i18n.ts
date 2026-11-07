@@ -11,7 +11,7 @@ export type Catalog = typeof es;
  * Páginas cuya ruta cambia con el idioma. El resto de rutas es igual en todos los dominios.
  * `providers` es la sección de proveedores: sus perfiles viven en <ruta>/<dirección>.
  */
-export type LocalizedPage = "privacy" | "terms" | "pricing" | "providers";
+export type LocalizedPage = "privacy" | "terms" | "pricing" | "providers" | "checkout";
 type LocaleConfig = {
   /** Nombre del idioma en ese mismo idioma, para el selector. */
   name: string;
@@ -43,7 +43,7 @@ export const locales = {
     name: "Español",
     intl: "es-MX",
     zod: "es",
-    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/planes", providers: "/proveedores" },
+    paths: { privacy: "/privacidad", terms: "/condiciones", pricing: "/planes", providers: "/proveedores", checkout: "/planes/pago" },
     moved: { pricing: ["/precios"] },
     messages: es,
   },
@@ -51,7 +51,7 @@ export const locales = {
     name: "English",
     intl: "en-US",
     zod: "en",
-    paths: { privacy: "/privacy", terms: "/terms", pricing: "/plans", providers: "/vendors" },
+    paths: { privacy: "/privacy", terms: "/terms", pricing: "/plans", providers: "/vendors", checkout: "/plans/checkout" },
     moved: { pricing: ["/pricing"] },
     messages: en,
   },
@@ -59,7 +59,7 @@ export const locales = {
     name: "Português",
     intl: "pt-BR",
     zod: "pt",
-    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/planos", providers: "/fornecedores" },
+    paths: { privacy: "/privacidade", terms: "/termos", pricing: "/planos", providers: "/fornecedores", checkout: "/planos/pagamento" },
     moved: { pricing: ["/precos"] },
     messages: pt,
     hostedBy: "en",
@@ -68,7 +68,7 @@ export const locales = {
     name: "Deutsch",
     intl: "de-DE",
     zod: "de",
-    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/plaene", providers: "/dienstleister" },
+    paths: { privacy: "/datenschutz", terms: "/nutzungsbedingungen", pricing: "/plaene", providers: "/dienstleister", checkout: "/plaene/zahlung" },
     moved: { pricing: ["/preise"] },
     messages: de,
     hostedBy: "en",
@@ -77,7 +77,7 @@ export const locales = {
     name: "Français",
     intl: "fr-FR",
     zod: "fr",
-    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/plans", providers: "/prestataires" },
+    paths: { privacy: "/confidentialite", terms: "/conditions", pricing: "/plans", providers: "/prestataires", checkout: "/plans/paiement" },
     moved: { pricing: ["/tarifs"] },
     messages: fr,
     hostedBy: "en",
@@ -89,6 +89,8 @@ export const defaultLocale: Locale = "es";
 export const supportedLocales = Object.keys(locales) as Locale[];
 /** Páginas traducidas que se publican (rutas de la SPA y sitemap). `providers` es la búsqueda de proveedores. */
 export const localizedPages = ["privacy", "terms", "pricing", "providers"] as const satisfies readonly LocalizedPage[];
+/** Páginas traducidas que no se indexan: tienen ruta en cada idioma, pero van con noindex y fuera del sitemap. */
+export const privateLocalizedPages = ["checkout"] as const satisfies readonly LocalizedPage[];
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && Object.hasOwn(locales, value);
@@ -260,7 +262,7 @@ export const localizedPath = (page: LocalizedPage, locale: Locale): string =>
 /** Página traducida a la que corresponde una ruta, en cualquiera de sus idiomas. */
 export function localizedPage(pathname: string): LocalizedPage | null {
   const path = pathname.replace(/\/+$/, "") || "/";
-  for (const page of localizedPages)
+  for (const page of [...localizedPages, ...privateLocalizedPages])
     if (supportedLocales.some((locale) => localizedPath(page, locale) === path)) return page;
   return null;
 }

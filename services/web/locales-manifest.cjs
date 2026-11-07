@@ -4,6 +4,7 @@
 //   locale es
 //   hosted pt en        (pt se sirve en el dominio de en, bajo /pt)
 //   path privacy es /privacidad
+//   private checkout    (página traducida con noindex y fuera del sitemap)
 //   moved pricing es /precios   (ruta anterior de una página: 301 a la actual)
 //   section providers es /proveedores   (sección con páginas por debajo: /proveedores/<dirección>)
 //   title es TuEventoFun · Invita, reúne y celebra
@@ -15,6 +16,7 @@ const {
   locales,
   supportedLocales,
   localizedPages,
+  privateLocalizedPages,
   localizedPath,
   siteLocale,
   translate,
@@ -28,7 +30,8 @@ for (const locale of supportedLocales) {
 }
 for (const locale of supportedLocales)
   if (siteLocale(locale) !== locale) lines.push(`hosted ${locale} ${siteLocale(locale)}`);
-for (const page of localizedPages)
+for (const page of privateLocalizedPages) lines.push(`private ${page}`);
+for (const page of [...localizedPages, ...privateLocalizedPages])
   for (const locale of supportedLocales) {
     const path = localizedPath(page, locale);
     if (!/^\/[a-z0-9/-]*$/.test(path)) throw new Error(`Ruta no válida: ${path}`);

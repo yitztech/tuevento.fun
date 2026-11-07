@@ -18,6 +18,7 @@ import { CouponField } from "./coupon";
 import { errorText, useApp } from "./context";
 import { LanguageSwitcher, tr, useLocale } from "./i18n";
 import { Button } from "./ui/button";
+import { PlanCheckout } from "./ui/site/plan-checkout";
 import { PlansPage } from "./ui/site/plans-page";
 import { SiteLayout } from "./ui/site/site-layout";
 
@@ -61,6 +62,15 @@ export function PricingPage() {
       <PlansPage />
     </SiteLayout>
   );
+}
+
+/** Página de pago de un plan elegido en `/planes`: visible sin sesión y sin indexar. */
+export function PlanCheckoutPage() {
+  const { locale } = useLocale();
+  useEffect(() => {
+    document.title = `${tr("pricing.checkoutTitle")} · TuEventoFun`;
+  }, [locale]);
+  return <PlanCheckout />;
 }
 
 /** Estado del plan de un evento: gratuito o el tramo pagado. */
